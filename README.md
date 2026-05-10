@@ -71,11 +71,11 @@ src/
     supabase/
       client.ts            # Browser client (Client Components)
       server.ts            # Server client (Server Components, Route Handlers)
-      middleware.ts        # Session refresh + auth gate logic
+      middleware.ts        # Session refresh + auth gate logic used by proxy
     types/
       database.ts          # Generated from Supabase schema
     utils.ts               # cn() helper (clsx + tailwind-merge)
-  middleware.ts            # Top-level Next middleware → calls lib/supabase/middleware
+  proxy.ts                 # Top-level Next proxy → calls lib/supabase/middleware
 docs/
   PRINCIPLES.md            # Core platform DNA
   SCOPE.md                 # What NOT to build yet + day-one DoD
