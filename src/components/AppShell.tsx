@@ -9,7 +9,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <Link
             href="/"
-            className="font-display text-2xl text-sage-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            className="text-xl font-extrabold text-sage-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
           >
             PaddockME
           </Link>

@@ -107,8 +107,8 @@ docs/
 
 ## Design system
 
-- **Display font:** Fraunces (italic, 400/600/700/800) — used for `h1`, `h2`, `h3`, and any `.font-display`. All headings render in italic by default.
-- **Body font:** Outfit (300–800).
+- **Display font:** Fraunces (italic, 400/600/700/800) - opt-in via `.font-display` for brand and hero moments only.
+- **App/body font:** Outfit (300-800) - used for operational headings, forms, labels, cards, and workflow screens.
 - **Palette:**
   - Sage — `#5B8C5A` (default) / `#3D6B3C` (dark) / `#2C5030` (deep) / `#E7F0E6` (mist) / `#D0E8CF` (glow)
   - Ochre — `#D4A853` / `#F2E4C1` (light)

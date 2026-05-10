@@ -33,7 +33,9 @@ export default function ProfilePage() {
             <ShieldCheck className="h-7 w-7" aria-hidden />
             <h2 className="text-xl font-bold">Preparedness score</h2>
           </div>
-          <p className="font-display text-5xl text-sage-deep">72</p>
+          <p className="text-5xl font-extrabold text-sage-deep">
+            72
+          </p>
           <p className="mt-2 text-sm text-bark/65">
             Placeholder score based on verification, documents and transport readiness.
           </p>

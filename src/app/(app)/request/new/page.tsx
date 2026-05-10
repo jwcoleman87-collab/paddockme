@@ -91,7 +91,9 @@ export default function NewRequestPage() {
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
                 <p className="text-sm text-bark/65">Big touch target now, smarter selector later.</p>
               </div>
-              <p className="font-display text-4xl text-sage-deep">{headCount}</p>
+              <p className="text-4xl font-extrabold text-sage-deep">
+                {headCount}
+              </p>
             </div>
             <input
               type="range"
