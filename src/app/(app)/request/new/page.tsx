@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/types/database";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 /**
@@ -48,6 +49,9 @@ const PASTURES = [
   { value: "native", label: "Native" },
   { value: "mixed", label: "Mixed" },
 ] as const;
+
+type AgistmentRequestInsert =
+  Database["public"]["Tables"]["agistment_requests"]["Insert"];
 
 // Australian agistment regions, organised by state. Starter set — refine later.
 const REGIONS: { state: string; regions: string[] }[] = [
@@ -143,24 +147,24 @@ export default function NewRequestPage() {
       return;
     }
 
+    const payload: AgistmentRequestInsert = {
+      requester_id: user.id,
+      stock_type: stockType!,
+      head_count: headCount,
+      duration: duration!,
+      preferred_regions: regions,
+      urgency,
+      required_pasture: pasture === "no_preference" ? null : pasture,
+      required_water: water,
+      required_yards: yards,
+      required_ramp: ramp,
+      required_shelter: shelter,
+      status: "matching",
+    };
+
     const { data, error: insertError } = await supabase
       .from("agistment_requests")
-      .insert([
-        {
-          requester_id: user.id,
-          stock_type: stockType!,
-          head_count: headCount,
-          duration: duration!,
-          preferred_regions: regions,
-          urgency,
-          required_pasture: pasture === "no_preference" ? null : pasture,
-          required_water: water,
-          required_yards: yards,
-          required_ramp: ramp,
-          required_shelter: shelter,
-          status: "matching",
-        },
-      ])
+      .insert(payload)
       .select("id")
       .single();
 
