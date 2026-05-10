@@ -5,21 +5,13 @@ import type { Database } from "@/lib/types/database";
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 /**
- * Refreshes the Supabase session on every request and gates the authenticated routes.
- * The (app) route group in src/app/(app)/* doesn't add "/app" to URLs — Next.js
- * strips parenthesised groups from the path. So protected pages live at /home,
- * /matches, /workspace, /map, /transport, /profile, /request, etc.
+ * Refreshes the Supabase session on every request.
+ *
+ * Foundation Build 01 uses dummy data so James can click through the product
+ * skeleton without needing a real account. Auth route redirects stay in place,
+ * but app routes are intentionally browseable until real data gates return.
  */
-const PROTECTED_PREFIXES = [
-  "/home",
-  "/request",
-  "/matches",
-  "/workspace",
-  "/map",
-  "/transport",
-  "/profile",
-];
-const POST_AUTH_LANDING = "/home";
+const POST_AUTH_LANDING = "/agreements";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -45,28 +37,15 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: do not put logic between createServerClient and getUser.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const url = request.nextUrl.clone();
   const path = url.pathname;
-
-  const isProtected = PROTECTED_PREFIXES.some(
-    (p) => path === p || path.startsWith(p + "/")
-  );
   const isAuthRoute =
     path.startsWith("/sign-in") || path.startsWith("/sign-up");
 
-  // Unauthenticated → protected route redirects to /sign-in (with ?next= preserved)
-  if (!user && isProtected) {
-    url.pathname = "/sign-in";
-    url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
-  }
-
-  // Already signed in → /sign-in or /sign-up redirects to /home
   if (user && isAuthRoute) {
     url.pathname = POST_AUTH_LANDING;
     url.search = "";

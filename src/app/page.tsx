@@ -1,107 +1,83 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Handshake, Map, Sprout, Truck } from "lucide-react";
+import { ButtonLink } from "@/components/Button";
+import { Card } from "@/components/Card";
 
-/**
- * Marketing landing page (root /).
- * Dark sage hero — "Reduce agricultural coordination friction" as the H1
- * (Fraunces italic, set globally in globals.css).
- *
- * The marketing chrome (top bar + footer) is rendered inline here rather
- * than via a route group, so it doesn't bleed into /app/* or /sign-in.
- */
-export default function MarketingHome() {
+export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="absolute top-0 inset-x-0 z-10">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 text-cream">
-          <Link href="/" className="font-display italic text-2xl tracking-tight">
-            PaddockME
-          </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link href="/sign-in" className="hover:text-sage-glow transition">
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="rounded-full bg-ochre px-4 py-2 font-medium text-sage-deep hover:bg-ochre-light transition"
-            >
-              Get started
-            </Link>
-          </div>
-        </nav>
+    <main className="min-h-dvh bg-warm-white text-bark">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 md:px-8">
+        <Link href="/" className="font-display text-2xl text-sage-deep">
+          PaddockME
+        </Link>
+        <ButtonLink href="/request/new" variant="secondary">
+          Open app
+        </ButtonLink>
       </header>
 
-      <main className="flex-1">
-        <section className="bg-sage-deep text-cream">
-          <div className="mx-auto max-w-6xl px-6 pt-40 pb-32">
-            <p className="mb-6 text-sm tracking-widest uppercase text-sage-glow/80">
-              Australian agistment marketplace
-            </p>
-            <h1 className="font-display italic font-bold text-5xl md:text-7xl leading-[1.05] max-w-4xl text-warm-white">
-              Reduce agricultural coordination friction.
-            </h1>
-            <p className="mt-8 text-lg md:text-xl text-sage-glow max-w-2xl leading-relaxed">
-              Match livestock with feed, paddocks with stock, and trucks with
-              routes — without the phone tag, the saleyard hand-shakes, or the
-              Facebook posts.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link
-                href="/sign-up"
-                className="inline-flex items-center gap-2 rounded-full bg-ochre px-6 py-3 font-medium text-sage-deep hover:bg-ochre-light transition"
-              >
-                Create your account
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/sign-in"
-                className="inline-flex items-center gap-2 rounded-full border border-sage-glow/40 px-6 py-3 font-medium text-cream hover:bg-sage-dark transition"
-              >
-                I already have an account
-              </Link>
-            </div>
+      <section className="mx-auto grid max-w-7xl gap-10 px-5 py-10 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20">
+        <div className="flex flex-col justify-center">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-ochre">
+            Australian agistment coordination
+          </p>
+          <h1 className="font-display text-5xl leading-tight text-sage-deep md:text-7xl">
+            Coordination is expensive.
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-bark/75 md:text-xl">
+            PaddockME removes hidden coordination costs between livestock, land
+            and transport.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/request/new">
+              Need agistment
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </ButtonLink>
+            <ButtonLink href="/listings/new" variant="secondary">
+              Offer agistment
+            </ButtonLink>
+            <ButtonLink href="/map" variant="ghost">
+              View regional map
+            </ButtonLink>
           </div>
-        </section>
+        </div>
 
-        <section className="bg-warm-white">
-          <div className="mx-auto max-w-6xl px-6 py-24 grid md:grid-cols-3 gap-10">
-            <div>
-              <h2 className="font-display italic text-2xl text-sage-deep mb-3">
-                Tap, don&rsquo;t type.
-              </h2>
-              <p className="text-bark/80 leading-relaxed">
-                Sliders and chips, not text fields. Every screen removes a
-                step, never adds one.
-              </p>
-            </div>
-            <div>
-              <h2 className="font-display italic text-2xl text-sage-deep mb-3">
-                One workspace, all parties.
-              </h2>
-              <p className="text-bark/80 leading-relaxed">
-                Agreement on the left, chat on the right. Alignment Engine
-                ticks off matches and flags mismatches.
-              </p>
-            </div>
-            <div>
-              <h2 className="font-display italic text-2xl text-sage-deep mb-3">
-                Successful matches only.
-              </h2>
-              <p className="text-bark/80 leading-relaxed">
-                We don&rsquo;t care about listings or impressions. We care
-                about livestock landing safely on green grass.
-              </p>
-            </div>
+        <div className="grid gap-4">
+          <Card className="bg-sage-deep text-cream">
+            <Handshake className="mb-5 h-8 w-8 text-sage-glow" aria-hidden />
+            <h2 className="text-2xl font-bold">Agreement-first workflow</h2>
+            <p className="mt-3 leading-relaxed text-sage-glow">
+              Requests, paddock details, transport needs and agreement terms
+              move into one shared workspace.
+            </p>
+          </Card>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Feature icon={<Sprout />} title="Land" text="List paddocks, feed, water and fencing without a broker." />
+            <Feature icon={<Truck />} title="Transport" text="Coordinate pickup, destination and driver updates separately." />
+            <Feature icon={<Map />} title="Regions" text="See availability and pressure as a placeholder intelligence layer." />
+            <Feature icon={<ArrowRight />} title="Low typing" text="Large touch targets, chips, checklists and clear next steps." />
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+    </main>
+  );
+}
 
-      <footer className="border-t border-mist bg-cream py-8 text-center text-sm text-stone">
-        <p>
-          PaddockME — Australian agistment marketplace. Built for paddocks
-          everywhere.
-        </p>
-      </footer>
-    </div>
+function Feature({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <Card>
+      <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+        {icon}
+      </div>
+      <h2 className="font-bold text-sage-deep">{title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-bark/70">{text}</p>
+    </Card>
   );
 }

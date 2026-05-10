@@ -45,13 +45,19 @@ Set these in `.env.local` for local dev, and in the Vercel project settings for 
 ```
 src/
   app/
-    (app)/                 # Authenticated app shell — bottom nav lives here
+    (app)/                 # Foundation skeleton app shell
       home/
       request/new/
+      listings/
+      listings/new/
+      listings/[id]/
       matches/
       workspace/
+      workspace/[id]/
       map/
       transport/
+      transport/[id]/
+      agreements/
       profile/
       layout.tsx
     (auth)/                # Sign-in, sign-up, onboarding
@@ -60,18 +66,28 @@ src/
       onboarding/
     auth/callback/         # OAuth + magic-link callback
     layout.tsx             # Root layout — fonts, metadata
-    page.tsx               # Marketing landing
+    page.tsx               # Homepage / onboarding entry
     globals.css            # Tailwind v4 @theme + base styles
   components/
-    ui/                    # Reusable UI primitives
-    paddock/               # PaddockCard, MatchScore, etc.
-    workspace/             # AlignmentEngine, agreement components
-    shared/                # Header, BottomNav, layout pieces
+    AppShell.tsx
+    BottomNav.tsx
+    PageHeader.tsx
+    Button.tsx
+    Card.tsx
+    StatusBadge.tsx
+    SelectablePill.tsx
+    SplitWorkspace.tsx
+    AgreementPanel.tsx
+    ChatPanel.tsx
+    Timeline.tsx
+    ListingCard.tsx
+    DummyMap.tsx
   lib/
+    dummyData.ts           # Clickable prototype data
     supabase/
       client.ts            # Browser client (Client Components)
       server.ts            # Server client (Server Components, Route Handlers)
-      middleware.ts        # Session refresh + auth gate logic used by proxy
+      middleware.ts        # Session refresh used by proxy
     types/
       database.ts          # Generated from Supabase schema
     utils.ts               # cn() helper (clsx + tailwind-merge)

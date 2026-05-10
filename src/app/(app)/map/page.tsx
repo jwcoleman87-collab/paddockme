@@ -1,8 +1,15 @@
+import { DummyMap } from "@/components/DummyMap";
+import { PageHeader } from "@/components/PageHeader";
+
 export default function MapPage() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="font-display italic text-4xl text-sage-deep mb-2">Map.</h1>
-      <p className="text-bark/80">Placeholder — map view lands here.</p>
-    </div>
+    <>
+      <PageHeader
+        eyebrow="Regional intelligence"
+        title="Availability by region."
+        description="A static map and heatmap placeholder for feed status, drought pressure and paddock availability. Real maps come later."
+      />
+      <DummyMap />
+    </>
   );
 }
