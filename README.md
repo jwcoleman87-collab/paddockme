@@ -109,3 +109,15 @@ Status indicators always use [lucide-react](https://lucide.dev) icons: `CheckCir
 ## Core platform DNA
 
 Every screen and decision is tested against the four principles in [`docs/PRINCIPLES.md`](./docs/PRINCIPLES.md). If something you're building doesn't serve them, stop and flag it.
+
+## Design intelligence
+
+The repo includes the [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) skill at `.uipro-skill/` — a design-intelligence database with 67 UI styles, 161 colour palettes, 161 industry-specific reasoning rules, and a Python search engine that generates recommended design systems from a product description.
+
+Use it as a second opinion when designing new pages. Run from the repo root:
+
+```bash
+python3 .uipro-skill/scripts/search.py "<product description>" --design-system -p "<project name>"
+```
+
+Adoption notes (what we kept, what we deviated from, and why) live in [`docs/DESIGN_INTELLIGENCE.md`](./docs/DESIGN_INTELLIGENCE.md). The brief and `globals.css` remain the source of truth for palette and typography; the skill is authoritative on patterns, anti-patterns, and the pre-delivery checklist.
