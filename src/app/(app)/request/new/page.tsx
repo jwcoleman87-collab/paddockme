@@ -145,20 +145,22 @@ export default function NewRequestPage() {
 
     const { data, error: insertError } = await supabase
       .from("agistment_requests")
-      .insert({
-        requester_id: user.id,
-        stock_type: stockType!,
-        head_count: headCount,
-        duration: duration!,
-        preferred_regions: regions,
-        urgency,
-        required_pasture: pasture === "no_preference" ? null : pasture,
-        required_water: water,
-        required_yards: yards,
-        required_ramp: ramp,
-        required_shelter: shelter,
-        status: "matching",
-      })
+      .insert([
+        {
+          requester_id: user.id,
+          stock_type: stockType!,
+          head_count: headCount,
+          duration: duration!,
+          preferred_regions: regions,
+          urgency,
+          required_pasture: pasture === "no_preference" ? null : pasture,
+          required_water: water,
+          required_yards: yards,
+          required_ramp: ramp,
+          required_shelter: shelter,
+          status: "matching",
+        },
+      ])
       .select("id")
       .single();
 
