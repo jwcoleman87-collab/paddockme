@@ -57,7 +57,7 @@ function SignInSkeleton() {
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/app/home";
+  const next = searchParams.get("next") ?? "/home";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

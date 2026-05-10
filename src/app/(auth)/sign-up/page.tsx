@@ -25,7 +25,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/app/home`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/home`,
       },
     });
     setLoading(false);
@@ -33,9 +33,9 @@ export default function SignUpPage() {
       setError(error.message);
       return;
     }
-    // Email confirmations may be off — if a session exists immediately, send to /app/home.
+    // Email confirmations may be off — if a session exists immediately, send to /home.
     if (data.session) {
-      router.push("/app/home");
+      router.push("/home");
       router.refresh();
       return;
     }

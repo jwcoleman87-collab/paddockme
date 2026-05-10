@@ -31,13 +31,13 @@ export default async function AppLayout({
       <header className="border-b border-mist bg-cream">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link
-            href="/app/home"
+            href="/home"
             className="font-display italic text-2xl text-sage-deep"
           >
             PaddockME
           </Link>
           <Link
-            href="/app/profile"
+            href="/profile"
             className="text-sm text-bark/80 hover:text-sage-deep"
           >
             {user.email}
@@ -49,11 +49,11 @@ export default async function AppLayout({
 
       <nav className="fixed inset-x-0 bottom-0 border-t border-mist bg-warm-white">
         <div className="mx-auto grid max-w-6xl grid-cols-5 px-2 py-2">
-          <BottomNavItem href="/app/home" icon={<Home className="h-5 w-5" />} label="Home" />
-          <BottomNavItem href="/app/request/new" icon={<Search className="h-5 w-5" />} label="Request" />
-          <BottomNavItem href="/app/matches" icon={<Layers className="h-5 w-5" />} label="Matches" />
-          <BottomNavItem href="/app/workspace" icon={<MessageSquare className="h-5 w-5" />} label="Workspace" />
-          <BottomNavItem href="/app/map" icon={<MapIcon className="h-5 w-5" />} label="Map" />
+          <BottomNavItem href="/home" icon={<Home className="h-5 w-5" />} label="Home" />
+          <BottomNavItem href="/request/new" icon={<Search className="h-5 w-5" />} label="Request" />
+          <BottomNavItem href="/matches" icon={<Layers className="h-5 w-5" />} label="Matches" />
+          <BottomNavItem href="/workspace" icon={<MessageSquare className="h-5 w-5" />} label="Workspace" />
+          <BottomNavItem href="/map" icon={<MapIcon className="h-5 w-5" />} label="Map" />
         </div>
       </nav>
     </div>
