@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/*
+ * PaddockME design system — Tailwind v4 CSS-based theme config.
+ * Mirrors the brand palette from the day-one brief: sage / ochre / terra / wheat / cream.
+ * All hex codes are exactly as specified — do not adjust without James's sign-off.
+ */
+
+@theme {
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-outfit), system-ui, sans-serif;
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+
+  /* Sage — primary brand */
+  --color-sage: #5b8c5a;
+  --color-sage-dark: #3d6b3c;
+  --color-sage-deep: #2c5030;
+  --color-sage-mist: #e7f0e6;
+  --color-sage-glow: #d0e8cf;
+
+  /* Ochre — accent warmth */
+  --color-ochre: #d4a853;
+  --color-ochre-light: #f2e4c1;
+
+  /* Terra — secondary accent */
+  --color-terra: #c47b5a;
+  --color-terra-light: #f0ddd3;
+
+  /* Neutrals */
+  --color-wheat: #f5ecd7;
+  --color-cream: #faf8f3;
+  --color-warm-white: #fdfcf9;
+  --color-bark: #5c4033;
+  --color-stone: #8c8478;
+  --color-mist: #e8e5df;
+
+  /* Status — match / amber. NEVER use emoji for state; use lucide icons. */
+  --color-match: #3ba55d;
+  --color-match-light: #e6f5eb;
+  --color-amber: #d49b3a;
+  --color-amber-light: #fdf3e0;
+
+  /* Border radii */
+  --radius: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #fdfcf9;
+  color: #2f2f2f;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
