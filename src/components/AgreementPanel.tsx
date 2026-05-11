@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -17,6 +18,7 @@ import {
 import { ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Timeline } from "@/components/Timeline";
 import { cn } from "@/lib/utils";
 import type {
   Agreement,
@@ -35,6 +37,15 @@ type AgreementPanelProps = {
   onSelectSection: (sectionId: string) => void;
   sectionState: Record<string, SectionAgreementState>;
   onToggleAgreement: (sectionId: string, party: "A" | "B") => void;
+  timelineItems?: TimelineItem[];
+};
+
+type AgreementTab = "overview" | "terms" | "artifacts" | "timeline";
+
+type TimelineItem = {
+  title: string;
+  detail: string;
+  complete?: boolean;
 };
 
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
@@ -47,114 +58,256 @@ const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> 
     transport: Truck,
   };
 
+const agreementTabs = [
+  { id: "overview", label: "Overview" },
+  { id: "terms", label: "Terms" },
+  { id: "artifacts", label: "Artifacts" },
+  { id: "timeline", label: "Timeline" },
+] satisfies { id: AgreementTab; label: string }[];
+
+const workspaceCardClass =
+  "min-w-0 overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
+
 export function AgreementPanel({
   agreement,
   activeSectionId,
   onSelectSection,
   sectionState,
   onToggleAgreement,
+  timelineItems = [],
 }: AgreementPanelProps) {
+  const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
+
   const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
     const state = sectionState[section.id] ?? section;
     return state.agreedByA && state.agreedByB ? count + 1 : count;
   }, 0);
 
   return (
-    <section className="space-y-5">
-      {/* Header card */}
-      <div className="rounded-xl border border-mist bg-cream">
-        <div className="border-b border-mist px-5 py-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <StatusBadge tone="warning">
-              Agreement status: {agreement.status}
+    <section className={workspaceCardClass}>
+      <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
+        <div className="mb-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <StatusBadge tone="warning">
+            Agreement status: {agreement.status}
+          </StatusBadge>
+          {agreement.transportRequired && (
+            <StatusBadge tone="info">
+              <Truck className="h-3.5 w-3.5" aria-hidden />
+              Transport required
             </StatusBadge>
-            {agreement.transportRequired && (
-              <StatusBadge tone="info">
-                <Truck className="h-3.5 w-3.5" aria-hidden />
-                Transport required
-              </StatusBadge>
-            )}
-            <StatusBadge tone="neutral">
-              {mutuallyAgreedCount} of {agreement.sections.length} sections agreed
-            </StatusBadge>
-          </div>
-          <h2 className="text-2xl font-bold text-sage-deep">
-            Shared agistment agreement
-          </h2>
-          <p className="mt-1 text-sm text-bark/65">
-            A shared artefact both farmers can review. Tap a section to anchor
-            the chat, then mark each side&rsquo;s agreement when the wording
-            holds up.
-          </p>
+          )}
+          <StatusBadge tone="neutral">
+            {mutuallyAgreedCount} of {agreement.sections.length} sections agreed
+          </StatusBadge>
         </div>
-      </div>
+        <h2 className="text-2xl font-bold text-sage-deep">
+          Shared agistment agreement
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-bark/65">
+          A shared artefact both farmers can review. Tap a section to anchor the
+          chat, then mark each side&apos;s agreement when the wording holds up.
+        </p>
 
-      {/* Sections */}
-      <div className="space-y-3">
-        {agreement.sections.map((section) => (
-          <SectionCard
-            key={section.id}
-            section={section}
-            active={activeSectionId === section.id}
-            state={
-              sectionState[section.id] ?? {
-                agreedByA: section.agreedByA,
-                agreedByB: section.agreedByB,
-              }
-            }
-            onSelect={() => onSelectSection(section.id)}
-            onToggleA={() => onToggleAgreement(section.id, "A")}
-            onToggleB={() => onToggleAgreement(section.id, "B")}
-          />
-        ))}
-      </div>
-
-      {/* Shared artefacts */}
-      <ArtefactStrip artefacts={agreement.artefacts} />
-
-      {/* Readiness checklist */}
-      <section className="rounded-xl border border-mist bg-cream p-5">
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
-          Livestock readiness checklist
-        </h3>
-        <div className="space-y-2">
-          {agreement.readinessChecklist.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between gap-3 rounded-lg border border-mist bg-warm-white px-4 py-3"
+        <div
+          role="tablist"
+          aria-label="Agreement panel sections"
+          className="mt-4 flex flex-wrap gap-1 rounded-[24px] border border-sage-deep/10 bg-warm-white p-1"
+        >
+          {agreementTabs.map((tab) => (
+            <AgreementTabButton
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
             >
-              <span className="font-semibold text-bark">{item.label}</span>
-              {item.complete ? (
-                <CheckCircle
-                  className="h-5 w-5 text-match"
-                  aria-label="Complete"
-                />
-              ) : (
-                <AlertTriangle
-                  className="h-5 w-5 text-amber"
-                  aria-label="Needs attention"
-                />
-              )}
-            </div>
+              {tab.label}
+            </AgreementTabButton>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Action buttons */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <ButtonLink
-          href={`/workspace/${agreement.id}`}
-          variant="secondary"
-        >
+      <div role="tabpanel" className="p-5">
+        {activeTab === "overview" && (
+          <AgreementOverview
+            agreement={agreement}
+            mutuallyAgreedCount={mutuallyAgreedCount}
+          />
+        )}
+
+        {activeTab === "terms" && (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
+              <h3 className="font-bold text-sage-deep">Terms under review</h3>
+              <p className="mt-1 text-sm leading-relaxed text-bark/65">
+                Select a section to anchor the chat and confirm each party&apos;s
+                agreement state.
+              </p>
+            </div>
+            {agreement.sections.map((section) => (
+              <SectionCard
+                key={section.id}
+                section={section}
+                active={activeSectionId === section.id}
+                state={
+                  sectionState[section.id] ?? {
+                    agreedByA: section.agreedByA,
+                    agreedByB: section.agreedByB,
+                  }
+                }
+                onSelect={() => onSelectSection(section.id)}
+                onToggleA={() => onToggleAgreement(section.id, "A")}
+                onToggleB={() => onToggleAgreement(section.id, "B")}
+              />
+            ))}
+          </div>
+        )}
+
+        {activeTab === "artifacts" && (
+          <ArtefactStrip artefacts={agreement.artefacts} />
+        )}
+
+        {activeTab === "timeline" && (
+          <div className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+            {timelineItems.length > 0 ? (
+              <Timeline items={timelineItems} />
+            ) : (
+              <p className="text-sm text-bark/65">
+                No timeline events have been added yet.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:grid-cols-3">
+        <ButtonLink href={`/workspace/${agreement.id}`} variant="secondary">
           Counter offer
         </ButtonLink>
-        <ButtonLink
-          href="/transport/transport-glenbarra"
-          variant="secondary"
-        >
+        <ButtonLink href="/transport/transport-glenbarra" variant="secondary">
           Open transport room
         </ButtonLink>
         <ButtonLink href="/agreements">Finalise agreement</ButtonLink>
+      </div>
+    </section>
+  );
+}
+
+function AgreementTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      role="tab"
+      aria-selected={active}
+      className={cn(
+        "min-h-10 shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
+        active
+          ? "bg-sage-deep text-cream shadow-sm"
+          : "text-bark/70 hover:bg-sage-mist/60 hover:text-sage-deep"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function AgreementOverview({
+  agreement,
+  mutuallyAgreedCount,
+}: {
+  agreement: Agreement;
+  mutuallyAgreedCount: number;
+}) {
+  const allAgreed = mutuallyAgreedCount === agreement.sections.length;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <InfoTile label="Livestock" value={agreement.livestock} />
+        <InfoTile label="Duration" value={agreement.duration} />
+        <InfoTile label="Feed" value={agreement.feed} />
+        <InfoTile label="Water" value={agreement.water} />
+        <InfoTile label="Fencing" value={agreement.fencing} />
+        <InfoTile
+          label="Transport"
+          value={agreement.transportRequired ? "Required" : "Not required"}
+        />
+      </div>
+
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+          Agreement alignment
+        </h3>
+        <div className="mt-3 space-y-2">
+          <AlignmentRow
+            complete={allAgreed}
+            label={`${mutuallyAgreedCount} of ${agreement.sections.length} sections mutually agreed`}
+          />
+          <AlignmentRow complete label="Feed, water and fencing details match" />
+          <AlignmentRow
+            complete={false}
+            label="Rate and final terms require attention"
+          />
+        </div>
+      </section>
+
+      <ReadinessChecklist agreement={agreement} />
+    </div>
+  );
+}
+
+function AlignmentRow({
+  complete,
+  label,
+}: {
+  complete: boolean;
+  label: string;
+}) {
+  const Icon = complete ? CheckCircle : AlertTriangle;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3">
+      <span className="text-sm font-semibold text-bark">{label}</span>
+      <Icon
+        className={cn("h-5 w-5 shrink-0", complete ? "text-match" : "text-amber")}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+function ReadinessChecklist({ agreement }: { agreement: Agreement }) {
+  return (
+    <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
+        Livestock readiness checklist
+      </h3>
+      <div className="space-y-2">
+        {agreement.readinessChecklist.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3"
+          >
+            <span className="font-semibold text-bark">{item.label}</span>
+            {item.complete ? (
+              <CheckCircle
+                className="h-5 w-5 text-match"
+                aria-label="Complete"
+              />
+            ) : (
+              <AlertTriangle
+                className="h-5 w-5 text-amber"
+                aria-label="Needs attention"
+              />
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -197,10 +350,10 @@ function SectionCard({
     <article
       aria-current={active ? "true" : undefined}
       className={cn(
-        "overflow-hidden rounded-xl border bg-cream transition",
+        "overflow-hidden rounded-xl border bg-cream/70 transition",
         active
-          ? "border-sage-deep shadow-[0_0_0_4px_rgba(208,232,207,0.55)]"
-          : "border-mist"
+          ? "border-sage-deep/45 shadow-[0_0_0_4px_rgba(208,232,207,0.55)]"
+          : "border-sage-deep/12"
       )}
     >
       <button
@@ -287,7 +440,7 @@ function PartyAgreeButton({
 function ArtefactStrip({ artefacts }: { artefacts: AgreementArtefact[] }) {
   if (artefacts.length === 0) return null;
   return (
-    <section className="rounded-xl border border-mist bg-cream p-5">
+    <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Shared artefacts
@@ -316,7 +469,7 @@ function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
     artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B";
 
   return (
-    <article className="flex w-44 shrink-0 flex-col gap-2 rounded-xl border border-mist bg-warm-white p-3">
+    <article className="flex w-44 shrink-0 flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3">
       <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-sage/35 bg-sage-mist text-sage-deep">
         <Icon className="h-7 w-7" aria-hidden />
       </div>

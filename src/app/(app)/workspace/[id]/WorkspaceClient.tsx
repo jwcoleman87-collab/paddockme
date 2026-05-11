@@ -7,7 +7,6 @@ import {
 } from "@/components/AgreementPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
-import { Timeline } from "@/components/Timeline";
 import type { Agreement, Message } from "@/lib/dummyData";
 
 /**
@@ -93,19 +92,15 @@ export function WorkspaceClient({
             onSelectSection={(id) => setActiveSectionId(id)}
             sectionState={sectionState}
             onToggleAgreement={toggleAgreement}
+            timelineItems={timelineItems}
           />
-          <section className="rounded-xl border border-mist bg-cream p-5">
-            <h2 className="mb-4 text-xl font-bold text-sage-deep">
-              Workspace timeline
-            </h2>
-            <Timeline items={timelineItems} />
-          </section>
         </div>
       }
       right={
         <ChatPanel
           title="Farmer A and Farmer B"
           messages={messages}
+          onlineCount={2}
           sections={agreement.sections}
           activeSectionId={activeSectionId}
           onSelectSection={setActiveSectionId}

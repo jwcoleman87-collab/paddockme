@@ -59,7 +59,13 @@ export default async function TransportDetailPage({
             </section>
           </div>
         }
-        right={<ChatPanel title="Farmer A, Farmer B and Driver" messages={messages} />}
+        right={
+          <ChatPanel
+            title="Farmer A, Farmer B and Driver"
+            messages={messages}
+            onlineCount={3}
+          />
+        }
       />
     </>
   );

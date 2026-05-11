@@ -31,12 +31,12 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+        "inline-flex min-h-8 max-w-full items-center gap-1.5 whitespace-normal rounded-full border px-3 py-1 text-left text-xs font-semibold",
         tones[tone],
         className
       )}
     >
-      <Icon className="h-3.5 w-3.5" aria-hidden />
+      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
       {children}
     </span>
   );

@@ -29,11 +29,21 @@ export function SplitWorkspace({
         </TabButton>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-        <div className={cn(active === "left" ? "block" : "hidden", "md:block")}>
+      <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-6">
+        <div
+          className={cn(
+            active === "left" ? "block" : "hidden",
+            "min-w-0 md:block"
+          )}
+        >
           {left}
         </div>
-        <div className={cn(active === "right" ? "block" : "hidden", "md:block")}>
+        <div
+          className={cn(
+            active === "right" ? "block" : "hidden",
+            "min-w-0 md:block"
+          )}
+        >
           {right}
         </div>
       </div>

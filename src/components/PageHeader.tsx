@@ -20,17 +20,17 @@ export function PageHeader({
         className
       )}
     >
-      <div className="min-w-0 max-w-3xl">
+      <div className="min-w-0 max-w-[21.5rem] sm:max-w-3xl">
         {eyebrow && (
           <p className="mb-3 inline-flex rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
             {eyebrow}
           </p>
         )}
-        <h1 className="max-w-2xl break-words text-3xl font-extrabold leading-tight text-sage-deep md:text-4xl">
+        <h1 className="max-w-full break-words text-3xl font-extrabold leading-tight text-sage-deep sm:max-w-2xl md:text-4xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-2xl break-words text-base leading-relaxed text-bark/75">
+          <p className="mt-3 max-w-full break-words text-base leading-relaxed text-bark/75 sm:max-w-2xl">
             {description}
           </p>
         )}
