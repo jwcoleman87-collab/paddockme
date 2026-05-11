@@ -9,7 +9,7 @@ import type { PaddockListing } from "@/lib/dummyData";
 export function ListingCard({ listing }: { listing: PaddockListing }) {
   return (
     <Card className="flex h-full flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8.75rem] sm:items-start">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem] sm:items-start">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <StatusBadge
@@ -35,8 +35,10 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
         <StateMiniMap
           state={listing.state}
           regionLabel={listing.regionLabel}
+          placeLabel={listing.mapPlaceLabel}
           dotPosition={listing.mapDot}
-          className="order-first h-28 sm:order-none sm:h-32"
+          nearbyPlaces={listing.mapNearbyPlaces}
+          className="order-first h-32 sm:order-none sm:h-36"
         />
       </div>
 

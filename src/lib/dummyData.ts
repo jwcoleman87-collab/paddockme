@@ -16,10 +16,16 @@ export type PaddockListing = {
   region: string;
   state: AustralianState;
   regionLabel: string;
+  mapPlaceLabel: string;
   mapDot: {
     x: number;
     y: number;
   };
+  mapNearbyPlaces: {
+    label: string;
+    x: number;
+    y: number;
+  }[];
   acres: number;
   suitableLivestock: string[];
   feedStatus: "Excellent" | "Good" | "Tight";
@@ -143,7 +149,13 @@ export const paddockListings: PaddockListing[] = [
     region: "Southern NSW",
     state: "NSW",
     regionLabel: "Southern NSW",
-    mapDot: { x: 67, y: 70 },
+    mapPlaceLabel: "Gundagai",
+    mapDot: { x: 66, y: 72 },
+    mapNearbyPlaces: [
+      { label: "Wagga", x: 56, y: 78 },
+      { label: "Tumut", x: 74, y: 75 },
+      { label: "Yass", x: 75, y: 60 },
+    ],
     acres: 280,
     suitableLivestock: ["Cattle", "Sheep"],
     feedStatus: "Excellent",
@@ -163,7 +175,13 @@ export const paddockListings: PaddockListing[] = [
     region: "Central West",
     state: "NSW",
     regionLabel: "Central West",
+    mapPlaceLabel: "Cowra",
     mapDot: { x: 58, y: 52 },
+    mapNearbyPlaces: [
+      { label: "Orange", x: 45, y: 42 },
+      { label: "Forbes", x: 48, y: 57 },
+      { label: "Young", x: 66, y: 66 },
+    ],
     acres: 145,
     suitableLivestock: ["Sheep", "Goats"],
     feedStatus: "Good",
@@ -183,7 +201,13 @@ export const paddockListings: PaddockListing[] = [
     region: "Gippsland",
     state: "VIC",
     regionLabel: "Gippsland",
-    mapDot: { x: 72, y: 53 },
+    mapPlaceLabel: "Sale",
+    mapDot: { x: 72, y: 54 },
+    mapNearbyPlaces: [
+      { label: "Traralgon", x: 56, y: 55 },
+      { label: "Maffra", x: 68, y: 43 },
+      { label: "Bairnsdale", x: 82, y: 50 },
+    ],
     acres: 420,
     suitableLivestock: ["Cattle", "Horses"],
     feedStatus: "Good",

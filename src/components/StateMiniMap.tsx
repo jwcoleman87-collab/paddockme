@@ -15,10 +15,16 @@ type DotPosition = {
   y: number;
 };
 
+type NearbyPlace = DotPosition & {
+  label: string;
+};
+
 type StateMiniMapProps = {
   state: StateMiniMapState;
   regionLabel?: string;
+  placeLabel?: string;
   dotPosition?: DotPosition;
+  nearbyPlaces?: NearbyPlace[];
   className?: string;
 };
 
@@ -36,10 +42,15 @@ const statePaths: Record<StateMiniMapState, string> = {
 export function StateMiniMap({
   state,
   regionLabel,
+  placeLabel,
   dotPosition = { x: 50, y: 50 },
+  nearbyPlaces = [],
   className,
 }: StateMiniMapProps) {
-  const label = regionLabel ? `${regionLabel}, ${state}` : state;
+  const locationLabel = placeLabel ?? regionLabel ?? state;
+  const label = regionLabel
+    ? `${locationLabel}, ${regionLabel}, ${state}`
+    : locationLabel;
 
   return (
     <div
@@ -63,13 +74,46 @@ export function StateMiniMap({
           strokeLinejoin="round"
           strokeWidth="3"
         />
-        <circle
+
+        <path
+          d={buildRoutePath(dotPosition, nearbyPlaces)}
+          fill="none"
+          stroke="var(--color-ochre)"
+          strokeDasharray="3 4"
+          strokeLinecap="round"
+          strokeWidth="1.4"
+          opacity="0.58"
+        />
+
+        <ellipse
           cx={dotPosition.x}
           cy={dotPosition.y}
-          r="18"
+          rx="21"
+          ry="15"
           fill="var(--color-sage-glow)"
           opacity="0.72"
         />
+
+        {nearbyPlaces.map((place) => (
+          <g key={place.label}>
+            <circle
+              cx={place.x}
+              cy={place.y}
+              r="2.1"
+              fill="var(--color-sage)"
+              opacity="0.62"
+            />
+            <text
+              x={place.x}
+              y={place.y - 4}
+              textAnchor={getTextAnchor(place.x)}
+              className="fill-bark/70 text-[0.42rem] font-bold"
+            >
+              {place.label}
+            </text>
+          </g>
+        ))}
+
         <circle
           cx={dotPosition.x}
           cy={dotPosition.y}
@@ -78,11 +122,36 @@ export function StateMiniMap({
           stroke="var(--color-warm-white)"
           strokeWidth="2"
         />
+        <text
+          x={dotPosition.x}
+          y={dotPosition.y - 8}
+          textAnchor={getTextAnchor(dotPosition.x)}
+          className="fill-sage-deep text-[0.55rem] font-black"
+        >
+          {locationLabel}
+        </text>
       </svg>
 
-      <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-cream/90 px-2 py-0.5 text-[0.65rem] font-semibold leading-4 text-sage-deep shadow-sm">
-        {regionLabel ?? state}
+      <span className="absolute left-2 top-2 rounded-full bg-cream/90 px-2 py-0.5 text-[0.62rem] font-bold leading-4 text-sage-deep shadow-sm">
+        {state}
+      </span>
+      <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-cream/95 px-2 py-0.5 text-[0.68rem] font-bold leading-4 text-sage-deep shadow-sm">
+        {placeLabel ? `${placeLabel} area` : regionLabel ?? state}
       </span>
     </div>
   );
+}
+
+function getTextAnchor(x: number) {
+  if (x > 74) return "end";
+  if (x < 26) return "start";
+  return "middle";
+}
+
+function buildRoutePath(origin: DotPosition, places: NearbyPlace[]) {
+  if (places.length === 0) return "";
+  const points = [origin, ...places.slice(0, 3)];
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
 }
