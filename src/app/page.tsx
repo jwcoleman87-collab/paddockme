@@ -5,15 +5,15 @@ import { Card } from "@/components/Card";
 const homeActions = [
   {
     href: "/request/new",
-    label: "Need agistment",
-    shortLabel: "Need",
+    label: "Need Agistment",
+    shortLabel: "Need Agistment",
     helper: "Place livestock",
     icon: ArrowRight,
   },
   {
     href: "/listings/new",
-    label: "Offer agistment",
-    shortLabel: "Offer",
+    label: "Offer Agistment",
+    shortLabel: "Offer Agistment",
     helper: "List paddocks",
     icon: Sprout,
   },
@@ -80,7 +80,7 @@ export default function HomePage() {
               className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-18"
             >
               <Icon className="h-5 w-5" aria-hidden />
-              <span className="text-[0.82rem] font-bold leading-tight sm:text-sm">
+              <span className="max-w-[5.75rem] whitespace-normal text-[0.82rem] font-bold leading-tight sm:max-w-none sm:text-sm">
                 <span className="sm:hidden">{shortLabel}</span>
                 <span className="hidden sm:inline">{label}</span>
               </span>
