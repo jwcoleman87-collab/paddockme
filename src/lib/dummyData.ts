@@ -6,12 +6,20 @@ export type Farmer = {
   verified: boolean;
 };
 
+export type AustralianState = "NSW" | "QLD" | "VIC" | "SA" | "WA" | "TAS" | "NT" | "ACT";
+
 export type PaddockListing = {
   id: string;
   title: string;
   ownerId: string;
   location: string;
   region: string;
+  state: AustralianState;
+  regionLabel: string;
+  mapDot: {
+    x: number;
+    y: number;
+  };
   acres: number;
   suitableLivestock: string[];
   feedStatus: "Excellent" | "Good" | "Tight";
@@ -133,6 +141,9 @@ export const paddockListings: PaddockListing[] = [
     ownerId: "farmer-b",
     location: "Near Gundagai, NSW",
     region: "Southern NSW",
+    state: "NSW",
+    regionLabel: "Southern NSW",
+    mapDot: { x: 67, y: 70 },
     acres: 280,
     suitableLivestock: ["Cattle", "Sheep"],
     feedStatus: "Excellent",
@@ -150,6 +161,9 @@ export const paddockListings: PaddockListing[] = [
     ownerId: "farmer-b",
     location: "Cowra, NSW",
     region: "Central West",
+    state: "NSW",
+    regionLabel: "Central West",
+    mapDot: { x: 58, y: 52 },
     acres: 145,
     suitableLivestock: ["Sheep", "Goats"],
     feedStatus: "Good",
@@ -167,6 +181,9 @@ export const paddockListings: PaddockListing[] = [
     ownerId: "farmer-b",
     location: "Gippsland, VIC",
     region: "Gippsland",
+    state: "VIC",
+    regionLabel: "Gippsland",
+    mapDot: { x: 72, y: 53 },
     acres: 420,
     suitableLivestock: ["Cattle", "Horses"],
     feedStatus: "Good",

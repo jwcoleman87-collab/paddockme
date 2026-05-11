@@ -1,3 +1,4 @@
+import { CirclePlus } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -13,7 +14,12 @@ export default function ListingsPage() {
         eyebrow="Available paddocks"
         title="Paddocks that could take stock."
         description="Dummy listings for the first skeleton. Price stays light here: the product should prove coordination value before over-focusing on rate cards."
-        action={<ButtonLink href="/listings/new">Create listing</ButtonLink>}
+        action={
+          <ButtonLink href="/listings/new">
+            <CirclePlus className="h-4 w-4" aria-hidden />
+            Create listing
+          </ButtonLink>
+        }
       />
 
       <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
