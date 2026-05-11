@@ -2,6 +2,7 @@ import { MapPin, ShieldCheck, Truck } from "lucide-react";
 import { Card } from "@/components/Card";
 import { ChatPanel } from "@/components/ChatPanel";
 import { DummyMap } from "@/components/DummyMap";
+import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -41,12 +42,12 @@ export default async function TransportDetailPage({
                 Stock move details
               </h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <Fact icon={<MapPin />} label="Pickup" value={job.pickup} />
-                <Fact icon={<MapPin />} label="Destination" value={job.destination} />
-                <Fact icon={<Truck />} label="Livestock" value={job.livestockCount} />
-                <Fact icon={<Truck />} label="Preferred date" value={job.preferredDate} />
-                <Fact icon={<Truck />} label="Driver" value={job.driver} />
-                <Fact icon={<MapPin />} label="Route" value={job.routeSummary} />
+                <InfoTile icon={<MapPin />} label="Pickup" value={job.pickup} />
+                <InfoTile icon={<MapPin />} label="Destination" value={job.destination} />
+                <InfoTile icon={<Truck />} label="Livestock" value={job.livestockCount} />
+                <InfoTile icon={<Truck />} label="Preferred date" value={job.preferredDate} />
+                <InfoTile icon={<Truck />} label="Driver" value={job.driver} />
+                <InfoTile icon={<MapPin />} label="Route" value={job.routeSummary} />
               </div>
             </Card>
 
@@ -61,23 +62,5 @@ export default async function TransportDetailPage({
         right={<ChatPanel title="Farmer A, Farmer B and Driver" messages={messages} />}
       />
     </>
-  );
-}
-
-function Fact({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-xl border border-mist bg-warm-white p-4">
-      <div className="mb-2 text-sage-deep">{icon}</div>
-      <p className="text-xs font-bold uppercase tracking-wide text-stone">{label}</p>
-      <p className="mt-1 font-semibold text-bark">{value}</p>
-    </div>
   );
 }

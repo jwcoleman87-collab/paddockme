@@ -1,6 +1,7 @@
 import { CheckCircle, CircleDot, ShieldCheck } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { farmers } from "@/lib/dummyData";
@@ -21,10 +22,10 @@ export default function ProfilePage() {
         <Card>
           <h2 className="text-xl font-bold text-sage-deep">Operational profile</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Fact label="Role" value={farmer.role} />
-            <Fact label="Region" value={farmer.region} />
-            <Fact label="ABN" value="Placeholder pending" />
-            <Fact label="PIC" value="Placeholder pending" />
+            <InfoTile label="Role" value={farmer.role} />
+            <InfoTile label="Region" value={farmer.region} />
+            <InfoTile label="ABN" value="Placeholder pending" />
+            <InfoTile label="PIC" value="Placeholder pending" />
           </div>
         </Card>
 
@@ -52,15 +53,6 @@ export default function ProfilePage() {
         Back to agreements
       </ButtonLink>
     </>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-mist bg-warm-white p-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-stone">{label}</p>
-      <p className="mt-1 font-semibold text-bark">{value}</p>
-    </div>
   );
 }
 

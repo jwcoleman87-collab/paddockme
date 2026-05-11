@@ -4,6 +4,8 @@
 
 **PaddockME is an Australian agistment marketplace** — connecting livestock owners who need pasture, landowners with spare paddocks, and transport drivers who move stock between them. Replaces the phone tag, Facebook posts, and saleyard hand-shakes with one workspace per match.
 
+**Next build:** [Foundation Build 02 — Workspace and Agreement Flow Polish](docs/BUILD_02.md).
+
 ## Stack
 
 - **Framework:** Next.js 16 (App Router) + TypeScript
@@ -95,7 +97,9 @@ src/
 docs/
   PRINCIPLES.md            # Core platform DNA
   SCOPE.md                 # What NOT to build yet + day-one DoD
-  PERSONAS.md              # Macca, Trev & Ros, Sam, Jen, Dale
+  PERSONAS.md              # Dale, Tash, Brett, Lyn, Wayne, Sharon
+  DESIGN_INTELLIGENCE.md   # ui-ux-pro-max recommendations + brand deviations
+  BUILD_02.md              # Foundation Build 02 — workspace and agreement flow polish
 ```
 
 ## Deployment
@@ -124,7 +128,7 @@ Status indicators always use [lucide-react](https://lucide.dev) icons: `CheckCir
 
 ## Core platform DNA
 
-Every screen and decision is tested against the four principles in [`docs/PRINCIPLES.md`](./docs/PRINCIPLES.md). If something you're building doesn't serve them, stop and flag it.
+Every screen and decision is tested against the five principles in [`docs/PRINCIPLES.md`](./docs/PRINCIPLES.md). If something you're building doesn't serve them, stop and flag it.
 
 ## Design intelligence
 

@@ -1,6 +1,6 @@
 # Core Platform DNA
 
-Every screen, feature, and decision must be tested against these four principles. If something you're about to build doesn't serve at least one of them, stop and flag it.
+Every screen, feature, and decision must be tested against these five principles. If something you're about to build doesn't serve at least one of them, stop and flag it.
 
 ## 1. Reduce agricultural coordination friction.
 
@@ -17,3 +17,7 @@ Not listings. Not impressions. Not traffic. Livestock matched with feed.
 ## 4. Low typing, high selection.
 
 Tap, don't type. Sliders and chips, not text fields. A farmer in a ute on a dirt road should be able to drive the app one-handed.
+
+## 5. Feel right before it gets clever.
+
+Polish the core human workflow before adding automation, AI, maps, payments, or clever backend behaviour. Cleverness layered on top of a workflow that doesn't feel right just makes the wrongness faster. Sequence the polish first; layer the cleverness later.

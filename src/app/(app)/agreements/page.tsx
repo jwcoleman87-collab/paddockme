@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { agreements, getListing } from "@/lib/dummyData";
@@ -28,10 +29,10 @@ export default function AgreementsPage() {
                 <p className="mt-1 text-sm text-bark/65">{listing.location}</p>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <Metric label="Livestock" value={agreement.livestock} />
-                <Metric label="Weeks remaining" value={`${agreement.weeksRemaining}`} />
-                <Metric label="Transport" value={agreement.transportRequired ? "Required" : "No"} />
-                <Metric label="Last update" value="18 min ago" />
+                <InfoTile tone="subtle" size="sm" label="Livestock" value={agreement.livestock} />
+                <InfoTile tone="subtle" size="sm" label="Weeks remaining" value={`${agreement.weeksRemaining}`} />
+                <InfoTile tone="subtle" size="sm" label="Transport" value={agreement.transportRequired ? "Required" : "No"} />
+                <InfoTile tone="subtle" size="sm" label="Last update" value="18 min ago" />
               </div>
               <p className="text-sm leading-relaxed text-bark/70">
                 {agreement.lastUpdate}
@@ -45,14 +46,5 @@ export default function AgreementsPage() {
         })}
       </div>
     </>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-warm-white p-3">
-      <p className="text-xs font-bold uppercase tracking-wide text-stone">{label}</p>
-      <p className="mt-1 font-semibold text-bark">{value}</p>
-    </div>
   );
 }

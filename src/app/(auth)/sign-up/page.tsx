@@ -81,7 +81,7 @@ export default function SignUpPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
-                placeholder="Macca Thompson"
+                placeholder="Pat Murphy"
               />
             </div>
             <div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 
@@ -147,12 +148,12 @@ export default function NewRequestPage() {
 
           <Card className="sticky top-24">
             <h2 className="text-xl font-bold text-sage-deep">Request summary</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <Summary label="Stock" value={`${headCount} ${breed} ${stockType}`} />
-              <Summary label="Duration" value={duration} />
-              <Summary label="Regions" value={selectedRegions.join(", ")} />
-              <Summary label="Transport" value={transportRequired} />
-            </dl>
+            <div className="mt-4 space-y-3 text-sm">
+              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${breed} ${stockType}`} />
+              <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
+              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
+              <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
+            </div>
             <Button type="submit" className="mt-5 w-full">
               Find matches
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -163,7 +164,6 @@ export default function NewRequestPage() {
     </>
   );
 }
-
 function ChoiceSection({
   title,
   children,
@@ -176,14 +176,5 @@ function ChoiceSection({
       <h2 className="mb-4 text-xl font-bold text-sage-deep">{title}</h2>
       <div className="flex flex-wrap gap-2">{children}</div>
     </Card>
-  );
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-warm-white p-3">
-      <dt className="text-xs font-bold uppercase tracking-wide text-stone">{label}</dt>
-      <dd className="mt-1 font-semibold text-bark">{value}</dd>
-    </div>
   );
 }

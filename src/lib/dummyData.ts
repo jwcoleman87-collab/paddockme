@@ -34,10 +34,26 @@ export type LivestockRequest = {
   transportRequired: "Yes" | "No" | "Unsure";
 };
 
-export type AgreementAlignment = {
+export type AgreementSectionDetail = {
   label: string;
-  status: "matched" | "attention";
-  detail: string;
+  value: string;
+};
+
+export type AgreementSection = {
+  id: string;
+  label: string;
+  summary: string;
+  detail: AgreementSectionDetail[];
+  agreedByA: boolean;
+  agreedByB: boolean;
+};
+
+export type AgreementArtefact = {
+  id: string;
+  label: string;
+  kind: "photo" | "document" | "map";
+  uploadedBy: "farmerA" | "farmerB";
+  description: string;
 };
 
 export type Agreement = {
@@ -56,7 +72,8 @@ export type Agreement = {
   weeksRemaining: number;
   lastUpdate: string;
   readinessChecklist: { label: string; complete: boolean }[];
-  alignment: AgreementAlignment[];
+  sections: AgreementSection[];
+  artefacts: AgreementArtefact[];
 };
 
 export type Message = {
@@ -67,6 +84,7 @@ export type Message = {
   senderRole: string;
   body: string;
   time: string;
+  sectionId?: string;
 };
 
 export type TransportJob = {
@@ -94,14 +112,14 @@ export const farmers: Farmer[] = [
   },
   {
     id: "farmer-b",
-    name: "Ros Robinson",
+    name: "Brett Donnelly",
     role: "Landowner",
     region: "Southern NSW",
     verified: true,
   },
   {
     id: "driver-1",
-    name: "Sam Keating",
+    name: "Wayne Hayes",
     role: "Transport Provider",
     region: "Riverina",
     verified: false,
@@ -190,33 +208,134 @@ export const agreements: Agreement[] = [
     fencing: "Secure",
     transportRequired: true,
     weeksRemaining: 12,
-    lastUpdate: "Ros updated feed and water details 18 minutes ago",
+    lastUpdate: "Brett updated feed and water details 18 minutes ago",
     readinessChecklist: [
       { label: "NLIS tagged", complete: true },
       { label: "Vaccination records uploaded", complete: true },
       { label: "PIC verified", complete: true },
       { label: "Transport ready", complete: false },
     ],
-    alignment: [
+    sections: [
       {
-        label: "Livestock type",
-        status: "matched",
-        detail: "Cattle accepted by listing",
+        id: "parties",
+        label: "Parties",
+        summary: "Dale Morgan and Brett Donnelly",
+        detail: [
+          { label: "Livestock owner", value: "Dale Morgan, Central West NSW" },
+          { label: "Landowner", value: "Brett Donnelly, Southern NSW" },
+        ],
+        agreedByA: true,
+        agreedByB: true,
       },
       {
-        label: "Duration",
-        status: "matched",
-        detail: "3 months fits availability window",
+        id: "stock",
+        label: "Stock",
+        summary: "100 Angus cattle, NLIS tagged",
+        detail: [
+          { label: "Type", value: "100 Angus cattle" },
+          { label: "Identification", value: "NLIS tagged" },
+          { label: "Vaccination", value: "Current (5-in-1)" },
+          { label: "PIC of origin", value: "Verified" },
+        ],
+        agreedByA: true,
+        agreedByB: false,
       },
       {
-        label: "Water and fencing",
-        status: "matched",
-        detail: "Permanent water and secure fencing confirmed",
+        id: "paddock",
+        label: "Paddock",
+        summary: "Glenbarra River Paddocks, 280 acres",
+        detail: [
+          { label: "Property", value: "Glenbarra River Paddocks" },
+          { label: "Location", value: "Near Gundagai, NSW" },
+          { label: "Size", value: "280 acres" },
+          { label: "Feed", value: "Excellent" },
+          { label: "Water", value: "Permanent" },
+          { label: "Fencing", value: "Secure" },
+        ],
+        agreedByA: true,
+        agreedByB: true,
       },
       {
-        label: "Price and special terms",
-        status: "attention",
-        detail: "Discuss terms before finalising",
+        id: "dates",
+        label: "Dates and duration",
+        summary: "Three months from 18 May 2026",
+        detail: [
+          { label: "Start", value: "18 May 2026" },
+          { label: "Duration", value: "3 months" },
+          { label: "Return move", value: "Tentative" },
+        ],
+        agreedByA: true,
+        agreedByB: true,
+      },
+      {
+        id: "terms",
+        label: "Rate and terms",
+        summary: "Weekly rate still being agreed",
+        detail: [
+          { label: "Rate", value: "Discuss terms - guide only" },
+          { label: "Feed top-up", value: "Landowner provides hay as needed" },
+          { label: "Water responsibility", value: "Landowner" },
+          { label: "Fencing responsibility", value: "Landowner" },
+        ],
+        agreedByA: false,
+        agreedByB: false,
+      },
+      {
+        id: "transport",
+        label: "Transport",
+        summary: "B-double pickup tentatively booked with Wayne Hayes",
+        detail: [
+          { label: "Pickup", value: "Dale Morgan property, Central West" },
+          { label: "Destination", value: "Glenbarra River Paddocks" },
+          { label: "Operator", value: "Wayne Hayes (single B-double)" },
+          { label: "Preferred date", value: "Friday 22 May" },
+        ],
+        agreedByA: true,
+        agreedByB: false,
+      },
+    ],
+    artefacts: [
+      {
+        id: "art-paddock-photo",
+        label: "Paddock view",
+        kind: "photo",
+        uploadedBy: "farmerB",
+        description: "River-flat paddocks, autumn feed",
+      },
+      {
+        id: "art-water-photo",
+        label: "Water point",
+        kind: "photo",
+        uploadedBy: "farmerB",
+        description: "Permanent trough, gravity-fed",
+      },
+      {
+        id: "art-gate-photo",
+        label: "Gate and yards",
+        kind: "photo",
+        uploadedBy: "farmerB",
+        description: "North gate, B-double compatible",
+      },
+      {
+        id: "art-nlis-doc",
+        label: "NLIS records",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "100 head, IDs uploaded",
+      },
+      {
+        id: "art-vaccination-doc",
+        label: "Vaccination records",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "5-in-1 current, drench schedule",
+      },
+      {
+        id: "art-property-map",
+        label: "Property map",
+        kind: "map",
+        uploadedBy: "farmerB",
+        description: "Paddock boundaries and access lanes",
       },
     ],
   },
@@ -231,15 +350,17 @@ export const workspaceMessages: Message[] = [
     senderRole: "Livestock owner",
     body: "The cattle can be ready by next Friday. Are the yards suitable for a B-double pickup?",
     time: "9:12 AM",
+    sectionId: "transport",
   },
   {
     id: "msg-2",
     threadId: "agreement-glenbarra",
     senderId: "farmer-b",
-    senderName: "Ros",
+    senderName: "Brett",
     senderRole: "Landowner",
     body: "The main lane is fine. Wet-weather access is best from the north gate. I added that note to the agreement.",
     time: "9:19 AM",
+    sectionId: "paddock",
   },
   {
     id: "msg-3",
@@ -249,6 +370,7 @@ export const workspaceMessages: Message[] = [
     senderRole: "Livestock owner",
     body: "Good. I still want to talk through the weekly terms before we finalise.",
     time: "9:26 AM",
+    sectionId: "terms",
   },
 ];
 
@@ -263,7 +385,7 @@ export const transportJobs: TransportJob[] = [
     destination: "Glenbarra River Paddocks, Southern NSW",
     livestockCount: "100 cattle",
     preferredDate: "Friday 22 May",
-    driver: "Sam Keating",
+    driver: "Wayne Hayes",
     status: "Loading",
     routeSummary: "Central West to Gundagai via Wagga corridor",
   },
@@ -274,7 +396,7 @@ export const transportMessages: Message[] = [
     id: "transport-msg-1",
     threadId: "transport-glenbarra",
     senderId: "driver-1",
-    senderName: "Sam",
+    senderName: "Wayne",
     senderRole: "Driver",
     body: "I can load Friday morning if yards are ready by 7 AM.",
     time: "10:03 AM",
@@ -292,7 +414,7 @@ export const transportMessages: Message[] = [
     id: "transport-msg-3",
     threadId: "transport-glenbarra",
     senderId: "farmer-b",
-    senderName: "Ros",
+    senderName: "Brett",
     senderRole: "Landowner",
     body: "North gate is the best entry. Please avoid the creek crossing if it rains.",
     time: "10:14 AM",

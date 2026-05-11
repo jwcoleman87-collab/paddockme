@@ -1,6 +1,7 @@
 import { ArrowRight, Camera, Droplets, Fence, Sprout } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { agreements, getListing } from "@/lib/dummyData";
@@ -34,10 +35,10 @@ export default async function ListingDetailPage({
           <Card>
             <h2 className="mb-4 text-xl font-bold text-sage-deep">Property summary</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Fact icon={<Sprout />} label="Acres" value={`${listing.acres}`} />
-              <Fact icon={<Sprout />} label="Feed" value={listing.feedStatus} />
-              <Fact icon={<Droplets />} label="Water" value={listing.waterStatus} />
-              <Fact icon={<Fence />} label="Fencing" value={listing.fencingStatus} />
+              <InfoTile icon={<Sprout />} label="Acres" value={`${listing.acres}`} />
+              <InfoTile icon={<Sprout />} label="Feed" value={listing.feedStatus} />
+              <InfoTile icon={<Droplets />} label="Water" value={listing.waterStatus} />
+              <InfoTile icon={<Fence />} label="Fencing" value={listing.fencingStatus} />
             </div>
           </Card>
 
@@ -64,30 +65,11 @@ export default async function ListingDetailPage({
     </>
   );
 }
-
 function PhotoPlaceholder({ label }: { label: string }) {
   return (
     <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-sage/35 bg-sage-mist text-center">
       <Camera className="mb-2 h-7 w-7 text-sage-deep" aria-hidden />
       <p className="text-sm font-semibold text-sage-deep">{label}</p>
-    </div>
-  );
-}
-
-function Fact({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-xl border border-mist bg-warm-white p-4">
-      <div className="mb-2 text-sage-deep">{icon}</div>
-      <p className="text-xs font-bold uppercase tracking-wide text-stone">{label}</p>
-      <p className="mt-1 font-semibold text-bark">{value}</p>
     </div>
   );
 }
