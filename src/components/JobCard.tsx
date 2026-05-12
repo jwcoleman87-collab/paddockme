@@ -106,12 +106,15 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
         <p className="text-sm text-bark/65">
           Driver sees movement details only. Private agistment terms stay in the agreement workspace.
         </p>
-        <ButtonLink href={`/transport/${job.id}`} variant="secondary" className="shrink-0">
-          View movement brief
+        <ButtonLink
+          href={`/transport/${job.id}?driver=${match.driver.id}`}
+          variant="secondary"
+          className="shrink-0"
+        >
+          Express interest
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
       </div>
     </Card>
   );
 }
-

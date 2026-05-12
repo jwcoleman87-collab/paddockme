@@ -557,6 +557,8 @@ export const transportJobs: TransportJob[] = [
   },
   {
     id: "job-bathurst-horses",
+    farmerAId: "farmer-a",
+    farmerBId: "farmer-b",
     pickup: "Bathurst spelling yards",
     pickupRegion: "Central West",
     destination: "Mudgee lifestyle block",
@@ -574,6 +576,8 @@ export const transportJobs: TransportJob[] = [
   },
   {
     id: "job-forbes-ewes",
+    farmerAId: "farmer-a",
+    farmerBId: "farmer-b",
     pickup: "Forbes saleyards",
     pickupRegion: "Central West",
     destination: "Cowra holding block",
@@ -591,6 +595,8 @@ export const transportJobs: TransportJob[] = [
   },
   {
     id: "job-coonamble-weaners",
+    farmerAId: "farmer-a",
+    farmerBId: "farmer-b",
     pickup: "Coonamble district property",
     pickupRegion: "Northern NSW",
     destination: "Tamworth backgrounding paddocks",
@@ -608,6 +614,8 @@ export const transportJobs: TransportJob[] = [
   },
   {
     id: "job-walgett-feedlot",
+    farmerAId: "farmer-a",
+    farmerBId: "farmer-b",
     pickup: "Walgett north yards",
     pickupRegion: "Northern NSW",
     destination: "Wagga agistment block",
