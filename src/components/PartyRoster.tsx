@@ -21,7 +21,7 @@ export function PartyRoster({
         <h2 className="text-lg font-bold text-sage-deep">
           Three parties in this room
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-bark/65">
+        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/80">
           Farmers coordinate the agreement. The driver only sees the movement
           brief: pickup, destination, livestock, access, timing, and chat.
         </p>
@@ -59,7 +59,7 @@ export function PartyRoster({
           <p className="text-sm font-bold text-sage-deep">
             Privacy wall: no private agistment pricing.
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-bark/70">
+          <p className="mt-1 text-sm font-medium leading-relaxed text-bark/80">
             This room deliberately excludes rates, terms, and contract detail.
             Those stay inside the two-party agreement workspace.
           </p>
@@ -101,11 +101,11 @@ function PartyCard({
           {getInitials(farmer.name)}
         </div>
         <div className="min-w-0">
-          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-bark/70">
             {label}
           </p>
           <p className="truncate text-base font-bold text-bark">{farmer.name}</p>
-          <p className="truncate text-xs font-semibold text-bark/65">
+          <p className="truncate text-xs font-semibold text-bark/75">
             {farmer.role} - {farmer.region}
           </p>
         </div>

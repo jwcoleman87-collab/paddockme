@@ -30,7 +30,7 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-full break-words text-base leading-relaxed text-bark/75 sm:max-w-2xl">
+          <p className="mt-3 max-w-full break-words text-base font-medium leading-relaxed text-bark/85 sm:max-w-2xl">
             {description}
           </p>
         )}

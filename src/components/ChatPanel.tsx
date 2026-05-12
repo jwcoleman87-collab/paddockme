@@ -35,7 +35,7 @@ export function ChatPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-sage-deep">Live Chat</h2>
-            <p className="mt-0.5 text-sm font-semibold text-bark/70">
+            <p className="mt-0.5 text-sm font-semibold text-bark/85">
               {title}
             </p>
           </div>
@@ -44,7 +44,7 @@ export function ChatPanel({
             {onlineCount} online
           </span>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-bark/65">
+        <p className="mt-3 text-sm font-medium leading-relaxed text-bark/80">
           {hasSections
             ? activeSection
               ? `Anchored to "${activeSection.label}" - replies are tagged to this section.`
@@ -75,7 +75,7 @@ export function ChatPanel({
 
       <div className="flex-1 space-y-4 overflow-y-auto bg-warm-white px-5 py-5">
         {messages.length === 0 && (
-          <p className="text-sm text-bark/60">No messages yet.</p>
+          <p className="text-sm font-medium text-bark/75">No messages yet.</p>
         )}
         {messages.map((message) => {
           const matchesActive =
@@ -98,7 +98,7 @@ export function ChatPanel({
 
       <div className="border-t border-sage-deep/15 bg-cream/45 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm text-stone shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm font-medium text-bark/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
             <span className="truncate">
               {activeSection
                 ? `Reply in "${activeSection.label}"`
@@ -142,15 +142,15 @@ function MessageBubble({
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-bark">{message.senderName}</p>
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone">
+          <p className="text-xs font-bold uppercase tracking-wide text-bark/70">
             {message.senderRole}
           </p>
         </div>
-        <span className="shrink-0 text-xs font-medium text-stone">
+        <span className="shrink-0 text-xs font-semibold text-bark/70">
           {message.time}
         </span>
       </div>
-      <p className="leading-relaxed text-bark/78">{message.body}</p>
+      <p className="font-medium leading-relaxed text-bark/90">{message.body}</p>
       {sectionLabel && (
         <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warm-white/75 px-3 py-1 text-xs font-semibold text-sage-deep">
           <MessageSquare className="h-3 w-3" aria-hidden />

@@ -13,9 +13,9 @@ import {
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ChatPanel } from "@/components/ChatPanel";
-import { DummyMap } from "@/components/DummyMap";
 import { InfoTile } from "@/components/InfoTile";
 import { PartyRoster } from "@/components/PartyRoster";
+import { RoutePreview } from "@/components/RoutePreview";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { Farmer, Message, TransportJob } from "@/lib/dummyData";
@@ -92,7 +92,7 @@ export function TransportRoomClient({
                   <h2 className="text-2xl font-bold text-sage-deep">
                     Stock movement brief
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/70">
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/85">
                     Driver-safe logistics for {job.livestockCount}. This is the
                     shared movement surface, not the agistment contract.
                   </p>
@@ -152,12 +152,7 @@ export function TransportRoomClient({
               )}
             </Card>
 
-            <section>
-              <h2 className="mb-4 text-xl font-bold text-sage-deep">
-                Route and tracking placeholder
-              </h2>
-              <DummyMap />
-            </section>
+            <RoutePreview job={job} />
           </div>
         }
         right={

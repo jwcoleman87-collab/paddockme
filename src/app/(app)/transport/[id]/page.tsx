@@ -31,12 +31,16 @@ export default async function TransportDetailPage({
   return (
     <>
       <PageHeader
-        eyebrow="Transport coordination"
-        title={job.state === "open" ? "Open movement brief." : "Three-party transport room."}
+        eyebrow="Transport room"
+        title={
+          job.state === "open"
+            ? "Open transport brief: review and express interest."
+            : "Transport chat room: coordinate the stock move."
+        }
         description={
           job.state === "open"
-            ? "Driver can review logistics and express interest. Private agistment terms stay out of this workspace."
-            : "Farmer A, Farmer B and the driver coordinate movement details. Contract pricing stays out of this workspace."
+            ? "This page lets a driver inspect pickup, destination, livestock, timing, and route details before putting their hand up."
+            : "This page is where Farmer A, Farmer B, and the driver chat, confirm movement details, and keep private agistment terms out of view."
         }
       />
 
