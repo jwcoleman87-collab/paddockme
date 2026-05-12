@@ -53,22 +53,27 @@ export function ChatPanel({
         </p>
 
         {hasSections && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <SectionChip
-              active={!activeSectionId}
-              onClick={() => onSelectSection?.(null)}
-            >
-              All sections
-            </SectionChip>
-            {sections!.map((section) => (
+          <div className="mt-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-bark/85">
+              Filter chat by agreement section
+            </p>
+            <div className="flex flex-wrap gap-1.5">
               <SectionChip
-                key={section.id}
-                active={activeSectionId === section.id}
-                onClick={() => onSelectSection?.(section.id)}
+                active={!activeSectionId}
+                onClick={() => onSelectSection?.(null)}
               >
-                {section.label}
+                All sections
               </SectionChip>
-            ))}
+              {sections!.map((section) => (
+                <SectionChip
+                  key={section.id}
+                  active={activeSectionId === section.id}
+                  onClick={() => onSelectSection?.(section.id)}
+                >
+                  {section.label}
+                </SectionChip>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -25,7 +25,11 @@ export function WorkspaceClient({
   agreement: Agreement;
   messages: Message[];
 }) {
-  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const firstOpenSectionId =
+    agreement.sections.find((section) => !(section.agreedByA && section.agreedByB))?.id ??
+    agreement.sections[0]?.id ??
+    null;
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(firstOpenSectionId);
 
   const [sectionState, setSectionState] = useState<
     Record<string, SectionAgreementState>

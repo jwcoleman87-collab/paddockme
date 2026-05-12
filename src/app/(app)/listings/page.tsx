@@ -1,5 +1,5 @@
-import { CirclePlus } from "lucide-react";
-import { ButtonLink } from "@/components/Button";
+import { SlidersHorizontal } from "lucide-react";
+import { FlowContextBar } from "@/components/FlowContextBar";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
@@ -11,17 +11,17 @@ export default function ListingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Available paddocks"
-        title="Paddocks that could take stock."
-        description="Dummy listings for the first skeleton. Price stays light here: the product should prove coordination value before over-focusing on rate cards."
-        action={
-          <ButtonLink href="/listings/new">
-            <CirclePlus className="h-4 w-4" aria-hidden />
-            Create listing
-          </ButtonLink>
-        }
+        eyebrow="Step 2 of 4"
+        title="Choose a paddock for your request."
+        description="These are prototype matches for Dale's 100 Angus cattle request. Refine the list, inspect a paddock, then message the landowner."
       />
 
+      <FlowContextBar step="Step 2 of 4: Choosing a paddock" />
+
+      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-bark/85">
+        <SlidersHorizontal className="h-4 w-4" aria-hidden />
+        Refine results
+      </div>
       <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
         {filters.map((filter, index) => (
           <SelectablePill key={filter} selected={index === 0}>

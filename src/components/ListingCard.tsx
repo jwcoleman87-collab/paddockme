@@ -44,6 +44,10 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
 
       <p className="text-sm font-medium leading-relaxed text-bark/90">{listing.summary}</p>
 
+      <div className="rounded-xl border border-sage/30 bg-sage-mist px-3 py-2 text-sm font-bold text-sage-deep">
+        {listing.matchSignal}
+      </div>
+
       <div className="grid grid-cols-2 gap-3 text-sm">
         <InfoTile
           size="sm"
@@ -69,7 +73,7 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
         <InfoTile size="sm" label="Acres" value={`${listing.acres}`} />
       </div>
 
-      <ButtonLink href={`/listings/${listing.id}`} className="mt-auto">
+      <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`} className="mt-auto">
         View details
       </ButtonLink>
     </Card>

@@ -55,7 +55,7 @@ export default function NewRequestPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Need agistment"
+        eyebrow="Step 1 of 4"
         title="Tell us what needs placing."
         description="A low-typing request flow for Farmer A. These choices will become match inputs later; for now they drive the clickable skeleton."
       />
@@ -147,7 +147,12 @@ export default function NewRequestPage() {
           </ChoiceSection>
 
           <Card className="sticky top-24">
-            <h2 className="text-xl font-bold text-sage-deep">Request summary</h2>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-xl font-bold text-sage-deep">Your request</h2>
+              <span className="rounded-full border border-amber/35 bg-amber-light px-3 py-1 text-xs font-bold text-amber">
+                Draft preview
+              </span>
+            </div>
             <div className="mt-4 space-y-3 text-sm">
               <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${breed} ${stockType}`} />
               <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
@@ -155,7 +160,7 @@ export default function NewRequestPage() {
               <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
             </div>
             <Button type="submit" className="mt-5 w-full">
-              Find matches
+              See available paddocks
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
           </Card>

@@ -1,6 +1,7 @@
 import { ArrowRight, Camera, Droplets, Fence, Sprout } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { FlowContextBar } from "@/components/FlowContextBar";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -22,6 +23,11 @@ export default async function ListingDetailPage({
         title={listing.title}
         description={listing.summary}
         action={<StatusBadge tone="success">{listing.verificationStatus}</StatusBadge>}
+      />
+      <FlowContextBar
+        step="Step 3 of 4: Reviewing paddock"
+        backHref="/listings?request=request-100-cattle"
+        backLabel="Back to matches"
       />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_0.42fr]">
@@ -53,12 +59,24 @@ export default async function ListingDetailPage({
         </div>
 
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
+          <Card>
+            <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
+              Landowner
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-sage-deep">
+              Brett Donnelly
+            </h2>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-bark/85">
+              Verified Southern NSW landowner. Prototype trust signal: paddock
+              details and access notes supplied.
+            </p>
+          </Card>
           <ButtonLink href={`/workspace/${agreement.id}`} className="w-full">
-            Discuss terms
+            Message Brett
             <ArrowRight className="h-4 w-4" aria-hidden />
           </ButtonLink>
           <ButtonLink href={`/workspace/${agreement.id}`} variant="secondary" className="w-full">
-            Start agreement
+            Request to agist here
           </ButtonLink>
         </aside>
       </div>

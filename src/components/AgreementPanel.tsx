@@ -15,7 +15,7 @@ import {
   Banknote,
   Tractor,
 } from "lucide-react";
-import { ButtonLink } from "@/components/Button";
+import { Button, ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
@@ -76,12 +76,13 @@ export function AgreementPanel({
   onToggleAgreement,
   timelineItems = [],
 }: AgreementPanelProps) {
-  const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
+  const [activeTab, setActiveTab] = useState<AgreementTab>("terms");
 
   const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
     const state = sectionState[section.id] ?? section;
     return state.agreedByA && state.agreedByB ? count + 1 : count;
   }, 0);
+  const allSectionsAgreed = mutuallyAgreedCount === agreement.sections.length;
 
   return (
     <section className={workspaceCardClass}>
@@ -185,7 +186,17 @@ export function AgreementPanel({
         <ButtonLink href="/transport/transport-glenbarra" variant="secondary">
           Open transport room
         </ButtonLink>
-        <ButtonLink href="/agreements">Finalise agreement</ButtonLink>
+        <Button
+          type="button"
+          disabled={!allSectionsAgreed}
+          title={
+            allSectionsAgreed
+              ? "Ready to finalise"
+              : `${agreement.sections.length - mutuallyAgreedCount} sections still need agreement`
+          }
+        >
+          Finalise agreement
+        </Button>
       </div>
     </section>
   );

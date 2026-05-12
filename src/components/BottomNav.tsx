@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, MessageSquare, Search, Sprout, Truck } from "lucide-react";
+import { FileText, Home, Map, Search, Sprout } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -11,11 +11,11 @@ const navItems = [
   { href: "/listings", label: "Paddocks", icon: Sprout },
   {
     href: "/workspace/agreement-glenbarra",
-    label: "Workspace",
-    icon: MessageSquare,
+    label: "Agreement",
+    icon: FileText,
     match: ["/workspace"],
   },
-  { href: "/jobs", label: "Jobs", icon: Truck },
+  { href: "/map", label: "Map", icon: Map },
 ];
 
 export function BottomNav() {

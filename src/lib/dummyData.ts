@@ -60,6 +60,7 @@ export type PaddockListing = {
   verificationStatus: "Verified provider" | "Pending verification";
   availabilityWindow: string;
   guideTerms: string;
+  matchSignal: string;
   summary: string;
 };
 
@@ -281,6 +282,7 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Verified provider",
     availabilityWindow: "Available from 18 May",
     guideTerms: "Discuss terms",
+    matchSignal: "Strong fit for 100 cattle - permanent water",
     summary:
       "River flats with strong autumn feed, permanent troughs, and laneway access suitable for truck loading.",
   },
@@ -307,6 +309,7 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Pending verification",
     availabilityWindow: "Two weeks notice",
     guideTerms: "Guide only",
+    matchSignal: "Short-term option - smaller holding block",
     summary:
       "Useful short-term holding block with reliable tank water and simple yard access.",
   },
@@ -333,6 +336,7 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Verified provider",
     availabilityWindow: "June to September",
     guideTerms: "Discuss terms",
+    matchSignal: "Outside preferred regions - compare if feed is tight",
     summary:
       "Improved pasture paddocks with permanent water, shade lines, and good wet-weather access.",
   },
