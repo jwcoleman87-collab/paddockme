@@ -46,7 +46,7 @@ export default async function TransportDetailPage({
                 <InfoTile icon={<MapPin />} label="Destination" value={job.destination} />
                 <InfoTile icon={<Truck />} label="Livestock" value={job.livestockCount} />
                 <InfoTile icon={<Truck />} label="Preferred date" value={job.preferredDate} />
-                <InfoTile icon={<Truck />} label="Driver" value={job.driver} />
+                <InfoTile icon={<Truck />} label="Driver" value={job.driver ?? "Unassigned"} />
                 <InfoTile icon={<MapPin />} label="Route" value={job.routeSummary} />
               </div>
             </Card>
@@ -63,7 +63,7 @@ export default async function TransportDetailPage({
           <ChatPanel
             title="Farmer A, Farmer B and Driver"
             messages={messages}
-            onlineCount={3}
+            onlineCount={job.driver ? 3 : 2}
           />
         }
       />

@@ -8,6 +8,32 @@ export type Farmer = {
 
 export type AustralianState = "NSW" | "QLD" | "VIC" | "SA" | "WA" | "TAS" | "NT" | "ACT";
 
+export type TruckClass = "medium-rigid" | "heavy-rigid" | "b-double" | "road-train";
+
+export type TruckCapacity = {
+  cattle: number;
+  sheep: number;
+  horses: number;
+};
+
+export type Truck = {
+  id: string;
+  ownerId: string;
+  rego: string;
+  label: string;
+  class: TruckClass;
+  capacity: TruckCapacity;
+  serviceRegions: string[];
+  preferredRadiusKm: number;
+};
+
+export const TRUCK_CLASS_LABEL: Record<TruckClass, string> = {
+  "medium-rigid": "Medium rigid",
+  "heavy-rigid": "Heavy rigid",
+  "b-double": "B-double",
+  "road-train": "Road train",
+};
+
 export type PaddockListing = {
   id: string;
   title: string;
@@ -101,19 +127,33 @@ export type Message = {
   sectionId?: string;
 };
 
+export type TransportSize = "small" | "medium" | "large";
+
+export type TransportState = "open" | "assigned" | "in-progress" | "complete";
+
+export type TransportStockType = "Cattle" | "Sheep" | "Horses" | "Goats";
+
 export type TransportJob = {
   id: string;
-  agreementId: string;
-  farmerAId: string;
-  farmerBId: string;
-  driverId: string;
+  agreementId?: string;
+  farmerAId?: string;
+  farmerBId?: string;
+  driverId?: string;
   pickup: string;
+  pickupRegion: string;
   destination: string;
+  destinationRegion: string;
   livestockCount: string;
+  stockType: TransportStockType;
+  headCount: number;
+  size: TransportSize;
   preferredDate: string;
-  driver: string;
-  status: "Loading" | "In Transit" | "Arrived";
+  driver?: string;
+  state: TransportState;
+  status: "Open" | "Loading" | "In Transit" | "Arrived";
   routeSummary: string;
+  distanceKm: number;
+  estimatedDuration: string;
 };
 
 export const farmers: Farmer[] = [
@@ -136,7 +176,84 @@ export const farmers: Farmer[] = [
     name: "Wayne Hayes",
     role: "Transport Provider",
     region: "Riverina",
-    verified: false,
+    verified: true,
+  },
+  {
+    id: "driver-2",
+    name: "Trav Henderson",
+    role: "Transport Provider",
+    region: "Central West NSW",
+    verified: true,
+  },
+  {
+    id: "driver-3",
+    name: "Sharon Whittaker",
+    role: "Transport Provider",
+    region: "Northern NSW",
+    verified: true,
+  },
+];
+
+export const trucks: Truck[] = [
+  {
+    id: "truck-wayne-bdouble",
+    ownerId: "driver-1",
+    rego: "NSW-18BD",
+    label: "Wayne's B-double",
+    class: "b-double",
+    capacity: { cattle: 60, sheep: 400, horses: 16 },
+    serviceRegions: ["Riverina", "Southern NSW", "Central West", "Northern Victoria"],
+    preferredRadiusKm: 900,
+  },
+  {
+    id: "truck-trav-rigid-1",
+    ownerId: "driver-2",
+    rego: "CW-42MR",
+    label: "Trav's 12-head rigid",
+    class: "medium-rigid",
+    capacity: { cattle: 12, sheep: 80, horses: 4 },
+    serviceRegions: ["Central West", "Northern NSW", "New England"],
+    preferredRadiusKm: 220,
+  },
+  {
+    id: "truck-trav-rigid-2",
+    ownerId: "driver-2",
+    rego: "CW-44MR",
+    label: "Trav's second rigid",
+    class: "medium-rigid",
+    capacity: { cattle: 10, sheep: 70, horses: 4 },
+    serviceRegions: ["Central West", "Southern NSW"],
+    preferredRadiusKm: 180,
+  },
+  {
+    id: "truck-sharon-roadtrain",
+    ownerId: "driver-3",
+    rego: "NW-90RT",
+    label: "Sharon's road train",
+    class: "road-train",
+    capacity: { cattle: 180, sheep: 1200, horses: 36 },
+    serviceRegions: ["Northern NSW", "New England", "SE QLD", "Riverina"],
+    preferredRadiusKm: 1100,
+  },
+  {
+    id: "truck-sharon-bdouble",
+    ownerId: "driver-3",
+    rego: "NW-21BD",
+    label: "Sharon's B-double",
+    class: "b-double",
+    capacity: { cattle: 70, sheep: 450, horses: 18 },
+    serviceRegions: ["Northern NSW", "Central West", "New England"],
+    preferredRadiusKm: 700,
+  },
+  {
+    id: "truck-sharon-heavy",
+    ownerId: "driver-3",
+    rego: "NW-12HR",
+    label: "Sharon's local rigid",
+    class: "heavy-rigid",
+    capacity: { cattle: 24, sheep: 160, horses: 8 },
+    serviceRegions: ["Northern NSW", "New England"],
+    preferredRadiusKm: 260,
   },
 ];
 
@@ -423,12 +540,88 @@ export const transportJobs: TransportJob[] = [
     farmerBId: "farmer-b",
     driverId: "driver-1",
     pickup: "Dale Morgan, Central West NSW",
+    pickupRegion: "Central West",
     destination: "Glenbarra River Paddocks, Southern NSW",
+    destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
+    stockType: "Cattle",
+    headCount: 100,
+    size: "large",
     preferredDate: "Friday 22 May",
     driver: "Wayne Hayes",
+    state: "assigned",
     status: "Loading",
     routeSummary: "Central West to Gundagai via Wagga corridor",
+    distanceKm: 420,
+    estimatedDuration: "5 h 45 min",
+  },
+  {
+    id: "job-bathurst-horses",
+    pickup: "Bathurst spelling yards",
+    pickupRegion: "Central West",
+    destination: "Mudgee lifestyle block",
+    destinationRegion: "Central West",
+    livestockCount: "2 retired thoroughbreds",
+    stockType: "Horses",
+    headCount: 2,
+    size: "small",
+    preferredDate: "Wednesday 27 May",
+    state: "open",
+    status: "Open",
+    routeSummary: "Bathurst to Mudgee via Sofala",
+    distanceKm: 150,
+    estimatedDuration: "2 h 10 min",
+  },
+  {
+    id: "job-forbes-ewes",
+    pickup: "Forbes saleyards",
+    pickupRegion: "Central West",
+    destination: "Cowra holding block",
+    destinationRegion: "Central West",
+    livestockCount: "80 crossbred ewes",
+    stockType: "Sheep",
+    headCount: 80,
+    size: "medium",
+    preferredDate: "Monday 1 June",
+    state: "open",
+    status: "Open",
+    routeSummary: "Forbes to Cowra direct run",
+    distanceKm: 70,
+    estimatedDuration: "1 h 20 min",
+  },
+  {
+    id: "job-coonamble-weaners",
+    pickup: "Coonamble district property",
+    pickupRegion: "Northern NSW",
+    destination: "Tamworth backgrounding paddocks",
+    destinationRegion: "New England",
+    livestockCount: "40 Angus weaners",
+    stockType: "Cattle",
+    headCount: 40,
+    size: "medium",
+    preferredDate: "Thursday 4 June",
+    state: "open",
+    status: "Open",
+    routeSummary: "Coonamble to Tamworth via Gunnedah",
+    distanceKm: 310,
+    estimatedDuration: "4 h 30 min",
+  },
+  {
+    id: "job-walgett-feedlot",
+    pickup: "Walgett north yards",
+    pickupRegion: "Northern NSW",
+    destination: "Wagga agistment block",
+    destinationRegion: "Riverina",
+    livestockCount: "180 feeder steers",
+    stockType: "Cattle",
+    headCount: 180,
+    size: "large",
+    preferredDate: "Friday 5 June",
+    state: "open",
+    status: "Open",
+    routeSummary: "Walgett to Wagga long-haul run",
+    distanceKm: 760,
+    estimatedDuration: "9 h 40 min",
   },
 ];
 
@@ -484,6 +677,18 @@ export function getAgreement(id: string) {
 
 export function getTransportJob(id: string) {
   return transportJobs.find((job) => job.id === id) ?? transportJobs[0];
+}
+
+export function getDrivers() {
+  return farmers.filter((farmer) => farmer.role === "Transport Provider");
+}
+
+export function getTrucksForDriver(driverId: string) {
+  return trucks.filter((truck) => truck.ownerId === driverId);
+}
+
+export function getOpenTransportJobs() {
+  return transportJobs.filter((job) => job.state === "open");
 }
 
 export function getMessages(threadId: string) {
