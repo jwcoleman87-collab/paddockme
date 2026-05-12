@@ -182,7 +182,7 @@ function ReadinessRow({ label, complete }: { label: string; complete: boolean })
     <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-mist bg-cream px-4 py-3">
       <span className="text-sm font-semibold text-bark">{label}</span>
       <CheckCircle2
-        className={complete ? "h-5 w-5 shrink-0 text-match" : "h-5 w-5 shrink-0 text-stone"}
+        className={complete ? "h-5 w-5 shrink-0 text-match" : "h-5 w-5 shrink-0 text-bark/75"}
         aria-hidden
       />
     </div>

@@ -54,7 +54,7 @@ export default function SignUpPage() {
         <h1 className="font-display italic text-3xl text-sage-deep mb-2">
           Make a new account.
         </h1>
-        <p className="text-bark/70 mb-8">
+        <p className="text-bark/85 mb-8">
           One account covers livestock, paddocks, and transport.
         </p>
 
@@ -129,7 +129,7 @@ export default function SignUpPage() {
           </form>
         )}
 
-        <p className="mt-8 text-center text-sm text-bark/70">
+        <p className="mt-8 text-center text-sm text-bark/85">
           Already have an account?{" "}
           <Link href="/sign-in" className="text-sage-deep underline">
             Sign in

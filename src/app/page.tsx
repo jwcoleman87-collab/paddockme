@@ -29,22 +29,22 @@ const homeActions = [
 export default function HomePage() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-warm-white pb-28 text-bark">
-      <header className="mx-auto flex max-w-7xl items-center px-5 py-5 md:px-8">
+      <header className="mx-auto flex max-w-7xl items-center px-5 py-4 md:px-8">
         <Link href="/" className="font-display text-2xl text-sage-deep">
           PaddockME
         </Link>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100dvh-5.25rem)] max-w-7xl flex-col px-5 pb-5 md:px-8">
-        <div className="grid flex-1 items-center gap-10 py-8 md:grid-cols-[1.05fr_0.95fr] md:py-14">
+      <section className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-7xl flex-col px-5 pb-5 md:px-8">
+        <div className="grid flex-1 items-start gap-10 pt-8 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-14">
           <div className="min-w-0">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-ochre">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-amber">
               Australian agistment coordination
             </p>
             <h1 className="font-display text-5xl leading-tight text-sage-deep md:text-7xl">
               Coordination is expensive.
             </h1>
-            <p className="mt-6 max-w-[21rem] break-words text-lg leading-relaxed text-bark/75 sm:max-w-2xl md:text-xl">
+            <p className="mt-6 max-w-[21rem] break-words text-lg font-medium leading-relaxed text-bark/90 sm:max-w-2xl md:text-xl">
               PaddockME removes hidden coordination costs between livestock,
               land and transport.
             </p>
@@ -84,7 +84,7 @@ export default function HomePage() {
                 <span className="sm:hidden">{shortLabel}</span>
                 <span className="hidden sm:inline">{label}</span>
               </span>
-              <span className="hidden text-xs font-medium text-bark/55 sm:inline">
+              <span className="hidden text-xs font-semibold text-bark/80 sm:inline">
                 {helper}
               </span>
             </Link>
@@ -110,7 +110,7 @@ function Feature({
         {icon}
       </div>
       <h2 className="font-bold text-sage-deep">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-bark/70">{text}</p>
+      <p className="mt-2 text-sm font-medium leading-relaxed text-bark/90">{text}</p>
     </Card>
   );
 }

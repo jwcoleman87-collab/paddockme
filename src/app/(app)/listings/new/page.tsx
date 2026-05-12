@@ -41,7 +41,7 @@ export default function NewListingPage() {
             <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-sage/35 bg-sage-mist text-center">
               <Camera className="mb-3 h-8 w-8 text-sage-deep" aria-hidden />
               <p className="font-semibold text-sage-deep">Photos placeholder</p>
-              <p className="mt-1 max-w-xs text-sm text-bark/65">
+              <p className="mt-1 max-w-xs text-sm font-medium text-bark/85">
                 Later this becomes paddock, water point, fencing and yards photos.
               </p>
             </div>
@@ -70,7 +70,7 @@ export default function NewListingPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <label className="block">
-      <span className="text-sm font-semibold text-bark/75">{label}</span>
+      <span className="text-sm font-semibold text-bark/90">{label}</span>
       <input
         readOnly
         value={value}

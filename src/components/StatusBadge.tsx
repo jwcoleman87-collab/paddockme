@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 type StatusTone = "success" | "warning" | "neutral" | "info";
 
 const tones: Record<StatusTone, string> = {
-  success: "border-match/25 bg-match-light text-match",
-  warning: "border-amber/30 bg-amber-light text-amber",
-  neutral: "border-mist bg-warm-white text-stone",
-  info: "border-sage-glow bg-sage-mist text-sage-deep",
+  success: "border-match/35 bg-match-light text-match",
+  warning: "border-amber/40 bg-amber-light text-amber",
+  neutral: "border-stone/30 bg-warm-white text-bark/85",
+  info: "border-sage/35 bg-sage-mist text-sage-deep",
 };
 
 const icons = {
@@ -31,7 +31,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex min-h-8 max-w-full items-center gap-1.5 whitespace-normal rounded-full border px-3 py-1 text-left text-xs font-semibold",
+        "inline-flex min-h-8 max-w-full items-center gap-1.5 whitespace-normal rounded-full border px-3 py-1 text-left text-xs font-bold",
         tones[tone],
         className
       )}

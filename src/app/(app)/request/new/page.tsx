@@ -90,7 +90,7 @@ export default function NewRequestPage() {
             <div className="mb-4 flex items-baseline justify-between">
               <div>
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-                <p className="text-sm text-bark/65">Big touch target now, smarter selector later.</p>
+                <p className="text-sm font-medium text-bark/80">Set the approximate head count.</p>
               </div>
               <p className="text-4xl font-extrabold text-sage-deep">
                 {headCount}
@@ -103,7 +103,7 @@ export default function NewRequestPage() {
               step={10}
               value={headCount}
               onChange={(event) => setHeadCount(Number(event.target.value))}
-              className="w-full accent-sage-deep"
+              className="paddockme-range w-full accent-sage-deep"
             />
           </Card>
 

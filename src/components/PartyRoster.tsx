@@ -101,11 +101,11 @@ function PartyCard({
           {getInitials(farmer.name)}
         </div>
         <div className="min-w-0">
-          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-bark/70">
+          <p className="text-[0.7rem] font-bold uppercase tracking-wide text-bark/85">
             {label}
           </p>
           <p className="truncate text-base font-bold text-bark">{farmer.name}</p>
-          <p className="truncate text-xs font-semibold text-bark/75">
+          <p className="truncate text-xs font-semibold text-bark/85">
             {farmer.role} - {farmer.region}
           </p>
         </div>

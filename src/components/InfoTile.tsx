@@ -50,7 +50,7 @@ export function InfoTile({
       )}
       <p
         className={cn(
-          "text-xs font-bold uppercase tracking-wide text-bark/70",
+          "text-xs font-bold uppercase tracking-wide text-bark/85",
           showIconInline && "flex items-center gap-1.5"
         )}
       >

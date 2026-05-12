@@ -21,12 +21,12 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
             >
               {listing.verificationStatus}
             </StatusBadge>
-            <span className="rounded-full bg-warm-white px-3 py-1 text-xs font-semibold text-stone">
+            <span className="rounded-full border border-stone/25 bg-warm-white px-3 py-1 text-xs font-bold text-bark/85">
               {listing.guideTerms}
             </span>
           </div>
           <h2 className="text-xl font-bold text-sage-deep">{listing.title}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-bark/65">
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-bark/85">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
             {listing.location}
           </p>
@@ -42,7 +42,7 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
         />
       </div>
 
-      <p className="text-sm leading-relaxed text-bark/75">{listing.summary}</p>
+      <p className="text-sm font-medium leading-relaxed text-bark/90">{listing.summary}</p>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
         <InfoTile

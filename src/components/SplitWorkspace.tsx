@@ -66,7 +66,7 @@ function TabButton({
       onClick={onClick}
       className={cn(
         "min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition",
-        active ? "bg-sage-deep text-cream" : "text-bark/65",
+        active ? "bg-sage-deep text-cream" : "text-bark/85",
         "cursor-pointer"
       )}
     >

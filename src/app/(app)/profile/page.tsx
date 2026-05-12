@@ -37,7 +37,7 @@ export default function ProfilePage() {
           <p className="text-5xl font-extrabold text-sage-deep">
             72
           </p>
-          <p className="mt-2 text-sm text-bark/65">
+          <p className="mt-2 text-sm font-medium text-bark/85">
             Placeholder score based on verification, documents and transport readiness.
           </p>
         </Card>
@@ -60,7 +60,7 @@ function Readiness({ label, complete }: { label: string; complete?: boolean }) {
   const Icon = complete ? CheckCircle : CircleDot;
   return (
     <div className="flex min-h-16 items-center gap-3 rounded-xl border border-mist bg-cream px-4">
-      <Icon className={complete ? "h-5 w-5 text-match" : "h-5 w-5 text-stone"} aria-hidden />
+      <Icon className={complete ? "h-5 w-5 text-match" : "h-5 w-5 text-bark/75"} aria-hidden />
       <span className="font-semibold text-bark">{label}</span>
     </div>
   );

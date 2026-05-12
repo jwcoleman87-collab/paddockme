@@ -30,15 +30,15 @@
   --color-wheat: #f5ecd7;
   --color-cream: #faf8f3;
   --color-warm-white: #fdfcf9;
-  --color-bark: #5c4033;
-  --color-stone: #8c8478;
-  --color-mist: #e8e5df;
+  --color-bark: #3f3328;
+  --color-stone: #6d6257;
+  --color-mist: #d9d4c8;
 
   /* Status — match / amber. NEVER use emoji for state; use lucide icons. */
-  --color-match: #3ba55d;
+  --color-match: #2f7d47;
   --color-match-light: #e6f5eb;
-  --color-amber: #d49b3a;
-  --color-amber-light: #fdf3e0;
+  --color-amber: #8a5a12;
+  --color-amber-light: #f7ead0;
 
   /* Border radii */
   --radius: 14px;
@@ -67,4 +67,24 @@ h3:not(.font-display) {
   font-family: var(--font-body);
   font-style: normal;
   letter-spacing: 0;
+}
+
+.paddockme-range {
+  height: 1.75rem;
+}
+
+.paddockme-range::-webkit-slider-runnable-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #cfc9bb;
+}
+
+.paddockme-range::-webkit-slider-thumb {
+  margin-top: -0.42rem;
+}
+
+.paddockme-range::-moz-range-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #cfc9bb;
 }

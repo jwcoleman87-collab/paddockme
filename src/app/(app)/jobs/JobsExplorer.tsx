@@ -52,7 +52,7 @@ export function JobsExplorer() {
         <Card className="bg-warm-white">
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
                 View as driver
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -69,7 +69,7 @@ export function JobsExplorer() {
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
                 Job size
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -109,7 +109,7 @@ export function JobsExplorer() {
 
           {driverTrucks.length > 0 && (
             <div className="mt-5 rounded-2xl border border-mist bg-cream p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
                 Available gear
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -136,4 +136,3 @@ export function JobsExplorer() {
     </>
   );
 }
-

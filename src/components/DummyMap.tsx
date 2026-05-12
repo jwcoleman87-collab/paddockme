@@ -46,7 +46,7 @@ export function DummyMap() {
                 style={{ width: `${region.availability}%` }}
               />
             </div>
-            <p className="mt-2 text-sm text-bark/70">
+            <p className="mt-2 text-sm font-medium text-bark/85">
               {region.availability}% indicative availability - feed is {region.feed.toLowerCase()}.
             </p>
           </article>
@@ -59,7 +59,7 @@ export function DummyMap() {
 function MapStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-sage-glow bg-warm-white/80 p-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-stone">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-bark/85">{label}</p>
       <p className="mt-1 font-semibold text-sage-deep">{value}</p>
     </div>
   );

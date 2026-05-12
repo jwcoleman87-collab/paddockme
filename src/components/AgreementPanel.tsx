@@ -103,7 +103,7 @@ export function AgreementPanel({
         <h2 className="text-2xl font-bold text-sage-deep">
           Shared agistment agreement
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-bark/65">
+        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
           A shared artefact both farmers can review. Tap a section to anchor the
           chat, then mark each side&apos;s agreement when the wording holds up.
         </p>
@@ -137,7 +137,7 @@ export function AgreementPanel({
           <div className="space-y-3">
             <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
               <h3 className="font-bold text-sage-deep">Terms under review</h3>
-              <p className="mt-1 text-sm leading-relaxed text-bark/65">
+              <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
                 Select a section to anchor the chat and confirm each party&apos;s
                 agreement state.
               </p>
@@ -170,7 +170,7 @@ export function AgreementPanel({
             {timelineItems.length > 0 ? (
               <Timeline items={timelineItems} />
             ) : (
-              <p className="text-sm text-bark/65">
+              <p className="text-sm font-medium text-bark/85">
                 No timeline events have been added yet.
               </p>
             )}
@@ -210,7 +210,7 @@ function AgreementTabButton({
         "min-h-10 shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
         active
           ? "bg-sage-deep text-cream shadow-sm"
-          : "text-bark/70 hover:bg-sage-mist/60 hover:text-sage-deep"
+          : "text-bark/85 hover:bg-sage-mist/60 hover:text-sage-deep"
       )}
     >
       {children}
@@ -242,7 +242,7 @@ function AgreementOverview({
       </div>
 
       <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-bark/85">
           Agreement alignment
         </h3>
         <div className="mt-3 space-y-2">
@@ -285,7 +285,7 @@ function AlignmentRow({
 function ReadinessChecklist({ agreement }: { agreement: Agreement }) {
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-bark/85">
         Livestock readiness checklist
       </h3>
       <div className="space-y-2">
@@ -374,7 +374,7 @@ function SectionCard({
           </div>
           <StatusBadge tone={summaryTone}>{summaryLabel}</StatusBadge>
         </div>
-        <p className="text-sm text-bark/70">{section.summary}</p>
+        <p className="text-sm font-medium text-bark/85">{section.summary}</p>
       </button>
 
       <div className="space-y-4 border-t border-mist bg-cream px-5 py-4">
@@ -426,7 +426,7 @@ function PartyAgreeButton({
         "inline-flex min-h-11 items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
         agreed
           ? "border-match/30 bg-match-light text-match"
-          : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+          : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist/40"
       )}
     >
       <span>
@@ -442,10 +442,10 @@ function ArtefactStrip({ artefacts }: { artefacts: AgreementArtefact[] }) {
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-bark/85">
           Shared artefacts
         </h3>
-        <span className="text-xs text-bark/55">
+        <span className="text-xs font-semibold text-bark/75">
           {artefacts.length} item{artefacts.length === 1 ? "" : "s"}
         </span>
       </div>
@@ -475,8 +475,8 @@ function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
       </div>
       <div>
         <p className="text-sm font-semibold text-bark">{artefact.label}</p>
-        <p className="mt-0.5 text-xs text-bark/65">{artefact.description}</p>
-        <p className="mt-2 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+        <p className="mt-0.5 text-xs font-medium text-bark/80">{artefact.description}</p>
+        <p className="mt-2 text-[0.7rem] font-bold uppercase tracking-wide text-bark/85">
           From {uploader}
         </p>
       </div>

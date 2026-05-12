@@ -98,7 +98,7 @@ function RoutePoint({
       </div>
       <div className="rounded-xl border border-sage-deep/15 bg-warm-white/95 px-3 py-2 shadow-sm">
         <p className="text-sm font-bold leading-snug text-bark">{value}</p>
-        <p className="mt-1 text-xs font-semibold text-bark/70">{region}</p>
+        <p className="mt-1 text-xs font-semibold text-bark/85">{region}</p>
       </div>
     </div>
   );

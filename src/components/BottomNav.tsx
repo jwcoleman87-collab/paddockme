@@ -40,7 +40,7 @@ export function BottomNav() {
                 "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-1 text-[0.68rem] font-semibold transition sm:min-h-16 sm:px-2 sm:text-xs",
                 active
                   ? "bg-sage-deep text-cream shadow-sm"
-                  : "text-bark/65 hover:bg-cream hover:text-sage-deep"
+                  : "text-bark/85 hover:bg-cream hover:text-sage-deep"
               )}
             >
               <Icon className="h-5 w-5" aria-hidden />

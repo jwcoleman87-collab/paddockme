@@ -55,7 +55,7 @@ export function StateMiniMap({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-mist bg-warm-white p-2 text-sage-deep shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]",
+        "relative overflow-hidden rounded-xl border border-stone/35 bg-warm-white p-2 text-sage-deep shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]",
         className,
       )}
     >

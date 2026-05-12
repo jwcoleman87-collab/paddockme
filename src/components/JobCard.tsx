@@ -27,13 +27,13 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
           <h2 className="text-2xl font-bold leading-tight text-sage-deep">
             {job.pickupRegion} to {job.destinationRegion}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/75">
+          <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-bark/90">
             {job.livestockCount} moving from {job.pickup} to {job.destination}.
           </p>
         </div>
-        <div className="rounded-2xl border border-sage-glow bg-sage-mist px-4 py-3 text-sm font-bold text-sage-deep sm:text-right">
+        <div className="rounded-2xl border border-sage-deep bg-sage-deep px-4 py-3 text-sm font-bold text-cream sm:text-right">
           {match.score}/100
-          <span className="block text-xs font-semibold text-bark/60">fit score</span>
+          <span className="block text-xs font-semibold text-cream/80">fit score</span>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border border-mist bg-cream p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-stone">
+          <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
             Best truck
           </p>
           <p className="mt-1 font-bold text-bark">
@@ -78,7 +78,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
               ? `${bestTruck.label} - ${TRUCK_CLASS_LABEL[bestTruck.class]}`
               : "Truck profile needed"}
           </p>
-          <p className="mt-2 flex items-start gap-2 text-sm leading-relaxed text-bark/70">
+          <p className="mt-2 flex items-start gap-2 text-sm font-medium leading-relaxed text-bark/85">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sage-deep" aria-hidden />
             {job.routeSummary}
           </p>
@@ -103,7 +103,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-mist pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-bark/65">
+        <p className="text-sm font-medium text-bark/85">
           Driver sees movement details only. Private agistment terms stay in the agreement workspace.
         </p>
         <ButtonLink

@@ -44,7 +44,7 @@ export default async function ListingDetailPage({
 
           <Card>
             <h2 className="text-xl font-bold text-sage-deep">Operational notes</h2>
-            <p className="mt-3 leading-relaxed text-bark/75">
+            <p className="mt-3 font-medium leading-relaxed text-bark/90">
               Suitable for {listing.suitableLivestock.join(" and ").toLowerCase()}.
               Access is best discussed before stock move. Terms are intentionally
               kept as "{listing.guideTerms.toLowerCase()}" at this stage.
@@ -67,7 +67,7 @@ export default async function ListingDetailPage({
 }
 function PhotoPlaceholder({ label }: { label: string }) {
   return (
-    <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-sage/35 bg-sage-mist text-center">
+    <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-sage/55 bg-sage-mist/85 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
       <Camera className="mb-2 h-7 w-7 text-sage-deep" aria-hidden />
       <p className="text-sm font-semibold text-sage-deep">{label}</p>
     </div>

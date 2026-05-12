@@ -75,7 +75,7 @@ export function ChatPanel({
 
       <div className="flex-1 space-y-4 overflow-y-auto bg-warm-white px-5 py-5">
         {messages.length === 0 && (
-          <p className="text-sm font-medium text-bark/75">No messages yet.</p>
+          <p className="text-sm font-medium text-bark/85">No messages yet.</p>
         )}
         {messages.map((message) => {
           const matchesActive =
@@ -98,7 +98,7 @@ export function ChatPanel({
 
       <div className="border-t border-sage-deep/15 bg-cream/45 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm font-medium text-bark/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/30 bg-warm-white px-4 text-sm font-medium text-bark/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
             <span className="truncate">
               {activeSection
                 ? `Reply in "${activeSection.label}"`
@@ -142,11 +142,11 @@ function MessageBubble({
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-bark">{message.senderName}</p>
-          <p className="text-xs font-bold uppercase tracking-wide text-bark/70">
+          <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
             {message.senderRole}
           </p>
         </div>
-        <span className="shrink-0 text-xs font-semibold text-bark/70">
+        <span className="shrink-0 text-xs font-semibold text-bark/85">
           {message.time}
         </span>
       </div>
@@ -194,7 +194,7 @@ function SectionChip({
         "inline-flex min-h-11 shrink-0 cursor-pointer items-center rounded-full border px-3.5 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
         active
           ? "border-sage-deep bg-sage-deep text-cream"
-          : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/50"
+          : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist/50"
       )}
     >
       {children}
