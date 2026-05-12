@@ -141,8 +141,10 @@ export type TransportJob = {
   farmerBId?: string;
   driverId?: string;
   pickup: string;
+  pickupTown: string;
   pickupRegion: string;
   destination: string;
+  destinationTown: string;
   destinationRegion: string;
   livestockCount: string;
   stockType: TransportStockType;
@@ -155,6 +157,7 @@ export type TransportJob = {
   routeSummary: string;
   distanceKm: number;
   estimatedDuration: string;
+  rateGuide: string;
 };
 
 export const farmers: Farmer[] = [
@@ -544,8 +547,10 @@ export const transportJobs: TransportJob[] = [
     farmerBId: "farmer-b",
     driverId: "driver-1",
     pickup: "Dale Morgan, Central West NSW",
+    pickupTown: "Orange district",
     pickupRegion: "Central West",
     destination: "Glenbarra River Paddocks, Southern NSW",
+    destinationTown: "Gundagai",
     destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
     stockType: "Cattle",
@@ -558,14 +563,17 @@ export const transportJobs: TransportJob[] = [
     routeSummary: "Central West to Gundagai via Wagga corridor",
     distanceKm: 420,
     estimatedDuration: "5 h 45 min",
+    rateGuide: "Assigned run - terms already agreed",
   },
   {
     id: "job-bathurst-horses",
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
     pickup: "Bathurst spelling yards",
+    pickupTown: "Bathurst",
     pickupRegion: "Central West",
     destination: "Mudgee lifestyle block",
+    destinationTown: "Mudgee",
     destinationRegion: "Central West",
     livestockCount: "2 retired thoroughbreds",
     stockType: "Horses",
@@ -577,14 +585,17 @@ export const transportJobs: TransportJob[] = [
     routeSummary: "Bathurst to Mudgee via Sofala",
     distanceKm: 150,
     estimatedDuration: "2 h 10 min",
+    rateGuide: "$520-$740 guide",
   },
   {
     id: "job-forbes-ewes",
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
     pickup: "Forbes saleyards",
+    pickupTown: "Forbes",
     pickupRegion: "Central West",
     destination: "Cowra holding block",
+    destinationTown: "Cowra",
     destinationRegion: "Central West",
     livestockCount: "80 crossbred ewes",
     stockType: "Sheep",
@@ -596,14 +607,17 @@ export const transportJobs: TransportJob[] = [
     routeSummary: "Forbes to Cowra direct run",
     distanceKm: 70,
     estimatedDuration: "1 h 20 min",
+    rateGuide: "$380-$560 guide",
   },
   {
     id: "job-coonamble-weaners",
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
     pickup: "Coonamble district property",
+    pickupTown: "Coonamble",
     pickupRegion: "Northern NSW",
     destination: "Tamworth backgrounding paddocks",
+    destinationTown: "Tamworth",
     destinationRegion: "New England",
     livestockCount: "40 Angus weaners",
     stockType: "Cattle",
@@ -615,14 +629,17 @@ export const transportJobs: TransportJob[] = [
     routeSummary: "Coonamble to Tamworth via Gunnedah",
     distanceKm: 310,
     estimatedDuration: "4 h 30 min",
+    rateGuide: "$1,050-$1,450 guide",
   },
   {
     id: "job-walgett-feedlot",
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
     pickup: "Walgett north yards",
+    pickupTown: "Walgett",
     pickupRegion: "Northern NSW",
     destination: "Wagga agistment block",
+    destinationTown: "Wagga Wagga",
     destinationRegion: "Riverina",
     livestockCount: "180 feeder steers",
     stockType: "Cattle",
@@ -634,6 +651,7 @@ export const transportJobs: TransportJob[] = [
     routeSummary: "Walgett to Wagga long-haul run",
     distanceKm: 760,
     estimatedDuration: "9 h 40 min",
+    rateGuide: "$3,200-$4,200 guide",
   },
 ];
 

@@ -55,8 +55,8 @@ export function TransportRoomClient({
         senderName: "PaddockME",
         senderRole: "System",
         body: interestSubmitted
-          ? `${driver.name} has expressed interest. Farmers can now confirm fit before assigning the movement.`
-          : "This movement is open. Driver can review logistics and express interest without seeing private agistment terms.",
+          ? `${driver.name} has put their hand up for this run. Farmers can now confirm fit before assigning the movement.`
+          : "This run is open. Driver can review logistics and put their hand up without seeing private agistment terms.",
         time: interestSubmitted ? "Now" : "Draft",
       },
     ];
@@ -78,6 +78,12 @@ export function TransportRoomClient({
           <div className="space-y-5">
             <Card className="bg-warm-white">
               <div className="mb-4 flex flex-wrap items-center gap-2">
+                {!isOpenJob && (
+                  <StatusBadge tone="success">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                    You're the confirmed driver
+                  </StatusBadge>
+                )}
                 <StatusBadge tone={interestSubmitted ? "success" : "info"}>
                   Status: {visibleStatus}
                 </StatusBadge>
@@ -90,7 +96,7 @@ export function TransportRoomClient({
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-sage-deep">
-                    Stock movement brief
+                    The run
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/85">
                     Driver-safe logistics for {job.livestockCount}. This is the
@@ -104,7 +110,7 @@ export function TransportRoomClient({
                     onClick={() => setInterestSubmitted(true)}
                     className="shrink-0"
                   >
-                    Express interest
+                    Put my hand up
                     <Truck className="h-4 w-4" aria-hidden />
                   </Button>
                 ) : (
@@ -122,6 +128,7 @@ export function TransportRoomClient({
                 <InfoTile icon={<CalendarDays />} label="Preferred date" value={job.preferredDate} />
                 <InfoTile icon={<Route />} label="Route" value={job.routeSummary} />
                 <InfoTile icon={<Clock3 />} label="Estimated time" value={job.estimatedDuration} />
+                <InfoTile icon={<Truck />} label="Rate guide" value={job.rateGuide} />
                 <InfoTile icon={<MapPin />} label="Distance" value={`${job.distanceKm} km`} />
                 <InfoTile
                   icon={<Truck />}
@@ -133,7 +140,7 @@ export function TransportRoomClient({
 
             <Card className="bg-warm-white">
               <h2 className="text-xl font-bold text-sage-deep">
-                Movement readiness
+                What's visible so far
               </h2>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <ReadinessRow label="Pickup and destination visible" complete />
@@ -147,7 +154,8 @@ export function TransportRoomClient({
               {isOpenJob && interestSubmitted && (
                 <div className="mt-4 rounded-xl border border-sage-glow bg-sage-mist px-4 py-3 text-sm leading-relaxed text-sage-deep">
                   Next prototype step: Farmer A and Farmer B confirm the driver,
-                  then this becomes the assigned three-party transport room.
+                  then this becomes the assigned three-party transport room. You
+                  will get a notification when Dale responds.
                 </div>
               )}
             </Card>

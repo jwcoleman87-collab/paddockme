@@ -57,7 +57,10 @@ export default function NewListingPage() {
                 </div>
               ))}
             </div>
-            <ButtonLink href="/listings" className="mt-5 w-full">
+            <ButtonLink
+              href="/listings/paddock-glenbarra?as=landowner&published=1"
+              className="mt-5 w-full"
+            >
               Publish listing
             </ButtonLink>
           </Card>

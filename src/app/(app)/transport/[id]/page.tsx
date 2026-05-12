@@ -34,7 +34,7 @@ export default async function TransportDetailPage({
         eyebrow="Transport room"
         title={
           job.state === "open"
-            ? "Open transport brief: review and express interest."
+            ? "Review the run."
             : "Transport chat room: coordinate the stock move."
         }
         description={

@@ -25,9 +25,7 @@ const SIZE_FILTERS: Array<{ label: string; value: TransportSize | "all" }> = [
 
 export function JobsExplorer() {
   const drivers = getDrivers();
-  const [selectedDriverId, setSelectedDriverId] = useState(
-    drivers.find((driver) => driver.id === "driver-2")?.id ?? drivers[0]?.id ?? ""
-  );
+  const selectedDriverId = drivers.find((driver) => driver.id === "driver-2")?.id ?? drivers[0]?.id ?? "";
   const [sizeFilter, setSizeFilter] = useState<TransportSize | "all">("all");
 
   const selectedDriver = drivers.find((driver) => driver.id === selectedDriverId) ?? drivers[0];
@@ -44,8 +42,8 @@ export function JobsExplorer() {
     <>
       <PageHeader
         eyebrow="Transport jobs"
-        title="Find stock movements that fit the truck."
-        description="A lightweight driver board for available transport work. It uses dummy capacity and region data for now."
+        title="Available runs for your truck."
+        description="Review open movements, check fit, then put your hand up. Farmers confirm the driver before the run becomes yours."
       />
 
       <div className="space-y-5">
@@ -53,18 +51,15 @@ export function JobsExplorer() {
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
-                View as driver
+                Driver view
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {drivers.map((driver) => (
-                  <SelectablePill
-                    key={driver.id}
-                    selected={driver.id === selectedDriver?.id}
-                    onClick={() => setSelectedDriverId(driver.id)}
-                  >
-                    {driver.name}
-                  </SelectablePill>
-                ))}
+              <div className="mt-3 rounded-2xl border border-sage/30 bg-sage-mist px-4 py-3">
+                <p className="font-bold text-sage-deep">
+                  {selectedDriver?.name ?? "Driver"}
+                </p>
+                <p className="mt-1 text-sm font-medium text-bark/85">
+                  Showing runs that match your truck profile and preferred regions.
+                </p>
               </div>
             </div>
 
@@ -107,6 +102,13 @@ export function JobsExplorer() {
             />
           </div>
 
+          <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            <PipelineTile label="Available" value={openJobs.length} />
+            <PipelineTile label="Interested" value={2} />
+            <PipelineTile label="Confirmed" value={1} />
+            <PipelineTile label="Completed" value={6} />
+          </div>
+
           {driverTrucks.length > 0 && (
             <div className="mt-5 rounded-2xl border border-mist bg-cream p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
@@ -134,5 +136,16 @@ export function JobsExplorer() {
         </div>
       </div>
     </>
+  );
+}
+
+function PipelineTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-mist bg-cream px-4 py-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-extrabold text-sage-deep">{value}</p>
+    </div>
   );
 }

@@ -25,7 +25,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
             <StatusBadge tone="neutral">{job.size} movement</StatusBadge>
           </div>
           <h2 className="text-2xl font-bold leading-tight text-sage-deep">
-            {job.pickupRegion} to {job.destinationRegion}
+            {job.pickupTown} to {job.destinationTown}
           </h2>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-bark/90">
             {job.livestockCount} moving from {job.pickup} to {job.destination}.
@@ -37,7 +37,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <InfoTile
           size="sm"
           icon={<Truck className="h-4 w-4" />}
@@ -63,7 +63,14 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
           size="sm"
           icon={<Gauge className="h-4 w-4" />}
           iconPlacement="inline"
-          label="Estimate"
+          label="Rate guide"
+          value={job.rateGuide}
+        />
+        <InfoTile
+          size="sm"
+          icon={<Gauge className="h-4 w-4" />}
+          iconPlacement="inline"
+          label="Time"
           value={job.estimatedDuration}
         />
       </div>
@@ -104,14 +111,15 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
 
       <div className="flex flex-col gap-3 border-t border-mist pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-medium text-bark/85">
-          Driver sees movement details only. Private agistment terms stay in the agreement workspace.
+          Tell the farmers you are available. They review your truck before
+          confirming the run.
         </p>
         <ButtonLink
           href={`/transport/${job.id}?driver=${match.driver.id}`}
           variant="secondary"
           className="shrink-0"
         >
-          Express interest
+          Put my hand up
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
       </div>

@@ -181,7 +181,7 @@ export function AgreementPanel({
 
       <div className="grid gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:grid-cols-3">
         <ButtonLink href={`/workspace/${agreement.id}`} variant="secondary">
-          Counter offer
+          Suggest a change
         </ButtonLink>
         <ButtonLink href="/transport/transport-glenbarra" variant="secondary">
           Open transport room
@@ -195,7 +195,7 @@ export function AgreementPanel({
               : `${agreement.sections.length - mutuallyAgreedCount} sections still need agreement`
           }
         >
-          Finalise agreement
+          Lock it in
         </Button>
       </div>
     </section>

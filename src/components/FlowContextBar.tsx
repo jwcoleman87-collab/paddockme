@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 type FlowContextBarProps = {
   step: string;
+  label?: string;
   backHref?: string;
   backLabel?: string;
   className?: string;
@@ -12,6 +13,7 @@ type FlowContextBarProps = {
 
 export function FlowContextBar({
   step,
+  label = "Your request",
   backHref,
   backLabel = "Back",
   className,
@@ -30,7 +32,7 @@ export function FlowContextBar({
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
-            Your request
+            {label}
           </p>
           <p className="mt-1 truncate text-sm font-bold text-sage-deep md:text-base">
             {summary}
