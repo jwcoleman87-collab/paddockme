@@ -68,6 +68,7 @@ export type AgreementArtefact = {
   kind: "photo" | "document" | "map";
   uploadedBy: "farmerA" | "farmerB";
   description: string;
+  sectionId?: string;
 };
 
 export type Agreement = {
@@ -342,6 +343,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "River-flat paddocks, autumn feed",
+        sectionId: "paddock",
       },
       {
         id: "art-water-photo",
@@ -349,6 +351,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "Permanent trough, gravity-fed",
+        sectionId: "paddock",
       },
       {
         id: "art-gate-photo",
@@ -356,6 +359,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "North gate, B-double compatible",
+        sectionId: "transport",
       },
       {
         id: "art-nlis-doc",
@@ -363,6 +367,7 @@ export const agreements: Agreement[] = [
         kind: "document",
         uploadedBy: "farmerA",
         description: "100 head, IDs uploaded",
+        sectionId: "stock",
       },
       {
         id: "art-vaccination-doc",
@@ -370,6 +375,7 @@ export const agreements: Agreement[] = [
         kind: "document",
         uploadedBy: "farmerA",
         description: "5-in-1 current, drench schedule",
+        sectionId: "stock",
       },
       {
         id: "art-property-map",
@@ -377,6 +383,7 @@ export const agreements: Agreement[] = [
         kind: "map",
         uploadedBy: "farmerB",
         description: "Paddock boundaries and access lanes",
+        sectionId: "paddock",
       },
     ],
   },

@@ -15,6 +15,7 @@ import {
   Banknote,
   Tractor,
 } from "lucide-react";
+import { ArtefactViewer } from "@/components/ArtefactViewer";
 import { ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -162,7 +163,11 @@ export function AgreementPanel({
         )}
 
         {activeTab === "artifacts" && (
-          <ArtefactStrip artefacts={agreement.artefacts} />
+          <ArtefactStrip
+            artefacts={agreement.artefacts}
+            sections={agreement.sections}
+            onSelectSection={onSelectSection}
+          />
         )}
 
         {activeTab === "timeline" && (
@@ -437,7 +442,19 @@ function PartyAgreeButton({
   );
 }
 
-function ArtefactStrip({ artefacts }: { artefacts: AgreementArtefact[] }) {
+function ArtefactStrip({
+  artefacts,
+  sections,
+  onSelectSection,
+}: {
+  artefacts: AgreementArtefact[];
+  sections: AgreementSection[];
+  onSelectSection: (sectionId: string) => void;
+}) {
+  const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
+  const activeArtefact =
+    artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
+
   if (artefacts.length === 0) return null;
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
@@ -451,14 +468,30 @@ function ArtefactStrip({ artefacts }: { artefacts: AgreementArtefact[] }) {
       </div>
       <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         {artefacts.map((artefact) => (
-          <ArtefactCard key={artefact.id} artefact={artefact} />
+          <ArtefactCard
+            key={artefact.id}
+            artefact={artefact}
+            onOpen={() => setActiveArtefactId(artefact.id)}
+          />
         ))}
       </div>
+      <ArtefactViewer
+        artefact={activeArtefact}
+        sections={sections}
+        onClose={() => setActiveArtefactId(null)}
+        onSelectSection={onSelectSection}
+      />
     </section>
   );
 }
 
-function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
+function ArtefactCard({
+  artefact,
+  onOpen,
+}: {
+  artefact: AgreementArtefact;
+  onOpen: () => void;
+}) {
   const Icon =
     artefact.kind === "photo"
       ? ImageIcon
@@ -469,7 +502,12 @@ function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
     artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B";
 
   return (
-    <article className="flex w-44 shrink-0 flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3">
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Open artefact: ${artefact.label}`}
+      className="flex w-44 shrink-0 cursor-pointer flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3 text-left transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+    >
       <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-sage/35 bg-sage-mist text-sage-deep">
         <Icon className="h-7 w-7" aria-hidden />
       </div>
@@ -480,6 +518,6 @@ function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
           From {uploader}
         </p>
       </div>
-    </article>
+    </button>
   );
 }
