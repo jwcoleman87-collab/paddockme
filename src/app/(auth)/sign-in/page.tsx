@@ -19,11 +19,11 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="font-display italic text-3xl text-sage-deep block mb-8"
+          className="font-display text-3xl text-sage-deep block mb-8"
         >
           PaddockME
         </Link>
-        <h1 className="font-display italic text-3xl text-sage-deep mb-2">
+        <h1 className="font-display text-3xl text-sage-deep mb-2">
           Welcome back.
         </h1>
         <p className="text-bark/70 mb-8">
