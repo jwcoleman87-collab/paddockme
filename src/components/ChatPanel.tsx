@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/Button";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,10 @@ type ChatPanelProps = {
   /** The section currently anchoring the chat. `null` means "no anchor - show all." */
   activeSectionId?: string | null;
   onSelectSection?: (sectionId: string | null) => void;
+  /** When provided, the composer becomes a functional input that calls this on send. */
+  onSend?: (body: string) => void;
+  /** Display name for whoever is composing (used as the placeholder hint). */
+  composerSenderLabel?: string;
 };
 
 export function ChatPanel({
@@ -28,11 +33,29 @@ export function ChatPanel({
   sections,
   activeSectionId,
   onSelectSection,
+  onSend,
+  composerSenderLabel,
 }: ChatPanelProps) {
+  const [draft, setDraft] = useState("");
   const hasSections = !!sections && sections.length > 0;
   const activeSection = hasSections
     ? sections!.find((section) => section.id === activeSectionId)
     : undefined;
+
+  const composerEnabled = !!onSend;
+  const composerPlaceholder = activeSection
+    ? `Reply in "${activeSection.label}"${composerSenderLabel ? ` as ${composerSenderLabel}` : ""}`
+    : composerSenderLabel
+      ? `Message as ${composerSenderLabel}`
+      : "Message field placeholder";
+
+  function handleSend(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed || !onSend) return;
+    onSend(trimmed);
+    setDraft("");
+  }
 
   return (
     <section className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]">
@@ -101,24 +124,35 @@ export function ChatPanel({
         })}
       </div>
 
-      <div className="border-t border-sage-deep/15 bg-cream/45 p-4">
+      <form
+        onSubmit={handleSend}
+        className="border-t border-sage-deep/15 bg-cream/45 p-4"
+      >
         <div className="flex items-center gap-3">
-          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm text-stone shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-            <span className="truncate">
-              {activeSection
-                ? `Reply in "${activeSection.label}"`
-                : "Message field placeholder"}
-            </span>
-          </div>
+          {composerEnabled ? (
+            <input
+              type="text"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={composerPlaceholder}
+              aria-label={composerPlaceholder}
+              className="min-h-12 flex-1 rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm text-bark shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition focus:border-sage focus:ring-2 focus:ring-sage-glow"
+            />
+          ) : (
+            <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/15 bg-warm-white px-4 text-sm text-stone shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+              <span className="truncate">{composerPlaceholder}</span>
+            </div>
+          )}
           <Button
-            type="button"
-            aria-label="Send placeholder message"
+            type="submit"
+            disabled={composerEnabled && draft.trim().length === 0}
+            aria-label={composerEnabled ? "Send message" : "Send placeholder message"}
             className="h-12 min-h-12 w-12 shrink-0 rounded-full p-0"
           >
             <Send className="h-4 w-4" aria-hidden />
           </Button>
         </div>
-      </div>
+      </form>
     </section>
   );
 }

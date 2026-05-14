@@ -26,20 +26,49 @@ const roles: { id: TransportRole; label: string; helper: string }[] = [
   },
 ];
 
+const senderProfile: Record<
+  TransportRole,
+  { id: string; name: string; role: string }
+> = {
+  farmerA: { id: "farmer-a", name: "Dale", role: "Livestock owner" },
+  farmerB: { id: "farmer-b", name: "Brett", role: "Landowner" },
+  driver: { id: "driver-1", name: "Wayne", role: "Driver" },
+};
+
 export function TransportClient({
   job,
-  messages,
+  messages: initialMessages,
 }: {
   job: TransportJob;
   messages: Message[];
 }) {
   const [role, setRole] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
 
   const sectionsForChat = job.sections.map((section) => ({
     id: section.id,
     label: section.label,
   }));
+
+  function sendMessage(body: string) {
+    const sender = senderProfile[role];
+    setMessages((current) => [
+      ...current,
+      {
+        id: `local-${Date.now()}`,
+        threadId: job.id,
+        senderId: sender.id,
+        senderName: sender.name,
+        senderRole: sender.role,
+        body,
+        time: shortTime(),
+        sectionId: activeSectionId ?? undefined,
+      },
+    ]);
+  }
+
+  const composerSenderLabel = `${senderProfile[role].name} (${senderProfile[role].role})`;
 
   return (
     <div className="space-y-5">
@@ -113,9 +142,18 @@ export function TransportClient({
             sections={sectionsForChat}
             activeSectionId={activeSectionId}
             onSelectSection={setActiveSectionId}
+            onSend={sendMessage}
+            composerSenderLabel={composerSenderLabel}
           />
         }
       />
     </div>
   );
+}
+
+function shortTime(): string {
+  return new Date().toLocaleTimeString("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

@@ -26,12 +26,29 @@ import type {
  */
 export function WorkspaceClient({
   agreement,
-  messages,
+  messages: initialMessages,
 }: {
   agreement: Agreement;
   messages: Message[];
 }) {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  function sendMessage(body: string) {
+    setMessages((current) => [
+      ...current,
+      {
+        id: `local-${Date.now()}`,
+        threadId: agreement.id,
+        senderId: "farmer-a",
+        senderName: "Dale",
+        senderRole: "Livestock owner",
+        body,
+        time: shortTime(),
+        sectionId: activeSectionId ?? undefined,
+      },
+    ]);
+  }
 
   const [sectionState, setSectionState] = useState<
     Record<string, SectionAgreementState>
@@ -154,6 +171,8 @@ export function WorkspaceClient({
           sections={agreement.sections}
           activeSectionId={activeSectionId}
           onSelectSection={setActiveSectionId}
+          onSend={sendMessage}
+          composerSenderLabel="Dale (Farmer A)"
         />
       }
     />
@@ -165,6 +184,13 @@ function nowLabel(): string {
     weekday: "short",
     day: "2-digit",
     month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function shortTime(): string {
+  return new Date().toLocaleTimeString("en-AU", {
     hour: "numeric",
     minute: "2-digit",
   });
