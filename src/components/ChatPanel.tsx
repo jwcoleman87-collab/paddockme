@@ -3,14 +3,19 @@
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/Button";
 import { cn } from "@/lib/utils";
-import type { AgreementSection, Message } from "@/lib/dummyData";
+import type { Message } from "@/lib/dummyData";
+
+type ChatSectionRef = {
+  id: string;
+  label: string;
+};
 
 type ChatPanelProps = {
   title?: string;
   messages: Message[];
   onlineCount?: number;
   /** When provided, renders a section chip row that anchors the conversation. */
-  sections?: AgreementSection[];
+  sections?: ChatSectionRef[];
   /** The section currently anchoring the chat. `null` means "no anchor - show all." */
   activeSectionId?: string | null;
   onSelectSection?: (sectionId: string | null) => void;

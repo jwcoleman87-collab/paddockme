@@ -102,6 +102,49 @@ export type Message = {
   sectionId?: string;
 };
 
+export type TransportRole = "farmerA" | "farmerB" | "driver";
+
+export type TransportSectionDetail = {
+  label: string;
+  value: string;
+  /** When true, this row is hidden from the Driver role (commercial / contract detail). */
+  privateFromDriver?: boolean;
+};
+
+export type TransportSectionStatus =
+  | "Pending"
+  | "Confirmed"
+  | "In progress"
+  | "Done";
+
+export type TransportSection = {
+  id: string;
+  label: string;
+  summary: string;
+  detail: TransportSectionDetail[];
+  status: TransportSectionStatus;
+  confirmations: {
+    farmerA: boolean;
+    farmerB: boolean;
+    driver: boolean;
+  };
+};
+
+export type TransportArtefact = {
+  id: string;
+  label: string;
+  kind: "photo" | "document" | "map";
+  uploadedBy: TransportRole;
+  description: string;
+  sectionId?: string;
+};
+
+export type TransportTimelineEntry = {
+  title: string;
+  detail: string;
+  complete: boolean;
+};
+
 export type TransportJob = {
   id: string;
   agreementId: string;
@@ -115,6 +158,15 @@ export type TransportJob = {
   driver: string;
   status: "Loading" | "In Transit" | "Arrived";
   routeSummary: string;
+  /** Visible to farmers only - hidden from driver per the driver-visibility rule. */
+  agreementContext: {
+    duration: string;
+    weeksRemaining: number;
+    agreementStatus: string;
+  };
+  sections: TransportSection[];
+  artefacts: TransportArtefact[];
+  timeline: TransportTimelineEntry[];
 };
 
 export const farmers: Farmer[] = [
@@ -436,6 +488,148 @@ export const transportJobs: TransportJob[] = [
     driver: "Wayne Hayes",
     status: "Loading",
     routeSummary: "Central West to Gundagai via Wagga corridor",
+    agreementContext: {
+      duration: "3 months",
+      weeksRemaining: 12,
+      agreementStatus: "Negotiating",
+    },
+    sections: [
+      {
+        id: "pickup",
+        label: "Pickup",
+        summary: "Dale Morgan property, Friday 22 May from 7 AM",
+        status: "Confirmed",
+        confirmations: { farmerA: true, farmerB: false, driver: true },
+        detail: [
+          { label: "Property", value: "Dale Morgan, Central West NSW" },
+          { label: "Loading window", value: "Friday 22 May, from 7:00 AM" },
+          { label: "Yards", value: "Loading race + head bail, B-double access" },
+          { label: "On-site contact", value: "Dale Morgan, 04xx xxx xxx" },
+        ],
+      },
+      {
+        id: "manifest",
+        label: "Stock manifest",
+        summary: "100 Angus cattle, ~380 kg head, NLIS tagged",
+        status: "Pending",
+        confirmations: { farmerA: true, farmerB: false, driver: false },
+        detail: [
+          { label: "Stock", value: "100 Angus cattle" },
+          { label: "Average weight", value: "~380 kg head, ~38 t total" },
+          { label: "Identification", value: "NLIS tagged, list attached" },
+          {
+            label: "Welfare notes",
+            value: "Drenched 14 days prior, last fed 4 h before load",
+          },
+        ],
+      },
+      {
+        id: "route",
+        label: "Route",
+        summary: "Central West to Gundagai via Wagga, ~280 km",
+        status: "Confirmed",
+        confirmations: { farmerA: true, farmerB: true, driver: true },
+        detail: [
+          { label: "Corridor", value: "Central West to Gundagai via Wagga" },
+          { label: "Distance", value: "~280 km" },
+          { label: "ETA", value: "5 to 6 hours including spell" },
+          { label: "Mandatory spell", value: "30 min at Cootamundra" },
+        ],
+      },
+      {
+        id: "delivery",
+        label: "Delivery",
+        summary: "Glenbarra North gate, Brett on site",
+        status: "Pending",
+        confirmations: { farmerA: false, farmerB: true, driver: false },
+        detail: [
+          { label: "Property", value: "Glenbarra River Paddocks" },
+          { label: "Gate", value: "North gate (B-double compatible)" },
+          { label: "On-site contact", value: "Brett Donnelly, 04xx xxx xxx" },
+          { label: "Wet weather", value: "Avoid creek crossing" },
+        ],
+      },
+      {
+        id: "return",
+        label: "Return move",
+        summary: "To be scheduled when agistment ends",
+        status: "Pending",
+        confirmations: { farmerA: false, farmerB: false, driver: false },
+        detail: [
+          { label: "Status", value: "Placeholder - book at end of agistment" },
+          { label: "Anchor date", value: "End of agreement (around 22 Aug)" },
+        ],
+      },
+    ],
+    artefacts: [
+      {
+        id: "transport-nvd",
+        label: "NVD (vendor declaration)",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "Signed declaration covering 100 head, current.",
+        sectionId: "manifest",
+      },
+      {
+        id: "transport-journey-plan",
+        label: "Journey plan",
+        kind: "document",
+        uploadedBy: "driver",
+        description: "Wagga corridor route, Cootamundra spell, ETA 1:30 PM.",
+        sectionId: "route",
+      },
+      {
+        id: "transport-manifest-doc",
+        label: "Loading manifest",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "100 head, NLIS list, mob notes.",
+        sectionId: "manifest",
+      },
+      {
+        id: "transport-gate-photo",
+        label: "North gate photo",
+        kind: "photo",
+        uploadedBy: "farmerB",
+        description: "B-double access from sealed road, no creek crossing.",
+        sectionId: "delivery",
+      },
+      {
+        id: "transport-route-map",
+        label: "Route map",
+        kind: "map",
+        uploadedBy: "driver",
+        description: "Central West to Gundagai via Wagga corridor.",
+        sectionId: "route",
+      },
+    ],
+    timeline: [
+      {
+        title: "Job booked",
+        detail: "Wayne accepted the load on Tuesday.",
+        complete: true,
+      },
+      {
+        title: "Loading scheduled",
+        detail: "Friday 22 May, 7 AM at Dale's yards.",
+        complete: true,
+      },
+      {
+        title: "In transit",
+        detail: "Departure pending confirmation from Brett at delivery gate.",
+        complete: false,
+      },
+      {
+        title: "Arrived",
+        detail: "Head count off-truck recorded at Glenbarra.",
+        complete: false,
+      },
+      {
+        title: "Return move scheduled",
+        detail: "Booked at end of agistment (around 22 Aug).",
+        complete: false,
+      },
+    ],
   },
 ];
 

@@ -8,10 +8,6 @@ import {
   MessageSquare,
   X,
 } from "lucide-react";
-import type {
-  AgreementArtefact,
-  AgreementSection,
-} from "@/lib/dummyData";
 
 const kindIcons = {
   photo: ImageIcon,
@@ -35,9 +31,27 @@ const kindPreviewHints = {
 const focusableSelector =
   'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
+export type ViewableArtefactKind = "photo" | "document" | "map";
+
+export type ViewableArtefact = {
+  id: string;
+  label: string;
+  kind: ViewableArtefactKind;
+  description: string;
+  /** Display name for whoever uploaded it (e.g., "Farmer A", "Driver"). */
+  uploaderLabel: string;
+  /** Optional section this artefact is discussed in (id matches an anchorable section). */
+  sectionId?: string;
+};
+
+export type ViewableSection = {
+  id: string;
+  label: string;
+};
+
 type ArtefactViewerProps = {
-  artefact: AgreementArtefact | null;
-  sections: AgreementSection[];
+  artefact: ViewableArtefact | null;
+  sections: ViewableSection[];
   onClose: () => void;
   onSelectSection: (sectionId: string) => void;
 };
@@ -94,7 +108,6 @@ export function ArtefactViewer({
 
   const Icon = kindIcons[artefact.kind];
   const kindLabel = kindLabels[artefact.kind];
-  const uploader = artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B";
   const linkedSection = artefact.sectionId
     ? sections.find((section) => section.id === artefact.sectionId)
     : undefined;
@@ -149,7 +162,7 @@ export function ArtefactViewer({
           </div>
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-            <MetaRow label="Uploaded by" value={uploader} />
+            <MetaRow label="Uploaded by" value={artefact.uploaderLabel} />
             <MetaRow label="Type" value={kindLabel} />
           </dl>
         </div>

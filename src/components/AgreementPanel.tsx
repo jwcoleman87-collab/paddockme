@@ -15,7 +15,7 @@ import {
   Banknote,
   Tractor,
 } from "lucide-react";
-import { ArtefactViewer } from "@/components/ArtefactViewer";
+import { ArtefactViewer, type ViewableArtefact } from "@/components/ArtefactViewer";
 import { ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -442,6 +442,17 @@ function PartyAgreeButton({
   );
 }
 
+function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
+  return {
+    id: artefact.id,
+    label: artefact.label,
+    kind: artefact.kind,
+    description: artefact.description,
+    uploaderLabel: artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B",
+    sectionId: artefact.sectionId,
+  };
+}
+
 function ArtefactStrip({
   artefacts,
   sections,
@@ -476,8 +487,11 @@ function ArtefactStrip({
         ))}
       </div>
       <ArtefactViewer
-        artefact={activeArtefact}
-        sections={sections}
+        artefact={activeArtefact ? toViewableArtefact(activeArtefact) : null}
+        sections={sections.map((section) => ({
+          id: section.id,
+          label: section.label,
+        }))}
         onClose={() => setActiveArtefactId(null)}
         onSelectSection={onSelectSection}
       />
