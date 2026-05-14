@@ -5,10 +5,12 @@ import {
   ArrowRight,
   CirclePlus,
   MapPin,
+  Sparkles,
   Sprout,
   Tractor,
   Truck,
   UserRound,
+  X,
 } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -46,13 +48,16 @@ export function AgreementsClient({
   agreements,
   transportJobs,
   listings,
+  showOnboardingWelcome = false,
 }: {
   farmers: Farmer[];
   agreements: Agreement[];
   transportJobs: TransportJob[];
   listings: PaddockListing[];
+  showOnboardingWelcome?: boolean;
 }) {
   const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
   const visibleAgreements = useMemo(() => {
@@ -78,6 +83,35 @@ export function AgreementsClient({
 
   return (
     <>
+      {showOnboardingWelcome && !welcomeDismissed && (
+        <section
+          aria-label="Welcome"
+          className="mb-5 flex items-start gap-3 rounded-2xl border border-sage-glow bg-sage-mist/55 p-4"
+        >
+          <Sparkles
+            className="mt-0.5 h-5 w-5 shrink-0 text-sage-deep"
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-sage-deep">
+              Welcome to PaddockME.
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-bark/75">
+              Your answers are noted. While persistence is still wiring up,
+              browse the personas below to see how the home view adapts to
+              each side of the marketplace.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWelcomeDismissed(true)}
+            aria-label="Dismiss welcome"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-mist bg-warm-white text-bark transition hover:border-sage/40 hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </section>
+      )}
       <section
         aria-label="Persona switcher"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"

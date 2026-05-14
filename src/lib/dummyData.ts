@@ -989,6 +989,10 @@ export function getTransportJobForAgreement(agreementId: string) {
   return transportJobs.find((job) => job.agreementId === agreementId);
 }
 
+export function getAgreementForListing(listingId: string) {
+  return agreements.find((agreement) => agreement.listingId === listingId);
+}
+
 export function getMessages(threadId: string) {
   return workspaceMessages.filter((message) => message.threadId === threadId);
 }

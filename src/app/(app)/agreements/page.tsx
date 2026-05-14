@@ -8,7 +8,18 @@ import {
 } from "@/lib/dummyData";
 import { AgreementsClient } from "./AgreementsClient";
 
-export default function AgreementsPage() {
+type SearchParams = {
+  onboarded?: string;
+};
+
+export default async function AgreementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const showOnboardingWelcome = params.onboarded === "true";
+
   return (
     <>
       <PageHeader
@@ -23,6 +34,7 @@ export default function AgreementsPage() {
         agreements={agreements}
         transportJobs={transportJobs}
         listings={paddockListings}
+        showOnboardingWelcome={showOnboardingWelcome}
       />
     </>
   );
