@@ -71,13 +71,29 @@ export type AgreementArtefact = {
   sectionId?: string;
 };
 
+export type AgreementLifecycleState =
+  | "Draft"
+  | "Negotiating"
+  | "Ready to finalise"
+  | "Active"
+  | "Completed"
+  | "Cancelled";
+
+export type AgreementLifecycleEvent = {
+  at: string;
+  from: AgreementLifecycleState | null;
+  to: AgreementLifecycleState;
+  byParty: "Farmer A" | "Farmer B" | "System";
+  note?: string;
+};
+
 export type Agreement = {
   id: string;
   listingId: string;
   requestId: string;
   farmerAId: string;
   farmerBId: string;
-  status: "Negotiating" | "Ready to finalise" | "Active";
+  status: AgreementLifecycleState;
   livestock: string;
   duration: string;
   feed: string;
@@ -89,6 +105,7 @@ export type Agreement = {
   readinessChecklist: { label: string; complete: boolean }[];
   sections: AgreementSection[];
   artefacts: AgreementArtefact[];
+  lifecycleHistory: AgreementLifecycleEvent[];
 };
 
 export type Message = {
@@ -436,6 +453,22 @@ export const agreements: Agreement[] = [
         uploadedBy: "farmerB",
         description: "Paddock boundaries and access lanes",
         sectionId: "paddock",
+      },
+    ],
+    lifecycleHistory: [
+      {
+        at: "Mon 12 May, 8:42 AM",
+        from: null,
+        to: "Draft",
+        byParty: "Farmer A",
+        note: "Request matched to Glenbarra River Paddocks.",
+      },
+      {
+        at: "Mon 12 May, 4:11 PM",
+        from: "Draft",
+        to: "Negotiating",
+        byParty: "Farmer B",
+        note: "Brett opened the workspace and added paddock detail.",
       },
     ],
   },

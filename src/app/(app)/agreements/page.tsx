@@ -4,7 +4,24 @@ import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
-import { agreements, getFarmer, getListing } from "@/lib/dummyData";
+import {
+  agreements,
+  getFarmer,
+  getListing,
+  type AgreementLifecycleState,
+} from "@/lib/dummyData";
+
+const lifecycleTone: Record<
+  AgreementLifecycleState,
+  "success" | "warning" | "info" | "neutral"
+> = {
+  Draft: "neutral",
+  Negotiating: "warning",
+  "Ready to finalise": "info",
+  Active: "success",
+  Completed: "info",
+  Cancelled: "neutral",
+};
 
 export default function AgreementsPage() {
   const currentUser = getFarmer("farmer-a");
@@ -64,7 +81,9 @@ export default function AgreementsPage() {
           return (
             <Card key={agreement.id} className="flex flex-col gap-5">
               <div>
-                <StatusBadge tone="warning">{agreement.status}</StatusBadge>
+                <StatusBadge tone={lifecycleTone[agreement.status]}>
+                  {agreement.status}
+                </StatusBadge>
                 <h2 className="mt-3 text-xl font-bold text-sage-deep">
                   {listing.title}
                 </h2>

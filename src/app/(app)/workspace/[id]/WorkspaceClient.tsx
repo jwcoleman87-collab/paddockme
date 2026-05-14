@@ -7,16 +7,22 @@ import {
 } from "@/components/AgreementPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
-import type { Agreement, Message } from "@/lib/dummyData";
+import type {
+  Agreement,
+  AgreementLifecycleEvent,
+  AgreementLifecycleState,
+  Message,
+} from "@/lib/dummyData";
 
 /**
  * Client wrapper for the workspace page.
  *
- * Owns two pieces of UI-only state shared between AgreementPanel and ChatPanel:
- *   1. `activeSectionId` - which agreement section is anchoring the chat
- *   2. `sectionState`    - per-section, per-party "agree" toggles
+ * Owns three pieces of UI-only state shared between AgreementPanel and ChatPanel:
+ *   1. `activeSectionId`     - which agreement section is anchoring the chat
+ *   2. `sectionState`        - per-section, per-party "agree" toggles
+ *   3. `lifecycleState`      - the current lifecycle state + audit history
  *
- * Neither is persisted. Persistence + RLS lands in Build 02 Steps 3-4 (separate session).
+ * None of this is persisted. Persistence + RLS lands in Build 02 Step 4 (needs Supabase).
  */
 export function WorkspaceClient({
   agreement,
@@ -38,6 +44,13 @@ export function WorkspaceClient({
     )
   );
 
+  const [lifecycleState, setLifecycleState] = useState<AgreementLifecycleState>(
+    agreement.status
+  );
+  const [lifecycleHistory, setLifecycleHistory] = useState<
+    AgreementLifecycleEvent[]
+  >(agreement.lifecycleHistory);
+
   const toggleAgreement = (sectionId: string, party: "A" | "B") => {
     setSectionState((current) => {
       const previous = current[sectionId] ?? {
@@ -49,6 +62,39 @@ export function WorkspaceClient({
           ? { ...previous, agreedByA: !previous.agreedByA }
           : { ...previous, agreedByB: !previous.agreedByB };
       return { ...current, [sectionId]: next };
+    });
+  };
+
+  const advanceLifecycle = (to: AgreementLifecycleState) => {
+    setLifecycleState((from) => {
+      setLifecycleHistory((history) => [
+        ...history,
+        {
+          at: nowLabel(),
+          from,
+          to,
+          byParty: "Farmer A",
+          note: `Advanced from ${from} to ${to}.`,
+        },
+      ]);
+      return to;
+    });
+  };
+
+  const cancelLifecycle = () => {
+    setLifecycleState((from) => {
+      if (from === "Cancelled" || from === "Completed") return from;
+      setLifecycleHistory((history) => [
+        ...history,
+        {
+          at: nowLabel(),
+          from,
+          to: "Cancelled",
+          byParty: "Farmer A",
+          note: "Agreement cancelled from the workspace.",
+        },
+      ]);
+      return "Cancelled";
     });
   };
 
@@ -93,6 +139,10 @@ export function WorkspaceClient({
             sectionState={sectionState}
             onToggleAgreement={toggleAgreement}
             timelineItems={timelineItems}
+            lifecycleState={lifecycleState}
+            lifecycleHistory={lifecycleHistory}
+            onAdvanceLifecycle={advanceLifecycle}
+            onCancelLifecycle={cancelLifecycle}
           />
         </div>
       }
@@ -108,4 +158,14 @@ export function WorkspaceClient({
       }
     />
   );
+}
+
+function nowLabel(): string {
+  return new Date().toLocaleString("en-AU", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

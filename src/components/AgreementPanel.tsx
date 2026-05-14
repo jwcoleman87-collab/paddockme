@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   AlertTriangle,
+  ArrowRight,
+  Ban,
   CheckCircle,
   Circle,
   FileText,
@@ -16,14 +18,17 @@ import {
   Tractor,
 } from "lucide-react";
 import { ArtefactViewer, type ViewableArtefact } from "@/components/ArtefactViewer";
-import { ButtonLink } from "@/components/Button";
+import { Button, ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
+import { LifecycleStepper } from "@/components/LifecycleStepper";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { cn } from "@/lib/utils";
 import type {
   Agreement,
   AgreementArtefact,
+  AgreementLifecycleEvent,
+  AgreementLifecycleState,
   AgreementSection,
 } from "@/lib/dummyData";
 
@@ -39,9 +44,18 @@ type AgreementPanelProps = {
   sectionState: Record<string, SectionAgreementState>;
   onToggleAgreement: (sectionId: string, party: "A" | "B") => void;
   timelineItems?: TimelineItem[];
+  lifecycleState: AgreementLifecycleState;
+  lifecycleHistory: AgreementLifecycleEvent[];
+  onAdvanceLifecycle: (to: AgreementLifecycleState) => void;
+  onCancelLifecycle: () => void;
 };
 
-type AgreementTab = "overview" | "terms" | "artifacts" | "timeline";
+type AgreementTab =
+  | "overview"
+  | "terms"
+  | "artifacts"
+  | "lifecycle"
+  | "timeline";
 
 type TimelineItem = {
   title: string;
@@ -63,8 +77,58 @@ const agreementTabs = [
   { id: "overview", label: "Overview" },
   { id: "terms", label: "Terms" },
   { id: "artifacts", label: "Artifacts" },
+  { id: "lifecycle", label: "Lifecycle" },
   { id: "timeline", label: "Timeline" },
 ] satisfies { id: AgreementTab; label: string }[];
+
+const lifecycleTone: Record<
+  AgreementLifecycleState,
+  "success" | "warning" | "info" | "neutral"
+> = {
+  Draft: "neutral",
+  Negotiating: "warning",
+  "Ready to finalise": "info",
+  Active: "success",
+  Completed: "info",
+  Cancelled: "neutral",
+};
+
+const forwardLifecycle: AgreementLifecycleState[] = [
+  "Draft",
+  "Negotiating",
+  "Ready to finalise",
+  "Active",
+  "Completed",
+];
+
+function nextLifecycleState(
+  current: AgreementLifecycleState
+): AgreementLifecycleState | null {
+  const index = forwardLifecycle.indexOf(current);
+  if (index < 0 || index >= forwardLifecycle.length - 1) return null;
+  return forwardLifecycle[index + 1];
+}
+
+const advanceLabels: Partial<
+  Record<AgreementLifecycleState, { label: string; helper: string }>
+> = {
+  Negotiating: {
+    label: "Send to Farmer B",
+    helper: "Move the draft into negotiation.",
+  },
+  "Ready to finalise": {
+    label: "Mark ready to finalise",
+    helper: "All sections need both-parties-agree first.",
+  },
+  Active: {
+    label: "Activate agreement",
+    helper: "Locks the agreed terms and starts the agistment clock.",
+  },
+  Completed: {
+    label: "Complete agreement",
+    helper: "The agistment period has ended.",
+  },
+};
 
 const workspaceCardClass =
   "min-w-0 overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
@@ -76,6 +140,10 @@ export function AgreementPanel({
   sectionState,
   onToggleAgreement,
   timelineItems = [],
+  lifecycleState,
+  lifecycleHistory,
+  onAdvanceLifecycle,
+  onCancelLifecycle,
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
 
@@ -83,13 +151,21 @@ export function AgreementPanel({
     const state = sectionState[section.id] ?? section;
     return state.agreedByA && state.agreedByB ? count + 1 : count;
   }, 0);
+  const allSectionsAgreed =
+    mutuallyAgreedCount === agreement.sections.length;
+  const nextState = nextLifecycleState(lifecycleState);
+  const advanceMeta = nextState ? advanceLabels[nextState] : undefined;
+  const isTerminal =
+    lifecycleState === "Completed" || lifecycleState === "Cancelled";
+  const advanceBlocked =
+    nextState === "Ready to finalise" && !allSectionsAgreed;
 
   return (
     <section className={workspaceCardClass}>
       <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
         <div className="mb-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <StatusBadge tone="warning">
-            Agreement status: {agreement.status}
+          <StatusBadge tone={lifecycleTone[lifecycleState]}>
+            Status: {lifecycleState}
           </StatusBadge>
           {agreement.transportRequired && (
             <StatusBadge tone="info">
@@ -170,6 +246,16 @@ export function AgreementPanel({
           />
         )}
 
+        {activeTab === "lifecycle" && (
+          <LifecycleTabContent
+            currentState={lifecycleState}
+            history={lifecycleHistory}
+            allSectionsAgreed={allSectionsAgreed}
+            sectionCount={agreement.sections.length}
+            agreedCount={mutuallyAgreedCount}
+          />
+        )}
+
         {activeTab === "timeline" && (
           <div className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
             {timelineItems.length > 0 ? (
@@ -183,16 +269,125 @@ export function AgreementPanel({
         )}
       </div>
 
-      <div className="grid gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:grid-cols-3">
-        <ButtonLink href={`/workspace/${agreement.id}`} variant="secondary">
-          Counter offer
-        </ButtonLink>
+      <div className="flex flex-col gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:flex-row sm:items-center sm:justify-between">
         <ButtonLink href="/transport/transport-glenbarra" variant="secondary">
           Open transport room
         </ButtonLink>
-        <ButtonLink href="/agreements">Finalise agreement</ButtonLink>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {!isTerminal && nextState && advanceMeta && (
+            <Button
+              type="button"
+              onClick={() => onAdvanceLifecycle(nextState)}
+              disabled={advanceBlocked}
+              title={
+                advanceBlocked
+                  ? `Mutual agreement needed on every section first (${mutuallyAgreedCount} of ${agreement.sections.length}).`
+                  : advanceMeta.helper
+              }
+            >
+              {advanceMeta.label}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Button>
+          )}
+          {!isTerminal && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onCancelLifecycle}
+              className="text-terra hover:bg-terra-light/60"
+            >
+              <Ban className="h-4 w-4" aria-hidden />
+              Cancel agreement
+            </Button>
+          )}
+          {isTerminal && (
+            <p className="text-sm font-semibold text-bark/70">
+              Agreement is {lifecycleState.toLowerCase()} - no further actions.
+            </p>
+          )}
+        </div>
       </div>
     </section>
+  );
+}
+
+function LifecycleTabContent({
+  currentState,
+  history,
+  allSectionsAgreed,
+  sectionCount,
+  agreedCount,
+}: {
+  currentState: AgreementLifecycleState;
+  history: AgreementLifecycleEvent[];
+  allSectionsAgreed: boolean;
+  sectionCount: number;
+  agreedCount: number;
+}) {
+  const nextState = nextLifecycleState(currentState);
+  const isTerminal =
+    currentState === "Completed" || currentState === "Cancelled";
+
+  return (
+    <div className="space-y-5">
+      <LifecycleStepper current={currentState} />
+
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+          {isTerminal ? "Final state" : "Next step"}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-bark/75">
+          {isTerminal
+            ? currentState === "Completed"
+              ? "The agistment ran to its end and the agreement is closed."
+              : "This agreement was cancelled and is no longer active."
+            : nextState === "Ready to finalise"
+              ? allSectionsAgreed
+                ? "Every section has both-parties-agree. You can move this agreement to ready-to-finalise."
+                : `${agreedCount} of ${sectionCount} sections mutually agreed. Both parties must agree on every section before this can be marked ready.`
+              : nextState
+                ? `From ${currentState}, the next forward state is ${nextState}.`
+                : "No further forward transitions defined."}
+        </p>
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
+          Audit history
+        </h3>
+        {history.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/60 px-4 py-6 text-center text-sm text-bark/60">
+            No lifecycle events recorded yet.
+          </p>
+        ) : (
+          <ol className="space-y-3">
+            {history.map((event, index) => (
+              <li
+                key={`${event.at}-${index}`}
+                className="rounded-xl border border-sage-deep/10 bg-warm-white px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-semibold text-bark">
+                    {event.from ? `${event.from} -> ${event.to}` : `Created as ${event.to}`}
+                  </span>
+                  <span className="rounded-full bg-sage-mist px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-sage-deep">
+                    {event.byParty}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
+                  {event.at}
+                </p>
+                {event.note && (
+                  <p className="mt-2 text-sm leading-relaxed text-bark/75">
+                    {event.note}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
   );
 }
 
