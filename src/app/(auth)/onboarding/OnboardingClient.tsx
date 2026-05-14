@@ -109,7 +109,9 @@ export function OnboardingClient() {
   }
 
   function finish() {
-    router.push("/agreements?onboarded=true");
+    const params = new URLSearchParams({ onboarded: "true" });
+    if (state.role) params.set("role", state.role);
+    router.push(`/agreements?${params.toString()}`);
   }
 
   return (

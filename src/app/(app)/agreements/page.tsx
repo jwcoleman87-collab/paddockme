@@ -5,11 +5,19 @@ import {
   farmers,
   paddockListings,
   transportJobs,
+  type Farmer,
 } from "@/lib/dummyData";
 import { AgreementsClient } from "./AgreementsClient";
 
 type SearchParams = {
   onboarded?: string;
+  role?: string;
+};
+
+const roleToProfileRole: Record<string, Farmer["role"]> = {
+  livestock: "Livestock Owner",
+  landowner: "Landowner",
+  transport: "Transport Provider",
 };
 
 export default async function AgreementsPage({
@@ -19,6 +27,12 @@ export default async function AgreementsPage({
 }) {
   const params = await searchParams;
   const showOnboardingWelcome = params.onboarded === "true";
+  const hintedRole = params.role
+    ? roleToProfileRole[params.role]
+    : undefined;
+  const initialFarmerId = hintedRole
+    ? farmers.find((farmer) => farmer.role === hintedRole)?.id
+    : undefined;
 
   return (
     <>
@@ -35,6 +49,7 @@ export default async function AgreementsPage({
         transportJobs={transportJobs}
         listings={paddockListings}
         showOnboardingWelcome={showOnboardingWelcome}
+        initialFarmerId={initialFarmerId}
       />
     </>
   );

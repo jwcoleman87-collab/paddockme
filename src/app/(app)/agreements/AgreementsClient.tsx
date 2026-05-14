@@ -49,14 +49,18 @@ export function AgreementsClient({
   transportJobs,
   listings,
   showOnboardingWelcome = false,
+  initialFarmerId,
 }: {
   farmers: Farmer[];
   agreements: Agreement[];
   transportJobs: TransportJob[];
   listings: PaddockListing[];
   showOnboardingWelcome?: boolean;
+  initialFarmerId?: string;
 }) {
-  const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
+  const [activeId, setActiveId] = useState<string>(
+    initialFarmerId ?? farmers[0]?.id ?? ""
+  );
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
