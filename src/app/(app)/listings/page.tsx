@@ -2,9 +2,31 @@ import { CirclePlus } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
 import { paddockListings } from "@/lib/dummyData";
-import { ListingsClient } from "./ListingsClient";
+import { ListingsClient, type InitialFilters } from "./ListingsClient";
 
-export default function ListingsPage() {
+type SearchParams = {
+  stock?: string;
+  regions?: string;
+};
+
+export default async function ListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const initialFilters: InitialFilters = {};
+
+  if (params.stock) {
+    initialFilters.stockTypes = [params.stock];
+  }
+  if (params.regions) {
+    initialFilters.regions = params.regions
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
   return (
     <>
       <PageHeader
@@ -19,7 +41,10 @@ export default function ListingsPage() {
         }
       />
 
-      <ListingsClient listings={paddockListings} />
+      <ListingsClient
+        listings={paddockListings}
+        initialFilters={initialFilters}
+      />
     </>
   );
 }

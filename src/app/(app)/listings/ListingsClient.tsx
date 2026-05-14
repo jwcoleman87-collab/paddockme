@@ -23,6 +23,8 @@ type FilterState = {
   verifiedOnly: boolean;
 };
 
+export type InitialFilters = Partial<FilterState>;
+
 const emptyFilters: FilterState = {
   regions: [],
   stockTypes: [],
@@ -69,8 +71,17 @@ const filterGroups: {
   },
 ];
 
-export function ListingsClient({ listings }: { listings: PaddockListing[] }) {
-  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+export function ListingsClient({
+  listings,
+  initialFilters,
+}: {
+  listings: PaddockListing[];
+  initialFilters?: InitialFilters;
+}) {
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    ...emptyFilters,
+    ...initialFilters,
+  }));
 
   const filtered = useMemo(
     () => listings.filter((listing) => matchesFilters(listing, filters)),

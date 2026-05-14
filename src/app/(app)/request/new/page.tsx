@@ -49,7 +49,12 @@ export default function NewRequestPage() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/listings?request=request-100-cattle");
+    const params = new URLSearchParams();
+    params.set("stock", stockType);
+    if (selectedRegions.length > 0) {
+      params.set("regions", selectedRegions.join(","));
+    }
+    router.push(`/listings?${params.toString()}`);
   }
 
   return (
