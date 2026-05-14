@@ -54,7 +54,7 @@ export default function NewRequestPage() {
     if (selectedRegions.length > 0) {
       params.set("regions", selectedRegions.join(","));
     }
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/matches?${params.toString()}`);
   }
 
   return (
