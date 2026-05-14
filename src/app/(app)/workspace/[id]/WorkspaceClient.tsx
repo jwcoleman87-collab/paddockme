@@ -7,6 +7,7 @@ import {
 } from "@/components/AgreementPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
+import { getTransportJobForAgreement } from "@/lib/dummyData";
 import type {
   Agreement,
   AgreementLifecycleEvent,
@@ -33,6 +34,10 @@ export function WorkspaceClient({
 }) {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const linkedTransport = getTransportJobForAgreement(agreement.id);
+  const transportHref = linkedTransport
+    ? `/transport/${linkedTransport.id}`
+    : undefined;
 
   function sendMessage(body: string) {
     setMessages((current) => [
@@ -160,6 +165,7 @@ export function WorkspaceClient({
             lifecycleHistory={lifecycleHistory}
             onAdvanceLifecycle={advanceLifecycle}
             onCancelLifecycle={cancelLifecycle}
+            transportHref={transportHref}
           />
         </div>
       }

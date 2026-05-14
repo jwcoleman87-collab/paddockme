@@ -140,6 +140,7 @@ export function TransportPanel({
             artefacts={job.artefacts}
             sections={job.sections}
             onSelectSection={onSelectSection}
+            activeSectionId={activeSectionId}
           />
         )}
 
@@ -450,14 +451,23 @@ function TransportArtefactStrip({
   artefacts,
   sections,
   onSelectSection,
+  activeSectionId,
 }: {
   artefacts: TransportArtefact[];
   sections: TransportSection[];
   onSelectSection: (sectionId: string) => void;
+  activeSectionId: string | null;
 }) {
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
+  const matchingCount = activeSectionId
+    ? artefacts.filter((artefact) => artefact.sectionId === activeSectionId)
+        .length
+    : artefacts.length;
+  const activeSectionLabel = activeSectionId
+    ? sections.find((section) => section.id === activeSectionId)?.label
+    : undefined;
 
   if (artefacts.length === 0) {
     return (
@@ -480,12 +490,14 @@ function TransportArtefactStrip({
 
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Transport artefacts
         </h3>
         <span className="text-xs text-bark/55">
-          {artefacts.length} item{artefacts.length === 1 ? "" : "s"}
+          {activeSectionLabel
+            ? `${matchingCount} for "${activeSectionLabel}"`
+            : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
         </span>
       </div>
       <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
@@ -494,6 +506,9 @@ function TransportArtefactStrip({
             key={artefact.id}
             artefact={artefact}
             onOpen={() => setActiveArtefactId(artefact.id)}
+            dimmed={
+              !!activeSectionId && artefact.sectionId !== activeSectionId
+            }
           />
         ))}
       </div>
@@ -513,9 +528,11 @@ function TransportArtefactStrip({
 function TransportArtefactCard({
   artefact,
   onOpen,
+  dimmed,
 }: {
   artefact: TransportArtefact;
   onOpen: () => void;
+  dimmed?: boolean;
 }) {
   const kindIcon = artefact.kind;
   const Icon =
@@ -531,7 +548,10 @@ function TransportArtefactCard({
       type="button"
       onClick={onOpen}
       aria-label={`Open transport artefact: ${artefact.label}`}
-      className="flex w-44 shrink-0 cursor-pointer flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3 text-left transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+      className={cn(
+        "flex w-44 shrink-0 cursor-pointer flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3 text-left transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        dimmed && "opacity-55"
+      )}
     >
       <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-sage/35 bg-sage-mist text-sage-deep">
         <Icon className="h-7 w-7" aria-hidden />

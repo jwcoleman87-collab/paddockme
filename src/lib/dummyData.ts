@@ -985,6 +985,10 @@ export function getTransportJob(id: string) {
   return transportJobs.find((job) => job.id === id) ?? transportJobs[0];
 }
 
+export function getTransportJobForAgreement(agreementId: string) {
+  return transportJobs.find((job) => job.agreementId === agreementId);
+}
+
 export function getMessages(threadId: string) {
   return workspaceMessages.filter((message) => message.threadId === threadId);
 }
