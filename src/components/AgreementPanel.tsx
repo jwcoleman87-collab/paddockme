@@ -209,6 +209,7 @@ export function AgreementPanel({
         {activeTab === "overview" && (
           <AgreementOverview
             agreement={agreement}
+            sectionState={sectionState}
             mutuallyAgreedCount={mutuallyAgreedCount}
           />
         )}
@@ -430,12 +431,24 @@ function AgreementTabButton({
 
 function AgreementOverview({
   agreement,
+  sectionState,
   mutuallyAgreedCount,
 }: {
   agreement: Agreement;
+  sectionState: Record<string, SectionAgreementState>;
   mutuallyAgreedCount: number;
 }) {
   const allAgreed = mutuallyAgreedCount === agreement.sections.length;
+  const sectionAgreed = (id: string) => {
+    const state = sectionState[id];
+    const fallback = agreement.sections.find((section) => section.id === id);
+    if (state) return state.agreedByA && state.agreedByB;
+    if (fallback) return fallback.agreedByA && fallback.agreedByB;
+    return false;
+  };
+  const paddockAgreed = sectionAgreed("paddock");
+  const termsAgreed = sectionAgreed("terms");
+  const transportAgreed = sectionAgreed("transport");
 
   return (
     <div className="space-y-5">
@@ -460,11 +473,32 @@ function AgreementOverview({
             complete={allAgreed}
             label={`${mutuallyAgreedCount} of ${agreement.sections.length} sections mutually agreed`}
           />
-          <AlignmentRow complete label="Feed, water and fencing details match" />
           <AlignmentRow
-            complete={false}
-            label="Rate and final terms require attention"
+            complete={paddockAgreed}
+            label={
+              paddockAgreed
+                ? "Feed, water and fencing details match"
+                : "Feed, water and fencing details still under review"
+            }
           />
+          <AlignmentRow
+            complete={termsAgreed}
+            label={
+              termsAgreed
+                ? "Rate and final terms agreed"
+                : "Rate and final terms require attention"
+            }
+          />
+          {agreement.transportRequired && (
+            <AlignmentRow
+              complete={transportAgreed}
+              label={
+                transportAgreed
+                  ? "Transport plan confirmed by both parties"
+                  : "Transport plan still being arranged"
+              }
+            />
+          )}
         </div>
       </section>
 
