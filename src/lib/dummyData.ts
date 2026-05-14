@@ -1,9 +1,76 @@
+export type ProfileRole =
+  | "Livestock Owner"
+  | "Landowner"
+  | "Transport Provider";
+
+export type VerificationStatus = "Verified" | "Pending" | "Not started";
+
+export type VerificationCheck = {
+  label: string;
+  status: VerificationStatus;
+  detail?: string;
+};
+
+export type ReadinessItem = {
+  label: string;
+  complete: boolean;
+  helper?: string;
+};
+
+export type LivestockSubProfile = {
+  stockTypes: string[];
+  headCount: number;
+  pic: string;
+  nlisRegistered: boolean;
+  vaccinationCurrent: boolean;
+  treatmentNotes?: string;
+};
+
+export type PropertySubProfile = {
+  propertyName: string;
+  acres: number;
+  suitableStock: string[];
+  feedStatus: PaddockListing["feedStatus"];
+  waterStatus: PaddockListing["waterStatus"];
+  fencingStatus: PaddockListing["fencingStatus"];
+  biosecurityRegistered: boolean;
+  yards: string;
+};
+
+export type TransportVehicle = {
+  rego: string;
+  config: string;
+  driver: string;
+};
+
+export type TransportSubProfile = {
+  abn: string;
+  fleetSize: number;
+  driverCount: number;
+  subContractorsAllowed: boolean;
+  accreditations: {
+    lbca: VerificationStatus;
+    truckSafe: VerificationStatus;
+    nhvas: VerificationStatus;
+  };
+  vehicles: TransportVehicle[];
+};
+
 export type Farmer = {
   id: string;
   name: string;
-  role: "Livestock Owner" | "Landowner" | "Transport Provider";
+  role: ProfileRole;
   region: string;
   verified: boolean;
+  tagline: string;
+  bio: string;
+  mobileVerified: boolean;
+  preparednessScore: number;
+  livestock?: LivestockSubProfile;
+  property?: PropertySubProfile;
+  transport?: TransportSubProfile;
+  verifications: VerificationCheck[];
+  readiness: ReadinessItem[];
 };
 
 export type AustralianState = "NSW" | "QLD" | "VIC" | "SA" | "WA" | "TAS" | "NT" | "ACT";
@@ -193,6 +260,61 @@ export const farmers: Farmer[] = [
     role: "Livestock Owner",
     region: "Central West NSW",
     verified: true,
+    tagline: "Cattle and sheep producer, crisis-mode user.",
+    bio: "Mid-size family operation, third-generation. Uses agistment reactively when his country runs dry.",
+    mobileVerified: true,
+    preparednessScore: 72,
+    livestock: {
+      stockTypes: ["Cattle", "Sheep"],
+      headCount: 850,
+      pic: "NA123456",
+      nlisRegistered: true,
+      vaccinationCurrent: true,
+      treatmentNotes: "5-in-1 current. Drenched 14 days prior to last move.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 281" },
+      { label: "PIC of origin", status: "Verified", detail: "NA123456" },
+      { label: "ABN", status: "Pending", detail: "Verification placeholder" },
+      { label: "NLIS account", status: "Verified" },
+    ],
+    readiness: [
+      { label: "NLIS tags ready for next move", complete: true },
+      { label: "Vaccination records uploaded", complete: true },
+      { label: "Crush and yards photographed", complete: true },
+      { label: "Insurance documents to upload", complete: false },
+    ],
+  },
+  {
+    id: "farmer-tash",
+    name: "Tash Reilly",
+    role: "Livestock Owner",
+    region: "Hunter NSW",
+    verified: true,
+    tagline: "Off-farm horse owner, continuous-use user.",
+    bio: "Owns 2 horses, no land. Uses agistment as everyday operating mode within 45 minutes of home.",
+    mobileVerified: true,
+    preparednessScore: 64,
+    livestock: {
+      stockTypes: ["Horses"],
+      headCount: 2,
+      pic: "Pending",
+      nlisRegistered: false,
+      vaccinationCurrent: true,
+      treatmentNotes: "Strangles current. Annual dental booked.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 944" },
+      { label: "PIC of origin", status: "Not started", detail: "Town address - PIC may not apply" },
+      { label: "EA membership", status: "Verified", detail: "Equestrian Australia, current" },
+      { label: "Insurance", status: "Pending" },
+    ],
+    readiness: [
+      { label: "Strangles vaccinations current", complete: true },
+      { label: "Float / transport contact saved", complete: true },
+      { label: "Vet records uploaded", complete: false },
+      { label: "Worming schedule shared with agistment host", complete: false },
+    ],
   },
   {
     id: "farmer-b",
@@ -200,13 +322,156 @@ export const farmers: Farmer[] = [
     role: "Landowner",
     region: "Southern NSW",
     verified: true,
+    tagline: "Active farmer with spare paddocks in good seasons.",
+    bio: "Third-generation 1,800ha mixed farming operation. Agist out 6-8 months when his own season is kind.",
+    mobileVerified: true,
+    preparednessScore: 81,
+    property: {
+      propertyName: "Glenbarra River Paddocks",
+      acres: 280,
+      suitableStock: ["Cattle", "Sheep"],
+      feedStatus: "Excellent",
+      waterStatus: "Permanent",
+      fencingStatus: "Secure",
+      biosecurityRegistered: true,
+      yards: "Loading race + head bail, B-double access from sealed road.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 117" },
+      { label: "PIC of origin", status: "Verified", detail: "NB987654" },
+      { label: "ABN", status: "Verified", detail: "Verification placeholder" },
+      { label: "LPA accreditation", status: "Verified" },
+      { label: "Biosecurity declaration", status: "Verified", detail: "Last updated 2 weeks ago" },
+    ],
+    readiness: [
+      { label: "Paddock photos current", complete: true },
+      { label: "Water points photographed", complete: true },
+      { label: "Fencing inspection recent", complete: true },
+      { label: "Gate access photos uploaded", complete: true },
+      { label: "Biosecurity declaration current", complete: true },
+    ],
+  },
+  {
+    id: "farmer-lyn",
+    name: "Lyn Whitfield",
+    role: "Landowner",
+    region: "Northern Tablelands NSW",
+    verified: true,
+    tagline: "Semi-retired with idle paddocks, looking for stable agistment.",
+    bio: "320ha family farm, sold the breeding herd 4 years ago. Wants long-term, predictable agistment without managing stock day to day.",
+    mobileVerified: true,
+    preparednessScore: 58,
+    property: {
+      propertyName: "Whitfield Family Block",
+      acres: 320,
+      suitableStock: ["Cattle", "Sheep"],
+      feedStatus: "Excellent",
+      waterStatus: "Permanent",
+      fencingStatus: "Good",
+      biosecurityRegistered: false,
+      yards: "Older yards, suitable for B-double with manual loading.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 326" },
+      { label: "PIC of origin", status: "Verified", detail: "NA445566" },
+      { label: "ABN", status: "Pending", detail: "Re-registered after sale of herd" },
+      { label: "LPA accreditation", status: "Not started", detail: "Was current under late husband's name" },
+      { label: "Biosecurity declaration", status: "Not started" },
+    ],
+    readiness: [
+      { label: "Paddock photos current", complete: false },
+      { label: "Water points photographed", complete: true },
+      { label: "Fencing inspection recent", complete: false },
+      { label: "Yards photographed", complete: false },
+      { label: "Indicative weekly rate set", complete: false },
+    ],
   },
   {
     id: "driver-1",
     name: "Wayne Hayes",
     role: "Transport Provider",
-    region: "Riverina",
-    verified: false,
+    region: "Riverina NSW",
+    verified: true,
+    tagline: "Owner-operator, single B-double, backloads matter.",
+    bio: "Works direct producer to feedlot and saleyard runs. Empty backloads are the structural pain.",
+    mobileVerified: true,
+    preparednessScore: 76,
+    transport: {
+      abn: "Verified",
+      fleetSize: 1,
+      driverCount: 1,
+      subContractorsAllowed: false,
+      accreditations: {
+        lbca: "Verified",
+        truckSafe: "Verified",
+        nhvas: "Pending",
+      },
+      vehicles: [
+        {
+          rego: "WH B-D 01",
+          config: "Kenworth K200 + B-double, double-deck",
+          driver: "Wayne Hayes",
+        },
+      ],
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 488" },
+      { label: "ABN", status: "Verified" },
+      { label: "Heavy vehicle licence (MC)", status: "Verified", detail: "Renews 2027" },
+      { label: "LBCA accreditation", status: "Verified" },
+      { label: "TruckSafe accreditation", status: "Verified" },
+      { label: "NHVAS mass management", status: "Pending", detail: "Module application lodged" },
+      { label: "Public liability + cargo insurance", status: "Verified" },
+    ],
+    readiness: [
+      { label: "Current journey plan templates", complete: true },
+      { label: "NVD intake workflow saved", complete: true },
+      { label: "Backload availability shared", complete: false },
+    ],
+  },
+  {
+    id: "driver-2",
+    name: "Sharon Mackie",
+    role: "Transport Provider",
+    region: "Goondiwindi QLD",
+    verified: true,
+    tagline: "Multi-truck family business, fleet utilisation is the game.",
+    bio: "12-truck operation, depot in Goondiwindi. Same app as Wayne - profile carries the difference (fleet, drivers, accreditations).",
+    mobileVerified: true,
+    preparednessScore: 88,
+    transport: {
+      abn: "Verified",
+      fleetSize: 12,
+      driverCount: 18,
+      subContractorsAllowed: true,
+      accreditations: {
+        lbca: "Verified",
+        truckSafe: "Verified",
+        nhvas: "Verified",
+      },
+      vehicles: [
+        { rego: "SM B-T 01", config: "Kenworth T610 + B-triple", driver: "Mackie senior" },
+        { rego: "SM B-D 04", config: "Volvo FH + B-double", driver: "Jase Mackie" },
+        { rego: "SM RT 02", config: "Western Star + road train", driver: "Curtis Walker" },
+        { rego: "SM B-D 07", config: "Kenworth K200 + B-double", driver: "Sub-contractor pool" },
+      ],
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 612" },
+      { label: "ABN", status: "Verified" },
+      { label: "Heavy vehicle licences (fleet)", status: "Verified", detail: "18 drivers, current" },
+      { label: "LBCA accreditation (business)", status: "Verified" },
+      { label: "TruckSafe accreditation (business)", status: "Verified" },
+      { label: "NHVAS mass management", status: "Verified", detail: "All modules current" },
+      { label: "Public liability + cargo insurance", status: "Verified" },
+      { label: "Sub-contractor settlement terms", status: "Verified" },
+    ],
+    readiness: [
+      { label: "Fleet capacity calendar synced", complete: true },
+      { label: "Driver fatigue records digital", complete: true },
+      { label: "Sub-contractor settlement on time", complete: true },
+      { label: "Forward bookings published", complete: false },
+    ],
   },
 ];
 
