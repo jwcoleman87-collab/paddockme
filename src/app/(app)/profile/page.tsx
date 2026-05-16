@@ -7,6 +7,13 @@ import {
 } from "@/lib/supabase/currentUser";
 import { ProfileClient } from "./ProfileClient";
 
+// Force dynamic rendering: getCurrentUserProfile reads cookies, but only
+// when env vars are present. The build sees env vars unset and statically
+// renders the page, which would cache the "not signed in" version on
+// Vercel and miss the live profile on every request. Forcing dynamic
+// makes the cookie read happen per-request.
+export const dynamic = "force-dynamic";
+
 function profileToFarmer(profile: CurrentUserProfile): Farmer {
   const inferredRole: Farmer["role"] = profile.accountTypes.includes(
     "Transport Provider"
