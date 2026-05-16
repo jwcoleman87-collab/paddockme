@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   CirclePlus,
@@ -63,6 +63,39 @@ export function AgreementsClient({
   );
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
+
+  const storageKey = "paddockme.agreements.persona";
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // URL hint wins over stored value - if the user just came from onboarding
+    // with ?role=transport we shouldn't drop them back on the last-viewed
+    // persona.
+    if (initialFarmerId) {
+      hydratedRef.current = true;
+      return;
+    }
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored && farmers.some((f) => f.id === stored)) {
+        setActiveId(stored);
+      }
+    } catch {
+      // ignore
+    }
+    hydratedRef.current = true;
+  }, [initialFarmerId, farmers]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem(storageKey, activeId);
+    } catch {
+      // ignore
+    }
+  }, [activeId]);
 
   const visibleAgreements = useMemo(() => {
     if (!farmer) return [];

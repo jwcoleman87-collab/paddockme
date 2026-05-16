@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle,
   CircleDot,
@@ -45,6 +45,31 @@ const roleIcon: Record<Farmer["role"], React.ComponentType<{ className?: string 
 
 export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
   const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("paddockme.profile.persona");
+      if (stored && farmers.some((f) => f.id === stored)) {
+        setActiveId(stored);
+      }
+    } catch {
+      // ignore
+    }
+    hydratedRef.current = true;
+  }, [farmers]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem("paddockme.profile.persona", activeId);
+    } catch {
+      // ignore
+    }
+  }, [activeId]);
+
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
   if (!farmer) return null;
 
