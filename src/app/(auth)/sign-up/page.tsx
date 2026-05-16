@@ -25,7 +25,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/home`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
       },
     });
     setLoading(false);
@@ -33,9 +33,11 @@ export default function SignUpPage() {
       setError(error.message);
       return;
     }
-    // Email confirmations may be off — if a session exists immediately, send to /home.
+    // Email confirmations may be off — if a session exists immediately,
+    // send the new user straight into the onboarding wizard so their
+    // profile gets populated before they land on /agreements.
     if (data.session) {
-      router.push("/home");
+      router.push("/onboarding");
       router.refresh();
       return;
     }
