@@ -149,6 +149,7 @@ export function AgreementPanel({
   transportHref,
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
+  const [pendingCancel, setPendingCancel] = useState(false);
 
   const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
     const state = sectionState[section.id] ?? section;
@@ -300,16 +301,44 @@ export function AgreementPanel({
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
           )}
-          {!isTerminal && (
+          {!isTerminal && !pendingCancel && (
             <Button
               type="button"
               variant="ghost"
-              onClick={onCancelLifecycle}
+              onClick={() => setPendingCancel(true)}
               className="text-terra hover:bg-terra-light/60"
             >
               <Ban className="h-4 w-4" aria-hidden />
               Cancel agreement
             </Button>
+          )}
+          {!isTerminal && pendingCancel && (
+            <div
+              role="group"
+              aria-label="Confirm cancellation"
+              className="flex items-center gap-2 rounded-full border border-terra/35 bg-terra-light/45 p-1"
+            >
+              <span className="px-3 text-xs font-semibold text-bark">
+                Cancel for real?
+              </span>
+              <Button
+                type="button"
+                onClick={() => {
+                  setPendingCancel(false);
+                  onCancelLifecycle();
+                }}
+                className="bg-terra text-cream hover:bg-terra"
+              >
+                Yes, cancel
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setPendingCancel(false)}
+              >
+                Keep
+              </Button>
+            </div>
           )}
           {isTerminal && (
             <p className="text-sm font-semibold text-bark/70">
