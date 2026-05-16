@@ -12,6 +12,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { ActivityFeed } from "./ActivityFeed";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -237,6 +238,11 @@ export function AgreementsClient({
           />
         </div>
       </Card>
+
+      <ActivityFeed
+        agreements={visibleAgreements}
+        transportJobs={visibleJobs}
+      />
 
       {farmer.role === "Transport Provider" ? (
         <TransportJobsBody jobs={visibleJobs} farmerName={firstName} />
