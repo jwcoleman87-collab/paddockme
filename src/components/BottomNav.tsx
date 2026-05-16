@@ -10,7 +10,7 @@ const navItems = [
   { href: "/request/new", label: "Request", icon: Search },
   { href: "/listings", label: "Paddocks", icon: Sprout },
   {
-    href: "/workspace/agreement-glenbarra",
+    href: "/workspace",
     label: "Workspace",
     icon: MessageSquare,
     match: ["/workspace"],
