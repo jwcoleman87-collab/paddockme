@@ -106,6 +106,15 @@ export default function NewRequestPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      // Ensure the profile row exists before the FK insert. With the
+      // handle_new_user trigger applied this is a no-op upsert; without
+      // it this is the row creation.
+      const metaName =
+        (user.user_metadata as { full_name?: string } | null)?.full_name ??
+        null;
+      await supabase
+        .from("profiles")
+        .upsert({ id: user.id, full_name: metaName }, { onConflict: "id" });
       // transportRequired isn't on the day-one schema yet - it carries via
       // the URL into /matches and will land as a column in a follow-up
       // migration. Skipping it here keeps the insert aligned with

@@ -616,14 +616,22 @@ async function persistProfileToSupabase(state: State): Promise<void> {
         : state.role === "landowner"
           ? state.suitableStock
           : [];
-    const { error } = await supabase
-      .from("profiles")
-      .update({
+    // upsert so this works whether the handle_new_user trigger is
+    // applied or not. Trigger applied: the row exists, we update.
+    // Trigger missing: we create the row fresh.
+    const metaName =
+      (user.user_metadata as { full_name?: string } | null)?.full_name ??
+      null;
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        full_name: metaName,
         account_types: [roleToAccountType[state.role]],
         regions: state.region ? [state.region] : [],
         stock_types: stockTypes,
-      })
-      .eq("id", user.id);
+      },
+      { onConflict: "id" }
+    );
     if (error) {
       // eslint-disable-next-line no-console
       console.warn("profile update failed", error.message);
