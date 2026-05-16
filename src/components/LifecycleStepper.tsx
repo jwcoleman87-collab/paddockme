@@ -35,7 +35,7 @@ export function LifecycleStepper({
             key={state}
             aria-current={isCurrent ? "step" : undefined}
             className={cn(
-              "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:border-y sm:border-x-0 sm:px-3 sm:py-2",
+              "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 transition-colors duration-300 sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:border-y sm:border-x-0 sm:px-3 sm:py-2",
               "sm:first:rounded-l-xl sm:first:border-l",
               "sm:last:rounded-r-xl sm:last:border-r",
               reached
@@ -47,12 +47,13 @@ export function LifecycleStepper({
           >
             <div
               className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-300",
                 reached
                   ? "bg-match text-cream"
                   : isCurrent
                     ? "bg-sage-deep text-cream"
-                    : "border border-mist bg-warm-white text-stone"
+                    : "border border-mist bg-warm-white text-stone",
+                isCurrent && "shadow-[0_0_0_3px_rgba(208,232,207,0.7)]"
               )}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />
