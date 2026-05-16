@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/profile"
             aria-label="Open profile"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-mist bg-cream text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-mist bg-cream text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
           >
             <User className="h-5 w-5" aria-hidden />
           </Link>

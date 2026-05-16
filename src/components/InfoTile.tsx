@@ -35,7 +35,7 @@ export function InfoTile({
   const container = cn(
     "bg-warm-white",
     tone === "default" && "border border-mist",
-    size === "md" ? "rounded-xl p-4" : "rounded-lg p-3"
+    size === "md" ? "rounded-md p-4" : "rounded-sm p-3"
   );
 
   const showIconAbove = icon && iconPlacement === "above";

@@ -2,23 +2,147 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
+import { createClient } from "@/lib/supabase/client";
+import type { TablesInsert } from "@/lib/types/database";
 
-const stockTypes = ["Cattle", "Sheep", "Horses", "Goats"];
-const breeds = [
-  "Angus",
-  "Hereford",
-  "Brahman",
-  "Charolais",
-  "Murray Grey",
-  "Mixed",
-  "Other",
-];
+const animalOptions = {
+  Cattle: [
+    "Angus",
+    "Hereford",
+    "Brahman",
+    "Charolais",
+    "Murray Grey",
+    "Shorthorn",
+    "Limousin",
+    "Simmental",
+    "Wagyu",
+    "Droughtmaster",
+    "Santa Gertrudis",
+    "Brangus",
+    "Friesian",
+    "Jersey",
+    "Mixed cattle",
+    "Other cattle",
+  ],
+  Sheep: [
+    "Merino",
+    "Poll Merino",
+    "Dohne Merino",
+    "Border Leicester",
+    "White Suffolk",
+    "Poll Dorset",
+    "Dorper",
+    "Australian White",
+    "Corriedale",
+    "Romney",
+    "Southdown",
+    "Wiltipoll",
+    "Composite sheep",
+    "Mixed sheep",
+    "Other sheep",
+  ],
+  Horses: [
+    "Thoroughbred",
+    "Standardbred",
+    "Quarter Horse",
+    "Australian Stock Horse",
+    "Warmblood",
+    "Arabian",
+    "Appaloosa",
+    "Paint Horse",
+    "Clydesdale",
+    "Percheron",
+    "Welsh Pony",
+    "Shetland Pony",
+    "Brumby",
+    "Miniature Horse",
+    "Mixed horses",
+    "Other horses",
+  ],
+  Goats: [
+    "Boer",
+    "Rangeland",
+    "Kalahari Red",
+    "Savanna",
+    "Saanen",
+    "Toggenburg",
+    "British Alpine",
+    "Anglo-Nubian",
+    "Nigerian Dwarf",
+    "Pygmy",
+    "Cashmere",
+    "Angora",
+    "Dairy goats",
+    "Meat goats",
+    "Mixed goats",
+    "Other goats",
+  ],
+  Bees: [
+    "Italian honey bees",
+    "Carniolan honey bees",
+    "Caucasian honey bees",
+    "Buckfast bees",
+    "Australian commercial honey bees",
+    "Native stingless bees",
+    "Queen rearing hives",
+    "Pollination hives",
+    "Honey production hives",
+    "Mixed apiary",
+    "Other bees",
+  ],
+  Alpacas: [
+    "Huacaya",
+    "Suri",
+    "Wethers",
+    "Breeding females",
+    "Males",
+    "Mixed alpacas",
+    "Other alpacas",
+  ],
+  Deer: [
+    "Red deer",
+    "Fallow deer",
+    "Rusa deer",
+    "Sambar deer",
+    "Chital deer",
+    "Mixed deer",
+    "Other deer",
+  ],
+  Pigs: [
+    "Large White",
+    "Landrace",
+    "Duroc",
+    "Berkshire",
+    "Hampshire",
+    "Tamworth",
+    "Wessex Saddleback",
+    "Growers",
+    "Sows",
+    "Mixed pigs",
+    "Other pigs",
+  ],
+  Poultry: [
+    "Layer hens",
+    "Broilers",
+    "Free-range chickens",
+    "Ducks",
+    "Geese",
+    "Turkeys",
+    "Guinea fowl",
+    "Mixed poultry",
+    "Other poultry",
+  ],
+} as const;
+
+type StockType = keyof typeof animalOptions;
+
+const stockTypes = Object.keys(animalOptions) as StockType[];
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
 const regions = [
   "Southern NSW",
@@ -32,12 +156,21 @@ const transport = ["Yes", "No", "Unsure"];
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const [stockType, setStockType] = useState("Cattle");
+  const [stockType, setStockType] = useState<StockType>("Cattle");
   const [breed, setBreed] = useState("Angus");
   const [duration, setDuration] = useState("3-6 months");
   const [selectedRegions, setSelectedRegions] = useState(["Southern NSW"]);
   const [transportRequired, setTransportRequired] = useState("Yes");
   const [headCount, setHeadCount] = useState(100);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const breedOptions = animalOptions[stockType];
+  const countUnit = stockType === "Bees" ? "hives" : stockType === "Poultry" ? "birds" : "head";
+
+  function selectStockType(value: StockType) {
+    setStockType(value);
+    setBreed(animalOptions[value][0]);
+  }
 
   function toggleRegion(region: string) {
     setSelectedRegions((current) =>
@@ -47,9 +180,60 @@ export default function NewRequestPage() {
     );
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/listings?request=request-100-cattle");
+
+    if (selectedRegions.length === 0) {
+      setError("Choose at least one preferred region.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError && userError.name !== "AuthSessionMissingError") {
+      setSaving(false);
+      setError(userError.message);
+      return;
+    }
+
+    if (!user) {
+      setSaving(false);
+      router.push("/listings?request=request-100-cattle");
+      return;
+    }
+
+    const payload: TablesInsert<"agistment_requests"> = {
+      requester_id: user.id,
+      stock_type: stockType,
+      breed,
+      head_count: headCount,
+      duration,
+      preferred_regions: selectedRegions,
+      urgency: "standard",
+      status: "matching",
+    };
+
+    const { data, error: insertError } = await supabase
+      .from("agistment_requests")
+      .insert(payload)
+      .select("id")
+      .single();
+
+    setSaving(false);
+
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+
+    router.push(`/listings?request=${data.id}`);
   }
 
   return (
@@ -67,15 +251,15 @@ export default function NewRequestPage() {
               <SelectablePill
                 key={value}
                 selected={stockType === value}
-                onClick={() => setStockType(value)}
+                onClick={() => selectStockType(value)}
               >
                 {value}
               </SelectablePill>
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Breed">
-            {breeds.map((value) => (
+          <ChoiceSection title={stockType === "Bees" ? "Bee or hive type" : "Breed or class"}>
+            {breedOptions.map((value) => (
               <SelectablePill
                 key={value}
                 selected={breed === value}
@@ -90,7 +274,9 @@ export default function NewRequestPage() {
             <div className="mb-4 flex items-baseline justify-between">
               <div>
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-                <p className="text-sm font-medium text-bark/80">Set the approximate head count.</p>
+                <p className="text-sm font-medium text-bark/80">
+                  Set the approximate {countUnit === "head" ? "head count" : countUnit}.
+                </p>
               </div>
               <p className="text-4xl font-extrabold text-sage-deep">
                 {headCount}
@@ -149,19 +335,33 @@ export default function NewRequestPage() {
           <Card className="sticky top-24">
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-xl font-bold text-sage-deep">Your request</h2>
-              <span className="rounded-full border border-amber/35 bg-amber-light px-3 py-1 text-xs font-bold text-amber">
+              <span className="rounded-md border border-amber/35 bg-amber-light px-3 py-1 text-xs font-bold text-amber">
                 Draft preview
               </span>
             </div>
             <div className="mt-4 space-y-3 text-sm">
-              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${breed} ${stockType}`} />
+              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${countUnit} ${breed} ${stockType}`} />
               <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
-              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
+              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ") || "Choose one"} />
               <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
             </div>
-            <Button type="submit" className="mt-5 w-full">
-              See available paddocks
-              <ArrowRight className="h-4 w-4" aria-hidden />
+            {error && (
+              <p className="mt-4 rounded-md border border-terra/25 bg-terra-light px-4 py-3 text-sm font-semibold text-bark" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" className="mt-5 w-full" disabled={saving}>
+              {saving ? (
+                <>
+                  Saving request
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                </>
+              ) : (
+                <>
+                  See available paddocks
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </>
+              )}
             </Button>
           </Card>
         </aside>

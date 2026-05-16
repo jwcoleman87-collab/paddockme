@@ -10,7 +10,7 @@ export function Card({
   return (
     <section
       className={cn(
-        "rounded-xl border border-mist bg-cream p-5 shadow-sm shadow-bark/5",
+        "rounded-lg border border-mist bg-cream p-5 shadow-sm shadow-bark/5",
         className
       )}
     >

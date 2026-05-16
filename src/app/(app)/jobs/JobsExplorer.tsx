@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BriefcaseBusiness, CheckCircle2, MapPin, Truck } from "lucide-react";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -24,8 +25,20 @@ const SIZE_FILTERS: Array<{ label: string; value: TransportSize | "all" }> = [
 ];
 
 export function JobsExplorer() {
+  return (
+    <Suspense fallback={<JobsExplorerSkeleton />}>
+      <JobsExplorerInner />
+    </Suspense>
+  );
+}
+
+function JobsExplorerInner() {
+  const searchParams = useSearchParams();
   const drivers = getDrivers();
-  const selectedDriverId = drivers.find((driver) => driver.id === "driver-2")?.id ?? drivers[0]?.id ?? "";
+  const driverParam = searchParams.get("driver");
+  const selectedDriverId = drivers.some((driver) => driver.id === driverParam)
+    ? driverParam!
+    : drivers.find((driver) => driver.id === "driver-2")?.id ?? drivers[0]?.id ?? "";
   const [sizeFilter, setSizeFilter] = useState<TransportSize | "all">("all");
 
   const selectedDriver = drivers.find((driver) => driver.id === selectedDriverId) ?? drivers[0];
@@ -53,13 +66,24 @@ export function JobsExplorer() {
               <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
                 Driver view
               </p>
-              <div className="mt-3 rounded-2xl border border-sage/30 bg-sage-mist px-4 py-3">
+              <div className="mt-3 rounded-md border border-sage/30 bg-sage-mist px-4 py-3">
                 <p className="font-bold text-sage-deep">
                   {selectedDriver?.name ?? "Driver"}
                 </p>
                 <p className="mt-1 text-sm font-medium text-bark/85">
                   Showing runs that match your truck profile and preferred regions.
                 </p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {drivers.map((driver) => (
+                  <SelectablePill
+                    key={driver.id}
+                    selected={driver.id === selectedDriverId}
+                    href={`/jobs?driver=${driver.id}`}
+                  >
+                    {driver.name}
+                  </SelectablePill>
+                ))}
               </div>
             </div>
 
@@ -110,7 +134,7 @@ export function JobsExplorer() {
           </div>
 
           {driverTrucks.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-mist bg-cream p-4">
+            <div className="mt-5 rounded-md border border-mist bg-cream p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
                 Available gear
               </p>
@@ -118,7 +142,7 @@ export function JobsExplorer() {
                 {driverTrucks.map((truck) => (
                   <span
                     key={truck.id}
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sage-glow bg-sage-mist px-3 py-2 text-sm font-semibold text-sage-deep"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-md border border-sage-glow bg-sage-mist px-3 py-2 text-sm font-semibold text-sage-deep"
                   >
                     <CheckCircle2 className="h-4 w-4" aria-hidden />
                     {TRUCK_CLASS_LABEL[truck.class]} - {truck.label}
@@ -139,9 +163,30 @@ export function JobsExplorer() {
   );
 }
 
+function JobsExplorerSkeleton() {
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Transport jobs"
+        title="Available runs for your truck."
+        description="Review open movements, check fit, then put your hand up. Farmers confirm the driver before the run becomes yours."
+      />
+      <Card className="space-y-4 bg-warm-white">
+        <div className="h-5 w-32 rounded-md bg-mist" />
+        <div className="h-16 rounded-md bg-sage-mist" />
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="h-20 rounded-xl bg-cream" />
+          <div className="h-20 rounded-xl bg-cream" />
+          <div className="h-20 rounded-xl bg-cream" />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function PipelineTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-mist bg-cream px-4 py-3">
+    <div className="rounded-md border border-mist bg-cream px-4 py-3">
       <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
         {label}
       </p>

@@ -89,7 +89,7 @@ export function TransportRoomClient({
                 </StatusBadge>
                 <StatusBadge tone="success">
                   <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-                  No private contract pricing
+                  Agistment terms hidden
                 </StatusBadge>
               </div>
 
@@ -114,7 +114,7 @@ export function TransportRoomClient({
                     <Truck className="h-4 w-4" aria-hidden />
                   </Button>
                 ) : (
-                  <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-match/25 bg-match-light px-4 py-2 text-sm font-bold text-match">
+                  <div className="inline-flex min-h-11 items-center gap-2 rounded-md border border-match/25 bg-match-light px-4 py-2 text-sm font-bold text-match">
                     <CheckCircle2 className="h-4 w-4" aria-hidden />
                     Driver visible to farmers
                   </div>
@@ -128,7 +128,7 @@ export function TransportRoomClient({
                 <InfoTile icon={<CalendarDays />} label="Preferred date" value={job.preferredDate} />
                 <InfoTile icon={<Route />} label="Route" value={job.routeSummary} />
                 <InfoTile icon={<Clock3 />} label="Estimated time" value={job.estimatedDuration} />
-                <InfoTile icon={<Truck />} label="Rate guide" value={job.rateGuide} />
+                <InfoTile icon={<Truck />} label="Transport quote" value={job.rateGuide} />
                 <InfoTile icon={<MapPin />} label="Distance" value={`${job.distanceKm} km`} />
                 <InfoTile
                   icon={<Truck />}
@@ -145,14 +145,14 @@ export function TransportRoomClient({
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <ReadinessRow label="Pickup and destination visible" complete />
                 <ReadinessRow label="Livestock count visible" complete />
-                <ReadinessRow label="Private terms hidden" complete />
+                <ReadinessRow label="Agistment rate and terms hidden" complete />
                 <ReadinessRow
                   label="Driver interest captured"
                   complete={!isOpenJob || interestSubmitted}
                 />
               </div>
               {isOpenJob && interestSubmitted && (
-                <div className="mt-4 rounded-xl border border-sage-glow bg-sage-mist px-4 py-3 text-sm leading-relaxed text-sage-deep">
+                <div className="mt-4 rounded-md border border-sage-glow bg-sage-mist px-4 py-3 text-sm leading-relaxed text-sage-deep">
                   Next prototype step: Farmer A and Farmer B confirm the driver,
                   then this becomes the assigned three-party transport room. You
                   will get a notification when Dale responds.
@@ -187,7 +187,7 @@ export function TransportRoomClient({
 }
 function ReadinessRow({ label, complete }: { label: string; complete: boolean }) {
   return (
-    <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-mist bg-cream px-4 py-3">
+    <div className="flex min-h-12 items-center justify-between gap-3 rounded-md border border-mist bg-cream px-4 py-3">
       <span className="text-sm font-semibold text-bark">{label}</span>
       <CheckCircle2
         className={complete ? "h-5 w-5 shrink-0 text-match" : "h-5 w-5 shrink-0 text-bark/75"}

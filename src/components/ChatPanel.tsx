@@ -30,7 +30,7 @@ export function ChatPanel({
     : undefined;
 
   return (
-    <section className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]">
+    <section className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-lg border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]">
       <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -39,7 +39,7 @@ export function ChatPanel({
               {title}
             </p>
           </div>
-          <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-match/20 bg-match-light px-3 text-xs font-bold text-match">
+          <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-md border border-match/20 bg-match-light px-3 text-xs font-bold text-match">
             <span className="h-2 w-2 rounded-full bg-match" aria-hidden />
             {onlineCount} online
           </span>
@@ -103,7 +103,7 @@ export function ChatPanel({
 
       <div className="border-t border-sage-deep/15 bg-cream/45 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex min-h-12 flex-1 items-center rounded-full border border-sage-deep/30 bg-warm-white px-4 text-sm font-medium text-bark/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <div className="flex min-h-12 flex-1 items-center rounded-md border border-sage-deep/30 bg-warm-white px-4 text-sm font-medium text-bark/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
             <span className="truncate">
               {activeSection
                 ? `Reply in "${activeSection.label}"`
@@ -113,7 +113,7 @@ export function ChatPanel({
           <Button
             type="button"
             aria-label="Send placeholder message"
-            className="h-12 min-h-12 w-12 shrink-0 rounded-full p-0"
+            className="h-12 min-h-12 w-12 shrink-0 rounded-md p-0"
           >
             <Send className="h-4 w-4" aria-hidden />
           </Button>
@@ -137,7 +137,7 @@ function MessageBubble({
   return (
     <article
       className={cn(
-        "rounded-2xl border px-4 py-3.5 shadow-[0_8px_22px_rgba(34,84,52,0.04)] transition",
+        "rounded-md border px-4 py-3.5 shadow-[0_8px_22px_rgba(34,84,52,0.04)] transition",
         tone === "farmer-b" && "border-sage-deep/12 bg-sage-mist/65",
         tone === "system" && "border-amber/25 bg-amber-light/70",
         tone === "default" && "border-mist bg-warm-white",
@@ -157,7 +157,7 @@ function MessageBubble({
       </div>
       <p className="font-medium leading-relaxed text-bark/90">{message.body}</p>
       {sectionLabel && (
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warm-white/75 px-3 py-1 text-xs font-semibold text-sage-deep">
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-warm-white/75 px-3 py-1 text-xs font-semibold text-sage-deep">
           <MessageSquare className="h-3 w-3" aria-hidden />
           {sectionLabel}
         </div>
@@ -196,7 +196,7 @@ function SectionChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-11 shrink-0 cursor-pointer items-center rounded-full border px-3.5 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        "inline-flex min-h-11 shrink-0 cursor-pointer items-center rounded-md border px-3.5 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
         active
           ? "border-sage-deep bg-sage-deep text-cream"
           : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist/50"

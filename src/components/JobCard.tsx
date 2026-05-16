@@ -31,7 +31,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
             {job.livestockCount} moving from {job.pickup} to {job.destination}.
           </p>
         </div>
-        <div className="rounded-2xl border border-sage-deep bg-sage-deep px-4 py-3 text-sm font-bold text-cream sm:text-right">
+        <div className="rounded-md border border-sage-deep bg-sage-deep px-4 py-3 text-sm font-bold text-cream sm:text-right">
           {match.score}/100
           <span className="block text-xs font-semibold text-cream/80">fit score</span>
         </div>
@@ -63,7 +63,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
           size="sm"
           icon={<Gauge className="h-4 w-4" />}
           iconPlacement="inline"
-          label="Rate guide"
+          label="Transport quote"
           value={job.rateGuide}
         />
         <InfoTile
@@ -76,7 +76,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-mist bg-cream p-4">
+        <div className="rounded-md border border-mist bg-cream p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
             Best truck
           </p>
@@ -96,7 +96,7 @@ export function JobCard({ match }: { match: DriverJobMatch }) {
             <div
               key={reason.label}
               className={cn(
-                "rounded-xl border px-3 py-2 text-sm",
+                "rounded-md border px-3 py-2 text-sm",
                 reason.positive
                   ? "border-match/20 bg-match-light text-bark"
                   : "border-amber/25 bg-amber-light text-bark"

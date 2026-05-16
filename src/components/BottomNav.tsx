@@ -82,7 +82,7 @@ function BottomNavFrame({
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
-      <div className="grid max-w-[22.5rem] grid-cols-5 gap-1 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
+      <div className="grid max-w-[22.5rem] grid-cols-5 gap-1 rounded-lg border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
         {navItems.map(({ href, label, icon: Icon, match }) => {
           const active =
             pathname === href ||
@@ -93,7 +93,7 @@ function BottomNavFrame({
               key={`${persona}-${label}`}
               href={href}
               className={cn(
-                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-1 text-[0.68rem] font-semibold transition sm:min-h-16 sm:px-2 sm:text-xs",
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 text-[0.68rem] font-semibold transition sm:min-h-16 sm:px-2 sm:text-xs",
                 active
                   ? "bg-sage-deep text-cream shadow-sm"
                   : "text-bark/85 hover:bg-cream hover:text-sage-deep"

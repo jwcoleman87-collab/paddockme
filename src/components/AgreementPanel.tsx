@@ -66,7 +66,7 @@ const agreementTabs = [
 ] satisfies { id: AgreementTab; label: string }[];
 
 const workspaceCardClass =
-  "min-w-0 overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
+  "min-w-0 overflow-hidden rounded-lg border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
 
 export function AgreementPanel({
   agreement,
@@ -112,7 +112,7 @@ export function AgreementPanel({
         <div
           role="tablist"
           aria-label="Agreement panel sections"
-          className="mt-4 flex flex-wrap gap-1 rounded-[24px] border border-sage-deep/10 bg-warm-white p-1"
+          className="mt-4 flex flex-wrap gap-1 rounded-lg border border-sage-deep/10 bg-warm-white p-1"
         >
           {agreementTabs.map((tab) => (
             <AgreementTabButton
@@ -218,7 +218,7 @@ function AgreementTabButton({
       role="tab"
       aria-selected={active}
       className={cn(
-        "min-h-10 shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
+        "min-h-10 shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
         active
           ? "bg-sage-deep text-cream shadow-sm"
           : "text-bark/85 hover:bg-sage-mist/60 hover:text-sage-deep"
@@ -434,7 +434,7 @@ function PartyAgreeButton({
       onClick={onClick}
       aria-pressed={agreed}
       className={cn(
-        "inline-flex min-h-11 items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        "inline-flex min-h-11 items-center justify-between gap-3 rounded-md border px-4 py-2 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
         agreed
           ? "border-match/30 bg-match-light text-match"
           : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist/40"
