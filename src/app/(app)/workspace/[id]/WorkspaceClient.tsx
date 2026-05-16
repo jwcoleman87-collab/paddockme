@@ -6,7 +6,7 @@ import {
   type SectionAgreementState,
 } from "@/components/AgreementPanel";
 import { ChatPanel } from "@/components/ChatPanel";
-import { FlashMessage, type FlashTone } from "@/components/FlashMessage";
+import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import type {
@@ -33,6 +33,7 @@ export function WorkspaceClient({
   agreement: Agreement;
   messages: Message[];
 }) {
+  const flash = useFlash();
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const linkedTransport = getTransportJobForAgreement(agreement.id);
@@ -73,15 +74,6 @@ export function WorkspaceClient({
   const [lifecycleHistory, setLifecycleHistory] = useState<
     AgreementLifecycleEvent[]
   >(agreement.lifecycleHistory);
-  const [flash, setFlash] = useState<{
-    id: number;
-    message: string;
-    tone: FlashTone;
-  } | null>(null);
-
-  function flashMessage(message: string, tone: FlashTone) {
-    setFlash({ id: Date.now(), message, tone });
-  }
 
   const toggleAgreement = (sectionId: string, party: "A" | "B") => {
     setSectionState((current) => {
@@ -100,7 +92,7 @@ export function WorkspaceClient({
       if (justMutuallyAgreed) {
         const section = agreement.sections.find((s) => s.id === sectionId);
         if (section) {
-          flashMessage(
+          flash(
             `Both parties agree on ${section.label}.`,
             "success"
           );
@@ -124,7 +116,7 @@ export function WorkspaceClient({
       ]);
       return to;
     });
-    flashMessage(
+    flash(
       to === "Completed"
         ? "Agreement marked complete."
         : `Moved to ${to}.`,
@@ -145,7 +137,7 @@ export function WorkspaceClient({
           note: "Agreement cancelled from the workspace.",
         },
       ]);
-      flashMessage("Agreement cancelled.", "warning");
+      flash("Agreement cancelled.", "warning");
       return "Cancelled";
     });
   };
@@ -179,16 +171,7 @@ export function WorkspaceClient({
   }, [agreement.sections, sectionState]);
 
   return (
-    <>
-      {flash && (
-        <FlashMessage
-          key={flash.id}
-          message={flash.message}
-          tone={flash.tone}
-          onDismiss={() => setFlash(null)}
-        />
-      )}
-      <SplitWorkspace
+    <SplitWorkspace
       leftLabel="Agreement"
       rightLabel="Chat"
       left={
@@ -220,8 +203,7 @@ export function WorkspaceClient({
           composerSenderLabel="Dale (Farmer A)"
         />
       }
-      />
-    </>
+    />
   );
 }
 

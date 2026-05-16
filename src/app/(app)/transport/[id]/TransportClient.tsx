@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Users } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
+import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { TransportPanel } from "@/components/TransportPanel";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,16 @@ export function TransportClient({
   job: TransportJob;
   messages: Message[];
 }) {
-  const [role, setRole] = useState<TransportRole>("farmerA");
+  const flash = useFlash();
+  const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  function setRole(next: TransportRole) {
+    if (next === role) return;
+    setRoleState(next);
+    flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+  }
 
   const sectionsForChat = job.sections.map((section) => ({
     id: section.id,

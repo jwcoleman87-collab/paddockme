@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Filter, X } from "lucide-react";
+import { useFlash } from "@/components/FlashProvider";
 import { ListingCard } from "@/components/ListingCard";
 import { SelectablePill } from "@/components/SelectablePill";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export function ListingsClient({
   listings: PaddockListing[];
   initialFilters?: InitialFilters;
 }) {
+  const flash = useFlash();
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...emptyFilters,
     ...initialFilters,
@@ -114,6 +116,7 @@ export function ListingsClient({
 
   function clearAll() {
     setFilters(emptyFilters);
+    flash("Filters cleared.", "info");
   }
 
   return (
