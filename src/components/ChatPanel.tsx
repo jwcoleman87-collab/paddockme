@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/Button";
 import { cn } from "@/lib/utils";
@@ -37,10 +37,17 @@ export function ChatPanel({
   composerSenderLabel,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
+  const messagesRef = useRef<HTMLDivElement | null>(null);
   const hasSections = !!sections && sections.length > 0;
   const activeSection = hasSections
     ? sections!.find((section) => section.id === activeSectionId)
     : undefined;
+
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
 
   const composerEnabled = !!onSend;
   const composerPlaceholder = activeSection
@@ -101,7 +108,10 @@ export function ChatPanel({
         )}
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto bg-warm-white px-5 py-5">
+      <div
+        ref={messagesRef}
+        className="flex-1 space-y-4 overflow-y-auto bg-warm-white px-5 py-5"
+      >
         {messages.length === 0 && (
           <p className="text-sm text-bark/60">No messages yet.</p>
         )}

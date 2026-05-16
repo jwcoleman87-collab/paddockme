@@ -26,7 +26,11 @@ type ScoredListing = {
 
 type SearchParams = {
   stock?: string;
+  breed?: string;
+  headCount?: string;
+  duration?: string;
   regions?: string;
+  transport?: string;
 };
 
 export default async function MatchesPage({
@@ -102,23 +106,50 @@ function mergeRequest(
         .map((r) => r.trim())
         .filter(Boolean)
     : undefined;
+  const headCountParam = params.headCount
+    ? Number.parseInt(params.headCount, 10)
+    : undefined;
+  const transport = parseTransport(params.transport);
+  // When stock is overridden via URL, the seed's breed (e.g. Angus) no longer
+  // applies. Use the explicit breed param if present; otherwise fall back to
+  // "Mixed" when the stock changed; otherwise keep the seed breed.
+  const stockChanged =
+    !!params.stock && !!seed && params.stock !== seed.stockType;
+
   if (!seed) {
     return {
       id: "url-request",
       requesterId: "farmer-a",
       stockType: params.stock ?? "Cattle",
-      breed: "Mixed",
-      headCount: 100,
-      duration: "3-6 months",
+      breed: params.breed ?? "Mixed",
+      headCount:
+        headCountParam !== undefined && !Number.isNaN(headCountParam)
+          ? headCountParam
+          : 100,
+      duration: params.duration ?? "3-6 months",
       preferredRegions: regions ?? [],
-      transportRequired: "Unsure",
+      transportRequired: transport ?? "Unsure",
     };
   }
   return {
     ...seed,
     stockType: params.stock ?? seed.stockType,
+    breed: params.breed ?? (stockChanged ? "Mixed" : seed.breed),
+    headCount:
+      headCountParam !== undefined && !Number.isNaN(headCountParam)
+        ? headCountParam
+        : seed.headCount,
+    duration: params.duration ?? seed.duration,
     preferredRegions: regions ?? seed.preferredRegions,
+    transportRequired: transport ?? seed.transportRequired,
   };
+}
+
+function parseTransport(
+  value: string | undefined
+): LivestockRequest["transportRequired"] | undefined {
+  if (value === "Yes" || value === "No" || value === "Unsure") return value;
+  return undefined;
 }
 
 function buildListingsHref(request: LivestockRequest): string {

@@ -51,8 +51,14 @@ export default function NewRequestPage() {
     e.preventDefault();
     const params = new URLSearchParams();
     params.set("stock", stockType);
+    params.set("breed", breed);
+    params.set("headCount", String(headCount));
+    params.set("duration", duration);
     if (selectedRegions.length > 0) {
       params.set("regions", selectedRegions.join(","));
+    }
+    if (transportRequired) {
+      params.set("transport", transportRequired);
     }
     router.push(`/matches?${params.toString()}`);
   }
