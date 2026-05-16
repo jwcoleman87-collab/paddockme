@@ -14,6 +14,10 @@ import {
   Truck,
 } from "lucide-react";
 import {
+  ArtefactUploadDialog,
+  type ArtefactDraft,
+} from "@/components/ArtefactUploadDialog";
+import {
   ArtefactViewer,
   type ViewableArtefact,
 } from "@/components/ArtefactViewer";
@@ -41,6 +45,9 @@ type TransportPanelProps = {
   onToggleConfirmation: (sectionId: string) => void;
   /** When provided, replaces job.timeline. Used to derive completion from live confirmations. */
   timeline?: TransportTimelineEntry[];
+  /** Live artefacts list (allows the client to lift state above the panel). */
+  artefacts: TransportArtefact[];
+  onAddArtefact?: (draft: ArtefactDraft) => void;
 };
 
 type TransportTab = "overview" | "coordination" | "artefacts" | "timeline";
@@ -88,6 +95,8 @@ export function TransportPanel({
   confirmations,
   onToggleConfirmation,
   timeline,
+  artefacts,
+  onAddArtefact,
 }: TransportPanelProps) {
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
@@ -150,10 +159,13 @@ export function TransportPanel({
 
         {activeTab === "artefacts" && (
           <TransportArtefactStrip
-            artefacts={job.artefacts}
+            artefacts={artefacts}
             sections={job.sections}
             onSelectSection={onSelectSection}
             activeSectionId={activeSectionId}
+            role={role}
+            driverName={job.driver}
+            onAddArtefact={onAddArtefact}
           />
         )}
 
@@ -518,13 +530,20 @@ function TransportArtefactStrip({
   sections,
   onSelectSection,
   activeSectionId,
+  role,
+  driverName,
+  onAddArtefact,
 }: {
   artefacts: TransportArtefact[];
   sections: TransportSection[];
   onSelectSection: (sectionId: string) => void;
   activeSectionId: string | null;
+  role: TransportRole;
+  driverName: string;
+  onAddArtefact?: (draft: ArtefactDraft) => void;
 }) {
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
   const matchingCount = activeSectionId
@@ -535,24 +554,18 @@ function TransportArtefactStrip({
     ? sections.find((section) => section.id === activeSectionId)?.label
     : undefined;
 
-  if (artefacts.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/60 px-4 py-6 text-center text-sm text-bark/60">
-        No transport artefacts attached yet.
-      </p>
-    );
-  }
-
   const viewable: ViewableArtefact | null = activeArtefact
     ? {
         id: activeArtefact.id,
         label: activeArtefact.label,
         kind: activeArtefact.kind,
         description: activeArtefact.description,
-        uploaderLabel: uploaderLabelFor(activeArtefact.uploadedBy, "Wayne"),
+        uploaderLabel: uploaderLabelFor(activeArtefact.uploadedBy, driverName),
         sectionId: activeArtefact.sectionId,
       }
     : null;
+
+  const uploaderLabel = uploaderLabelFor(role, driverName);
 
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
@@ -560,24 +573,44 @@ function TransportArtefactStrip({
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Transport artefacts
         </h3>
-        <span className="text-xs text-bark/55">
-          {activeSectionLabel
-            ? `${matchingCount} for "${activeSectionLabel}"`
-            : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-bark/55">
+            {activeSectionLabel
+              ? `${matchingCount} for "${activeSectionLabel}"`
+              : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
+          </span>
+          {onAddArtefact && (
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              + Add artefact
+            </button>
+          )}
+        </div>
       </div>
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-        {artefacts.map((artefact) => (
-          <TransportArtefactCard
-            key={artefact.id}
-            artefact={artefact}
-            onOpen={() => setActiveArtefactId(artefact.id)}
-            dimmed={
-              !!activeSectionId && artefact.sectionId !== activeSectionId
-            }
-          />
-        ))}
-      </div>
+
+      {artefacts.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-sage-deep/15 bg-warm-white px-4 py-6 text-center text-sm text-bark/60">
+          No transport artefacts attached yet. Add an NVD, journey plan, or
+          gate access photo when one is on hand.
+        </p>
+      ) : (
+        <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+          {artefacts.map((artefact) => (
+            <TransportArtefactCard
+              key={artefact.id}
+              artefact={artefact}
+              onOpen={() => setActiveArtefactId(artefact.id)}
+              driverName={driverName}
+              dimmed={
+                !!activeSectionId && artefact.sectionId !== activeSectionId
+              }
+            />
+          ))}
+        </div>
+      )}
       <ArtefactViewer
         artefact={viewable}
         sections={sections.map((section) => ({
@@ -587,6 +620,21 @@ function TransportArtefactStrip({
         onClose={() => setActiveArtefactId(null)}
         onSelectSection={onSelectSection}
       />
+      {onAddArtefact && (
+        <ArtefactUploadDialog
+          open={uploadOpen}
+          uploaderLabel={uploaderLabel}
+          sections={sections.map((section) => ({
+            id: section.id,
+            label: section.label,
+          }))}
+          onClose={() => setUploadOpen(false)}
+          onSubmit={(draft) => {
+            onAddArtefact(draft);
+            setUploadOpen(false);
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -594,10 +642,12 @@ function TransportArtefactStrip({
 function TransportArtefactCard({
   artefact,
   onOpen,
+  driverName,
   dimmed,
 }: {
   artefact: TransportArtefact;
   onOpen: () => void;
+  driverName: string;
   dimmed?: boolean;
 }) {
   const kindIcon = artefact.kind;
@@ -607,7 +657,7 @@ function TransportArtefactCard({
       : kindIcon === "map"
         ? MapIcon
         : ClipboardList;
-  const uploader = uploaderLabelFor(artefact.uploadedBy, "Wayne");
+  const uploader = uploaderLabelFor(artefact.uploadedBy, driverName);
 
   return (
     <button

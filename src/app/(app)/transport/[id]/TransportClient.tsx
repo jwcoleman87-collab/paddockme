@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Users } from "lucide-react";
+import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
@@ -9,6 +10,7 @@ import { TransportPanel } from "@/components/TransportPanel";
 import { cn } from "@/lib/utils";
 import type {
   Message,
+  TransportArtefact,
   TransportJob,
   TransportRole,
   TransportTimelineEntry,
@@ -57,6 +59,7 @@ export function TransportClient({
       job.sections.map((section) => [section.id, { ...section.confirmations }])
     )
   );
+  const [artefacts, setArtefacts] = useState<TransportArtefact[]>(job.artefacts);
 
   const hydratedRef = useRef(false);
   const storageKey = `paddockme.transport.${job.id}`;
@@ -69,6 +72,7 @@ export function TransportClient({
         const parsed = JSON.parse(stored);
         if (parsed.confirmations) setConfirmations(parsed.confirmations);
         if (parsed.messages) setMessages(parsed.messages);
+        if (parsed.artefacts) setArtefacts(parsed.artefacts);
       }
     } catch {
       // ignore
@@ -82,12 +86,12 @@ export function TransportClient({
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ confirmations, messages })
+        JSON.stringify({ confirmations, messages, artefacts })
       );
     } catch {
       // ignore
     }
-  }, [storageKey, confirmations, messages]);
+  }, [storageKey, confirmations, messages, artefacts]);
 
   function setRole(next: TransportRole) {
     if (next === role) return;
@@ -151,6 +155,23 @@ export function TransportClient({
       }
       return { ...current, [sectionId]: next };
     });
+  }
+
+  function addArtefact(draft: ArtefactDraft) {
+    const newArtefact: TransportArtefact = {
+      id: `local-art-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label: draft.label,
+      kind: draft.kind,
+      description: draft.description,
+      uploadedBy: role,
+      sectionId: draft.sectionId,
+    };
+    setArtefacts((current) => [...current, newArtefact]);
+    flash(`Artefact "${draft.label}" added.`, "success");
+    appendSystemMessage(
+      `${senderProfile[role].name} added artefact "${draft.label}".`,
+      draft.sectionId
+    );
   }
 
   function appendSystemMessage(body: string, sectionId?: string) {
@@ -258,6 +279,8 @@ export function TransportClient({
             confirmations={confirmations}
             onToggleConfirmation={toggleConfirmation}
             timeline={derivedTimeline}
+            artefacts={artefacts}
+            onAddArtefact={addArtefact}
           />
         }
         right={
