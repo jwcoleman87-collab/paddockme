@@ -7,6 +7,7 @@ import {
   type SectionAgreementState,
   type WorkspaceParty,
 } from "@/components/AgreementPanel";
+import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import type {
   Agreement,
+  AgreementArtefact,
   AgreementLifecycleEvent,
   AgreementLifecycleState,
   Message,
@@ -121,6 +123,9 @@ export function WorkspaceClient({
   const [lifecycleHistory, setLifecycleHistory] = useState<
     AgreementLifecycleEvent[]
   >(agreement.lifecycleHistory);
+  const [artefacts, setArtefacts] = useState<AgreementArtefact[]>(
+    agreement.artefacts
+  );
 
   const hydratedRef = useRef(false);
   const storageKey = `paddockme.workspace.${agreement.id}`;
@@ -135,12 +140,14 @@ export function WorkspaceClient({
           lifecycleState?: AgreementLifecycleState;
           lifecycleHistory?: AgreementLifecycleEvent[];
           messages?: Message[];
+          artefacts?: AgreementArtefact[];
         };
         if (parsed.sectionState) setSectionState(parsed.sectionState);
         if (parsed.lifecycleState) setLifecycleState(parsed.lifecycleState);
         if (parsed.lifecycleHistory)
           setLifecycleHistory(parsed.lifecycleHistory);
         if (parsed.messages) setMessages(parsed.messages);
+        if (parsed.artefacts) setArtefacts(parsed.artefacts);
       }
     } catch {
       // ignore
@@ -160,12 +167,20 @@ export function WorkspaceClient({
           lifecycleState,
           lifecycleHistory,
           messages,
+          artefacts,
         })
       );
     } catch {
       // ignore - quota / private mode
     }
-  }, [storageKey, sectionState, lifecycleState, lifecycleHistory, messages]);
+  }, [
+    storageKey,
+    sectionState,
+    lifecycleState,
+    lifecycleHistory,
+    messages,
+    artefacts,
+  ]);
 
   const toggleAgreement = (sectionId: string, party: WorkspaceParty) => {
     // Guard - the panel only renders the viewer's own button as
@@ -226,6 +241,23 @@ export function WorkspaceClient({
         ? "Agreement marked complete."
         : `Moved to ${to}.`,
       "success"
+    );
+  };
+
+  const addArtefact = (draft: ArtefactDraft) => {
+    const newArtefact: AgreementArtefact = {
+      id: `local-art-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label: draft.label,
+      kind: draft.kind,
+      description: draft.description,
+      uploadedBy: viewerParty === "A" ? "farmerA" : "farmerB",
+      sectionId: draft.sectionId,
+    };
+    setArtefacts((current) => [...current, newArtefact]);
+    flash(`Artefact "${draft.label}" added.`, "success");
+    appendSystemMessage(
+      `${partyProfile[viewerParty].label} added artefact "${draft.label}".`,
+      draft.sectionId
     );
   };
 
@@ -349,6 +381,8 @@ export function WorkspaceClient({
               onCancelLifecycle={cancelLifecycle}
               transportHref={transportHref}
               viewerParty={viewerParty}
+              artefacts={artefacts}
+              onAddArtefact={addArtefact}
             />
           </div>
         }

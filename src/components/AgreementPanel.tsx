@@ -17,6 +17,10 @@ import {
   Banknote,
   Tractor,
 } from "lucide-react";
+import {
+  ArtefactUploadDialog,
+  type ArtefactDraft,
+} from "@/components/ArtefactUploadDialog";
 import { ArtefactViewer, type ViewableArtefact } from "@/components/ArtefactViewer";
 import { Button, ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
@@ -54,6 +58,10 @@ type AgreementPanelProps = {
   transportHref?: string;
   /** The party the current viewer represents. Drives which agree button is interactive. */
   viewerParty: WorkspaceParty;
+  /** Live artefacts list (allows the workspace client to lift state above the panel). */
+  artefacts: AgreementArtefact[];
+  /** Called when the upload dialog submits. */
+  onAddArtefact?: (draft: ArtefactDraft) => void;
 };
 
 type AgreementTab =
@@ -152,6 +160,8 @@ export function AgreementPanel({
   onCancelLifecycle,
   transportHref,
   viewerParty,
+  artefacts,
+  onAddArtefact,
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
   const [pendingCancel, setPendingCancel] = useState(false);
@@ -251,10 +261,12 @@ export function AgreementPanel({
 
         {activeTab === "artifacts" && (
           <ArtefactStrip
-            artefacts={agreement.artefacts}
+            artefacts={artefacts}
             sections={agreement.sections}
             onSelectSection={onSelectSection}
             activeSectionId={activeSectionId}
+            viewerParty={viewerParty}
+            onAddArtefact={onAddArtefact}
           />
         )}
 
@@ -744,13 +756,18 @@ function ArtefactStrip({
   sections,
   onSelectSection,
   activeSectionId,
+  viewerParty,
+  onAddArtefact,
 }: {
   artefacts: AgreementArtefact[];
   sections: AgreementSection[];
   onSelectSection: (sectionId: string) => void;
   activeSectionId: string | null;
+  viewerParty: WorkspaceParty;
+  onAddArtefact?: (draft: ArtefactDraft) => void;
 }) {
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
   const matchingCount = activeSectionId
@@ -761,31 +778,51 @@ function ArtefactStrip({
     ? sections.find((section) => section.id === activeSectionId)?.label
     : undefined;
 
-  if (artefacts.length === 0) return null;
+  const uploaderLabel =
+    viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
+
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Shared artefacts
         </h3>
-        <span className="text-xs text-bark/55">
-          {activeSectionLabel
-            ? `${matchingCount} for "${activeSectionLabel}"`
-            : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-bark/55">
+            {activeSectionLabel
+              ? `${matchingCount} for "${activeSectionLabel}"`
+              : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
+          </span>
+          {onAddArtefact && (
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              + Add artefact
+            </button>
+          )}
+        </div>
       </div>
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-        {artefacts.map((artefact) => (
-          <ArtefactCard
-            key={artefact.id}
-            artefact={artefact}
-            onOpen={() => setActiveArtefactId(artefact.id)}
-            dimmed={
-              !!activeSectionId && artefact.sectionId !== activeSectionId
-            }
-          />
-        ))}
-      </div>
+      {artefacts.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-sage-deep/15 bg-warm-white px-4 py-6 text-center text-sm text-bark/60">
+          No artefacts shared yet. Add one when an NVD, photo, or property
+          map needs to be on record.
+        </p>
+      ) : (
+        <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+          {artefacts.map((artefact) => (
+            <ArtefactCard
+              key={artefact.id}
+              artefact={artefact}
+              onOpen={() => setActiveArtefactId(artefact.id)}
+              dimmed={
+                !!activeSectionId && artefact.sectionId !== activeSectionId
+              }
+            />
+          ))}
+        </div>
+      )}
       <ArtefactViewer
         artefact={activeArtefact ? toViewableArtefact(activeArtefact) : null}
         sections={sections.map((section) => ({
@@ -795,6 +832,21 @@ function ArtefactStrip({
         onClose={() => setActiveArtefactId(null)}
         onSelectSection={onSelectSection}
       />
+      {onAddArtefact && (
+        <ArtefactUploadDialog
+          open={uploadOpen}
+          uploaderLabel={uploaderLabel}
+          sections={sections.map((section) => ({
+            id: section.id,
+            label: section.label,
+          }))}
+          onClose={() => setUploadOpen(false)}
+          onSubmit={(draft) => {
+            onAddArtefact(draft);
+            setUploadOpen(false);
+          }}
+        />
+      )}
     </section>
   );
 }
