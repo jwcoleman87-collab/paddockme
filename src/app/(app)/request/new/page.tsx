@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
@@ -32,12 +33,57 @@ const transport = ["Yes", "No", "Unsure"];
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const flash = useFlash();
   const [stockType, setStockType] = useState("Cattle");
   const [breed, setBreed] = useState("Angus");
   const [duration, setDuration] = useState("3-6 months");
   const [selectedRegions, setSelectedRegions] = useState(["Southern NSW"]);
   const [transportRequired, setTransportRequired] = useState("Yes");
   const [headCount, setHeadCount] = useState(100);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("paddockme.onboarding");
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as {
+        stockTypes?: string[];
+        region?: string;
+        headCountBracket?: string;
+      };
+      let applied = false;
+      if (
+        parsed.stockTypes &&
+        parsed.stockTypes.length > 0 &&
+        stockTypes.includes(parsed.stockTypes[0])
+      ) {
+        setStockType(parsed.stockTypes[0]);
+        applied = true;
+      }
+      if (parsed.region) {
+        const mapped = mapOnboardingRegion(parsed.region);
+        if (mapped) {
+          setSelectedRegions([mapped]);
+          applied = true;
+        }
+      }
+      if (parsed.headCountBracket) {
+        const count = headCountFromBracket(parsed.headCountBracket);
+        if (count !== null) {
+          setHeadCount(count);
+          applied = true;
+        }
+      }
+      if (applied) {
+        flash("Pre-filled from your onboarding answers.", "info");
+      }
+    } catch {
+      // ignore - localStorage may be unavailable
+    }
+    // Intentionally run once on mount: we hydrate from onboarding state
+    // without re-running when other deps change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleRegion(region: string) {
     setSelectedRegions((current) =>
@@ -188,4 +234,26 @@ function ChoiceSection({
       <div className="flex flex-wrap gap-2">{children}</div>
     </Card>
   );
+}
+
+function mapOnboardingRegion(onboardingRegion: string): string | null {
+  if (regions.includes(onboardingRegion)) return onboardingRegion;
+  if (onboardingRegion === "Central West NSW") return "Central West";
+  if (onboardingRegion === "Gippsland VIC") return "Gippsland";
+  return null;
+}
+
+function headCountFromBracket(bracket: string): number | null {
+  switch (bracket) {
+    case "1-20":
+      return 10;
+    case "20-100":
+      return 50;
+    case "100-500":
+      return 250;
+    case "500+":
+      return 600;
+    default:
+      return null;
+  }
 }

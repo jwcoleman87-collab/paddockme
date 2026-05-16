@@ -109,6 +109,7 @@ export function OnboardingClient() {
   }
 
   function finish() {
+    persistOnboarding(state);
     const params = new URLSearchParams({ onboarded: "true" });
     if (state.role) params.set("role", state.role);
     router.push(`/agreements?${params.toString()}`);
@@ -568,6 +569,18 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 font-semibold text-bark">{value}</dd>
     </div>
   );
+}
+
+function persistOnboarding(state: State) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      "paddockme.onboarding",
+      JSON.stringify(state)
+    );
+  } catch {
+    // localStorage can throw in private modes or when over quota; ignore.
+  }
 }
 
 function stepIsComplete(step: number, state: State): boolean {
