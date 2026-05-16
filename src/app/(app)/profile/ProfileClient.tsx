@@ -5,6 +5,7 @@ import {
   CheckCircle,
   CircleDot,
   MapPin,
+  RotateCcw,
   ShieldCheck,
   Sprout,
   Tractor,
@@ -12,6 +13,7 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import { useFlash } from "@/components/FlashProvider";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -44,6 +46,7 @@ const roleIcon: Record<Farmer["role"], React.ComponentType<{ className?: string 
 };
 
 export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
+  const flash = useFlash();
   const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
   const hydratedRef = useRef(false);
 
@@ -200,8 +203,52 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
           />
         </aside>
       </div>
+
+      <section
+        aria-label="Prototype tools"
+        className="mt-7 rounded-xl border border-dashed border-mist bg-cream/45 px-4 py-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              Prototype tools
+            </p>
+            <p className="mt-1 text-sm text-bark/70">
+              Persona, workspace, and transport state are stored in your
+              browser for the duration of the prototype. Wipe them to start
+              clean.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => resetPrototypeState(flash)}
+            className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden />
+            Reset prototype state
+          </button>
+        </div>
+      </section>
     </>
   );
+}
+
+function resetPrototypeState(flash: (message: string, tone?: "info" | "success" | "warning") => void) {
+  if (typeof window === "undefined") return;
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith("paddockme.")) toRemove.push(key);
+    }
+    toRemove.forEach((key) => window.localStorage.removeItem(key));
+    flash(`Cleared ${toRemove.length} stored value${toRemove.length === 1 ? "" : "s"}. Reloading...`, "info");
+    setTimeout(() => {
+      window.location.href = "/agreements";
+    }, 600);
+  } catch {
+    flash("Couldn't access local storage.", "warning");
+  }
 }
 
 function LivestockCard({ livestock }: { livestock: LivestockSubProfile }) {
