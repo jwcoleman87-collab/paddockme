@@ -9,6 +9,8 @@ import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 const stockTypes = ["Cattle", "Sheep", "Horses", "Goats"];
 const breeds = [
@@ -93,7 +95,43 @@ export default function NewRequestPage() {
     );
   }
 
-  function submit(e: React.FormEvent) {
+  async function persistRequest(): Promise<void> {
+    // Dual-write: if Supabase is configured AND the user is signed in,
+    // also insert into agistment_requests. Failures are swallowed - the
+    // URL-driven flow below works either way.
+    if (!isSupabaseConfigured()) return;
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      // transportRequired isn't on the day-one schema yet - it carries via
+      // the URL into /matches and will land as a column in a follow-up
+      // migration. Skipping it here keeps the insert aligned with
+      // database.ts as it stands.
+      const { error } = await supabase.from("agistment_requests").insert({
+        requester_id: user.id,
+        stock_type: stockType,
+        breed,
+        head_count: headCount,
+        duration,
+        preferred_regions: selectedRegions,
+        status: "open",
+      });
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn("agistment_requests insert failed", error.message);
+        return;
+      }
+      flash("Request saved.", "success");
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn("agistment_requests insert threw", error);
+    }
+  }
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     params.set("stock", stockType);
@@ -106,6 +144,7 @@ export default function NewRequestPage() {
     if (transportRequired) {
       params.set("transport", transportRequired);
     }
+    await persistRequest();
     router.push(`/matches?${params.toString()}`);
   }
 
