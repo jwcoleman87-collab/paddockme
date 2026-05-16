@@ -47,11 +47,32 @@ export function TransportClient({
   const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [confirmations, setConfirmations] = useState(() =>
+    Object.fromEntries(
+      job.sections.map((section) => [section.id, { ...section.confirmations }])
+    )
+  );
 
   function setRole(next: TransportRole) {
     if (next === role) return;
     setRoleState(next);
     flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+  }
+
+  function toggleConfirmation(sectionId: string) {
+    setConfirmations((current) => {
+      const previous = current[sectionId] ?? { farmerA: false, farmerB: false, driver: false };
+      const next = { ...previous, [role]: !previous[role] };
+      const wasAllConfirmed = previous.farmerA && previous.farmerB && previous.driver;
+      const nowAllConfirmed = next.farmerA && next.farmerB && next.driver;
+      if (nowAllConfirmed && !wasAllConfirmed) {
+        const section = job.sections.find((s) => s.id === sectionId);
+        if (section) {
+          flash(`All three parties confirmed ${section.label}.`, "success");
+        }
+      }
+      return { ...current, [sectionId]: next };
+    });
   }
 
   const sectionsForChat = job.sections.map((section) => ({
@@ -140,6 +161,8 @@ export function TransportClient({
             role={role}
             activeSectionId={activeSectionId}
             onSelectSection={(id) => setActiveSectionId(id)}
+            confirmations={confirmations}
+            onToggleConfirmation={toggleConfirmation}
           />
         }
         right={

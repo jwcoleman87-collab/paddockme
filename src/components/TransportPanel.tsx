@@ -29,11 +29,15 @@ import type {
   TransportSectionStatus,
 } from "@/lib/dummyData";
 
+type ConfirmationState = TransportSection["confirmations"];
+
 type TransportPanelProps = {
   job: TransportJob;
   role: TransportRole;
   activeSectionId: string | null;
   onSelectSection: (sectionId: string) => void;
+  confirmations: Record<string, ConfirmationState>;
+  onToggleConfirmation: (sectionId: string) => void;
 };
 
 type TransportTab = "overview" | "coordination" | "artefacts" | "timeline";
@@ -78,6 +82,8 @@ export function TransportPanel({
   role,
   activeSectionId,
   onSelectSection,
+  confirmations,
+  onToggleConfirmation,
 }: TransportPanelProps) {
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
   const isDriver = role === "driver";
@@ -132,6 +138,8 @@ export function TransportPanel({
             role={role}
             activeSectionId={activeSectionId}
             onSelectSection={onSelectSection}
+            confirmations={confirmations}
+            onToggleConfirmation={onToggleConfirmation}
           />
         )}
 
@@ -292,30 +300,40 @@ function CoordinationList({
   role,
   activeSectionId,
   onSelectSection,
+  confirmations,
+  onToggleConfirmation,
 }: {
   sections: TransportSection[];
   role: TransportRole;
   activeSectionId: string | null;
   onSelectSection: (sectionId: string) => void;
+  confirmations: Record<string, ConfirmationState>;
+  onToggleConfirmation: (sectionId: string) => void;
 }) {
   return (
     <div className="space-y-3">
       <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
         <h3 className="font-bold text-sage-deep">Movement steps</h3>
         <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          Tap a step to anchor the group chat. Confirmations show who&apos;s
-          locked the step in.
+          Tap a step to anchor the group chat. Tap your own pill in the
+          confirmations row to lock the step in.
         </p>
       </div>
-      {sections.map((section) => (
-        <CoordinationCard
-          key={section.id}
-          section={section}
-          role={role}
-          active={activeSectionId === section.id}
-          onSelect={() => onSelectSection(section.id)}
-        />
-      ))}
+      {sections.map((section) => {
+        const liveConfirmations =
+          confirmations[section.id] ?? section.confirmations;
+        return (
+          <CoordinationCard
+            key={section.id}
+            section={section}
+            role={role}
+            active={activeSectionId === section.id}
+            onSelect={() => onSelectSection(section.id)}
+            confirmations={liveConfirmations}
+            onToggleConfirmation={() => onToggleConfirmation(section.id)}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -325,14 +343,19 @@ function CoordinationCard({
   role,
   active,
   onSelect,
+  confirmations,
+  onToggleConfirmation,
 }: {
   section: TransportSection;
   role: TransportRole;
   active: boolean;
   onSelect: () => void;
+  confirmations: ConfirmationState;
+  onToggleConfirmation: () => void;
 }) {
   const Icon = sectionIcons[section.id] ?? Truck;
-  const tone = sectionStatusTone[section.status];
+  const derivedStatus = deriveStatus(confirmations, section.status);
+  const tone = sectionStatusTone[derivedStatus];
   const visibleDetail =
     role === "driver"
       ? section.detail.filter((row) => !row.privateFromDriver)
@@ -364,7 +387,7 @@ function CoordinationCard({
             <Icon className="h-5 w-5" aria-hidden />
             <h3 className="text-lg font-bold">{section.label}</h3>
           </div>
-          <StatusBadge tone={tone}>{section.status}</StatusBadge>
+          <StatusBadge tone={tone}>{derivedStatus}</StatusBadge>
         </div>
         <p className="text-sm text-bark/70">{section.summary}</p>
       </button>
@@ -389,20 +412,37 @@ function CoordinationCard({
         )}
 
         <ConfirmationsRow
-          confirmations={section.confirmations}
+          confirmations={confirmations}
           role={role}
+          onToggle={onToggleConfirmation}
         />
       </div>
     </article>
   );
 }
 
+function deriveStatus(
+  confirmations: ConfirmationState,
+  fallback: TransportSectionStatus
+): TransportSectionStatus {
+  if (fallback === "Done") return "Done";
+  const count =
+    (confirmations.farmerA ? 1 : 0) +
+    (confirmations.farmerB ? 1 : 0) +
+    (confirmations.driver ? 1 : 0);
+  if (count === 3) return "Confirmed";
+  if (count > 0) return "In progress";
+  return "Pending";
+}
+
 function ConfirmationsRow({
   confirmations,
   role,
+  onToggle,
 }: {
-  confirmations: TransportSection["confirmations"];
+  confirmations: ConfirmationState;
   role: TransportRole;
+  onToggle: () => void;
 }) {
   const items: { key: TransportRole; label: string; confirmed: boolean }[] = [
     {
@@ -424,20 +464,41 @@ function ConfirmationsRow({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <span
-          key={item.key}
-          className={cn(
-            "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
-            item.confirmed
-              ? "border-match/25 bg-match-light text-match"
-              : "border-mist bg-warm-white text-stone",
-            item.key === role && "ring-2 ring-sage-deep/35"
-          )}
-        >
-          {item.label}: {item.confirmed ? "Confirmed" : "Awaiting"}
-        </span>
-      ))}
+      {items.map((item) => {
+        const isYours = item.key === role;
+        const classes = cn(
+          "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition",
+          item.confirmed
+            ? "border-match/25 bg-match-light text-match"
+            : "border-mist bg-warm-white text-stone",
+          isYours && "ring-2 ring-sage-deep/35",
+          isYours &&
+            "cursor-pointer hover:border-sage/40 focus-visible:outline-none focus-visible:ring-sage"
+        );
+        const label = `${item.label}: ${item.confirmed ? "Confirmed" : "Awaiting"}`;
+
+        if (isYours) {
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggle();
+              }}
+              aria-pressed={item.confirmed}
+              className={classes}
+            >
+              {label}
+            </button>
+          );
+        }
+        return (
+          <span key={item.key} className={classes}>
+            {label}
+          </span>
+        );
+      })}
     </div>
   );
 }
