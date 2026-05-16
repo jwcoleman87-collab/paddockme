@@ -68,6 +68,7 @@ export function TransportClient({
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.confirmations) setConfirmations(parsed.confirmations);
+        if (parsed.messages) setMessages(parsed.messages);
       }
     } catch {
       // ignore
@@ -81,12 +82,12 @@ export function TransportClient({
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ confirmations })
+        JSON.stringify({ confirmations, messages })
       );
     } catch {
       // ignore
     }
-  }, [storageKey, confirmations]);
+  }, [storageKey, confirmations, messages]);
 
   function setRole(next: TransportRole) {
     if (next === role) return;
@@ -134,14 +135,38 @@ export function TransportClient({
       const next = { ...previous, [role]: !previous[role] };
       const wasAllConfirmed = previous.farmerA && previous.farmerB && previous.driver;
       const nowAllConfirmed = next.farmerA && next.farmerB && next.driver;
-      if (nowAllConfirmed && !wasAllConfirmed) {
-        const section = job.sections.find((s) => s.id === sectionId);
-        if (section) {
-          flash(`All three parties confirmed ${section.label}.`, "success");
-        }
+      const section = job.sections.find((s) => s.id === sectionId);
+      if (section && next[role] && !previous[role]) {
+        appendSystemMessage(
+          `${senderProfile[role].name} confirmed "${section.label}".`,
+          sectionId
+        );
+      }
+      if (section && nowAllConfirmed && !wasAllConfirmed) {
+        flash(`All three parties confirmed ${section.label}.`, "success");
+        appendSystemMessage(
+          `All three parties have confirmed "${section.label}". Step locked in.`,
+          sectionId
+        );
       }
       return { ...current, [sectionId]: next };
     });
+  }
+
+  function appendSystemMessage(body: string, sectionId?: string) {
+    setMessages((current) => [
+      ...current,
+      {
+        id: `system-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        threadId: job.id,
+        senderId: "system",
+        senderName: "PaddockME",
+        senderRole: "System",
+        body,
+        time: shortTime(),
+        sectionId,
+      },
+    ]);
   }
 
   const sectionsForChat = job.sections.map((section) => ({

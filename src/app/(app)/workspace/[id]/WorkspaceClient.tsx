@@ -57,6 +57,22 @@ export function WorkspaceClient({
     ]);
   }
 
+  function appendSystemMessage(body: string, sectionId?: string) {
+    setMessages((current) => [
+      ...current,
+      {
+        id: `system-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        threadId: agreement.id,
+        senderId: "system",
+        senderName: "PaddockME",
+        senderRole: "System",
+        body,
+        time: shortTime(),
+        sectionId,
+      },
+    ]);
+  }
+
   const seedSectionState = useMemo(
     () =>
       Object.fromEntries(
@@ -89,11 +105,13 @@ export function WorkspaceClient({
           sectionState?: Record<string, SectionAgreementState>;
           lifecycleState?: AgreementLifecycleState;
           lifecycleHistory?: AgreementLifecycleEvent[];
+          messages?: Message[];
         };
         if (parsed.sectionState) setSectionState(parsed.sectionState);
         if (parsed.lifecycleState) setLifecycleState(parsed.lifecycleState);
         if (parsed.lifecycleHistory)
           setLifecycleHistory(parsed.lifecycleHistory);
+        if (parsed.messages) setMessages(parsed.messages);
       }
     } catch {
       // ignore
@@ -108,12 +126,17 @@ export function WorkspaceClient({
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ sectionState, lifecycleState, lifecycleHistory })
+        JSON.stringify({
+          sectionState,
+          lifecycleState,
+          lifecycleHistory,
+          messages,
+        })
       );
     } catch {
       // ignore - quota / private mode
     }
-  }, [storageKey, sectionState, lifecycleState, lifecycleHistory]);
+  }, [storageKey, sectionState, lifecycleState, lifecycleHistory, messages]);
 
   const toggleAgreement = (sectionId: string, party: "A" | "B") => {
     setSectionState((current) => {
@@ -136,6 +159,10 @@ export function WorkspaceClient({
             `Both parties agree on ${section.label}.`,
             "success"
           );
+          appendSystemMessage(
+            `Both parties agree on "${section.label}".`,
+            section.id
+          );
         }
       }
       return { ...current, [sectionId]: next };
@@ -154,6 +181,11 @@ export function WorkspaceClient({
           note: `Advanced from ${from} to ${to}.`,
         },
       ]);
+      appendSystemMessage(
+        from
+          ? `Agreement moved from ${from} to ${to}.`
+          : `Agreement entered ${to}.`
+      );
       return to;
     });
     flash(
@@ -177,6 +209,7 @@ export function WorkspaceClient({
           note: "Agreement cancelled from the workspace.",
         },
       ]);
+      appendSystemMessage(`Agreement cancelled by Farmer A.`);
       flash("Agreement cancelled.", "warning");
       return "Cancelled";
     });
