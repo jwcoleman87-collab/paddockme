@@ -37,12 +37,14 @@ export type SectionAgreementState = {
   agreedByB: boolean;
 };
 
+export type WorkspaceParty = "A" | "B";
+
 type AgreementPanelProps = {
   agreement: Agreement;
   activeSectionId: string | null;
   onSelectSection: (sectionId: string) => void;
   sectionState: Record<string, SectionAgreementState>;
-  onToggleAgreement: (sectionId: string, party: "A" | "B") => void;
+  onToggleAgreement: (sectionId: string, party: WorkspaceParty) => void;
   timelineItems?: TimelineItem[];
   lifecycleState: AgreementLifecycleState;
   lifecycleHistory: AgreementLifecycleEvent[];
@@ -50,6 +52,8 @@ type AgreementPanelProps = {
   onCancelLifecycle: () => void;
   /** href of the transport room linked to this agreement, when one exists. */
   transportHref?: string;
+  /** The party the current viewer represents. Drives which agree button is interactive. */
+  viewerParty: WorkspaceParty;
 };
 
 type AgreementTab =
@@ -147,6 +151,7 @@ export function AgreementPanel({
   onAdvanceLifecycle,
   onCancelLifecycle,
   transportHref,
+  viewerParty,
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
   const [pendingCancel, setPendingCancel] = useState(false);
@@ -235,6 +240,7 @@ export function AgreementPanel({
                     agreedByB: section.agreedByB,
                   }
                 }
+                viewerParty={viewerParty}
                 onSelect={() => onSelectSection(section.id)}
                 onToggleA={() => onToggleAgreement(section.id, "A")}
                 onToggleB={() => onToggleAgreement(section.id, "B")}
@@ -590,6 +596,7 @@ function SectionCard({
   section,
   active,
   state,
+  viewerParty,
   onSelect,
   onToggleA,
   onToggleB,
@@ -597,6 +604,7 @@ function SectionCard({
   section: AgreementSection;
   active: boolean;
   state: SectionAgreementState;
+  viewerParty: WorkspaceParty;
   onSelect: () => void;
   onToggleA: () => void;
   onToggleB: () => void;
@@ -667,11 +675,13 @@ function SectionCard({
           <PartyAgreeButton
             party="Farmer A"
             agreed={agreedByA}
+            interactive={viewerParty === "A"}
             onClick={onToggleA}
           />
           <PartyAgreeButton
             party="Farmer B"
             agreed={agreedByB}
+            interactive={viewerParty === "B"}
             onClick={onToggleB}
           />
         </div>
@@ -683,28 +693,36 @@ function SectionCard({
 function PartyAgreeButton({
   party,
   agreed,
+  interactive,
   onClick,
 }: {
   party: string;
   agreed: boolean;
+  interactive: boolean;
   onClick: () => void;
 }) {
   const Icon = agreed ? CheckCircle : Circle;
+  const label = interactive
+    ? `${party}: ${agreed ? "Agreed" : "Tap to agree"}`
+    : `${party}: ${agreed ? "Agreed" : "Awaiting"}`;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={interactive ? onClick : undefined}
+      disabled={!interactive}
       aria-pressed={agreed}
+      title={interactive ? undefined : `Only ${party} can toggle this from their account.`}
       className={cn(
-        "inline-flex min-h-11 items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        "inline-flex min-h-11 items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        interactive ? "cursor-pointer" : "cursor-not-allowed",
         agreed
           ? "border-match/30 bg-match-light text-match"
-          : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+          : interactive
+            ? "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+            : "border-mist bg-warm-white/60 text-bark/55"
       )}
     >
-      <span>
-        {party}: {agreed ? "Agreed" : "Tap to agree"}
-      </span>
+      <span>{label}</span>
       <Icon className="h-4 w-4" aria-hidden />
     </button>
   );

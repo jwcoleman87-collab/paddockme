@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Users } from "lucide-react";
 import {
   AgreementPanel,
   type SectionAgreementState,
+  type WorkspaceParty,
 } from "@/components/AgreementPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
+import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import type {
   Agreement,
@@ -15,6 +18,24 @@ import type {
   AgreementLifecycleState,
   Message,
 } from "@/lib/dummyData";
+
+const partyProfile: Record<
+  WorkspaceParty,
+  { id: string; name: string; role: string; label: string }
+> = {
+  A: {
+    id: "farmer-a",
+    name: "Dale",
+    role: "Livestock owner",
+    label: "Farmer A (Dale)",
+  },
+  B: {
+    id: "farmer-b",
+    name: "Brett",
+    role: "Landowner",
+    label: "Farmer B (Brett)",
+  },
+};
 
 /**
  * Client wrapper for the workspace page.
@@ -34,6 +55,7 @@ export function WorkspaceClient({
   messages: Message[];
 }) {
   const flash = useFlash();
+  const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const linkedTransport = getTransportJobForAgreement(agreement.id);
@@ -41,15 +63,22 @@ export function WorkspaceClient({
     ? `/transport/${linkedTransport.id}`
     : undefined;
 
+  function setViewerParty(next: WorkspaceParty) {
+    if (next === viewerParty) return;
+    setViewerPartyState(next);
+    flash(`Viewing as ${partyProfile[next].label}.`, "info");
+  }
+
   function sendMessage(body: string) {
+    const sender = partyProfile[viewerParty];
     setMessages((current) => [
       ...current,
       {
         id: `local-${Date.now()}`,
         threadId: agreement.id,
-        senderId: "farmer-a",
-        senderName: "Dale",
-        senderRole: "Livestock owner",
+        senderId: sender.id,
+        senderName: sender.name,
+        senderRole: sender.role,
         body,
         time: shortTime(),
         sectionId: activeSectionId ?? undefined,
@@ -138,7 +167,10 @@ export function WorkspaceClient({
     }
   }, [storageKey, sectionState, lifecycleState, lifecycleHistory, messages]);
 
-  const toggleAgreement = (sectionId: string, party: "A" | "B") => {
+  const toggleAgreement = (sectionId: string, party: WorkspaceParty) => {
+    // Guard - the panel only renders the viewer's own button as
+    // interactive, but defend against rogue calls just in case.
+    if (party !== viewerParty) return;
     setSectionState((current) => {
       const previous = current[sectionId] ?? {
         agreedByA: false,
@@ -170,6 +202,7 @@ export function WorkspaceClient({
   };
 
   const advanceLifecycle = (to: AgreementLifecycleState) => {
+    const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
     setLifecycleState((from) => {
       setLifecycleHistory((history) => [
         ...history,
@@ -177,13 +210,13 @@ export function WorkspaceClient({
           at: nowLabel(),
           from,
           to,
-          byParty: "Farmer A",
+          byParty,
           note: `Advanced from ${from} to ${to}.`,
         },
       ]);
       appendSystemMessage(
         from
-          ? `Agreement moved from ${from} to ${to}.`
+          ? `Agreement moved from ${from} to ${to} by ${byParty}.`
           : `Agreement entered ${to}.`
       );
       return to;
@@ -197,6 +230,7 @@ export function WorkspaceClient({
   };
 
   const cancelLifecycle = () => {
+    const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
     setLifecycleState((from) => {
       if (from === "Cancelled" || from === "Completed") return from;
       setLifecycleHistory((history) => [
@@ -205,11 +239,11 @@ export function WorkspaceClient({
           at: nowLabel(),
           from,
           to: "Cancelled",
-          byParty: "Farmer A",
+          byParty,
           note: "Agreement cancelled from the workspace.",
         },
       ]);
-      appendSystemMessage(`Agreement cancelled by Farmer A.`);
+      appendSystemMessage(`Agreement cancelled by ${byParty}.`);
       flash("Agreement cancelled.", "warning");
       return "Cancelled";
     });
@@ -244,39 +278,94 @@ export function WorkspaceClient({
   }, [agreement.sections, sectionState]);
 
   return (
-    <SplitWorkspace
-      leftLabel="Agreement"
-      rightLabel="Chat"
-      left={
-        <div className="space-y-5">
-          <AgreementPanel
-            agreement={agreement}
-            activeSectionId={activeSectionId}
-            onSelectSection={(id) => setActiveSectionId(id)}
-            sectionState={sectionState}
-            onToggleAgreement={toggleAgreement}
-            timelineItems={timelineItems}
-            lifecycleState={lifecycleState}
-            lifecycleHistory={lifecycleHistory}
-            onAdvanceLifecycle={advanceLifecycle}
-            onCancelLifecycle={cancelLifecycle}
-            transportHref={transportHref}
-          />
+    <div className="space-y-5">
+      <section
+        aria-label="Prototype party switcher"
+        className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sage-deep">
+            <Users className="h-5 w-5" aria-hidden />
+            <h2 className="text-sm font-bold uppercase tracking-wide">
+              Viewing as
+            </h2>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+            Prototype
+          </span>
         </div>
-      }
-      right={
-        <ChatPanel
-          title="Farmer A and Farmer B"
-          messages={messages}
-          onlineCount={2}
-          sections={agreement.sections}
-          activeSectionId={activeSectionId}
-          onSelectSection={setActiveSectionId}
-          onSend={sendMessage}
-          composerSenderLabel="Dale (Farmer A)"
-        />
-      }
-    />
+        <div
+          role="radiogroup"
+          aria-label="Choose which side of the agreement you represent"
+          className="grid gap-2 sm:grid-cols-2"
+        >
+          {(["A", "B"] as const).map((party) => {
+            const profile = partyProfile[party];
+            const active = party === viewerParty;
+            return (
+              <button
+                key={party}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setViewerParty(party)}
+                className={cn(
+                  "flex min-h-16 flex-col items-start gap-0.5 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  active
+                    ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
+                    : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+                )}
+              >
+                <span className="text-sm font-bold">{profile.label}</span>
+                <span
+                  className={cn(
+                    "text-xs",
+                    active ? "text-sage-glow" : "text-bark/60"
+                  )}
+                >
+                  {profile.role}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <SplitWorkspace
+        leftLabel="Agreement"
+        rightLabel="Chat"
+        left={
+          <div className="space-y-5">
+            <AgreementPanel
+              agreement={agreement}
+              activeSectionId={activeSectionId}
+              onSelectSection={(id) => setActiveSectionId(id)}
+              sectionState={sectionState}
+              onToggleAgreement={toggleAgreement}
+              timelineItems={timelineItems}
+              lifecycleState={lifecycleState}
+              lifecycleHistory={lifecycleHistory}
+              onAdvanceLifecycle={advanceLifecycle}
+              onCancelLifecycle={cancelLifecycle}
+              transportHref={transportHref}
+              viewerParty={viewerParty}
+            />
+          </div>
+        }
+        right={
+          <ChatPanel
+            title="Farmer A and Farmer B"
+            messages={messages}
+            onlineCount={2}
+            sections={agreement.sections}
+            activeSectionId={activeSectionId}
+            onSelectSection={setActiveSectionId}
+            onSend={sendMessage}
+            composerSenderLabel={partyProfile[viewerParty].label}
+          />
+        }
+      />
+    </div>
   );
 }
 
