@@ -7,6 +7,10 @@ import {
   transportJobs,
   type Farmer,
 } from "@/lib/dummyData";
+import {
+  getCurrentUserProfile,
+  type CurrentUserProfile,
+} from "@/lib/supabase/currentUser";
 import { AgreementsClient } from "./AgreementsClient";
 
 type SearchParams = {
@@ -20,6 +24,29 @@ const roleToProfileRole: Record<string, Farmer["role"]> = {
   transport: "Transport Provider",
 };
 
+function profileToFarmer(profile: CurrentUserProfile): Farmer {
+  const inferredRole: Farmer["role"] = profile.accountTypes.includes(
+    "Transport Provider"
+  )
+    ? "Transport Provider"
+    : profile.accountTypes.includes("Landowner")
+      ? "Landowner"
+      : "Livestock Owner";
+  return {
+    id: profile.id,
+    name: profile.fullName ?? profile.email ?? "Your account",
+    role: inferredRole,
+    region: profile.regions[0] ?? "Region not set",
+    verified: false,
+    tagline: "Signed in - your live PaddockME account.",
+    bio: "Profile pulled from Supabase. Finish onboarding to set role and region; data here updates as you go.",
+    mobileVerified: false,
+    preparednessScore: 0,
+    verifications: [],
+    readiness: [],
+  };
+}
+
 export default async function AgreementsPage({
   searchParams,
 }: {
@@ -30,9 +57,18 @@ export default async function AgreementsPage({
   const hintedRole = params.role
     ? roleToProfileRole[params.role]
     : undefined;
-  const initialFarmerId = hintedRole
-    ? farmers.find((farmer) => farmer.role === hintedRole)?.id
-    : undefined;
+
+  const currentUserProfile = await getCurrentUserProfile();
+  const signedInFarmer = currentUserProfile
+    ? profileToFarmer(currentUserProfile)
+    : null;
+  const personaList = signedInFarmer ? [signedInFarmer, ...farmers] : farmers;
+
+  const initialFarmerId = signedInFarmer
+    ? signedInFarmer.id
+    : hintedRole
+      ? farmers.find((farmer) => farmer.role === hintedRole)?.id
+      : undefined;
 
   return (
     <>
@@ -44,7 +80,7 @@ export default async function AgreementsPage({
       />
 
       <AgreementsClient
-        farmers={farmers}
+        farmers={personaList}
         agreements={agreements}
         transportJobs={transportJobs}
         listings={paddockListings}

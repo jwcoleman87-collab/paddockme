@@ -12,6 +12,8 @@ import {
   Truck,
 } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 type Role = "livestock" | "landowner" | "transport";
@@ -25,6 +27,12 @@ type State = {
   suitableStock: string[];
   fleetSize: string | null;
   multiTruck: boolean | null;
+};
+
+const roleToAccountType: Record<Role, string> = {
+  livestock: "Livestock Owner",
+  landowner: "Landowner",
+  transport: "Transport Provider",
 };
 
 const initialState: State = {
@@ -108,8 +116,9 @@ export function OnboardingClient() {
     if (step > 0) setStep(step - 1);
   }
 
-  function finish() {
+  async function finish() {
     persistOnboarding(state);
+    await persistProfileToSupabase(state);
     const params = new URLSearchParams({ onboarded: "true" });
     if (state.role) params.set("role", state.role);
     router.push(`/agreements?${params.toString()}`);
@@ -580,6 +589,48 @@ function persistOnboarding(state: State) {
     );
   } catch {
     // localStorage can throw in private modes or when over quota; ignore.
+  }
+}
+
+/**
+ * If Supabase is configured AND the user is signed in, write the onboarding
+ * answers to public.profiles. The handle_new_user trigger created the row
+ * at signup; this fills in account_types / regions / stock_types so the home
+ * view can match.
+ *
+ * Silently no-ops if env vars are missing, no user is signed in, or the
+ * insert fails. The localStorage prototype path is unchanged.
+ */
+async function persistProfileToSupabase(state: State): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  if (!state.role) return;
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const stockTypes =
+      state.role === "livestock"
+        ? state.stockTypes
+        : state.role === "landowner"
+          ? state.suitableStock
+          : [];
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        account_types: [roleToAccountType[state.role]],
+        regions: state.region ? [state.region] : [],
+        stock_types: stockTypes,
+      })
+      .eq("id", user.id);
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.warn("profile update failed", error.message);
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn("profile update threw", error);
   }
 }
 
