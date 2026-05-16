@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Users } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { TransportPanel } from "@/components/TransportPanel";
 import { cn } from "@/lib/utils";
-import type { Message, TransportJob, TransportRole } from "@/lib/dummyData";
+import type {
+  Message,
+  TransportJob,
+  TransportRole,
+  TransportTimelineEntry,
+} from "@/lib/dummyData";
 
 const roles: { id: TransportRole; label: string; helper: string }[] = [
   {
@@ -58,6 +63,40 @@ export function TransportClient({
     setRoleState(next);
     flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
   }
+
+  const derivedTimeline: TransportTimelineEntry[] = useMemo(() => {
+    const sectionFullyConfirmed = (sectionId: string) => {
+      const state = confirmations[sectionId];
+      if (!state) return false;
+      return state.farmerA && state.farmerB && state.driver;
+    };
+    return job.timeline.map((entry, index) => {
+      // Map each timeline entry to a derived complete state based on
+      // which section confirmations gate it. The first entry ("Job booked")
+      // is always complete - the room exists.
+      let complete: boolean;
+      switch (index) {
+        case 0:
+          complete = true;
+          break;
+        case 1:
+          complete = sectionFullyConfirmed("pickup");
+          break;
+        case 2:
+          complete = sectionFullyConfirmed("route");
+          break;
+        case 3:
+          complete = sectionFullyConfirmed("delivery");
+          break;
+        case 4:
+          complete = sectionFullyConfirmed("return");
+          break;
+        default:
+          complete = entry.complete;
+      }
+      return { ...entry, complete };
+    });
+  }, [confirmations, job.timeline]);
 
   function toggleConfirmation(sectionId: string) {
     setConfirmations((current) => {
@@ -163,6 +202,7 @@ export function TransportClient({
             onSelectSection={(id) => setActiveSectionId(id)}
             confirmations={confirmations}
             onToggleConfirmation={toggleConfirmation}
+            timeline={derivedTimeline}
           />
         }
         right={

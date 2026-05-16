@@ -27,6 +27,7 @@ import type {
   TransportRole,
   TransportSection,
   TransportSectionStatus,
+  TransportTimelineEntry,
 } from "@/lib/dummyData";
 
 type ConfirmationState = TransportSection["confirmations"];
@@ -38,6 +39,8 @@ type TransportPanelProps = {
   onSelectSection: (sectionId: string) => void;
   confirmations: Record<string, ConfirmationState>;
   onToggleConfirmation: (sectionId: string) => void;
+  /** When provided, replaces job.timeline. Used to derive completion from live confirmations. */
+  timeline?: TransportTimelineEntry[];
 };
 
 type TransportTab = "overview" | "coordination" | "artefacts" | "timeline";
@@ -84,7 +87,9 @@ export function TransportPanel({
   onSelectSection,
   confirmations,
   onToggleConfirmation,
+  timeline,
 }: TransportPanelProps) {
+  const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
   const isDriver = role === "driver";
 
@@ -154,7 +159,7 @@ export function TransportPanel({
 
         {activeTab === "timeline" && (
           <div className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-            <Timeline items={job.timeline} />
+            <Timeline items={timelineItems} />
           </div>
         )}
       </div>
