@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AgreementPanel,
   type SectionAgreementState,
@@ -57,23 +57,63 @@ export function WorkspaceClient({
     ]);
   }
 
+  const seedSectionState = useMemo(
+    () =>
+      Object.fromEntries(
+        agreement.sections.map((section) => [
+          section.id,
+          { agreedByA: section.agreedByA, agreedByB: section.agreedByB },
+        ])
+      ),
+    [agreement.sections]
+  );
   const [sectionState, setSectionState] = useState<
     Record<string, SectionAgreementState>
-  >(() =>
-    Object.fromEntries(
-      agreement.sections.map((section) => [
-        section.id,
-        { agreedByA: section.agreedByA, agreedByB: section.agreedByB },
-      ])
-    )
-  );
-
+  >(seedSectionState);
   const [lifecycleState, setLifecycleState] = useState<AgreementLifecycleState>(
     agreement.status
   );
   const [lifecycleHistory, setLifecycleHistory] = useState<
     AgreementLifecycleEvent[]
   >(agreement.lifecycleHistory);
+
+  const hydratedRef = useRef(false);
+  const storageKey = `paddockme.workspace.${agreement.id}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as {
+          sectionState?: Record<string, SectionAgreementState>;
+          lifecycleState?: AgreementLifecycleState;
+          lifecycleHistory?: AgreementLifecycleEvent[];
+        };
+        if (parsed.sectionState) setSectionState(parsed.sectionState);
+        if (parsed.lifecycleState) setLifecycleState(parsed.lifecycleState);
+        if (parsed.lifecycleHistory)
+          setLifecycleHistory(parsed.lifecycleHistory);
+      }
+    } catch {
+      // ignore
+    }
+    hydratedRef.current = true;
+    // Only hydrate once per agreement.
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ sectionState, lifecycleState, lifecycleHistory })
+      );
+    } catch {
+      // ignore - quota / private mode
+    }
+  }, [storageKey, sectionState, lifecycleState, lifecycleHistory]);
 
   const toggleAgreement = (sectionId: string, party: "A" | "B") => {
     setSectionState((current) => {

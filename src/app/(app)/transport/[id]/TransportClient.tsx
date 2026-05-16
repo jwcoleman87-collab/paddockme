@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Users } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
@@ -57,6 +57,36 @@ export function TransportClient({
       job.sections.map((section) => [section.id, { ...section.confirmations }])
     )
   );
+
+  const hydratedRef = useRef(false);
+  const storageKey = `paddockme.transport.${job.id}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.confirmations) setConfirmations(parsed.confirmations);
+      }
+    } catch {
+      // ignore
+    }
+    hydratedRef.current = true;
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ confirmations })
+      );
+    } catch {
+      // ignore
+    }
+  }, [storageKey, confirmations]);
 
   function setRole(next: TransportRole) {
     if (next === role) return;
