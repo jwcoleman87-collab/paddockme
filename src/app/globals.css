@@ -49,8 +49,6 @@
 
 body {
   font-family: var(--font-body);
-  background: #fdfcf9;
-  color: #2f2f2f;
   -webkit-font-smoothing: antialiased;
 }
 

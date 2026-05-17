@@ -3,8 +3,11 @@
 import { useState } from "react";
 import {
   AlertTriangle,
+  ArrowRight,
+  Ban,
   CheckCircle,
   Circle,
+  EyeOff,
   FileText,
   Image as ImageIcon,
   Map as MapIcon,
@@ -15,15 +18,25 @@ import {
   Banknote,
   Tractor,
 } from "lucide-react";
+import {
+  ArtefactUploadDialog,
+  type ArtefactDraft,
+} from "@/components/ArtefactUploadDialog";
+import { ArtefactViewer, type ViewableArtefact } from "@/components/ArtefactViewer";
 import { Button, ButtonLink } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
+import { LifecycleStepper } from "@/components/LifecycleStepper";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { cn } from "@/lib/utils";
 import type {
   Agreement,
   AgreementArtefact,
+  AgreementLifecycleEvent,
+  AgreementLifecycleState,
   AgreementSection,
+  TransportJob,
+  TransportQuote,
 } from "@/lib/dummyData";
 
 export type SectionAgreementState = {
@@ -31,16 +44,47 @@ export type SectionAgreementState = {
   agreedByB: boolean;
 };
 
+export type WorkspaceParty = "A" | "B";
+
 type AgreementPanelProps = {
   agreement: Agreement;
   activeSectionId: string | null;
   onSelectSection: (sectionId: string) => void;
   sectionState: Record<string, SectionAgreementState>;
-  onToggleAgreement: (sectionId: string, party: "A" | "B") => void;
+  onToggleAgreement: (sectionId: string, party: WorkspaceParty) => void;
   timelineItems?: TimelineItem[];
+  lifecycleState: AgreementLifecycleState;
+  lifecycleHistory: AgreementLifecycleEvent[];
+  onAdvanceLifecycle: (to: AgreementLifecycleState) => void;
+  onCancelLifecycle: () => void;
+  /** href of the transport room linked to this agreement, when one exists. */
+  transportHref?: string;
+  /** The party the current viewer represents. Drives which agree button is interactive. */
+  viewerParty: WorkspaceParty;
+  /** Live artefacts list (allows the workspace client to lift state above the panel). */
+  artefacts: AgreementArtefact[];
+  /** Called when the upload dialog submits. */
+  onAddArtefact?: (draft: ArtefactDraft) => void;
+  /** Linked transport job. When present, the Transport tab renders a live summary. */
+  transportJob?: TransportJob;
+  /** Live transport confirmations from the workspace client (for the summary count). */
+  transportConfirmations?: Record<
+    string,
+    { farmerA: boolean; farmerB: boolean; driver: boolean }
+  >;
+  /** Live transport quotes - the commercial chain. Empty array when no negotiation has started. */
+  transportQuotes?: TransportQuote[];
+  /** Pointer to the accepted quote in the chain. */
+  acceptedTransportQuoteId?: string;
 };
 
-type AgreementTab = "overview" | "terms" | "artifacts" | "timeline";
+type AgreementTab =
+  | "overview"
+  | "terms"
+  | "artifacts"
+  | "lifecycle"
+  | "transport"
+  | "timeline";
 
 type TimelineItem = {
   title: string;
@@ -62,11 +106,62 @@ const agreementTabs = [
   { id: "overview", label: "Overview" },
   { id: "terms", label: "Terms" },
   { id: "artifacts", label: "Artifacts" },
+  { id: "lifecycle", label: "Lifecycle" },
+  { id: "transport", label: "Transport" },
   { id: "timeline", label: "Timeline" },
 ] satisfies { id: AgreementTab; label: string }[];
 
+const lifecycleTone: Record<
+  AgreementLifecycleState,
+  "success" | "warning" | "info" | "neutral"
+> = {
+  Draft: "neutral",
+  Negotiating: "warning",
+  "Ready to finalise": "info",
+  Active: "success",
+  Completed: "info",
+  Cancelled: "neutral",
+};
+
+const forwardLifecycle: AgreementLifecycleState[] = [
+  "Draft",
+  "Negotiating",
+  "Ready to finalise",
+  "Active",
+  "Completed",
+];
+
+function nextLifecycleState(
+  current: AgreementLifecycleState
+): AgreementLifecycleState | null {
+  const index = forwardLifecycle.indexOf(current);
+  if (index < 0 || index >= forwardLifecycle.length - 1) return null;
+  return forwardLifecycle[index + 1];
+}
+
+const advanceLabels: Partial<
+  Record<AgreementLifecycleState, { label: string; helper: string }>
+> = {
+  Negotiating: {
+    label: "Send to Farmer B",
+    helper: "Move the draft into negotiation.",
+  },
+  "Ready to finalise": {
+    label: "Mark ready to finalise",
+    helper: "All sections need both-parties-agree first.",
+  },
+  Active: {
+    label: "Activate agreement",
+    helper: "Locks the agreed terms and starts the agistment clock.",
+  },
+  Completed: {
+    label: "Complete agreement",
+    helper: "The agistment period has ended.",
+  },
+};
+
 const workspaceCardClass =
-  "min-w-0 overflow-hidden rounded-lg border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
+  "min-w-0 overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
 
 export function AgreementPanel({
   agreement,
@@ -75,21 +170,41 @@ export function AgreementPanel({
   sectionState,
   onToggleAgreement,
   timelineItems = [],
+  lifecycleState,
+  lifecycleHistory,
+  onAdvanceLifecycle,
+  onCancelLifecycle,
+  transportHref,
+  viewerParty,
+  artefacts,
+  onAddArtefact,
+  transportJob,
+  transportConfirmations,
+  transportQuotes,
+  acceptedTransportQuoteId,
 }: AgreementPanelProps) {
-  const [activeTab, setActiveTab] = useState<AgreementTab>("terms");
+  const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
+  const [pendingCancel, setPendingCancel] = useState(false);
 
   const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
     const state = sectionState[section.id] ?? section;
     return state.agreedByA && state.agreedByB ? count + 1 : count;
   }, 0);
-  const allSectionsAgreed = mutuallyAgreedCount === agreement.sections.length;
+  const allSectionsAgreed =
+    mutuallyAgreedCount === agreement.sections.length;
+  const nextState = nextLifecycleState(lifecycleState);
+  const advanceMeta = nextState ? advanceLabels[nextState] : undefined;
+  const isTerminal =
+    lifecycleState === "Completed" || lifecycleState === "Cancelled";
+  const advanceBlocked =
+    nextState === "Ready to finalise" && !allSectionsAgreed;
 
   return (
     <section className={workspaceCardClass}>
       <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
         <div className="mb-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <StatusBadge tone="warning">
-            Agreement status: {agreement.status}
+          <StatusBadge tone={lifecycleTone[lifecycleState]}>
+            Status: {lifecycleState}
           </StatusBadge>
           {agreement.transportRequired && (
             <StatusBadge tone="info">
@@ -104,7 +219,7 @@ export function AgreementPanel({
         <h2 className="text-2xl font-bold text-sage-deep">
           Shared agistment agreement
         </h2>
-        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
+        <p className="mt-1 text-sm leading-relaxed text-bark/65">
           A shared artefact both farmers can review. Tap a section to anchor the
           chat, then mark each side&apos;s agreement when the wording holds up.
         </p>
@@ -112,7 +227,7 @@ export function AgreementPanel({
         <div
           role="tablist"
           aria-label="Agreement panel sections"
-          className="mt-4 flex flex-wrap gap-1 rounded-lg border border-sage-deep/10 bg-warm-white p-1"
+          className="mt-4 flex flex-wrap gap-1 rounded-[24px] border border-sage-deep/10 bg-warm-white p-1"
         >
           {agreementTabs.map((tab) => (
             <AgreementTabButton
@@ -130,6 +245,7 @@ export function AgreementPanel({
         {activeTab === "overview" && (
           <AgreementOverview
             agreement={agreement}
+            sectionState={sectionState}
             mutuallyAgreedCount={mutuallyAgreedCount}
           />
         )}
@@ -138,7 +254,7 @@ export function AgreementPanel({
           <div className="space-y-3">
             <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
               <h3 className="font-bold text-sage-deep">Terms under review</h3>
-              <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
+              <p className="mt-1 text-sm leading-relaxed text-bark/65">
                 Select a section to anchor the chat and confirm each party&apos;s
                 agreement state.
               </p>
@@ -154,6 +270,7 @@ export function AgreementPanel({
                     agreedByB: section.agreedByB,
                   }
                 }
+                viewerParty={viewerParty}
                 onSelect={() => onSelectSection(section.id)}
                 onToggleA={() => onToggleAgreement(section.id, "A")}
                 onToggleB={() => onToggleAgreement(section.id, "B")}
@@ -163,7 +280,35 @@ export function AgreementPanel({
         )}
 
         {activeTab === "artifacts" && (
-          <ArtefactStrip artefacts={agreement.artefacts} />
+          <ArtefactStrip
+            artefacts={artefacts}
+            sections={agreement.sections}
+            onSelectSection={onSelectSection}
+            activeSectionId={activeSectionId}
+            viewerParty={viewerParty}
+            onAddArtefact={onAddArtefact}
+          />
+        )}
+
+        {activeTab === "lifecycle" && (
+          <LifecycleTabContent
+            currentState={lifecycleState}
+            history={lifecycleHistory}
+            allSectionsAgreed={allSectionsAgreed}
+            sectionCount={agreement.sections.length}
+            agreedCount={mutuallyAgreedCount}
+          />
+        )}
+
+        {activeTab === "transport" && (
+          <TransportTabContent
+            transportJob={transportJob}
+            transportHref={transportHref}
+            confirmations={transportConfirmations}
+            quotes={transportQuotes ?? []}
+            acceptedQuoteId={acceptedTransportQuoteId}
+            viewerParty={viewerParty}
+          />
         )}
 
         {activeTab === "timeline" && (
@@ -171,7 +316,7 @@ export function AgreementPanel({
             {timelineItems.length > 0 ? (
               <Timeline items={timelineItems} />
             ) : (
-              <p className="text-sm font-medium text-bark/85">
+              <p className="text-sm text-bark/65">
                 No timeline events have been added yet.
               </p>
             )}
@@ -179,25 +324,405 @@ export function AgreementPanel({
         )}
       </div>
 
-      <div className="grid gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:grid-cols-3">
-        <ButtonLink href={`/workspace/${agreement.id}`} variant="secondary">
-          Suggest a change
-        </ButtonLink>
-        <ButtonLink href="/transport/transport-glenbarra" variant="secondary">
-          Open transport room
-        </ButtonLink>
-        <Button
-          type="button"
-          disabled={!allSectionsAgreed}
-          title={
-            allSectionsAgreed
-              ? "Ready to finalise"
-              : `${agreement.sections.length - mutuallyAgreedCount} sections still need agreement`
-          }
-        >
-          Lock it in
-        </Button>
+      <div className="flex flex-col gap-3 border-t border-sage-deep/12 bg-cream/45 p-5 sm:flex-row sm:items-center sm:justify-between">
+        {transportHref ? (
+          <ButtonLink href={transportHref} variant="secondary">
+            Open transport room
+          </ButtonLink>
+        ) : (
+          <span className="text-sm font-semibold text-bark/55">
+            No transport room linked yet.
+          </span>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {!isTerminal && nextState && advanceMeta && (
+            <Button
+              type="button"
+              onClick={() => onAdvanceLifecycle(nextState)}
+              disabled={advanceBlocked}
+              title={
+                advanceBlocked
+                  ? `Mutual agreement needed on every section first (${mutuallyAgreedCount} of ${agreement.sections.length}).`
+                  : advanceMeta.helper
+              }
+            >
+              {advanceMeta.label}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Button>
+          )}
+          {!isTerminal && !pendingCancel && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setPendingCancel(true)}
+              className="text-terra hover:bg-terra-light/60"
+            >
+              <Ban className="h-4 w-4" aria-hidden />
+              Cancel agreement
+            </Button>
+          )}
+          {!isTerminal && pendingCancel && (
+            <div
+              role="group"
+              aria-label="Confirm cancellation"
+              className="flex items-center gap-2 rounded-full border border-terra/35 bg-terra-light/45 p-1"
+            >
+              <span className="px-3 text-xs font-semibold text-bark">
+                Cancel for real?
+              </span>
+              <Button
+                type="button"
+                onClick={() => {
+                  setPendingCancel(false);
+                  onCancelLifecycle();
+                }}
+                className="bg-terra text-cream hover:bg-terra"
+              >
+                Yes, cancel
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setPendingCancel(false)}
+              >
+                Keep
+              </Button>
+            </div>
+          )}
+          {isTerminal && (
+            <p className="text-sm font-semibold text-bark/70">
+              Agreement is {lifecycleState.toLowerCase()} - no further actions.
+            </p>
+          )}
+        </div>
       </div>
+    </section>
+  );
+}
+
+function LifecycleTabContent({
+  currentState,
+  history,
+  allSectionsAgreed,
+  sectionCount,
+  agreedCount,
+}: {
+  currentState: AgreementLifecycleState;
+  history: AgreementLifecycleEvent[];
+  allSectionsAgreed: boolean;
+  sectionCount: number;
+  agreedCount: number;
+}) {
+  const nextState = nextLifecycleState(currentState);
+  const isTerminal =
+    currentState === "Completed" || currentState === "Cancelled";
+
+  return (
+    <div className="space-y-5">
+      <LifecycleStepper current={currentState} />
+
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+          {isTerminal ? "Final state" : "Next step"}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-bark/75">
+          {isTerminal
+            ? currentState === "Completed"
+              ? "The agistment ran to its end and the agreement is closed."
+              : "This agreement was cancelled and is no longer active."
+            : nextState === "Ready to finalise"
+              ? allSectionsAgreed
+                ? "Every section has both-parties-agree. You can move this agreement to ready-to-finalise."
+                : `${agreedCount} of ${sectionCount} sections mutually agreed. Both parties must agree on every section before this can be marked ready.`
+              : nextState
+                ? `From ${currentState}, the next forward state is ${nextState}.`
+                : "No further forward transitions defined."}
+        </p>
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
+          Audit history
+        </h3>
+        {history.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/60 px-4 py-6 text-center text-sm text-bark/60">
+            No lifecycle events recorded yet.
+          </p>
+        ) : (
+          <ol className="space-y-3">
+            {history.map((event, index) => (
+              <li
+                key={`${event.at}-${index}`}
+                className="rounded-xl border border-sage-deep/10 bg-warm-white px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-semibold text-bark">
+                    {event.from ? `${event.from} -> ${event.to}` : `Created as ${event.to}`}
+                  </span>
+                  <span className="rounded-full bg-sage-mist px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-sage-deep">
+                    {event.byParty}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
+                  {event.at}
+                </p>
+                {event.note && (
+                  <p className="mt-2 text-sm leading-relaxed text-bark/75">
+                    {event.note}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function TransportTabContent({
+  transportJob,
+  transportHref,
+  confirmations,
+  quotes,
+  acceptedQuoteId,
+  viewerParty,
+}: {
+  transportJob?: TransportJob;
+  transportHref?: string;
+  confirmations?: Record<
+    string,
+    { farmerA: boolean; farmerB: boolean; driver: boolean }
+  >;
+  quotes: TransportQuote[];
+  acceptedQuoteId?: string;
+  viewerParty: WorkspaceParty;
+}) {
+  if (!transportJob) {
+    return (
+      <div className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
+        <Truck
+          className="mx-auto mb-2 h-6 w-6 text-sage-deep"
+          aria-hidden
+        />
+        <p className="text-sm font-semibold text-bark">
+          No transport room linked yet.
+        </p>
+        <p className="mt-2 text-sm text-bark/70">
+          A transport room opens when the agreement is activated and a driver
+          is invited.
+        </p>
+      </div>
+    );
+  }
+
+  let confirmedCount = 0;
+  for (const section of transportJob.sections) {
+    const state = confirmations?.[section.id] ?? section.confirmations;
+    confirmedCount +=
+      (state.farmerA ? 1 : 0) +
+      (state.farmerB ? 1 : 0) +
+      (state.driver ? 1 : 0);
+  }
+  const totalConfirmations = transportJob.sections.length * 3;
+
+  const showPricing = viewerParty === "A";
+  const acceptedQuote = acceptedQuoteId
+    ? quotes.find((q) => q.id === acceptedQuoteId)
+    : undefined;
+  const pendingQuote = quotes
+    .slice()
+    .reverse()
+    .find((q) => q.status === "pending");
+  const latestQuote =
+    acceptedQuote ?? pendingQuote ?? quotes[quotes.length - 1];
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sage-deep">
+            <Truck className="h-5 w-5" aria-hidden />
+            <h3 className="text-sm font-bold uppercase tracking-wide">
+              Stock movement
+            </h3>
+          </div>
+          <StatusBadge tone="info">Status: {transportJob.status}</StatusBadge>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Driver"
+            value={transportJob.driver}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Pickup window"
+            value={transportJob.preferredDate}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Pickup from"
+            value={transportJob.pickup}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Delivery to"
+            value={transportJob.destination}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+            Coordination
+          </h3>
+          <span className="rounded-full bg-warm-white px-2.5 py-0.5 text-xs font-bold text-stone">
+            {confirmedCount} / {totalConfirmations} confirmations
+          </span>
+        </div>
+        <ul className="space-y-2">
+          {transportJob.sections.map((section) => {
+            const state =
+              confirmations?.[section.id] ?? section.confirmations;
+            const sectionConfirmed =
+              (state.farmerA ? 1 : 0) +
+              (state.farmerB ? 1 : 0) +
+              (state.driver ? 1 : 0);
+            const fullyConfirmed = sectionConfirmed === 3;
+            const Icon = fullyConfirmed ? CheckCircle : Circle;
+            return (
+              <li
+                key={section.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-mist bg-warm-white px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-bark">{section.label}</p>
+                  <p className="text-xs text-bark/65">
+                    {sectionConfirmed} of 3 parties confirmed
+                  </p>
+                </div>
+                <Icon
+                  className={cn(
+                    "h-5 w-5 shrink-0",
+                    fullyConfirmed ? "text-match" : "text-stone"
+                  )}
+                  aria-hidden
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {showPricing ? (
+        <TransportPricingSummary
+          quote={latestQuote}
+          accepted={!!acceptedQuote}
+        />
+      ) : (
+        <section className="flex items-start gap-3 rounded-xl border border-amber/25 bg-amber-light/45 p-4">
+          <EyeOff
+            className="mt-0.5 h-5 w-5 shrink-0 text-amber"
+            aria-hidden
+          />
+          <div>
+            <p className="text-sm font-bold text-bark">
+              Transport pricing isn&apos;t visible to you.
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-bark/70">
+              The haulage rate sits between Farmer A and the driver. You see
+              pickup, delivery, and arrival timing - the commercial detail
+              between the other two parties stays between them.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {transportHref && (
+        <ButtonLink href={transportHref}>
+          Open transport room
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </ButtonLink>
+      )}
+    </div>
+  );
+}
+
+function TransportPricingSummary({
+  quote,
+  accepted,
+}: {
+  quote?: TransportQuote;
+  accepted: boolean;
+}) {
+  if (!quote) {
+    return (
+      <section className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
+        <Banknote
+          className="mx-auto mb-2 h-6 w-6 text-sage-deep"
+          aria-hidden
+        />
+        <p className="text-sm font-semibold text-bark">
+          No transport rate proposed yet.
+        </p>
+        <p className="mt-1 text-sm text-bark/70">
+          The driver hasn&apos;t sent a quote. Open the transport room to
+          start the conversation.
+        </p>
+      </section>
+    );
+  }
+  const basisLabel =
+    quote.basis === "per_head"
+      ? "per head"
+      : quote.basis === "per_km"
+        ? "per km"
+        : "flat";
+  const tone: "success" | "warning" | "info" = accepted
+    ? "success"
+    : quote.status === "rejected"
+      ? "warning"
+      : "info";
+  const statusLabel = accepted
+    ? "Accepted"
+    : quote.status === "rejected"
+      ? "Rejected"
+      : quote.status === "countered"
+        ? "Countered"
+        : "Awaiting response";
+  return (
+    <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sage-deep">
+          <Banknote className="h-5 w-5" aria-hidden />
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            Transport rate
+          </h3>
+        </div>
+        <StatusBadge tone={tone}>{statusLabel}</StatusBadge>
+      </div>
+      <p className="text-2xl font-bold text-sage-deep">
+        ${quote.amount.toFixed(2)} {quote.currency}{" "}
+        <span className="text-base font-semibold text-bark/70">
+          {basisLabel}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-bark/65">{quote.paymentTerms}</p>
+      {quote.note && (
+        <p className="mt-3 rounded-lg border border-mist bg-warm-white px-3 py-2 text-sm text-bark/75">
+          {quote.note}
+        </p>
+      )}
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-stone">
+        Proposed by {quote.proposedBy === "driver" ? "Driver" : "Farmer A"}{" "}
+        &middot; {quote.at}
+      </p>
     </section>
   );
 }
@@ -218,10 +743,10 @@ function AgreementTabButton({
       role="tab"
       aria-selected={active}
       className={cn(
-        "min-h-10 shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
+        "min-h-10 shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
         active
           ? "bg-sage-deep text-cream shadow-sm"
-          : "text-bark/85 hover:bg-sage-mist/60 hover:text-sage-deep"
+          : "text-bark/70 hover:bg-sage-mist/60 hover:text-sage-deep"
       )}
     >
       {children}
@@ -231,12 +756,24 @@ function AgreementTabButton({
 
 function AgreementOverview({
   agreement,
+  sectionState,
   mutuallyAgreedCount,
 }: {
   agreement: Agreement;
+  sectionState: Record<string, SectionAgreementState>;
   mutuallyAgreedCount: number;
 }) {
   const allAgreed = mutuallyAgreedCount === agreement.sections.length;
+  const sectionAgreed = (id: string) => {
+    const state = sectionState[id];
+    const fallback = agreement.sections.find((section) => section.id === id);
+    if (state) return state.agreedByA && state.agreedByB;
+    if (fallback) return fallback.agreedByA && fallback.agreedByB;
+    return false;
+  };
+  const paddockAgreed = sectionAgreed("paddock");
+  const termsAgreed = sectionAgreed("terms");
+  const transportAgreed = sectionAgreed("transport");
 
   return (
     <div className="space-y-5">
@@ -253,7 +790,7 @@ function AgreementOverview({
       </div>
 
       <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-bark/85">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Agreement alignment
         </h3>
         <div className="mt-3 space-y-2">
@@ -261,11 +798,32 @@ function AgreementOverview({
             complete={allAgreed}
             label={`${mutuallyAgreedCount} of ${agreement.sections.length} sections mutually agreed`}
           />
-          <AlignmentRow complete label="Feed, water and fencing details match" />
           <AlignmentRow
-            complete={false}
-            label="Rate and final terms require attention"
+            complete={paddockAgreed}
+            label={
+              paddockAgreed
+                ? "Feed, water and fencing details match"
+                : "Feed, water and fencing details still under review"
+            }
           />
+          <AlignmentRow
+            complete={termsAgreed}
+            label={
+              termsAgreed
+                ? "Rate and final terms agreed"
+                : "Rate and final terms require attention"
+            }
+          />
+          {agreement.transportRequired && (
+            <AlignmentRow
+              complete={transportAgreed}
+              label={
+                transportAgreed
+                  ? "Transport plan confirmed by both parties"
+                  : "Transport plan still being arranged"
+              }
+            />
+          )}
         </div>
       </section>
 
@@ -296,7 +854,7 @@ function AlignmentRow({
 function ReadinessChecklist({ agreement }: { agreement: Agreement }) {
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-bark/85">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
         Livestock readiness checklist
       </h3>
       <div className="space-y-2">
@@ -328,6 +886,7 @@ function SectionCard({
   section,
   active,
   state,
+  viewerParty,
   onSelect,
   onToggleA,
   onToggleB,
@@ -335,6 +894,7 @@ function SectionCard({
   section: AgreementSection;
   active: boolean;
   state: SectionAgreementState;
+  viewerParty: WorkspaceParty;
   onSelect: () => void;
   onToggleA: () => void;
   onToggleB: () => void;
@@ -385,7 +945,7 @@ function SectionCard({
           </div>
           <StatusBadge tone={summaryTone}>{summaryLabel}</StatusBadge>
         </div>
-        <p className="text-sm font-medium text-bark/85">{section.summary}</p>
+        <p className="text-sm text-bark/70">{section.summary}</p>
       </button>
 
       <div className="space-y-4 border-t border-mist bg-cream px-5 py-4">
@@ -405,11 +965,13 @@ function SectionCard({
           <PartyAgreeButton
             party="Farmer A"
             agreed={agreedByA}
+            interactive={viewerParty === "A"}
             onClick={onToggleA}
           />
           <PartyAgreeButton
             party="Farmer B"
             agreed={agreedByB}
+            interactive={viewerParty === "B"}
             onClick={onToggleB}
           />
         </div>
@@ -421,55 +983,161 @@ function SectionCard({
 function PartyAgreeButton({
   party,
   agreed,
+  interactive,
   onClick,
 }: {
   party: string;
   agreed: boolean;
+  interactive: boolean;
   onClick: () => void;
 }) {
   const Icon = agreed ? CheckCircle : Circle;
+  const label = interactive
+    ? `${party}: ${agreed ? "Agreed" : "Tap to agree"}`
+    : `${party}: ${agreed ? "Agreed" : "Awaiting"}`;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={interactive ? onClick : undefined}
+      disabled={!interactive}
       aria-pressed={agreed}
+      title={interactive ? undefined : `Only ${party} can toggle this from their account.`}
       className={cn(
-        "inline-flex min-h-11 items-center justify-between gap-3 rounded-md border px-4 py-2 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        "inline-flex min-h-11 items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        interactive ? "cursor-pointer" : "cursor-not-allowed",
         agreed
           ? "border-match/30 bg-match-light text-match"
-          : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist/40"
+          : interactive
+            ? "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+            : "border-mist bg-warm-white/60 text-bark/55"
       )}
     >
-      <span>
-        {party}: {agreed ? "Agreed" : "Tap to agree"}
-      </span>
+      <span>{label}</span>
       <Icon className="h-4 w-4" aria-hidden />
     </button>
   );
 }
 
-function ArtefactStrip({ artefacts }: { artefacts: AgreementArtefact[] }) {
-  if (artefacts.length === 0) return null;
+function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
+  return {
+    id: artefact.id,
+    label: artefact.label,
+    kind: artefact.kind,
+    description: artefact.description,
+    uploaderLabel: artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B",
+    sectionId: artefact.sectionId,
+  };
+}
+
+function ArtefactStrip({
+  artefacts,
+  sections,
+  onSelectSection,
+  activeSectionId,
+  viewerParty,
+  onAddArtefact,
+}: {
+  artefacts: AgreementArtefact[];
+  sections: AgreementSection[];
+  onSelectSection: (sectionId: string) => void;
+  activeSectionId: string | null;
+  viewerParty: WorkspaceParty;
+  onAddArtefact?: (draft: ArtefactDraft) => void;
+}) {
+  const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const activeArtefact =
+    artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
+  const matchingCount = activeSectionId
+    ? artefacts.filter((artefact) => artefact.sectionId === activeSectionId)
+        .length
+    : artefacts.length;
+  const activeSectionLabel = activeSectionId
+    ? sections.find((section) => section.id === activeSectionId)?.label
+    : undefined;
+
+  const uploaderLabel =
+    viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
+
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-bark/85">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Shared artefacts
         </h3>
-        <span className="text-xs font-semibold text-bark/75">
-          {artefacts.length} item{artefacts.length === 1 ? "" : "s"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-bark/55">
+            {activeSectionLabel
+              ? `${matchingCount} for "${activeSectionLabel}"`
+              : `${artefacts.length} item${artefacts.length === 1 ? "" : "s"}`}
+          </span>
+          {onAddArtefact && (
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              + Add artefact
+            </button>
+          )}
+        </div>
       </div>
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-        {artefacts.map((artefact) => (
-          <ArtefactCard key={artefact.id} artefact={artefact} />
-        ))}
-      </div>
+      {artefacts.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-sage-deep/15 bg-warm-white px-4 py-6 text-center text-sm text-bark/60">
+          No artefacts shared yet. Add one when an NVD, photo, or property
+          map needs to be on record.
+        </p>
+      ) : (
+        <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+          {artefacts.map((artefact) => (
+            <ArtefactCard
+              key={artefact.id}
+              artefact={artefact}
+              onOpen={() => setActiveArtefactId(artefact.id)}
+              dimmed={
+                !!activeSectionId && artefact.sectionId !== activeSectionId
+              }
+            />
+          ))}
+        </div>
+      )}
+      <ArtefactViewer
+        artefact={activeArtefact ? toViewableArtefact(activeArtefact) : null}
+        sections={sections.map((section) => ({
+          id: section.id,
+          label: section.label,
+        }))}
+        onClose={() => setActiveArtefactId(null)}
+        onSelectSection={onSelectSection}
+      />
+      {onAddArtefact && (
+        <ArtefactUploadDialog
+          open={uploadOpen}
+          uploaderLabel={uploaderLabel}
+          sections={sections.map((section) => ({
+            id: section.id,
+            label: section.label,
+          }))}
+          onClose={() => setUploadOpen(false)}
+          onSubmit={(draft) => {
+            onAddArtefact(draft);
+            setUploadOpen(false);
+          }}
+        />
+      )}
     </section>
   );
 }
 
-function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
+function ArtefactCard({
+  artefact,
+  onOpen,
+  dimmed,
+}: {
+  artefact: AgreementArtefact;
+  onOpen: () => void;
+  dimmed?: boolean;
+}) {
   const Icon =
     artefact.kind === "photo"
       ? ImageIcon
@@ -480,17 +1148,25 @@ function ArtefactCard({ artefact }: { artefact: AgreementArtefact }) {
     artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B";
 
   return (
-    <article className="flex w-44 shrink-0 flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3">
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Open artefact: ${artefact.label}`}
+      className={cn(
+        "flex w-44 shrink-0 cursor-pointer flex-col gap-2 rounded-xl border border-sage-deep/10 bg-warm-white p-3 text-left transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+        dimmed && "opacity-55"
+      )}
+    >
       <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-sage/35 bg-sage-mist text-sage-deep">
         <Icon className="h-7 w-7" aria-hidden />
       </div>
       <div>
         <p className="text-sm font-semibold text-bark">{artefact.label}</p>
-        <p className="mt-0.5 text-xs font-medium text-bark/80">{artefact.description}</p>
-        <p className="mt-2 text-[0.7rem] font-bold uppercase tracking-wide text-bark/85">
+        <p className="mt-0.5 text-xs text-bark/65">{artefact.description}</p>
+        <p className="mt-2 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
           From {uploader}
         </p>
       </div>
-    </article>
+    </button>
   );
 }

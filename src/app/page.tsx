@@ -29,25 +29,54 @@ const homeActions = [
 export default function HomePage() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-warm-white pb-28 text-bark">
-      <header className="mx-auto flex max-w-7xl items-center px-5 py-4 md:px-8">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-5 md:px-8">
         <Link href="/" className="font-display text-2xl text-sage-deep">
           PaddockME
         </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/sign-in"
+            className="text-sm font-semibold text-bark/75 transition hover:text-sage-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className="inline-flex min-h-9 items-center rounded-full bg-sage-deep px-4 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+          >
+            Create account
+          </Link>
+        </div>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-7xl flex-col px-5 pb-5 md:px-8">
-        <div className="grid flex-1 items-start gap-10 pt-8 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-14">
+      <section className="mx-auto flex min-h-[calc(100dvh-5.25rem)] max-w-7xl flex-col px-5 pb-5 md:px-8">
+        <div className="grid flex-1 items-center gap-10 py-8 md:grid-cols-[1.05fr_0.95fr] md:py-14">
           <div className="min-w-0">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-amber">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-ochre">
               Australian agistment coordination
             </p>
             <h1 className="font-display text-5xl leading-tight text-sage-deep md:text-7xl">
               Coordination is expensive.
             </h1>
-            <p className="mt-6 max-w-[21rem] break-words text-lg font-medium leading-relaxed text-bark/90 sm:max-w-2xl md:text-xl">
+            <p className="mt-6 max-w-[21rem] break-words text-lg leading-relaxed text-bark/75 sm:max-w-2xl md:text-xl">
               PaddockME removes hidden coordination costs between livestock,
               land and transport.
             </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href="/onboarding"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+              >
+                Take the tour
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+              <Link
+                href="/agreements"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-sage-deep/25 bg-cream px-5 py-2 text-sm font-semibold text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+              >
+                Skip to the app
+              </Link>
+            </div>
           </div>
 
           <div className="hidden min-w-0 gap-4 md:grid">
@@ -84,7 +113,7 @@ export default function HomePage() {
                 <span className="sm:hidden">{shortLabel}</span>
                 <span className="hidden sm:inline">{label}</span>
               </span>
-              <span className="hidden text-xs font-semibold text-bark/80 sm:inline">
+              <span className="hidden text-xs font-medium text-bark/55 sm:inline">
                 {helper}
               </span>
             </Link>
@@ -110,7 +139,7 @@ function Feature({
         {icon}
       </div>
       <h2 className="font-bold text-sage-deep">{title}</h2>
-      <p className="mt-2 text-sm font-medium leading-relaxed text-bark/90">{text}</p>
+      <p className="mt-2 text-sm leading-relaxed text-bark/70">{text}</p>
     </Card>
   );
 }

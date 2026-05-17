@@ -105,16 +105,16 @@ When Build 02 finishes, James must be able to:
 
 | Item | Status |
 | --- | --- |
-| Sign in as each of the six personas and land on a persona-appropriate home view | pending |
-| Visit every route at consistent typography, spacing, and component patterns | pending |
-| Pass the "one-handed in a ute" test on a real 6.1" phone | pending |
-| Open a 2-party workspace and see the agreement state pulled from Supabase | pending |
-| Toggle a "both parties agree" state per section and have it persist | pending |
-| Open a 3-party transport room as Wayne or Sharon and see logistics-only fields | pending |
-| Confirm via SQL that the driver cannot SELECT the agreement rate column (RLS proof) | pending |
-| Move an agreement through all five lifecycle states from the UI | pending |
-| Filter matches by region + stock type + head count and see real Supabase rows | pending |
-| View a profile page rendering verification placeholders for each persona type | pending |
+| Sign in as each of the six personas and land on a persona-appropriate home view | partial (persona switcher on /profile and /transport; auth-gated home view still pending Supabase) |
+| Visit every route at consistent typography, spacing, and component patterns | done |
+| Pass the "one-handed in a ute" test on a real 6.1" phone | pending (manual test) |
+| Open a 2-party workspace and see the agreement state pulled from Supabase | partial (workspace renders, persistence still pending Supabase) |
+| Toggle a "both parties agree" state per section and have it persist | partial (toggles wired; persistence pending Supabase) |
+| Open a 3-party transport room as Wayne or Sharon and see logistics-only fields | done (role switcher, driver-visibility wall) |
+| Confirm via SQL that the driver cannot SELECT the agreement rate column (RLS proof) | pending Supabase |
+| Move an agreement through all five lifecycle states from the UI | done |
+| Filter matches by region + stock type + head count and see real Supabase rows | partial (chip filters on /listings; real data pending Supabase) |
+| View a profile page rendering verification placeholders for each persona type | done |
 | Push a change to `main` and watch the QA checklist still pass | ongoing |
 
 ## Acceptance principles

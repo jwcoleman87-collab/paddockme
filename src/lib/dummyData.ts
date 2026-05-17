@@ -1,38 +1,81 @@
+export type ProfileRole =
+  | "Livestock Owner"
+  | "Landowner"
+  | "Transport Provider";
+
+export type VerificationStatus = "Verified" | "Pending" | "Not started";
+
+export type VerificationCheck = {
+  label: string;
+  status: VerificationStatus;
+  detail?: string;
+};
+
+export type ReadinessItem = {
+  label: string;
+  complete: boolean;
+  helper?: string;
+};
+
+export type LivestockSubProfile = {
+  stockTypes: string[];
+  headCount: number;
+  pic: string;
+  nlisRegistered: boolean;
+  vaccinationCurrent: boolean;
+  treatmentNotes?: string;
+};
+
+export type PropertySubProfile = {
+  propertyName: string;
+  acres: number;
+  suitableStock: string[];
+  feedStatus: PaddockListing["feedStatus"];
+  waterStatus: PaddockListing["waterStatus"];
+  fencingStatus: PaddockListing["fencingStatus"];
+  biosecurityRegistered: boolean;
+  yards: string;
+};
+
+export type TransportVehicle = {
+  rego: string;
+  config: string;
+  driver: string;
+};
+
+export type TransportSubProfile = {
+  abn: string;
+  fleetSize: number;
+  driverCount: number;
+  subContractorsAllowed: boolean;
+  accreditations: {
+    lbca: VerificationStatus;
+    truckSafe: VerificationStatus;
+    nhvas: VerificationStatus;
+  };
+  vehicles: TransportVehicle[];
+};
+
 export type Farmer = {
   id: string;
   name: string;
-  role: "Livestock Owner" | "Landowner" | "Transport Provider";
+  role: ProfileRole;
   region: string;
   verified: boolean;
+  tagline: string;
+  bio: string;
+  mobileVerified: boolean;
+  preparednessScore: number;
+  /** Path to a square profile image in /public. Falls back to initials when absent. */
+  avatarUrl?: string;
+  livestock?: LivestockSubProfile;
+  property?: PropertySubProfile;
+  transport?: TransportSubProfile;
+  verifications: VerificationCheck[];
+  readiness: ReadinessItem[];
 };
 
 export type AustralianState = "NSW" | "QLD" | "VIC" | "SA" | "WA" | "TAS" | "NT" | "ACT";
-
-export type TruckClass = "medium-rigid" | "heavy-rigid" | "b-double" | "road-train";
-
-export type TruckCapacity = {
-  cattle: number;
-  sheep: number;
-  horses: number;
-};
-
-export type Truck = {
-  id: string;
-  ownerId: string;
-  rego: string;
-  label: string;
-  class: TruckClass;
-  capacity: TruckCapacity;
-  serviceRegions: string[];
-  preferredRadiusKm: number;
-};
-
-export const TRUCK_CLASS_LABEL: Record<TruckClass, string> = {
-  "medium-rigid": "Medium rigid",
-  "heavy-rigid": "Heavy rigid",
-  "b-double": "B-double",
-  "road-train": "Road train",
-};
 
 export type PaddockListing = {
   id: string;
@@ -60,7 +103,6 @@ export type PaddockListing = {
   verificationStatus: "Verified provider" | "Pending verification";
   availabilityWindow: string;
   guideTerms: string;
-  matchSignal: string;
   summary: string;
 };
 
@@ -95,6 +137,23 @@ export type AgreementArtefact = {
   kind: "photo" | "document" | "map";
   uploadedBy: "farmerA" | "farmerB";
   description: string;
+  sectionId?: string;
+};
+
+export type AgreementLifecycleState =
+  | "Draft"
+  | "Negotiating"
+  | "Ready to finalise"
+  | "Active"
+  | "Completed"
+  | "Cancelled";
+
+export type AgreementLifecycleEvent = {
+  at: string;
+  from: AgreementLifecycleState | null;
+  to: AgreementLifecycleState;
+  byParty: "Farmer A" | "Farmer B" | "System";
+  note?: string;
 };
 
 export type Agreement = {
@@ -103,7 +162,7 @@ export type Agreement = {
   requestId: string;
   farmerAId: string;
   farmerBId: string;
-  status: "Negotiating" | "Ready to finalise" | "Active";
+  status: AgreementLifecycleState;
   livestock: string;
   duration: string;
   feed: string;
@@ -115,6 +174,7 @@ export type Agreement = {
   readinessChecklist: { label: string; complete: boolean }[];
   sections: AgreementSection[];
   artefacts: AgreementArtefact[];
+  lifecycleHistory: AgreementLifecycleEvent[];
 };
 
 export type Message = {
@@ -123,41 +183,118 @@ export type Message = {
   senderId: string;
   senderName: string;
   senderRole: string;
+  senderAvatarUrl?: string;
   body: string;
   time: string;
   sectionId?: string;
 };
 
-export type TransportSize = "small" | "medium" | "large";
+export type TransportRole = "farmerA" | "farmerB" | "driver";
 
-export type TransportState = "open" | "assigned" | "in-progress" | "complete";
+export type TransportSectionDetail = {
+  label: string;
+  value: string;
+  /** When true, this row is hidden from the Driver role (commercial / contract detail). */
+  privateFromDriver?: boolean;
+};
 
-export type TransportStockType = "Cattle" | "Sheep" | "Horses" | "Goats";
+export type TransportSectionStatus =
+  | "Pending"
+  | "Confirmed"
+  | "In progress"
+  | "Done";
+
+export type TransportSection = {
+  id: string;
+  label: string;
+  summary: string;
+  detail: TransportSectionDetail[];
+  status: TransportSectionStatus;
+  confirmations: {
+    farmerA: boolean;
+    farmerB: boolean;
+    driver: boolean;
+  };
+};
+
+export type TransportArtefact = {
+  id: string;
+  label: string;
+  kind: "photo" | "document" | "map";
+  uploadedBy: TransportRole;
+  description: string;
+  sectionId?: string;
+};
+
+export type TransportTimelineEntry = {
+  title: string;
+  detail: string;
+  complete: boolean;
+};
+
+export type TransportQuoteBasis = "per_head" | "per_km" | "flat";
+
+export type TransportQuoteStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "countered";
+
+/**
+ * A single price proposal in the transport pricing chain.
+ *
+ * Visibility: rows are visible only to the two commercial parties on the
+ * transport job - Farmer A (livestock owner, pays) and the driver (paid).
+ * Farmer B (landowner) never appears in the SELECT scope. This is the
+ * landowner-visibility wall, mirror-image of the driver-visibility wall
+ * that excludes drivers from the agreement rate.
+ */
+export type TransportQuote = {
+  id: string;
+  transportJobId: string;
+  proposedBy: Extract<TransportRole, "farmerA" | "driver">;
+  basis: TransportQuoteBasis;
+  amount: number;
+  currency: string;
+  paymentTerms: string;
+  status: TransportQuoteStatus;
+  /** Links a counter-offer to the quote it replaced. */
+  previousQuoteId?: string;
+  at: string;
+  acceptedAt?: string;
+  note?: string;
+};
 
 export type TransportJob = {
   id: string;
-  agreementId?: string;
-  farmerAId?: string;
-  farmerBId?: string;
-  driverId?: string;
+  agreementId: string;
+  farmerAId: string;
+  farmerBId: string;
+  driverId: string;
   pickup: string;
-  pickupTown: string;
-  pickupRegion: string;
   destination: string;
-  destinationTown: string;
-  destinationRegion: string;
+  /** Structured pickup region for backload matching. Free-text `pickup` stays the display. */
+  pickupRegion?: string;
+  /** Structured destination region for backload matching. */
+  destinationRegion?: string;
   livestockCount: string;
-  stockType: TransportStockType;
-  headCount: number;
-  size: TransportSize;
   preferredDate: string;
-  driver?: string;
-  state: TransportState;
-  status: "Open" | "Loading" | "In Transit" | "Arrived";
+  driver: string;
+  status: "Loading" | "In Transit" | "Arrived";
   routeSummary: string;
-  distanceKm: number;
-  estimatedDuration: string;
-  rateGuide: string;
+  /** Visible to farmers only - hidden from driver per the driver-visibility rule. */
+  agreementContext: {
+    duration: string;
+    weeksRemaining: number;
+    agreementStatus: string;
+  };
+  sections: TransportSection[];
+  artefacts: TransportArtefact[];
+  timeline: TransportTimelineEntry[];
+  /** Commercial pricing chain. Visible to Farmer A and Driver only. */
+  quotes: TransportQuote[];
+  /** Pointer to the accepted quote in the chain, if any. */
+  acceptedQuoteId?: string;
 };
 
 export const farmers: Farmer[] = [
@@ -167,6 +304,62 @@ export const farmers: Farmer[] = [
     role: "Livestock Owner",
     region: "Central West NSW",
     verified: true,
+    tagline: "Cattle and sheep producer, crisis-mode user.",
+    bio: "Mid-size family operation, third-generation. Uses agistment reactively when his country runs dry.",
+    mobileVerified: true,
+    preparednessScore: 72,
+    avatarUrl: "/avatars/dale.jpg",
+    livestock: {
+      stockTypes: ["Cattle", "Sheep"],
+      headCount: 850,
+      pic: "NA123456",
+      nlisRegistered: true,
+      vaccinationCurrent: true,
+      treatmentNotes: "5-in-1 current. Drenched 14 days prior to last move.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 281" },
+      { label: "PIC of origin", status: "Verified", detail: "NA123456" },
+      { label: "ABN", status: "Pending", detail: "Verification placeholder" },
+      { label: "NLIS account", status: "Verified" },
+    ],
+    readiness: [
+      { label: "NLIS tags ready for next move", complete: true },
+      { label: "Vaccination records uploaded", complete: true },
+      { label: "Crush and yards photographed", complete: true },
+      { label: "Insurance documents to upload", complete: false },
+    ],
+  },
+  {
+    id: "farmer-tash",
+    name: "Tash Reilly",
+    role: "Livestock Owner",
+    region: "Hunter NSW",
+    verified: true,
+    tagline: "Off-farm horse owner, continuous-use user.",
+    bio: "Owns 2 horses, no land. Uses agistment as everyday operating mode within 45 minutes of home.",
+    mobileVerified: true,
+    preparednessScore: 64,
+    livestock: {
+      stockTypes: ["Horses"],
+      headCount: 2,
+      pic: "Pending",
+      nlisRegistered: false,
+      vaccinationCurrent: true,
+      treatmentNotes: "Strangles current. Annual dental booked.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 944" },
+      { label: "PIC of origin", status: "Not started", detail: "Town address - PIC may not apply" },
+      { label: "EA membership", status: "Verified", detail: "Equestrian Australia, current" },
+      { label: "Insurance", status: "Pending" },
+    ],
+    readiness: [
+      { label: "Strangles vaccinations current", complete: true },
+      { label: "Float / transport contact saved", complete: true },
+      { label: "Vet records uploaded", complete: false },
+      { label: "Worming schedule shared with agistment host", complete: false },
+    ],
   },
   {
     id: "farmer-b",
@@ -174,90 +367,158 @@ export const farmers: Farmer[] = [
     role: "Landowner",
     region: "Southern NSW",
     verified: true,
+    tagline: "Active farmer with spare paddocks in good seasons.",
+    bio: "Third-generation 1,800ha mixed farming operation. Agist out 6-8 months when his own season is kind.",
+    mobileVerified: true,
+    preparednessScore: 81,
+    avatarUrl: "/avatars/brett.jpg",
+    property: {
+      propertyName: "Glenbarra River Paddocks",
+      acres: 280,
+      suitableStock: ["Cattle", "Sheep"],
+      feedStatus: "Excellent",
+      waterStatus: "Permanent",
+      fencingStatus: "Secure",
+      biosecurityRegistered: true,
+      yards: "Loading race + head bail, B-double access from sealed road.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 117" },
+      { label: "PIC of origin", status: "Verified", detail: "NB987654" },
+      { label: "ABN", status: "Verified", detail: "Verification placeholder" },
+      { label: "LPA accreditation", status: "Verified" },
+      { label: "Biosecurity declaration", status: "Verified", detail: "Last updated 2 weeks ago" },
+    ],
+    readiness: [
+      { label: "Paddock photos current", complete: true },
+      { label: "Water points photographed", complete: true },
+      { label: "Fencing inspection recent", complete: true },
+      { label: "Gate access photos uploaded", complete: true },
+      { label: "Biosecurity declaration current", complete: true },
+    ],
+  },
+  {
+    id: "farmer-lyn",
+    name: "Lyn Whitfield",
+    role: "Landowner",
+    region: "Northern Tablelands NSW",
+    verified: true,
+    tagline: "Semi-retired with idle paddocks, looking for stable agistment.",
+    bio: "320ha family farm, sold the breeding herd 4 years ago. Wants long-term, predictable agistment without managing stock day to day.",
+    mobileVerified: true,
+    preparednessScore: 58,
+    property: {
+      propertyName: "Whitfield Family Block",
+      acres: 320,
+      suitableStock: ["Cattle", "Sheep"],
+      feedStatus: "Excellent",
+      waterStatus: "Permanent",
+      fencingStatus: "Good",
+      biosecurityRegistered: false,
+      yards: "Older yards, suitable for B-double with manual loading.",
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 326" },
+      { label: "PIC of origin", status: "Verified", detail: "NA445566" },
+      { label: "ABN", status: "Pending", detail: "Re-registered after sale of herd" },
+      { label: "LPA accreditation", status: "Not started", detail: "Was current under late husband's name" },
+      { label: "Biosecurity declaration", status: "Not started" },
+    ],
+    readiness: [
+      { label: "Paddock photos current", complete: false },
+      { label: "Water points photographed", complete: true },
+      { label: "Fencing inspection recent", complete: false },
+      { label: "Yards photographed", complete: false },
+      { label: "Indicative weekly rate set", complete: false },
+    ],
   },
   {
     id: "driver-1",
     name: "Wayne Hayes",
     role: "Transport Provider",
-    region: "Riverina",
+    region: "Riverina NSW",
     verified: true,
+    tagline: "Owner-operator, single B-double, backloads matter.",
+    bio: "Works direct producer to feedlot and saleyard runs. Empty backloads are the structural pain.",
+    mobileVerified: true,
+    preparednessScore: 76,
+    avatarUrl: "/avatars/wayne.jpg",
+    transport: {
+      abn: "Verified",
+      fleetSize: 1,
+      driverCount: 1,
+      subContractorsAllowed: false,
+      accreditations: {
+        lbca: "Verified",
+        truckSafe: "Verified",
+        nhvas: "Pending",
+      },
+      vehicles: [
+        {
+          rego: "WH B-D 01",
+          config: "Kenworth K200 + B-double, double-deck",
+          driver: "Wayne Hayes",
+        },
+      ],
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 488" },
+      { label: "ABN", status: "Verified" },
+      { label: "Heavy vehicle licence (MC)", status: "Verified", detail: "Renews 2027" },
+      { label: "LBCA accreditation", status: "Verified" },
+      { label: "TruckSafe accreditation", status: "Verified" },
+      { label: "NHVAS mass management", status: "Pending", detail: "Module application lodged" },
+      { label: "Public liability + cargo insurance", status: "Verified" },
+    ],
+    readiness: [
+      { label: "Current journey plan templates", complete: true },
+      { label: "NVD intake workflow saved", complete: true },
+      { label: "Backload availability shared", complete: false },
+    ],
   },
   {
     id: "driver-2",
-    name: "Trav Henderson",
+    name: "Sharon Mackie",
     role: "Transport Provider",
-    region: "Central West NSW",
+    region: "Goondiwindi QLD",
     verified: true,
-  },
-  {
-    id: "driver-3",
-    name: "Sharon Whittaker",
-    role: "Transport Provider",
-    region: "Northern NSW",
-    verified: true,
-  },
-];
-
-export const trucks: Truck[] = [
-  {
-    id: "truck-wayne-bdouble",
-    ownerId: "driver-1",
-    rego: "NSW-18BD",
-    label: "Wayne's B-double",
-    class: "b-double",
-    capacity: { cattle: 60, sheep: 400, horses: 16 },
-    serviceRegions: ["Riverina", "Southern NSW", "Central West", "Northern Victoria"],
-    preferredRadiusKm: 900,
-  },
-  {
-    id: "truck-trav-rigid-1",
-    ownerId: "driver-2",
-    rego: "CW-42MR",
-    label: "Trav's 12-head rigid",
-    class: "medium-rigid",
-    capacity: { cattle: 12, sheep: 80, horses: 4 },
-    serviceRegions: ["Central West", "Northern NSW", "New England"],
-    preferredRadiusKm: 220,
-  },
-  {
-    id: "truck-trav-rigid-2",
-    ownerId: "driver-2",
-    rego: "CW-44MR",
-    label: "Trav's second rigid",
-    class: "medium-rigid",
-    capacity: { cattle: 10, sheep: 70, horses: 4 },
-    serviceRegions: ["Central West", "Southern NSW"],
-    preferredRadiusKm: 180,
-  },
-  {
-    id: "truck-sharon-roadtrain",
-    ownerId: "driver-3",
-    rego: "NW-90RT",
-    label: "Sharon's road train",
-    class: "road-train",
-    capacity: { cattle: 180, sheep: 1200, horses: 36 },
-    serviceRegions: ["Northern NSW", "New England", "SE QLD", "Riverina"],
-    preferredRadiusKm: 1100,
-  },
-  {
-    id: "truck-sharon-bdouble",
-    ownerId: "driver-3",
-    rego: "NW-21BD",
-    label: "Sharon's B-double",
-    class: "b-double",
-    capacity: { cattle: 70, sheep: 450, horses: 18 },
-    serviceRegions: ["Northern NSW", "Central West", "New England"],
-    preferredRadiusKm: 700,
-  },
-  {
-    id: "truck-sharon-heavy",
-    ownerId: "driver-3",
-    rego: "NW-12HR",
-    label: "Sharon's local rigid",
-    class: "heavy-rigid",
-    capacity: { cattle: 24, sheep: 160, horses: 8 },
-    serviceRegions: ["Northern NSW", "New England"],
-    preferredRadiusKm: 260,
+    tagline: "Multi-truck family business, fleet utilisation is the game.",
+    bio: "12-truck operation, depot in Goondiwindi. Same app as Wayne - profile carries the difference (fleet, drivers, accreditations).",
+    mobileVerified: true,
+    preparednessScore: 88,
+    transport: {
+      abn: "Verified",
+      fleetSize: 12,
+      driverCount: 18,
+      subContractorsAllowed: true,
+      accreditations: {
+        lbca: "Verified",
+        truckSafe: "Verified",
+        nhvas: "Verified",
+      },
+      vehicles: [
+        { rego: "SM B-T 01", config: "Kenworth T610 + B-triple", driver: "Mackie senior" },
+        { rego: "SM B-D 04", config: "Volvo FH + B-double", driver: "Jase Mackie" },
+        { rego: "SM RT 02", config: "Western Star + road train", driver: "Curtis Walker" },
+        { rego: "SM B-D 07", config: "Kenworth K200 + B-double", driver: "Sub-contractor pool" },
+      ],
+    },
+    verifications: [
+      { label: "Mobile verified", status: "Verified", detail: "04xx xxx 612" },
+      { label: "ABN", status: "Verified" },
+      { label: "Heavy vehicle licences (fleet)", status: "Verified", detail: "18 drivers, current" },
+      { label: "LBCA accreditation (business)", status: "Verified" },
+      { label: "TruckSafe accreditation (business)", status: "Verified" },
+      { label: "NHVAS mass management", status: "Verified", detail: "All modules current" },
+      { label: "Public liability + cargo insurance", status: "Verified" },
+      { label: "Sub-contractor settlement terms", status: "Verified" },
+    ],
+    readiness: [
+      { label: "Fleet capacity calendar synced", complete: true },
+      { label: "Driver fatigue records digital", complete: true },
+      { label: "Sub-contractor settlement on time", complete: true },
+      { label: "Forward bookings published", complete: false },
+    ],
   },
 ];
 
@@ -285,7 +546,6 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Verified provider",
     availabilityWindow: "Available from 18 May",
     guideTerms: "Discuss terms",
-    matchSignal: "Strong fit for 100 cattle - permanent water",
     summary:
       "River flats with strong autumn feed, permanent troughs, and laneway access suitable for truck loading.",
   },
@@ -312,7 +572,6 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Pending verification",
     availabilityWindow: "Two weeks notice",
     guideTerms: "Guide only",
-    matchSignal: "Short-term option - smaller holding block",
     summary:
       "Useful short-term holding block with reliable tank water and simple yard access.",
   },
@@ -339,7 +598,6 @@ export const paddockListings: PaddockListing[] = [
     verificationStatus: "Verified provider",
     availabilityWindow: "June to September",
     guideTerms: "Discuss terms",
-    matchSignal: "Outside preferred regions - compare if feed is tight",
     summary:
       "Improved pasture paddocks with permanent water, shade lines, and good wet-weather access.",
   },
@@ -466,6 +724,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "River-flat paddocks, autumn feed",
+        sectionId: "paddock",
       },
       {
         id: "art-water-photo",
@@ -473,6 +732,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "Permanent trough, gravity-fed",
+        sectionId: "paddock",
       },
       {
         id: "art-gate-photo",
@@ -480,6 +740,7 @@ export const agreements: Agreement[] = [
         kind: "photo",
         uploadedBy: "farmerB",
         description: "North gate, B-double compatible",
+        sectionId: "transport",
       },
       {
         id: "art-nlis-doc",
@@ -487,6 +748,7 @@ export const agreements: Agreement[] = [
         kind: "document",
         uploadedBy: "farmerA",
         description: "100 head, IDs uploaded",
+        sectionId: "stock",
       },
       {
         id: "art-vaccination-doc",
@@ -494,6 +756,7 @@ export const agreements: Agreement[] = [
         kind: "document",
         uploadedBy: "farmerA",
         description: "5-in-1 current, drench schedule",
+        sectionId: "stock",
       },
       {
         id: "art-property-map",
@@ -501,6 +764,23 @@ export const agreements: Agreement[] = [
         kind: "map",
         uploadedBy: "farmerB",
         description: "Paddock boundaries and access lanes",
+        sectionId: "paddock",
+      },
+    ],
+    lifecycleHistory: [
+      {
+        at: "Mon 12 May, 8:42 AM",
+        from: null,
+        to: "Draft",
+        byParty: "Farmer A",
+        note: "Request matched to Glenbarra River Paddocks.",
+      },
+      {
+        at: "Mon 12 May, 4:11 PM",
+        from: "Draft",
+        to: "Negotiating",
+        byParty: "Farmer B",
+        note: "Brett opened the workspace and added paddock detail.",
       },
     ],
   },
@@ -547,111 +827,171 @@ export const transportJobs: TransportJob[] = [
     farmerBId: "farmer-b",
     driverId: "driver-1",
     pickup: "Dale Morgan, Central West NSW",
-    pickupTown: "Orange district",
-    pickupRegion: "Central West",
     destination: "Glenbarra River Paddocks, Southern NSW",
-    destinationTown: "Gundagai",
+    pickupRegion: "Central West NSW",
     destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
-    stockType: "Cattle",
-    headCount: 100,
-    size: "large",
     preferredDate: "Friday 22 May",
     driver: "Wayne Hayes",
-    state: "assigned",
     status: "Loading",
     routeSummary: "Central West to Gundagai via Wagga corridor",
-    distanceKm: 420,
-    estimatedDuration: "5 h 45 min",
-    rateGuide: "Assigned run - terms already agreed",
-  },
-  {
-    id: "job-bathurst-horses",
-    farmerAId: "farmer-a",
-    farmerBId: "farmer-b",
-    pickup: "Bathurst spelling yards",
-    pickupTown: "Bathurst",
-    pickupRegion: "Central West",
-    destination: "Mudgee lifestyle block",
-    destinationTown: "Mudgee",
-    destinationRegion: "Central West",
-    livestockCount: "2 retired thoroughbreds",
-    stockType: "Horses",
-    headCount: 2,
-    size: "small",
-    preferredDate: "Wednesday 27 May",
-    state: "open",
-    status: "Open",
-    routeSummary: "Bathurst to Mudgee via Sofala",
-    distanceKm: 150,
-    estimatedDuration: "2 h 10 min",
-    rateGuide: "$520-$740 guide",
-  },
-  {
-    id: "job-forbes-ewes",
-    farmerAId: "farmer-a",
-    farmerBId: "farmer-b",
-    pickup: "Forbes saleyards",
-    pickupTown: "Forbes",
-    pickupRegion: "Central West",
-    destination: "Cowra holding block",
-    destinationTown: "Cowra",
-    destinationRegion: "Central West",
-    livestockCount: "80 crossbred ewes",
-    stockType: "Sheep",
-    headCount: 80,
-    size: "medium",
-    preferredDate: "Monday 1 June",
-    state: "open",
-    status: "Open",
-    routeSummary: "Forbes to Cowra direct run",
-    distanceKm: 70,
-    estimatedDuration: "1 h 20 min",
-    rateGuide: "$380-$560 guide",
-  },
-  {
-    id: "job-coonamble-weaners",
-    farmerAId: "farmer-a",
-    farmerBId: "farmer-b",
-    pickup: "Coonamble district property",
-    pickupTown: "Coonamble",
-    pickupRegion: "Northern NSW",
-    destination: "Tamworth backgrounding paddocks",
-    destinationTown: "Tamworth",
-    destinationRegion: "New England",
-    livestockCount: "40 Angus weaners",
-    stockType: "Cattle",
-    headCount: 40,
-    size: "medium",
-    preferredDate: "Thursday 4 June",
-    state: "open",
-    status: "Open",
-    routeSummary: "Coonamble to Tamworth via Gunnedah",
-    distanceKm: 310,
-    estimatedDuration: "4 h 30 min",
-    rateGuide: "$1,050-$1,450 guide",
-  },
-  {
-    id: "job-walgett-feedlot",
-    farmerAId: "farmer-a",
-    farmerBId: "farmer-b",
-    pickup: "Walgett north yards",
-    pickupTown: "Walgett",
-    pickupRegion: "Northern NSW",
-    destination: "Wagga agistment block",
-    destinationTown: "Wagga Wagga",
-    destinationRegion: "Riverina",
-    livestockCount: "180 feeder steers",
-    stockType: "Cattle",
-    headCount: 180,
-    size: "large",
-    preferredDate: "Friday 5 June",
-    state: "open",
-    status: "Open",
-    routeSummary: "Walgett to Wagga long-haul run",
-    distanceKm: 760,
-    estimatedDuration: "9 h 40 min",
-    rateGuide: "$3,200-$4,200 guide",
+    agreementContext: {
+      duration: "3 months",
+      weeksRemaining: 12,
+      agreementStatus: "Negotiating",
+    },
+    sections: [
+      {
+        id: "pickup",
+        label: "Pickup",
+        summary: "Dale Morgan property, Friday 22 May from 7 AM",
+        status: "Confirmed",
+        confirmations: { farmerA: true, farmerB: false, driver: true },
+        detail: [
+          { label: "Property", value: "Dale Morgan, Central West NSW" },
+          { label: "Loading window", value: "Friday 22 May, from 7:00 AM" },
+          { label: "Yards", value: "Loading race + head bail, B-double access" },
+          { label: "On-site contact", value: "Dale Morgan, 04xx xxx xxx" },
+        ],
+      },
+      {
+        id: "manifest",
+        label: "Stock manifest",
+        summary: "100 Angus cattle, ~380 kg head, NLIS tagged",
+        status: "Pending",
+        confirmations: { farmerA: true, farmerB: false, driver: false },
+        detail: [
+          { label: "Stock", value: "100 Angus cattle" },
+          { label: "Average weight", value: "~380 kg head, ~38 t total" },
+          { label: "Identification", value: "NLIS tagged, list attached" },
+          {
+            label: "Welfare notes",
+            value: "Drenched 14 days prior, last fed 4 h before load",
+          },
+        ],
+      },
+      {
+        id: "route",
+        label: "Route",
+        summary: "Central West to Gundagai via Wagga, ~280 km",
+        status: "Confirmed",
+        confirmations: { farmerA: true, farmerB: true, driver: true },
+        detail: [
+          { label: "Corridor", value: "Central West to Gundagai via Wagga" },
+          { label: "Distance", value: "~280 km" },
+          { label: "ETA", value: "5 to 6 hours including spell" },
+          { label: "Mandatory spell", value: "30 min at Cootamundra" },
+        ],
+      },
+      {
+        id: "delivery",
+        label: "Delivery",
+        summary: "Glenbarra North gate, Brett on site",
+        status: "Pending",
+        confirmations: { farmerA: false, farmerB: true, driver: false },
+        detail: [
+          { label: "Property", value: "Glenbarra River Paddocks" },
+          { label: "Gate", value: "North gate (B-double compatible)" },
+          { label: "On-site contact", value: "Brett Donnelly, 04xx xxx xxx" },
+          { label: "Wet weather", value: "Avoid creek crossing" },
+        ],
+      },
+      {
+        id: "return",
+        label: "Return move",
+        summary: "To be scheduled when agistment ends",
+        status: "Pending",
+        confirmations: { farmerA: false, farmerB: false, driver: false },
+        detail: [
+          { label: "Status", value: "Placeholder - book at end of agistment" },
+          { label: "Anchor date", value: "End of agreement (around 22 Aug)" },
+        ],
+      },
+    ],
+    artefacts: [
+      {
+        id: "transport-nvd",
+        label: "NVD (vendor declaration)",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "Signed declaration covering 100 head, current.",
+        sectionId: "manifest",
+      },
+      {
+        id: "transport-journey-plan",
+        label: "Journey plan",
+        kind: "document",
+        uploadedBy: "driver",
+        description: "Wagga corridor route, Cootamundra spell, ETA 1:30 PM.",
+        sectionId: "route",
+      },
+      {
+        id: "transport-manifest-doc",
+        label: "Loading manifest",
+        kind: "document",
+        uploadedBy: "farmerA",
+        description: "100 head, NLIS list, mob notes.",
+        sectionId: "manifest",
+      },
+      {
+        id: "transport-gate-photo",
+        label: "North gate photo",
+        kind: "photo",
+        uploadedBy: "farmerB",
+        description: "B-double access from sealed road, no creek crossing.",
+        sectionId: "delivery",
+      },
+      {
+        id: "transport-route-map",
+        label: "Route map",
+        kind: "map",
+        uploadedBy: "driver",
+        description: "Central West to Gundagai via Wagga corridor.",
+        sectionId: "route",
+      },
+    ],
+    timeline: [
+      {
+        title: "Job booked",
+        detail: "Wayne accepted the load on Tuesday.",
+        complete: true,
+      },
+      {
+        title: "Loading scheduled",
+        detail: "Friday 22 May, 7 AM at Dale's yards.",
+        complete: true,
+      },
+      {
+        title: "In transit",
+        detail: "Departure pending confirmation from Brett at delivery gate.",
+        complete: false,
+      },
+      {
+        title: "Arrived",
+        detail: "Head count off-truck recorded at Glenbarra.",
+        complete: false,
+      },
+      {
+        title: "Return move scheduled",
+        detail: "Booked at end of agistment (around 22 Aug).",
+        complete: false,
+      },
+    ],
+    quotes: [
+      {
+        id: "quote-glenbarra-1",
+        transportJobId: "transport-glenbarra",
+        proposedBy: "driver",
+        basis: "per_head",
+        amount: 8.5,
+        currency: "AUD",
+        paymentTerms: "Net 14 after delivery",
+        status: "pending",
+        at: "Tue 13 May, 11:02 AM",
+        note: "Standard B-double rate, Wagga corridor. Fuel surcharge included.",
+      },
+    ],
+    acceptedQuoteId: undefined,
   },
 ];
 
@@ -685,6 +1025,101 @@ export const transportMessages: Message[] = [
   },
 ];
 
+/**
+ * A run-of-truck a driver has publicly available - origin to destination,
+ * date window, capacity. Lives in /transport/available, parallel to /listings
+ * for paddocks. Visible to all farmers (no privacy wall - this is marketplace
+ * discovery), but only the owning driver can edit / withdraw.
+ */
+export type TransportCapacityStatus = "published" | "booked" | "withdrawn" | "expired";
+
+export type TransportCapacity = {
+  id: string;
+  driverId: string;
+  /** Display label for the truck. Null when irrelevant (single-truck operator). */
+  truckLabel: string | null;
+  originRegion: string;
+  destinationRegion: string;
+  earliestDate: string;
+  latestDate: string;
+  headCapacity: number;
+  stockTypes: string[];
+  /** Indicative rate. Quote chain is still the source of truth for the agreed price. */
+  rateBasis: TransportQuoteBasis | null;
+  rateAmount: number | null;
+  notes: string | null;
+  status: TransportCapacityStatus;
+  /** Display string for "posted X minutes ago" feel. */
+  postedAt: string;
+};
+
+export const transportCapacities: TransportCapacity[] = [
+  {
+    id: "cap-wayne-wagga-toowoomba",
+    driverId: "driver-1",
+    truckLabel: "B-double, double-deck",
+    originRegion: "Riverina NSW",
+    destinationRegion: "Darling Downs QLD",
+    earliestDate: "Fri 22 May",
+    latestDate: "Sat 23 May",
+    headCapacity: 56,
+    stockTypes: ["Cattle", "Sheep"],
+    rateBasis: "per_head",
+    rateAmount: 8.5,
+    notes: "Returning from Glenbarra drop. Backload preferred to keep the truck full.",
+    status: "published",
+    postedAt: "Tue 13 May, 9:14 AM",
+  },
+  {
+    id: "cap-sharon-toowoomba-tamworth",
+    driverId: "driver-2",
+    truckLabel: "B-triple, SM B-T 01",
+    originRegion: "Darling Downs QLD",
+    destinationRegion: "Northern Tablelands NSW",
+    earliestDate: "Mon 25 May",
+    latestDate: "Wed 27 May",
+    headCapacity: 84,
+    stockTypes: ["Cattle"],
+    rateBasis: "per_head",
+    rateAmount: 7.2,
+    notes: "Full deck. Crate config locked - can't take sheep on this run.",
+    status: "published",
+    postedAt: "Mon 12 May, 4:32 PM",
+  },
+  {
+    id: "cap-sharon-goondiwindi-roma",
+    driverId: "driver-2",
+    truckLabel: "Road train, SM RT 02",
+    originRegion: "Darling Downs QLD",
+    destinationRegion: "Maranoa QLD",
+    earliestDate: "Thu 28 May",
+    latestDate: "Sat 30 May",
+    headCapacity: 120,
+    stockTypes: ["Cattle"],
+    rateBasis: "per_km",
+    rateAmount: 4.6,
+    notes: "Long-haul, road-train rated only on permitted routes.",
+    status: "published",
+    postedAt: "Wed 14 May, 7:48 AM",
+  },
+  {
+    id: "cap-wayne-tamworth-armidale",
+    driverId: "driver-1",
+    truckLabel: "B-double, double-deck",
+    originRegion: "Northern Tablelands NSW",
+    destinationRegion: "Hunter NSW",
+    earliestDate: "Mon 1 Jun",
+    latestDate: "Wed 3 Jun",
+    headCapacity: 56,
+    stockTypes: ["Cattle", "Sheep", "Horses"],
+    rateBasis: "flat",
+    rateAmount: 1850,
+    notes: "Flat rate for the whole truck. Happy to split load if needed.",
+    status: "published",
+    postedAt: "Wed 14 May, 3:21 PM",
+  },
+];
+
 export const regionalInsights = [
   { region: "Southern NSW", availability: 78, feed: "Strong", pressure: "Low" },
   { region: "Central West", availability: 54, feed: "Patchy", pressure: "Medium" },
@@ -709,16 +1144,12 @@ export function getTransportJob(id: string) {
   return transportJobs.find((job) => job.id === id) ?? transportJobs[0];
 }
 
-export function getDrivers() {
-  return farmers.filter((farmer) => farmer.role === "Transport Provider");
+export function getTransportJobForAgreement(agreementId: string) {
+  return transportJobs.find((job) => job.agreementId === agreementId);
 }
 
-export function getTrucksForDriver(driverId: string) {
-  return trucks.filter((truck) => truck.ownerId === driverId);
-}
-
-export function getOpenTransportJobs() {
-  return transportJobs.filter((job) => job.state === "open");
+export function getAgreementForListing(listingId: string) {
+  return agreements.find((agreement) => agreement.listingId === listingId);
 }
 
 export function getMessages(threadId: string) {
@@ -727,4 +1158,77 @@ export function getMessages(threadId: string) {
 
 export function getTransportMessages(threadId: string) {
   return transportMessages.filter((message) => message.threadId === threadId);
+}
+
+export function getTransportCapacity(id: string) {
+  return transportCapacities.find((capacity) => capacity.id === id);
+}
+
+export function listTransportCapacities() {
+  return transportCapacities.filter(
+    (capacity) => capacity.status === "published"
+  );
+}
+
+/**
+ * Geographic adjacency map. A region is "near" another when its capacity
+ * row can plausibly chain off the other's destination - same broad area,
+ * road-network reachable in a reasonable backload window.
+ *
+ * Hand-curated for the seed regions; real data should drive this off a
+ * geo-lookup later. Symmetric by construction (regions appear in each
+ * other's neighbour lists).
+ */
+const regionAdjacency: Record<string, string[]> = {
+  "Southern NSW": ["Riverina NSW", "Central West NSW"],
+  "Riverina NSW": ["Southern NSW", "Central West NSW", "Western VIC"],
+  "Central West NSW": [
+    "Southern NSW",
+    "Riverina NSW",
+    "Northern Tablelands NSW",
+    "Northern NSW",
+  ],
+  "Northern NSW": ["Central West NSW", "Northern Tablelands NSW", "Darling Downs QLD"],
+  "Northern Tablelands NSW": [
+    "Hunter NSW",
+    "Northern NSW",
+    "Central West NSW",
+    "Darling Downs QLD",
+  ],
+  "Hunter NSW": ["Northern Tablelands NSW", "Central West NSW"],
+  "Darling Downs QLD": [
+    "Northern Tablelands NSW",
+    "Northern NSW",
+    "Maranoa QLD",
+    "SE QLD",
+  ],
+  "Maranoa QLD": ["Darling Downs QLD"],
+  "SE QLD": ["Darling Downs QLD"],
+  "Gippsland VIC": ["Western VIC"],
+  "Western VIC": ["Gippsland VIC", "Riverina NSW"],
+};
+
+export function regionsNear(region: string): string[] {
+  return [region, ...(regionAdjacency[region] ?? [])];
+}
+
+/**
+ * Possible-backload lookup for a driver. Returns the driver's own published
+ * capacity rows that could chain off the supplied region.
+ *
+ * When `nearRegion` is supplied, only capacities whose origin is in that
+ * region or its adjacency set are returned - so a job ending in Southern
+ * NSW surfaces backloads originating in Riverina but not in Hunter.
+ *
+ * When no anchor region is supplied (or it's unknown), returns all of the
+ * driver's published rows - safer fallback than silently empty.
+ */
+export function getDriverBackloads(driverId: string, nearRegion?: string) {
+  const all = transportCapacities.filter(
+    (capacity) =>
+      capacity.driverId === driverId && capacity.status === "published"
+  );
+  if (!nearRegion || !regionAdjacency[nearRegion]) return all;
+  const neighbours = new Set(regionsNear(nearRegion));
+  return all.filter((capacity) => neighbours.has(capacity.originRegion));
 }

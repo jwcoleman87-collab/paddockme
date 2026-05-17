@@ -1,19 +1,50 @@
-import { FlowContextBar } from "@/components/FlowContextBar";
+import { CirclePlus } from "lucide-react";
+import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
-import { ListingsExplorer } from "./ListingsExplorer";
+import { paddockListings } from "@/lib/dummyData";
+import { ListingsClient, type InitialFilters } from "./ListingsClient";
 
-export default function ListingsPage() {
+type SearchParams = {
+  stock?: string;
+  regions?: string;
+};
+
+export default async function ListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const initialFilters: InitialFilters = {};
+
+  if (params.stock) {
+    initialFilters.stockTypes = [params.stock];
+  }
+  if (params.regions) {
+    initialFilters.regions = params.regions
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
   return (
     <>
       <PageHeader
-        eyebrow="Step 2 of 4"
-        title="Choose a paddock for your request."
-        description="These are prototype matches for Dale's 100 Angus cattle request. Refine the list, inspect a paddock, then message the landowner."
+        eyebrow="Available paddocks"
+        title="Paddocks that could take stock."
+        description="Filter by region, stock fit, feed, water, fencing, and verification. Chips AND across groups so each one you tap narrows the shortlist."
+        action={
+          <ButtonLink href="/listings/new">
+            <CirclePlus className="h-4 w-4" aria-hidden />
+            Create listing
+          </ButtonLink>
+        }
       />
 
-      <FlowContextBar step="Step 2 of 4: Choosing a paddock" />
-
-      <ListingsExplorer />
+      <ListingsClient
+        listings={paddockListings}
+        initialFilters={initialFilters}
+      />
     </>
   );
 }

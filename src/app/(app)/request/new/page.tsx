@@ -1,148 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { createClient } from "@/lib/supabase/client";
-import type { TablesInsert } from "@/lib/types/database";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-const animalOptions = {
-  Cattle: [
-    "Angus",
-    "Hereford",
-    "Brahman",
-    "Charolais",
-    "Murray Grey",
-    "Shorthorn",
-    "Limousin",
-    "Simmental",
-    "Wagyu",
-    "Droughtmaster",
-    "Santa Gertrudis",
-    "Brangus",
-    "Friesian",
-    "Jersey",
-    "Mixed cattle",
-    "Other cattle",
-  ],
-  Sheep: [
-    "Merino",
-    "Poll Merino",
-    "Dohne Merino",
-    "Border Leicester",
-    "White Suffolk",
-    "Poll Dorset",
-    "Dorper",
-    "Australian White",
-    "Corriedale",
-    "Romney",
-    "Southdown",
-    "Wiltipoll",
-    "Composite sheep",
-    "Mixed sheep",
-    "Other sheep",
-  ],
-  Horses: [
-    "Thoroughbred",
-    "Standardbred",
-    "Quarter Horse",
-    "Australian Stock Horse",
-    "Warmblood",
-    "Arabian",
-    "Appaloosa",
-    "Paint Horse",
-    "Clydesdale",
-    "Percheron",
-    "Welsh Pony",
-    "Shetland Pony",
-    "Brumby",
-    "Miniature Horse",
-    "Mixed horses",
-    "Other horses",
-  ],
-  Goats: [
-    "Boer",
-    "Rangeland",
-    "Kalahari Red",
-    "Savanna",
-    "Saanen",
-    "Toggenburg",
-    "British Alpine",
-    "Anglo-Nubian",
-    "Nigerian Dwarf",
-    "Pygmy",
-    "Cashmere",
-    "Angora",
-    "Dairy goats",
-    "Meat goats",
-    "Mixed goats",
-    "Other goats",
-  ],
-  Bees: [
-    "Italian honey bees",
-    "Carniolan honey bees",
-    "Caucasian honey bees",
-    "Buckfast bees",
-    "Australian commercial honey bees",
-    "Native stingless bees",
-    "Queen rearing hives",
-    "Pollination hives",
-    "Honey production hives",
-    "Mixed apiary",
-    "Other bees",
-  ],
-  Alpacas: [
-    "Huacaya",
-    "Suri",
-    "Wethers",
-    "Breeding females",
-    "Males",
-    "Mixed alpacas",
-    "Other alpacas",
-  ],
-  Deer: [
-    "Red deer",
-    "Fallow deer",
-    "Rusa deer",
-    "Sambar deer",
-    "Chital deer",
-    "Mixed deer",
-    "Other deer",
-  ],
-  Pigs: [
-    "Large White",
-    "Landrace",
-    "Duroc",
-    "Berkshire",
-    "Hampshire",
-    "Tamworth",
-    "Wessex Saddleback",
-    "Growers",
-    "Sows",
-    "Mixed pigs",
-    "Other pigs",
-  ],
-  Poultry: [
-    "Layer hens",
-    "Broilers",
-    "Free-range chickens",
-    "Ducks",
-    "Geese",
-    "Turkeys",
-    "Guinea fowl",
-    "Mixed poultry",
-    "Other poultry",
-  ],
-} as const;
-
-type StockType = keyof typeof animalOptions;
-
-const stockTypes = Object.keys(animalOptions) as StockType[];
+const stockTypes = ["Cattle", "Sheep", "Horses", "Goats"];
+const breeds = [
+  "Angus",
+  "Hereford",
+  "Brahman",
+  "Charolais",
+  "Murray Grey",
+  "Mixed",
+  "Other",
+];
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
 const regions = [
   "Southern NSW",
@@ -156,21 +35,57 @@ const transport = ["Yes", "No", "Unsure"];
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const [stockType, setStockType] = useState<StockType>("Cattle");
+  const flash = useFlash();
+  const [stockType, setStockType] = useState("Cattle");
   const [breed, setBreed] = useState("Angus");
   const [duration, setDuration] = useState("3-6 months");
   const [selectedRegions, setSelectedRegions] = useState(["Southern NSW"]);
   const [transportRequired, setTransportRequired] = useState("Yes");
   const [headCount, setHeadCount] = useState(100);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const breedOptions = animalOptions[stockType];
-  const countUnit = stockType === "Bees" ? "hives" : stockType === "Poultry" ? "birds" : "head";
 
-  function selectStockType(value: StockType) {
-    setStockType(value);
-    setBreed(animalOptions[value][0]);
-  }
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("paddockme.onboarding");
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as {
+        stockTypes?: string[];
+        region?: string;
+        headCountBracket?: string;
+      };
+      let applied = false;
+      if (
+        parsed.stockTypes &&
+        parsed.stockTypes.length > 0 &&
+        stockTypes.includes(parsed.stockTypes[0])
+      ) {
+        setStockType(parsed.stockTypes[0]);
+        applied = true;
+      }
+      if (parsed.region) {
+        const mapped = mapOnboardingRegion(parsed.region);
+        if (mapped) {
+          setSelectedRegions([mapped]);
+          applied = true;
+        }
+      }
+      if (parsed.headCountBracket) {
+        const count = headCountFromBracket(parsed.headCountBracket);
+        if (count !== null) {
+          setHeadCount(count);
+          applied = true;
+        }
+      }
+      if (applied) {
+        flash("Pre-filled from your onboarding answers.", "info");
+      }
+    } catch {
+      // ignore - localStorage may be unavailable
+    }
+    // Intentionally run once on mount: we hydrate from onboarding state
+    // without re-running when other deps change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleRegion(region: string) {
     setSelectedRegions((current) =>
@@ -180,66 +95,72 @@ export default function NewRequestPage() {
     );
   }
 
+  async function persistRequest(): Promise<void> {
+    // Dual-write: if Supabase is configured AND the user is signed in,
+    // also insert into agistment_requests. Failures are swallowed - the
+    // URL-driven flow below works either way.
+    if (!isSupabaseConfigured()) return;
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      // Ensure the profile row exists before the FK insert. With the
+      // handle_new_user trigger applied this is a no-op upsert; without
+      // it this is the row creation.
+      const metaName =
+        (user.user_metadata as { full_name?: string } | null)?.full_name ??
+        null;
+      await supabase
+        .from("profiles")
+        .upsert({ id: user.id, full_name: metaName }, { onConflict: "id" });
+      // transportRequired isn't on the day-one schema yet - it carries via
+      // the URL into /matches and will land as a column in a follow-up
+      // migration. Skipping it here keeps the insert aligned with
+      // database.ts as it stands.
+      const { error } = await supabase.from("agistment_requests").insert({
+        requester_id: user.id,
+        stock_type: stockType,
+        breed,
+        head_count: headCount,
+        duration,
+        preferred_regions: selectedRegions,
+        status: "open",
+      });
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn("agistment_requests insert failed", error.message);
+        return;
+      }
+      flash("Request saved.", "success");
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn("agistment_requests insert threw", error);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (selectedRegions.length === 0) {
-      setError("Choose at least one preferred region.");
-      return;
+    const params = new URLSearchParams();
+    params.set("stock", stockType);
+    params.set("breed", breed);
+    params.set("headCount", String(headCount));
+    params.set("duration", duration);
+    if (selectedRegions.length > 0) {
+      params.set("regions", selectedRegions.join(","));
     }
-
-    setSaving(true);
-    setError(null);
-
-    const supabase = createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError && userError.name !== "AuthSessionMissingError") {
-      setSaving(false);
-      setError(userError.message);
-      return;
+    if (transportRequired) {
+      params.set("transport", transportRequired);
     }
-
-    if (!user) {
-      setSaving(false);
-      router.push("/listings?request=request-100-cattle");
-      return;
-    }
-
-    const payload: TablesInsert<"agistment_requests"> = {
-      requester_id: user.id,
-      stock_type: stockType,
-      breed,
-      head_count: headCount,
-      duration,
-      preferred_regions: selectedRegions,
-      urgency: "standard",
-      status: "matching",
-    };
-
-    const { data, error: insertError } = await supabase
-      .from("agistment_requests")
-      .insert(payload)
-      .select("id")
-      .single();
-
-    setSaving(false);
-
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-
-    router.push(`/listings?request=${data.id}`);
+    await persistRequest();
+    router.push(`/matches?${params.toString()}`);
   }
 
   return (
     <>
       <PageHeader
-        eyebrow="Step 1 of 4"
+        eyebrow="Need agistment"
         title="Tell us what needs placing."
         description="A low-typing request flow for Farmer A. These choices will become match inputs later; for now they drive the clickable skeleton."
       />
@@ -251,15 +172,15 @@ export default function NewRequestPage() {
               <SelectablePill
                 key={value}
                 selected={stockType === value}
-                onClick={() => selectStockType(value)}
+                onClick={() => setStockType(value)}
               >
                 {value}
               </SelectablePill>
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title={stockType === "Bees" ? "Bee or hive type" : "Breed or class"}>
-            {breedOptions.map((value) => (
+          <ChoiceSection title="Breed">
+            {breeds.map((value) => (
               <SelectablePill
                 key={value}
                 selected={breed === value}
@@ -274,9 +195,7 @@ export default function NewRequestPage() {
             <div className="mb-4 flex items-baseline justify-between">
               <div>
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-                <p className="text-sm font-medium text-bark/80">
-                  Set the approximate {countUnit === "head" ? "head count" : countUnit}.
-                </p>
+                <p className="text-sm text-bark/65">Big touch target now, smarter selector later.</p>
               </div>
               <p className="text-4xl font-extrabold text-sage-deep">
                 {headCount}
@@ -289,7 +208,7 @@ export default function NewRequestPage() {
               step={10}
               value={headCount}
               onChange={(event) => setHeadCount(Number(event.target.value))}
-              className="paddockme-range w-full accent-sage-deep"
+              className="w-full accent-sage-deep"
             />
           </Card>
 
@@ -333,35 +252,16 @@ export default function NewRequestPage() {
           </ChoiceSection>
 
           <Card className="sticky top-24">
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-xl font-bold text-sage-deep">Your request</h2>
-              <span className="rounded-md border border-amber/35 bg-amber-light px-3 py-1 text-xs font-bold text-amber">
-                Draft preview
-              </span>
-            </div>
+            <h2 className="text-xl font-bold text-sage-deep">Request summary</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${countUnit} ${breed} ${stockType}`} />
+              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${breed} ${stockType}`} />
               <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
-              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ") || "Choose one"} />
+              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
               <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
             </div>
-            {error && (
-              <p className="mt-4 rounded-md border border-terra/25 bg-terra-light px-4 py-3 text-sm font-semibold text-bark" role="alert">
-                {error}
-              </p>
-            )}
-            <Button type="submit" className="mt-5 w-full" disabled={saving}>
-              {saving ? (
-                <>
-                  Saving request
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                </>
-              ) : (
-                <>
-                  See available paddocks
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </>
-              )}
+            <Button type="submit" className="mt-5 w-full">
+              Find matches
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
           </Card>
         </aside>
@@ -382,4 +282,26 @@ function ChoiceSection({
       <div className="flex flex-wrap gap-2">{children}</div>
     </Card>
   );
+}
+
+function mapOnboardingRegion(onboardingRegion: string): string | null {
+  if (regions.includes(onboardingRegion)) return onboardingRegion;
+  if (onboardingRegion === "Central West NSW") return "Central West";
+  if (onboardingRegion === "Gippsland VIC") return "Gippsland";
+  return null;
+}
+
+function headCountFromBracket(bracket: string): number | null {
+  switch (bracket) {
+    case "1-20":
+      return 10;
+    case "20-100":
+      return 50;
+    case "100-500":
+      return 250;
+    case "500+":
+      return 600;
+    default:
+      return null;
+  }
 }

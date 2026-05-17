@@ -65,10 +65,6 @@ export function ListingCard({
 
       <p className="text-sm font-medium leading-snug text-bark/90">{listing.summary}</p>
 
-      <div className="rounded-md border border-sage/30 bg-sage-mist px-3 py-1.5 text-sm font-bold text-sage-deep">
-        {listing.matchSignal}
-      </div>
-
       <PaddockSignalStrip listing={listing} />
 
       <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`} className="mt-auto">
