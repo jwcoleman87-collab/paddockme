@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { ActivityFeed } from "./ActivityFeed";
+import { Avatar } from "@/components/Avatar";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -172,7 +173,6 @@ export function AgreementsClient({
         >
           {farmers.map((option) => {
             const active = option.id === activeId;
-            const Icon = roleIcon[option.role];
             return (
               <button
                 key={option.id}
@@ -181,18 +181,18 @@ export function AgreementsClient({
                 aria-checked={active}
                 onClick={() => setActiveId(option.id)}
                 className={cn(
-                  "flex min-h-16 items-start gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  "flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
                 )}
               >
-                <Icon
-                  className={cn(
-                    "mt-0.5 h-5 w-5 shrink-0",
-                    active ? "text-sage-glow" : "text-sage-deep"
-                  )}
-                  aria-hidden
+                <Avatar
+                  name={option.name}
+                  src={option.avatarUrl}
+                  size="md"
+                  ring={active}
+                  className="shrink-0"
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold">{option.name}</p>

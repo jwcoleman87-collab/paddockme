@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/dummyData";
@@ -188,12 +189,22 @@ function MessageBubble({
         dimmed && "opacity-55"
       )}
     >
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold text-bark">{message.senderName}</p>
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone">
-            {message.senderRole}
-          </p>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {tone !== "system" && (
+            <Avatar
+              name={message.senderName}
+              src={message.senderAvatarUrl}
+              size="sm"
+              className="shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="font-semibold text-bark">{message.senderName}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone">
+              {message.senderRole}
+            </p>
+          </div>
         </div>
         <span className="shrink-0 text-xs font-medium text-stone">
           {message.time}

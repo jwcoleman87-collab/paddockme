@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Users } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
@@ -42,11 +43,11 @@ const roles: { id: TransportRole; label: string; helper: string }[] = [
 
 const senderProfile: Record<
   TransportRole,
-  { id: string; name: string; role: string }
+  { id: string; name: string; role: string; avatarUrl: string }
 > = {
-  farmerA: { id: "farmer-a", name: "Dale", role: "Livestock owner" },
-  farmerB: { id: "farmer-b", name: "Brett", role: "Landowner" },
-  driver: { id: "driver-1", name: "Wayne", role: "Driver" },
+  farmerA: { id: "farmer-a", name: "Dale", role: "Livestock owner", avatarUrl: "/avatars/dale.jpg" },
+  farmerB: { id: "farmer-b", name: "Brett", role: "Landowner", avatarUrl: "/avatars/brett.jpg" },
+  driver: { id: "driver-1", name: "Wayne", role: "Driver", avatarUrl: "/avatars/wayne.jpg" },
 };
 
 export function TransportClient({
@@ -312,6 +313,7 @@ export function TransportClient({
         senderId: sender.id,
         senderName: sender.name,
         senderRole: sender.role,
+        senderAvatarUrl: sender.avatarUrl,
         body,
         time: shortTime(),
         sectionId: activeSectionId ?? undefined,
@@ -353,21 +355,30 @@ export function TransportClient({
                 aria-checked={active}
                 onClick={() => setRole(option.id)}
                 className={cn(
-                  "flex min-h-16 flex-col items-start gap-0.5 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
                 )}
               >
-                <span className="text-sm font-bold">{option.label}</span>
-                <span
-                  className={cn(
-                    "text-xs",
-                    active ? "text-sage-glow" : "text-bark/60"
-                  )}
-                >
-                  {option.helper}
-                </span>
+                <Avatar
+                  name={senderProfile[option.id].name}
+                  src={senderProfile[option.id].avatarUrl}
+                  size="md"
+                  ring={active}
+                  className="shrink-0"
+                />
+                <div>
+                  <span className="block text-sm font-bold">{option.label}</span>
+                  <span
+                    className={cn(
+                      "block text-xs",
+                      active ? "text-sage-glow" : "text-bark/60"
+                    )}
+                  >
+                    {option.helper}
+                  </span>
+                </div>
               </button>
             );
           })}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Users } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import {
   AgreementPanel,
   type SectionAgreementState,
@@ -23,19 +24,21 @@ import type {
 
 const partyProfile: Record<
   WorkspaceParty,
-  { id: string; name: string; role: string; label: string }
+  { id: string; name: string; role: string; label: string; avatarUrl: string }
 > = {
   A: {
     id: "farmer-a",
     name: "Dale",
     role: "Livestock owner",
     label: "Farmer A (Dale)",
+    avatarUrl: "/avatars/dale.jpg",
   },
   B: {
     id: "farmer-b",
     name: "Brett",
     role: "Landowner",
     label: "Farmer B (Brett)",
+    avatarUrl: "/avatars/brett.jpg",
   },
 };
 
@@ -130,6 +133,7 @@ export function WorkspaceClient({
         senderId: sender.id,
         senderName: sender.name,
         senderRole: sender.role,
+        senderAvatarUrl: sender.avatarUrl,
         body,
         time: shortTime(),
         sectionId: activeSectionId ?? undefined,
@@ -391,21 +395,30 @@ export function WorkspaceClient({
                 aria-checked={active}
                 onClick={() => setViewerParty(party)}
                 className={cn(
-                  "flex min-h-16 flex-col items-start gap-0.5 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
                 )}
               >
-                <span className="text-sm font-bold">{profile.label}</span>
-                <span
-                  className={cn(
-                    "text-xs",
-                    active ? "text-sage-glow" : "text-bark/60"
-                  )}
-                >
-                  {profile.role}
-                </span>
+                <Avatar
+                  name={profile.name}
+                  src={profile.avatarUrl}
+                  size="md"
+                  ring={active}
+                  className="shrink-0"
+                />
+                <div>
+                  <span className="block text-sm font-bold">{profile.label}</span>
+                  <span
+                    className={cn(
+                      "block text-xs",
+                      active ? "text-sage-glow" : "text-bark/60"
+                    )}
+                  >
+                    {profile.role}
+                  </span>
+                </div>
               </button>
             );
           })}

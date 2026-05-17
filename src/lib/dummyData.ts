@@ -66,6 +66,8 @@ export type Farmer = {
   bio: string;
   mobileVerified: boolean;
   preparednessScore: number;
+  /** Path to a square profile image in /public. Falls back to initials when absent. */
+  avatarUrl?: string;
   livestock?: LivestockSubProfile;
   property?: PropertySubProfile;
   transport?: TransportSubProfile;
@@ -181,6 +183,7 @@ export type Message = {
   senderId: string;
   senderName: string;
   senderRole: string;
+  senderAvatarUrl?: string;
   body: string;
   time: string;
   sectionId?: string;
@@ -305,6 +308,7 @@ export const farmers: Farmer[] = [
     bio: "Mid-size family operation, third-generation. Uses agistment reactively when his country runs dry.",
     mobileVerified: true,
     preparednessScore: 72,
+    avatarUrl: "/avatars/dale.jpg",
     livestock: {
       stockTypes: ["Cattle", "Sheep"],
       headCount: 850,
@@ -367,6 +371,7 @@ export const farmers: Farmer[] = [
     bio: "Third-generation 1,800ha mixed farming operation. Agist out 6-8 months when his own season is kind.",
     mobileVerified: true,
     preparednessScore: 81,
+    avatarUrl: "/avatars/brett.jpg",
     property: {
       propertyName: "Glenbarra River Paddocks",
       acres: 280,
@@ -437,6 +442,7 @@ export const farmers: Farmer[] = [
     bio: "Works direct producer to feedlot and saleyard runs. Empty backloads are the structural pain.",
     mobileVerified: true,
     preparednessScore: 76,
+    avatarUrl: "/avatars/wayne.jpg",
     transport: {
       abn: "Verified",
       fleetSize: 1,
