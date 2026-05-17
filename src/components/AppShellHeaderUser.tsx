@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { farmers } from "@/lib/dummyData";
 
@@ -13,10 +14,14 @@ import { farmers } from "@/lib/dummyData";
  * Falls back to the generic User icon when no persona is selected yet.
  */
 export function AppShellHeaderUser() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
 
   useEffect(() => {
     function read(): string | null {
+      const routePersona = personaForRoute(pathname, searchParams);
+      if (routePersona) return routePersona;
       try {
         return (
           window.localStorage.getItem("paddockme.agreements.persona") ??
@@ -48,7 +53,7 @@ export function AppShellHeaderUser() {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("paddockme:persona-change", onPersonaChange);
     };
-  }, []);
+  }, [pathname, searchParams]);
 
   const persona = activePersonaId
     ? farmers.find((f) => f.id === activePersonaId)
@@ -75,4 +80,32 @@ export function AppShellHeaderUser() {
       <User className="h-5 w-5" aria-hidden />
     </>
   );
+}
+
+function personaForRoute(
+  pathname: string | null,
+  searchParams: ReturnType<typeof useSearchParams>
+): string | null {
+  if (!pathname) return null;
+  const viewAs = searchParams?.get("as");
+
+  if (
+    pathname === "/landowner" ||
+    pathname === "/listings/new" ||
+    viewAs === "landowner"
+  ) {
+    return "farmer-b";
+  }
+
+  if (pathname.startsWith("/transport")) {
+    if (viewAs === "landowner") return "farmer-b";
+    if (viewAs === "farmerA") return "farmer-a";
+    return "driver-1";
+  }
+
+  if (pathname === "/request/new" || pathname.startsWith("/matches")) {
+    return "farmer-a";
+  }
+
+  return null;
 }
