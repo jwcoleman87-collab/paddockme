@@ -1157,3 +1157,17 @@ export function listTransportCapacities() {
     (capacity) => capacity.status === "published"
   );
 }
+
+/**
+ * Possible-backload lookup for a driver. Returns the driver's own published
+ * capacity rows - the runs they've posted that could chain off the current
+ * job's delivery point. The geographic proximity / date-window filtering
+ * lives in the UI for the prototype; the schema is shaped to support it
+ * when matched is wired against live data.
+ */
+export function getDriverBackloads(driverId: string) {
+  return transportCapacities.filter(
+    (capacity) =>
+      capacity.driverId === driverId && capacity.status === "published"
+  );
+}

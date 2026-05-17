@@ -11,13 +11,15 @@ import {
   type TransportQuoteDraft,
 } from "@/components/TransportPanel";
 import { cn } from "@/lib/utils";
-import type {
-  Message,
-  TransportArtefact,
-  TransportJob,
-  TransportQuote,
-  TransportRole,
-  TransportTimelineEntry,
+import {
+  getDriverBackloads,
+  type Message,
+  type TransportArtefact,
+  type TransportCapacity,
+  type TransportJob,
+  type TransportQuote,
+  type TransportRole,
+  type TransportTimelineEntry,
 } from "@/lib/dummyData";
 
 const roles: { id: TransportRole; label: string; helper: string }[] = [
@@ -67,6 +69,13 @@ export function TransportClient({
   const [quotes, setQuotes] = useState<TransportQuote[]>(job.quotes ?? []);
   const [acceptedQuoteId, setAcceptedQuoteId] = useState<string | undefined>(
     job.acceptedQuoteId
+  );
+  // Possible backloads = this driver's other published capacity rows. The
+  // BackloadsPanel only renders when role === "driver", so we still compute
+  // for everyone (cheap) and let the panel filter.
+  const backloads: TransportCapacity[] = useMemo(
+    () => getDriverBackloads(job.driverId),
+    [job.driverId]
   );
 
   const hydratedRef = useRef(false);
@@ -383,6 +392,7 @@ export function TransportClient({
             onProposeQuote={proposeQuote}
             onAcceptQuote={acceptQuote}
             onRejectQuote={rejectQuote}
+            backloads={backloads}
           />
         }
         right={

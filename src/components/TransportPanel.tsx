@@ -34,6 +34,7 @@ import { Timeline } from "@/components/Timeline";
 import { cn } from "@/lib/utils";
 import type {
   TransportArtefact,
+  TransportCapacity,
   TransportJob,
   TransportQuote,
   TransportQuoteBasis,
@@ -67,6 +68,8 @@ type TransportPanelProps = {
   onAcceptQuote?: (quoteId: string) => void;
   /** Recipient of a pending quote rejects it. */
   onRejectQuote?: (quoteId: string) => void;
+  /** Driver's other posted capacity rows. Rendered as Possible backloads when role=driver. */
+  backloads?: TransportCapacity[];
 };
 
 export type TransportQuoteDraft = {
@@ -136,6 +139,7 @@ export function TransportPanel({
   onProposeQuote,
   onAcceptQuote,
   onRejectQuote,
+  backloads,
 }: TransportPanelProps) {
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
@@ -188,7 +192,11 @@ export function TransportPanel({
 
       <div role="tabpanel" className="p-5">
         {activeTab === "overview" && (
-          <TransportOverview job={job} role={role} />
+          <TransportOverview
+            job={job}
+            role={role}
+            backloads={backloads ?? []}
+          />
         )}
 
         {activeTab === "coordination" && (
@@ -284,9 +292,11 @@ function TransportTabButton({
 function TransportOverview({
   job,
   role,
+  backloads,
 }: {
   job: TransportJob;
   role: TransportRole;
+  backloads: TransportCapacity[];
 }) {
   const isDriver = role === "driver";
 
@@ -364,7 +374,75 @@ function TransportOverview({
           </div>
         </section>
       )}
+
+      {isDriver && backloads.length > 0 && (
+        <BackloadsPanel job={job} backloads={backloads} />
+      )}
     </div>
+  );
+}
+
+function BackloadsPanel({
+  job,
+  backloads,
+}: {
+  job: TransportJob;
+  backloads: TransportCapacity[];
+}) {
+  return (
+    <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+      <div className="mb-2 flex items-center gap-2 text-sage-deep">
+        <Route className="h-5 w-5" aria-hidden />
+        <h3 className="text-sm font-bold uppercase tracking-wide">
+          Possible backloads
+        </h3>
+      </div>
+      <p className="mb-4 text-sm leading-relaxed text-bark/70">
+        Your other posted runs that could chain off this delivery at{" "}
+        <span className="font-semibold text-bark">{job.destination}</span>.
+        Turning the empty leg back into a paid leg.
+      </p>
+      <ul className="space-y-2">
+        {backloads.map((capacity) => (
+          <BackloadRow key={capacity.id} capacity={capacity} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function BackloadRow({ capacity }: { capacity: TransportCapacity }) {
+  const rateLabel = capacity.rateAmount
+    ? `$${capacity.rateAmount.toFixed(2)} ${
+        capacity.rateBasis === "per_head"
+          ? "/ head"
+          : capacity.rateBasis === "per_km"
+            ? "/ km"
+            : "flat"
+      }`
+    : "Rate on enquiry";
+  return (
+    <li className="rounded-lg border border-mist bg-warm-white px-4 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-bark">
+            {capacity.originRegion} &rarr; {capacity.destinationRegion}
+          </p>
+          <p className="mt-0.5 text-xs text-bark/65">
+            {capacity.earliestDate} - {capacity.latestDate} &middot;{" "}
+            {capacity.headCapacity} head &middot; {capacity.stockTypes.join(", ")}
+          </p>
+          {capacity.truckLabel && (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
+              {capacity.truckLabel}
+            </p>
+          )}
+        </div>
+        <span className="rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
+          {rateLabel}
+        </span>
+      </div>
+    </li>
   );
 }
 
