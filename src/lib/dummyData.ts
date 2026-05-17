@@ -229,6 +229,39 @@ export type TransportTimelineEntry = {
   complete: boolean;
 };
 
+export type TransportQuoteBasis = "per_head" | "per_km" | "flat";
+
+export type TransportQuoteStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "countered";
+
+/**
+ * A single price proposal in the transport pricing chain.
+ *
+ * Visibility: rows are visible only to the two commercial parties on the
+ * transport job - Farmer A (livestock owner, pays) and the driver (paid).
+ * Farmer B (landowner) never appears in the SELECT scope. This is the
+ * landowner-visibility wall, mirror-image of the driver-visibility wall
+ * that excludes drivers from the agreement rate.
+ */
+export type TransportQuote = {
+  id: string;
+  transportJobId: string;
+  proposedBy: Extract<TransportRole, "farmerA" | "driver">;
+  basis: TransportQuoteBasis;
+  amount: number;
+  currency: string;
+  paymentTerms: string;
+  status: TransportQuoteStatus;
+  /** Links a counter-offer to the quote it replaced. */
+  previousQuoteId?: string;
+  at: string;
+  acceptedAt?: string;
+  note?: string;
+};
+
 export type TransportJob = {
   id: string;
   agreementId: string;
@@ -251,6 +284,10 @@ export type TransportJob = {
   sections: TransportSection[];
   artefacts: TransportArtefact[];
   timeline: TransportTimelineEntry[];
+  /** Commercial pricing chain. Visible to Farmer A and Driver only. */
+  quotes: TransportQuote[];
+  /** Pointer to the accepted quote in the chain, if any. */
+  acceptedQuoteId?: string;
 };
 
 export const farmers: Farmer[] = [
@@ -928,6 +965,21 @@ export const transportJobs: TransportJob[] = [
         complete: false,
       },
     ],
+    quotes: [
+      {
+        id: "quote-glenbarra-1",
+        transportJobId: "transport-glenbarra",
+        proposedBy: "driver",
+        basis: "per_head",
+        amount: 8.5,
+        currency: "AUD",
+        paymentTerms: "Net 14 after delivery",
+        status: "pending",
+        at: "Tue 13 May, 11:02 AM",
+        note: "Standard B-double rate, Wagga corridor. Fuel surcharge included.",
+      },
+    ],
+    acceptedQuoteId: undefined,
   },
 ];
 

@@ -6,12 +6,16 @@ import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
-import { TransportPanel } from "@/components/TransportPanel";
+import {
+  TransportPanel,
+  type TransportQuoteDraft,
+} from "@/components/TransportPanel";
 import { cn } from "@/lib/utils";
 import type {
   Message,
   TransportArtefact,
   TransportJob,
+  TransportQuote,
   TransportRole,
   TransportTimelineEntry,
 } from "@/lib/dummyData";
@@ -60,6 +64,10 @@ export function TransportClient({
     )
   );
   const [artefacts, setArtefacts] = useState<TransportArtefact[]>(job.artefacts);
+  const [quotes, setQuotes] = useState<TransportQuote[]>(job.quotes ?? []);
+  const [acceptedQuoteId, setAcceptedQuoteId] = useState<string | undefined>(
+    job.acceptedQuoteId
+  );
 
   const hydratedRef = useRef(false);
   const storageKey = `paddockme.transport.${job.id}`;
@@ -73,6 +81,9 @@ export function TransportClient({
         if (parsed.confirmations) setConfirmations(parsed.confirmations);
         if (parsed.messages) setMessages(parsed.messages);
         if (parsed.artefacts) setArtefacts(parsed.artefacts);
+        if (parsed.quotes) setQuotes(parsed.quotes);
+        if (parsed.acceptedQuoteId !== undefined)
+          setAcceptedQuoteId(parsed.acceptedQuoteId);
       }
     } catch {
       // ignore
@@ -86,12 +97,18 @@ export function TransportClient({
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ confirmations, messages, artefacts })
+        JSON.stringify({
+          confirmations,
+          messages,
+          artefacts,
+          quotes,
+          acceptedQuoteId,
+        })
       );
     } catch {
       // ignore
     }
-  }, [storageKey, confirmations, messages, artefacts]);
+  }, [storageKey, confirmations, messages, artefacts, quotes, acceptedQuoteId]);
 
   function setRole(next: TransportRole) {
     if (next === role) return;
@@ -171,6 +188,86 @@ export function TransportClient({
     appendSystemMessage(
       `${senderProfile[role].name} added artefact "${draft.label}".`,
       draft.sectionId
+    );
+  }
+
+  function proposeQuote(draft: TransportQuoteDraft) {
+    if (role === "farmerB") return; // landowner-visibility wall
+    const proposer: "farmerA" | "driver" = role === "driver" ? "driver" : "farmerA";
+    const newQuote: TransportQuote = {
+      id: `quote-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      transportJobId: job.id,
+      proposedBy: proposer,
+      basis: draft.basis,
+      amount: draft.amount,
+      currency: draft.currency,
+      paymentTerms: draft.paymentTerms,
+      status: "pending",
+      previousQuoteId: draft.previousQuoteId,
+      at: nowLabel(),
+      note: draft.note,
+    };
+    setQuotes((current) => {
+      // If countering, mark the previous quote as countered.
+      if (draft.previousQuoteId) {
+        return [
+          ...current.map((q) =>
+            q.id === draft.previousQuoteId && q.status === "pending"
+              ? { ...q, status: "countered" as const }
+              : q
+          ),
+          newQuote,
+        ];
+      }
+      return [...current, newQuote];
+    });
+    const basisLabel =
+      draft.basis === "per_head"
+        ? "per head"
+        : draft.basis === "per_km"
+          ? "per km"
+          : "flat";
+    const headline = `$${draft.amount.toFixed(2)} ${draft.currency} ${basisLabel}`;
+    flash(
+      draft.previousQuoteId ? `Counter sent: ${headline}.` : `Quote sent: ${headline}.`,
+      "success"
+    );
+    appendSystemMessage(
+      `${senderProfile[role].name} ${draft.previousQuoteId ? "countered" : "proposed"} a transport rate of ${headline}.`
+    );
+  }
+
+  function acceptQuote(quoteId: string) {
+    if (role === "farmerB") return;
+    const quote = quotes.find((q) => q.id === quoteId);
+    if (!quote || quote.status !== "pending") return;
+    if (quote.proposedBy === role) return; // can't accept your own
+    const at = nowLabel();
+    setQuotes((current) =>
+      current.map((q) =>
+        q.id === quoteId ? { ...q, status: "accepted" as const, acceptedAt: at } : q
+      )
+    );
+    setAcceptedQuoteId(quoteId);
+    flash("Transport rate accepted.", "success");
+    appendSystemMessage(
+      `${senderProfile[role].name} accepted the transport rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
+    );
+  }
+
+  function rejectQuote(quoteId: string) {
+    if (role === "farmerB") return;
+    const quote = quotes.find((q) => q.id === quoteId);
+    if (!quote || quote.status !== "pending") return;
+    if (quote.proposedBy === role) return;
+    setQuotes((current) =>
+      current.map((q) =>
+        q.id === quoteId ? { ...q, status: "rejected" as const } : q
+      )
+    );
+    flash("Quote rejected.", "warning");
+    appendSystemMessage(
+      `${senderProfile[role].name} rejected the proposed rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
     );
   }
 
@@ -281,6 +378,11 @@ export function TransportClient({
             timeline={derivedTimeline}
             artefacts={artefacts}
             onAddArtefact={addArtefact}
+            quotes={quotes}
+            acceptedQuoteId={acceptedQuoteId}
+            onProposeQuote={proposeQuote}
+            onAcceptQuote={acceptQuote}
+            onRejectQuote={rejectQuote}
           />
         }
         right={
@@ -302,6 +404,16 @@ export function TransportClient({
 
 function shortTime(): string {
   return new Date().toLocaleTimeString("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function nowLabel(): string {
+  return new Date().toLocaleString("en-AU", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
     hour: "numeric",
     minute: "2-digit",
   });

@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import {
+  ArrowRight,
+  Ban,
+  Banknote,
   Calendar,
+  Check,
+  CheckCircle,
   ClipboardList,
   Eye,
   EyeOff,
@@ -21,13 +26,17 @@ import {
   ArtefactViewer,
   type ViewableArtefact,
 } from "@/components/ArtefactViewer";
+import { Button } from "@/components/Button";
 import { InfoTile } from "@/components/InfoTile";
+import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
 import { cn } from "@/lib/utils";
 import type {
   TransportArtefact,
   TransportJob,
+  TransportQuote,
+  TransportQuoteBasis,
   TransportRole,
   TransportSection,
   TransportSectionStatus,
@@ -48,9 +57,33 @@ type TransportPanelProps = {
   /** Live artefacts list (allows the client to lift state above the panel). */
   artefacts: TransportArtefact[];
   onAddArtefact?: (draft: ArtefactDraft) => void;
+  /** Live quote chain - the transport commercial negotiation. */
+  quotes: TransportQuote[];
+  /** Pointer to the accepted quote, if any. */
+  acceptedQuoteId?: string;
+  /** Driver or Farmer A proposes a new quote. Not callable as Farmer B (the tab is hidden). */
+  onProposeQuote?: (draft: TransportQuoteDraft) => void;
+  /** Recipient of a pending quote accepts it. */
+  onAcceptQuote?: (quoteId: string) => void;
+  /** Recipient of a pending quote rejects it. */
+  onRejectQuote?: (quoteId: string) => void;
 };
 
-type TransportTab = "overview" | "coordination" | "artefacts" | "timeline";
+export type TransportQuoteDraft = {
+  basis: TransportQuoteBasis;
+  amount: number;
+  currency: string;
+  paymentTerms: string;
+  note?: string;
+  previousQuoteId?: string;
+};
+
+type TransportTab =
+  | "overview"
+  | "coordination"
+  | "rate"
+  | "artefacts"
+  | "timeline";
 
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
   {
@@ -64,6 +97,7 @@ const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> 
 const transportTabs = [
   { id: "overview", label: "Overview" },
   { id: "coordination", label: "Coordination" },
+  { id: "rate", label: "Rate" },
   { id: "artefacts", label: "Artefacts" },
   { id: "timeline", label: "Timeline" },
 ] satisfies { id: TransportTab; label: string }[];
@@ -97,10 +131,21 @@ export function TransportPanel({
   timeline,
   artefacts,
   onAddArtefact,
+  quotes,
+  acceptedQuoteId,
+  onProposeQuote,
+  onAcceptQuote,
+  onRejectQuote,
 }: TransportPanelProps) {
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
   const isDriver = role === "driver";
+  // The landowner-visibility wall: Farmer B never sees the Rate tab. The
+  // pricing chain stays between Farmer A and the driver.
+  const showRateTab = role !== "farmerB";
+  const visibleTabs = showRateTab
+    ? transportTabs
+    : transportTabs.filter((tab) => tab.id !== "rate");
 
   return (
     <section className={transportCardClass}>
@@ -129,7 +174,7 @@ export function TransportPanel({
           aria-label="Transport panel sections"
           className="mt-4 flex flex-wrap gap-1 rounded-[24px] border border-sage-deep/10 bg-warm-white p-1"
         >
-          {transportTabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <TransportTabButton
               key={tab.id}
               active={activeTab === tab.id}
@@ -154,6 +199,17 @@ export function TransportPanel({
             onSelectSection={onSelectSection}
             confirmations={confirmations}
             onToggleConfirmation={onToggleConfirmation}
+          />
+        )}
+
+        {activeTab === "rate" && showRateTab && (
+          <RateNegotiation
+            quotes={quotes}
+            acceptedQuoteId={acceptedQuoteId}
+            role={role}
+            onPropose={onProposeQuote}
+            onAccept={onAcceptQuote}
+            onReject={onRejectQuote}
           />
         )}
 
@@ -680,5 +736,357 @@ function TransportArtefactCard({
         </p>
       </div>
     </button>
+  );
+}
+
+function RateNegotiation({
+  quotes,
+  acceptedQuoteId,
+  role,
+  onPropose,
+  onAccept,
+  onReject,
+}: {
+  quotes: TransportQuote[];
+  acceptedQuoteId?: string;
+  role: TransportRole;
+  onPropose?: (draft: TransportQuoteDraft) => void;
+  onAccept?: (quoteId: string) => void;
+  onReject?: (quoteId: string) => void;
+}) {
+  const acceptedQuote = acceptedQuoteId
+    ? quotes.find((q) => q.id === acceptedQuoteId)
+    : undefined;
+  const pendingQuote = quotes
+    .slice()
+    .reverse()
+    .find((q) => q.status === "pending");
+  // The party who didn't send the pending quote is the one who can act on it.
+  const youCanAct =
+    pendingQuote && !acceptedQuote && pendingQuote.proposedBy !== role;
+  const youProposedLast =
+    pendingQuote && pendingQuote.proposedBy === role;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <div className="mb-2 flex items-center gap-2 text-sage-deep">
+          <Banknote className="h-5 w-5" aria-hidden />
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            Transport rate
+          </h3>
+        </div>
+        <p className="text-sm leading-relaxed text-bark/70">
+          Negotiate the haulage rate here. Visible to Farmer A and the driver
+          only - the landowner never sees these numbers.
+        </p>
+      </div>
+
+      {acceptedQuote && (
+        <AcceptedQuoteCard quote={acceptedQuote} />
+      )}
+
+      {!acceptedQuote && pendingQuote && (
+        <PendingQuoteCard
+          quote={pendingQuote}
+          youCanAct={!!youCanAct}
+          youProposedLast={!!youProposedLast}
+          onAccept={onAccept ? () => onAccept(pendingQuote.id) : undefined}
+          onReject={onReject ? () => onReject(pendingQuote.id) : undefined}
+        />
+      )}
+
+      {!acceptedQuote && quotes.length === 0 && (
+        <div className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
+          <p className="text-sm font-semibold text-bark">
+            No quote sent yet.
+          </p>
+          <p className="mt-1 text-sm text-bark/70">
+            {role === "driver"
+              ? "Propose a rate to start the conversation."
+              : "Wait for the driver to send a quote, or propose your own."}
+          </p>
+        </div>
+      )}
+
+      {!acceptedQuote && onPropose && (
+        <QuoteProposeForm
+          previousQuoteId={pendingQuote?.id}
+          previousAmount={pendingQuote?.amount}
+          isCounter={!!pendingQuote && !youProposedLast}
+          onPropose={onPropose}
+        />
+      )}
+
+      {quotes.length > 1 && (
+        <section>
+          <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
+            Negotiation history
+          </h4>
+          <ol className="space-y-2">
+            {quotes
+              .slice()
+              .reverse()
+              .map((quote) => (
+                <QuoteHistoryRow key={quote.id} quote={quote} />
+              ))}
+          </ol>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function AcceptedQuoteCard({ quote }: { quote: TransportQuote }) {
+  const basisLabel =
+    quote.basis === "per_head"
+      ? "per head"
+      : quote.basis === "per_km"
+        ? "per km"
+        : "flat";
+  return (
+    <section className="rounded-xl border border-match/25 bg-match-light/55 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sage-deep">
+          <CheckCircle className="h-5 w-5 text-match" aria-hidden />
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            Rate accepted
+          </h3>
+        </div>
+        <StatusBadge tone="success">Locked in</StatusBadge>
+      </div>
+      <p className="text-2xl font-bold text-sage-deep">
+        ${quote.amount.toFixed(2)} {quote.currency}{" "}
+        <span className="text-base font-semibold text-bark/70">
+          {basisLabel}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-bark/65">{quote.paymentTerms}</p>
+      {quote.acceptedAt && (
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-stone">
+          Accepted {quote.acceptedAt}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function PendingQuoteCard({
+  quote,
+  youCanAct,
+  youProposedLast,
+  onAccept,
+  onReject,
+}: {
+  quote: TransportQuote;
+  youCanAct: boolean;
+  youProposedLast: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
+}) {
+  const basisLabel =
+    quote.basis === "per_head"
+      ? "per head"
+      : quote.basis === "per_km"
+        ? "per km"
+        : "flat";
+  return (
+    <section className="rounded-xl border border-sage-deep/15 bg-warm-white p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-bold uppercase tracking-wide text-stone">
+          {quote.proposedBy === "driver" ? "Driver proposed" : "Farmer A proposed"}{" "}
+          &middot; {quote.at}
+        </p>
+        <StatusBadge tone="info">
+          {youProposedLast ? "Awaiting other party" : "Awaiting you"}
+        </StatusBadge>
+      </div>
+      <p className="text-2xl font-bold text-sage-deep">
+        ${quote.amount.toFixed(2)} {quote.currency}{" "}
+        <span className="text-base font-semibold text-bark/70">
+          {basisLabel}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-bark/65">{quote.paymentTerms}</p>
+      {quote.note && (
+        <p className="mt-3 rounded-lg border border-mist bg-cream/60 px-3 py-2 text-sm text-bark/75">
+          {quote.note}
+        </p>
+      )}
+      {youCanAct && (onAccept || onReject) && (
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-mist pt-4">
+          {onAccept && (
+            <Button type="button" onClick={onAccept}>
+              <Check className="h-4 w-4" aria-hidden />
+              Accept rate
+            </Button>
+          )}
+          {onReject && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onReject}
+              className="text-terra hover:bg-terra-light/60"
+            >
+              <Ban className="h-4 w-4" aria-hidden />
+              Reject
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function QuoteHistoryRow({ quote }: { quote: TransportQuote }) {
+  const basisLabel =
+    quote.basis === "per_head"
+      ? "/ head"
+      : quote.basis === "per_km"
+        ? "/ km"
+        : "flat";
+  const tone: "success" | "warning" | "info" | "neutral" =
+    quote.status === "accepted"
+      ? "success"
+      : quote.status === "rejected"
+        ? "warning"
+        : quote.status === "countered"
+          ? "neutral"
+          : "info";
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-mist bg-warm-white px-3 py-2 text-sm">
+      <div className="min-w-0">
+        <p className="font-semibold text-bark">
+          ${quote.amount.toFixed(2)} {quote.currency} {basisLabel}
+        </p>
+        <p className="text-xs text-bark/65">
+          {quote.proposedBy === "driver" ? "Driver" : "Farmer A"} &middot;{" "}
+          {quote.at}
+        </p>
+      </div>
+      <StatusBadge tone={tone}>{quote.status}</StatusBadge>
+    </li>
+  );
+}
+
+function QuoteProposeForm({
+  previousQuoteId,
+  previousAmount,
+  isCounter,
+  onPropose,
+}: {
+  previousQuoteId?: string;
+  previousAmount?: number;
+  isCounter: boolean;
+  onPropose: (draft: TransportQuoteDraft) => void;
+}) {
+  const [basis, setBasis] = useState<TransportQuoteBasis>("per_head");
+  const [amount, setAmount] = useState<string>(
+    previousAmount ? previousAmount.toFixed(2) : ""
+  );
+  const [paymentTerms, setPaymentTerms] = useState("Net 14 after delivery");
+  const [note, setNote] = useState("");
+
+  const parsed = Number.parseFloat(amount);
+  const canSubmit = Number.isFinite(parsed) && parsed > 0;
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canSubmit) return;
+    onPropose({
+      basis,
+      amount: parsed,
+      currency: "AUD",
+      paymentTerms: paymentTerms.trim() || "Net 14 after delivery",
+      note: note.trim() ? note.trim() : undefined,
+      previousQuoteId,
+    });
+    setNote("");
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-xl border border-sage-deep/10 bg-cream/60 p-4"
+    >
+      <h4 className="text-sm font-bold uppercase tracking-wide text-stone">
+        {isCounter ? "Counter offer" : "Propose a rate"}
+      </h4>
+
+      <div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
+          Rate basis
+        </p>
+        <div role="radiogroup" aria-label="Rate basis" className="flex flex-wrap gap-2">
+          {(
+            [
+              { id: "per_head", label: "Per head" },
+              { id: "per_km", label: "Per km" },
+              { id: "flat", label: "Flat" },
+            ] as { id: TransportQuoteBasis; label: string }[]
+          ).map((option) => (
+            <SelectablePill
+              key={option.id}
+              selected={basis === option.id}
+              onClick={() => setBasis(option.id)}
+            >
+              {option.label}
+            </SelectablePill>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-stone">
+            Amount (AUD)
+          </span>
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            required
+            className="mt-1 min-h-12 w-full rounded-xl border border-sage-deep/15 bg-warm-white px-4 text-base font-semibold text-bark outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+            placeholder="8.50"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-stone">
+            Payment terms
+          </span>
+          <input
+            type="text"
+            value={paymentTerms}
+            onChange={(event) => setPaymentTerms(event.target.value)}
+            maxLength={80}
+            className="mt-1 min-h-12 w-full rounded-xl border border-sage-deep/15 bg-warm-white px-4 text-base text-bark outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+            placeholder="Net 14 after delivery"
+          />
+        </label>
+      </div>
+
+      <label className="block">
+        <span className="text-xs font-bold uppercase tracking-wide text-stone">
+          Note (optional)
+        </span>
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          rows={2}
+          maxLength={280}
+          className="mt-1 w-full rounded-xl border border-sage-deep/15 bg-warm-white px-4 py-3 text-base text-bark outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+          placeholder="Fuel surcharge included; expects Friday loading."
+        />
+      </label>
+
+      <div className="flex justify-end">
+        <Button type="submit" disabled={!canSubmit}>
+          {isCounter ? "Send counter" : "Send quote"}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
+    </form>
   );
 }

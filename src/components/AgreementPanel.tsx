@@ -7,6 +7,7 @@ import {
   Ban,
   CheckCircle,
   Circle,
+  EyeOff,
   FileText,
   Image as ImageIcon,
   Map as MapIcon,
@@ -34,6 +35,8 @@ import type {
   AgreementLifecycleEvent,
   AgreementLifecycleState,
   AgreementSection,
+  TransportJob,
+  TransportQuote,
 } from "@/lib/dummyData";
 
 export type SectionAgreementState = {
@@ -62,6 +65,17 @@ type AgreementPanelProps = {
   artefacts: AgreementArtefact[];
   /** Called when the upload dialog submits. */
   onAddArtefact?: (draft: ArtefactDraft) => void;
+  /** Linked transport job. When present, the Transport tab renders a live summary. */
+  transportJob?: TransportJob;
+  /** Live transport confirmations from the workspace client (for the summary count). */
+  transportConfirmations?: Record<
+    string,
+    { farmerA: boolean; farmerB: boolean; driver: boolean }
+  >;
+  /** Live transport quotes - the commercial chain. Empty array when no negotiation has started. */
+  transportQuotes?: TransportQuote[];
+  /** Pointer to the accepted quote in the chain. */
+  acceptedTransportQuoteId?: string;
 };
 
 type AgreementTab =
@@ -69,6 +83,7 @@ type AgreementTab =
   | "terms"
   | "artifacts"
   | "lifecycle"
+  | "transport"
   | "timeline";
 
 type TimelineItem = {
@@ -92,6 +107,7 @@ const agreementTabs = [
   { id: "terms", label: "Terms" },
   { id: "artifacts", label: "Artifacts" },
   { id: "lifecycle", label: "Lifecycle" },
+  { id: "transport", label: "Transport" },
   { id: "timeline", label: "Timeline" },
 ] satisfies { id: AgreementTab; label: string }[];
 
@@ -162,6 +178,10 @@ export function AgreementPanel({
   viewerParty,
   artefacts,
   onAddArtefact,
+  transportJob,
+  transportConfirmations,
+  transportQuotes,
+  acceptedTransportQuoteId,
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
   const [pendingCancel, setPendingCancel] = useState(false);
@@ -277,6 +297,17 @@ export function AgreementPanel({
             allSectionsAgreed={allSectionsAgreed}
             sectionCount={agreement.sections.length}
             agreedCount={mutuallyAgreedCount}
+          />
+        )}
+
+        {activeTab === "transport" && (
+          <TransportTabContent
+            transportJob={transportJob}
+            transportHref={transportHref}
+            confirmations={transportConfirmations}
+            quotes={transportQuotes ?? []}
+            acceptedQuoteId={acceptedTransportQuoteId}
+            viewerParty={viewerParty}
           />
         )}
 
@@ -446,6 +477,253 @@ function LifecycleTabContent({
         )}
       </section>
     </div>
+  );
+}
+
+function TransportTabContent({
+  transportJob,
+  transportHref,
+  confirmations,
+  quotes,
+  acceptedQuoteId,
+  viewerParty,
+}: {
+  transportJob?: TransportJob;
+  transportHref?: string;
+  confirmations?: Record<
+    string,
+    { farmerA: boolean; farmerB: boolean; driver: boolean }
+  >;
+  quotes: TransportQuote[];
+  acceptedQuoteId?: string;
+  viewerParty: WorkspaceParty;
+}) {
+  if (!transportJob) {
+    return (
+      <div className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
+        <Truck
+          className="mx-auto mb-2 h-6 w-6 text-sage-deep"
+          aria-hidden
+        />
+        <p className="text-sm font-semibold text-bark">
+          No transport room linked yet.
+        </p>
+        <p className="mt-2 text-sm text-bark/70">
+          A transport room opens when the agreement is activated and a driver
+          is invited.
+        </p>
+      </div>
+    );
+  }
+
+  let confirmedCount = 0;
+  for (const section of transportJob.sections) {
+    const state = confirmations?.[section.id] ?? section.confirmations;
+    confirmedCount +=
+      (state.farmerA ? 1 : 0) +
+      (state.farmerB ? 1 : 0) +
+      (state.driver ? 1 : 0);
+  }
+  const totalConfirmations = transportJob.sections.length * 3;
+
+  const showPricing = viewerParty === "A";
+  const acceptedQuote = acceptedQuoteId
+    ? quotes.find((q) => q.id === acceptedQuoteId)
+    : undefined;
+  const pendingQuote = quotes
+    .slice()
+    .reverse()
+    .find((q) => q.status === "pending");
+  const latestQuote =
+    acceptedQuote ?? pendingQuote ?? quotes[quotes.length - 1];
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sage-deep">
+            <Truck className="h-5 w-5" aria-hidden />
+            <h3 className="text-sm font-bold uppercase tracking-wide">
+              Stock movement
+            </h3>
+          </div>
+          <StatusBadge tone="info">Status: {transportJob.status}</StatusBadge>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Driver"
+            value={transportJob.driver}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Pickup window"
+            value={transportJob.preferredDate}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Pickup from"
+            value={transportJob.pickup}
+          />
+          <InfoTile
+            tone="subtle"
+            size="sm"
+            label="Delivery to"
+            value={transportJob.destination}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+            Coordination
+          </h3>
+          <span className="rounded-full bg-warm-white px-2.5 py-0.5 text-xs font-bold text-stone">
+            {confirmedCount} / {totalConfirmations} confirmations
+          </span>
+        </div>
+        <ul className="space-y-2">
+          {transportJob.sections.map((section) => {
+            const state =
+              confirmations?.[section.id] ?? section.confirmations;
+            const sectionConfirmed =
+              (state.farmerA ? 1 : 0) +
+              (state.farmerB ? 1 : 0) +
+              (state.driver ? 1 : 0);
+            const fullyConfirmed = sectionConfirmed === 3;
+            const Icon = fullyConfirmed ? CheckCircle : Circle;
+            return (
+              <li
+                key={section.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-mist bg-warm-white px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-bark">{section.label}</p>
+                  <p className="text-xs text-bark/65">
+                    {sectionConfirmed} of 3 parties confirmed
+                  </p>
+                </div>
+                <Icon
+                  className={cn(
+                    "h-5 w-5 shrink-0",
+                    fullyConfirmed ? "text-match" : "text-stone"
+                  )}
+                  aria-hidden
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {showPricing ? (
+        <TransportPricingSummary
+          quote={latestQuote}
+          accepted={!!acceptedQuote}
+        />
+      ) : (
+        <section className="flex items-start gap-3 rounded-xl border border-amber/25 bg-amber-light/45 p-4">
+          <EyeOff
+            className="mt-0.5 h-5 w-5 shrink-0 text-amber"
+            aria-hidden
+          />
+          <div>
+            <p className="text-sm font-bold text-bark">
+              Transport pricing isn&apos;t visible to you.
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-bark/70">
+              The haulage rate sits between Farmer A and the driver. You see
+              pickup, delivery, and arrival timing - the commercial detail
+              between the other two parties stays between them.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {transportHref && (
+        <ButtonLink href={transportHref}>
+          Open transport room
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </ButtonLink>
+      )}
+    </div>
+  );
+}
+
+function TransportPricingSummary({
+  quote,
+  accepted,
+}: {
+  quote?: TransportQuote;
+  accepted: boolean;
+}) {
+  if (!quote) {
+    return (
+      <section className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
+        <Banknote
+          className="mx-auto mb-2 h-6 w-6 text-sage-deep"
+          aria-hidden
+        />
+        <p className="text-sm font-semibold text-bark">
+          No transport rate proposed yet.
+        </p>
+        <p className="mt-1 text-sm text-bark/70">
+          The driver hasn&apos;t sent a quote. Open the transport room to
+          start the conversation.
+        </p>
+      </section>
+    );
+  }
+  const basisLabel =
+    quote.basis === "per_head"
+      ? "per head"
+      : quote.basis === "per_km"
+        ? "per km"
+        : "flat";
+  const tone: "success" | "warning" | "info" = accepted
+    ? "success"
+    : quote.status === "rejected"
+      ? "warning"
+      : "info";
+  const statusLabel = accepted
+    ? "Accepted"
+    : quote.status === "rejected"
+      ? "Rejected"
+      : quote.status === "countered"
+        ? "Countered"
+        : "Awaiting response";
+  return (
+    <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sage-deep">
+          <Banknote className="h-5 w-5" aria-hidden />
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            Transport rate
+          </h3>
+        </div>
+        <StatusBadge tone={tone}>{statusLabel}</StatusBadge>
+      </div>
+      <p className="text-2xl font-bold text-sage-deep">
+        ${quote.amount.toFixed(2)} {quote.currency}{" "}
+        <span className="text-base font-semibold text-bark/70">
+          {basisLabel}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-bark/65">{quote.paymentTerms}</p>
+      {quote.note && (
+        <p className="mt-3 rounded-lg border border-mist bg-warm-white px-3 py-2 text-sm text-bark/75">
+          {quote.note}
+        </p>
+      )}
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-stone">
+        Proposed by {quote.proposedBy === "driver" ? "Driver" : "Farmer A"}{" "}
+        &middot; {quote.at}
+      </p>
+    </section>
   );
 }
 

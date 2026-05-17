@@ -65,6 +65,55 @@ export function WorkspaceClient({
     ? `/transport/${linkedTransport.id}`
     : undefined;
 
+  // Read-through of the transport room's live state from localStorage so the
+  // Transport tab in the workspace reflects whatever Farmer A / Driver have
+  // confirmed and negotiated in the room. One-way: the workspace doesn't
+  // write transport state, the transport room does.
+  const [transportConfirmations, setTransportConfirmations] = useState<
+    Record<string, { farmerA: boolean; farmerB: boolean; driver: boolean }>
+  >(() =>
+    linkedTransport
+      ? Object.fromEntries(
+          linkedTransport.sections.map((section) => [
+            section.id,
+            { ...section.confirmations },
+          ])
+        )
+      : {}
+  );
+  const [transportQuotes, setTransportQuotes] = useState(
+    linkedTransport?.quotes ?? []
+  );
+  const [acceptedTransportQuoteId, setAcceptedTransportQuoteId] = useState<
+    string | undefined
+  >(linkedTransport?.acceptedQuoteId);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!linkedTransport) return;
+    try {
+      const raw = window.localStorage.getItem(
+        `paddockme.transport.${linkedTransport.id}`
+      );
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        confirmations?: Record<
+          string,
+          { farmerA: boolean; farmerB: boolean; driver: boolean }
+        >;
+        quotes?: typeof transportQuotes;
+        acceptedQuoteId?: string;
+      };
+      if (parsed.confirmations) setTransportConfirmations(parsed.confirmations);
+      if (parsed.quotes) setTransportQuotes(parsed.quotes);
+      if (parsed.acceptedQuoteId !== undefined)
+        setAcceptedTransportQuoteId(parsed.acceptedQuoteId);
+    } catch {
+      // ignore - localStorage may be unavailable
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedTransport?.id]);
+
   function setViewerParty(next: WorkspaceParty) {
     if (next === viewerParty) return;
     setViewerPartyState(next);
@@ -383,6 +432,10 @@ export function WorkspaceClient({
               viewerParty={viewerParty}
               artefacts={artefacts}
               onAddArtefact={addArtefact}
+              transportJob={linkedTransport}
+              transportConfirmations={transportConfirmations}
+              transportQuotes={transportQuotes}
+              acceptedTransportQuoteId={acceptedTransportQuoteId}
             />
           </div>
         }
