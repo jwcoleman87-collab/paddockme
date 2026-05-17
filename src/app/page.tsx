@@ -18,6 +18,13 @@ const homeActions = [
     icon: Sprout,
   },
   {
+    href: "/transport/available",
+    label: "Find Transport Work",
+    shortLabel: "Transport",
+    helper: "List truck capacity",
+    icon: Truck,
+  },
+  {
     href: "/map",
     label: "Regional map",
     shortLabel: "Map",
@@ -101,7 +108,7 @@ export default function HomePage() {
         aria-label="Choose a starting point"
         className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
-        <div className="grid max-w-[22.5rem] grid-cols-3 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
+        <div className="grid max-w-[25rem] grid-cols-4 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
           {homeActions.map(({ href, label, shortLabel, helper, icon: Icon }) => (
             <Link
               key={href}

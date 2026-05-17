@@ -42,6 +42,12 @@ export type ViewableArtefact = {
   uploaderLabel: string;
   /** Optional section this artefact is discussed in (id matches an anchorable section). */
   sectionId?: string;
+  recordDetails?: {
+    title: string;
+    status: string;
+    rows: { label: string; value: string }[];
+    notes?: string;
+  };
 };
 
 export type ViewableSection = {
@@ -153,13 +159,41 @@ export function ArtefactViewer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-sage/35 bg-sage-mist px-4 py-10 text-center">
-            <Icon className="h-12 w-12 text-sage-deep" aria-hidden />
-            <p className="font-semibold text-sage-deep">{kindLabel} preview</p>
-            <p className="max-w-sm text-sm text-bark/70">
-              {kindPreviewHints[artefact.kind]}
-            </p>
-          </div>
+          {artefact.recordDetails ? (
+            <div className="rounded-xl border border-sage-deep/15 bg-cream/70 p-4">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-sage-deep/10 pb-4">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-stone">
+                    Checked record
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold text-sage-deep">
+                    {artefact.recordDetails.title}
+                  </h3>
+                </div>
+                <span className="rounded-full bg-match-light px-3 py-1 text-xs font-bold uppercase tracking-wide text-match">
+                  {artefact.recordDetails.status}
+                </span>
+              </div>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                {artefact.recordDetails.rows.map((row) => (
+                  <MetaRow key={row.label} label={row.label} value={row.value} />
+                ))}
+              </dl>
+              {artefact.recordDetails.notes && (
+                <p className="mt-4 rounded-lg border border-mist bg-warm-white px-4 py-3 text-sm leading-relaxed text-bark/75">
+                  {artefact.recordDetails.notes}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-sage/35 bg-sage-mist px-4 py-10 text-center">
+              <Icon className="h-12 w-12 text-sage-deep" aria-hidden />
+              <p className="font-semibold text-sage-deep">{kindLabel} preview</p>
+              <p className="max-w-sm text-sm text-bark/70">
+                {kindPreviewHints[artefact.kind]}
+              </p>
+            </div>
+          )}
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
             <MetaRow label="Uploaded by" value={artefact.uploaderLabel} />

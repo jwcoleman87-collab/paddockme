@@ -207,9 +207,9 @@ export default function NewRequestPage() {
             </div>
             <input
               type="range"
-              min={10}
+              min={1}
               max={1200}
-              step={10}
+              step={1}
               value={headCount}
               onChange={(event) => setHeadCount(Number(event.target.value))}
               className="w-full accent-sage-deep"

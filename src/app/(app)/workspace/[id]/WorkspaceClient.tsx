@@ -200,7 +200,9 @@ export function WorkspaceClient({
         if (parsed.lifecycleHistory)
           setLifecycleHistory(parsed.lifecycleHistory);
         if (parsed.messages) setMessages(parsed.messages);
-        if (parsed.artefacts) setArtefacts(parsed.artefacts);
+        if (parsed.artefacts) {
+          setArtefacts(mergeArtefacts(agreement.artefacts, parsed.artefacts));
+        }
       }
     } catch {
       // ignore
@@ -467,6 +469,16 @@ export function WorkspaceClient({
       />
     </div>
   );
+}
+
+function mergeArtefacts(
+  seedArtefacts: AgreementArtefact[],
+  storedArtefacts: AgreementArtefact[]
+): AgreementArtefact[] {
+  const byId = new Map<string, AgreementArtefact>();
+  for (const artefact of seedArtefacts) byId.set(artefact.id, artefact);
+  for (const artefact of storedArtefacts) byId.set(artefact.id, artefact);
+  return Array.from(byId.values());
 }
 
 function nowLabel(): string {

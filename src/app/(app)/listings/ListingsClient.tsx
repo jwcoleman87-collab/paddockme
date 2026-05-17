@@ -5,6 +5,7 @@ import { Filter, X } from "lucide-react";
 import { useFlash } from "@/components/FlashProvider";
 import { ListingCard } from "@/components/ListingCard";
 import { SelectablePill } from "@/components/SelectablePill";
+import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { cn } from "@/lib/utils";
 import type { PaddockListing } from "@/lib/dummyData";
 
@@ -191,7 +192,11 @@ export function ListingsClient({
       {filtered.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              mapImageSrc={getListingMapImageSrc(listing.id)}
+            />
           ))}
         </div>
       ) : (

@@ -5,6 +5,7 @@ import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getAgreementForListing, getListing } from "@/lib/dummyData";
+import { getListingMapImageSrc } from "@/lib/listingMapImages";
 
 export default async function ListingDetailPage({
   params,
@@ -14,6 +15,7 @@ export default async function ListingDetailPage({
   const { id } = await params;
   const listing = getListing(id);
   const agreement = getAgreementForListing(listing.id);
+  const mapImageSrc = getListingMapImageSrc(listing.id);
 
   return (
     <>
@@ -27,7 +29,15 @@ export default async function ListingDetailPage({
       <div className="grid gap-5 lg:grid-cols-[1fr_0.42fr]">
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">
-            <PhotoPlaceholder label="Paddock view" />
+            {mapImageSrc ? (
+              <LocationMapPreview
+                src={mapImageSrc}
+                label={`${listing.mapPlaceLabel} map`}
+                placeLabel={listing.mapPlaceLabel}
+              />
+            ) : (
+              <PhotoPlaceholder label="Paddock map" />
+            )}
             <PhotoPlaceholder label="Water point" />
             <PhotoPlaceholder label="Gate and yards" />
           </div>
@@ -104,6 +114,25 @@ function PhotoPlaceholder({ label }: { label: string }) {
     <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-sage/35 bg-sage-mist text-center">
       <Camera className="mb-2 h-7 w-7 text-sage-deep" aria-hidden />
       <p className="text-sm font-semibold text-sage-deep">{label}</p>
+    </div>
+  );
+}
+
+function LocationMapPreview({
+  src,
+  label,
+  placeLabel,
+}: {
+  src: string;
+  label: string;
+  placeLabel: string;
+}) {
+  return (
+    <div className="relative min-h-44 overflow-hidden rounded-xl border border-stone/35 bg-warm-white">
+      <img src={src} alt={label} className="h-44 w-full object-cover" />
+      <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-md bg-cream/95 px-3 py-1 text-xs font-bold text-sage-deep shadow-sm">
+        {placeLabel} map
+      </span>
     </div>
   );
 }

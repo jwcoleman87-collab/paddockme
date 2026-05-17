@@ -12,6 +12,7 @@ import {
   type LivestockRequest,
   type PaddockListing,
 } from "@/lib/dummyData";
+import { getListingMapImageSrc } from "@/lib/listingMapImages";
 
 type MatchSignal = {
   label: string;
@@ -213,7 +214,10 @@ function ScoredCard({
           Score {entry.score} / 100 &middot; {badge.label}
         </StatusBadge>
       </div>
-      <ListingCard listing={entry.listing} />
+      <ListingCard
+        listing={entry.listing}
+        mapImageSrc={getListingMapImageSrc(entry.listing.id)}
+      />
       <Card className="mt-3">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Why this match

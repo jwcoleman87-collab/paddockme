@@ -9,6 +9,7 @@ import {
   paddockListings,
   type PaddockListing,
 } from "@/lib/dummyData";
+import { getListingMapImageSrc } from "@/lib/listingMapImages";
 
 type ListingFilter =
   | "all"
@@ -34,12 +35,6 @@ const filters: Array<{ label: string; value: ListingFilter }> = [
   { label: "Preferred region", value: "preferred-region" },
   { label: "Strong feed", value: "strong-feed" },
 ];
-
-const locationMaps: Record<string, string> = {
-  "paddock-glenbarra": "/location-maps/gundagai.png",
-  "paddock-wattle-creek": "/location-maps/cowra.png",
-  "paddock-hillview": "/location-maps/gippsland.png",
-};
 
 export function ListingsExplorer() {
   const request = livestockRequests[0];
@@ -108,7 +103,7 @@ export function ListingsExplorer() {
               listing={match.listing}
               matchScore={match.score}
               matchReasons={match.reasons}
-              mapImageSrc={locationMaps[match.listing.id]}
+              mapImageSrc={getListingMapImageSrc(match.listing.id)}
             />
           ))}
         </div>

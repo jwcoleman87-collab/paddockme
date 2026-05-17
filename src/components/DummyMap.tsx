@@ -4,6 +4,7 @@ import {
   regionalInsights,
   type PaddockListing,
 } from "@/lib/dummyData";
+import { getListingMapImageSrc } from "@/lib/listingMapImages";
 
 type RegionRollup = {
   region: string;
@@ -13,6 +14,8 @@ type RegionRollup = {
   listings: number;
   verified: number;
   totalAcres: number;
+  mapImageSrc?: string;
+  mapPlaceLabel?: string;
   /** Whether this entry was derived from live listings (true) or the seed list (false). */
   fromListings: boolean;
 };
@@ -72,35 +75,49 @@ export function DummyMap() {
         {rollups.map((rollup) => (
           <article
             key={rollup.region}
-            className="rounded-xl border border-mist bg-cream p-4"
+            className="overflow-hidden rounded-[8px] border border-mist bg-cream"
           >
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-bold text-sage-deep">{rollup.region}</h3>
-              <StatusBadge tone={pressureTone(rollup.pressure)}>
-                {rollup.pressure} pressure
-              </StatusBadge>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-warm-white">
-              <div
-                className="h-full rounded-full bg-sage"
-                style={{ width: `${rollup.availability}%` }}
-              />
-            </div>
-            <p className="mt-2 text-sm text-bark/70">
-              {rollup.availability}% indicative availability - feed is{" "}
-              {rollup.feed.toLowerCase()}.
-            </p>
-            {rollup.fromListings ? (
-              <p className="mt-1 text-xs text-stone">
-                {rollup.listings} listing
-                {rollup.listings === 1 ? "" : "s"} &middot; {rollup.totalAcres}{" "}
-                ac &middot; {rollup.verified} verified
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-stone">
-                No live listings yet - showing seeded outlook.
-              </p>
+            {rollup.mapImageSrc && (
+              <div className="relative h-32 border-b border-mist bg-warm-white">
+                <img
+                  src={rollup.mapImageSrc}
+                  alt={`${rollup.mapPlaceLabel ?? rollup.region} map`}
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute bottom-2 left-2 rounded-[8px] bg-cream/95 px-2.5 py-1 text-xs font-bold text-sage-deep shadow-sm">
+                  {rollup.mapPlaceLabel ?? rollup.region}
+                </span>
+              </div>
             )}
+            <div className="p-4">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-bold text-sage-deep">{rollup.region}</h3>
+                <StatusBadge tone={pressureTone(rollup.pressure)}>
+                  {rollup.pressure} pressure
+                </StatusBadge>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-warm-white">
+                <div
+                  className="h-full rounded-full bg-sage"
+                  style={{ width: `${rollup.availability}%` }}
+                />
+              </div>
+              <p className="mt-2 text-sm text-bark/70">
+                {rollup.availability}% indicative availability - feed is{" "}
+                {rollup.feed.toLowerCase()}.
+              </p>
+              {rollup.fromListings ? (
+                <p className="mt-1 text-xs text-stone">
+                  {rollup.listings} listing
+                  {rollup.listings === 1 ? "" : "s"} &middot; {rollup.totalAcres}{" "}
+                  ac &middot; {rollup.verified} verified
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-stone">
+                  No live listings yet - showing seeded outlook.
+                </p>
+              )}
+            </div>
           </article>
         ))}
       </div>
@@ -137,6 +154,9 @@ function computeRegionRollups(): RegionRollup[] {
         (l) => l.verificationStatus === "Verified provider"
       ).length;
       const totalAcres = listings.reduce((sum, l) => sum + l.acres, 0);
+      const mapListing = listings.find((listing) =>
+        getListingMapImageSrc(listing.id)
+      );
       return {
         region: regionName,
         pressure: pressureFromAvailability(availability),
@@ -145,6 +165,8 @@ function computeRegionRollups(): RegionRollup[] {
         listings: listings.length,
         verified,
         totalAcres,
+        mapImageSrc: mapListing ? getListingMapImageSrc(mapListing.id) : undefined,
+        mapPlaceLabel: mapListing?.mapPlaceLabel,
         fromListings: true,
       };
     }

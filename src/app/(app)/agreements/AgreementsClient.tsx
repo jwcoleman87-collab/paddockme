@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   CirclePlus,
@@ -58,9 +58,38 @@ export function AgreementsClient({
   showOnboardingWelcome?: boolean;
   initialFarmerId?: string;
 }) {
-  const activeId = initialFarmerId ?? farmers[0]?.id ?? "";
+  const [activeId, setActiveId] = useState(initialFarmerId ?? farmers[0]?.id ?? "");
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const hydratedRef = useRef(false);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (initialFarmerId) {
+      hydratedRef.current = true;
+      return;
+    }
+    try {
+      const stored = window.localStorage.getItem("paddockme.agreements.persona");
+      if (stored && farmers.some((f) => f.id === stored)) {
+        setActiveId(stored);
+      }
+    } catch {
+      // ignore
+    }
+    hydratedRef.current = true;
+  }, [farmers, initialFarmerId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem("paddockme.agreements.persona", activeId);
+    } catch {
+      // ignore
+    }
+    window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
+  }, [activeId]);
 
   const visibleAgreements = useMemo(() => {
     if (!farmer) return [];

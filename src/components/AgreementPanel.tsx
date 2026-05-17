@@ -7,6 +7,7 @@ import {
   Ban,
   CheckCircle,
   Circle,
+  ClipboardCheck,
   EyeOff,
   FileText,
   Image as ImageIcon,
@@ -90,6 +91,13 @@ type TimelineItem = {
   title: string;
   detail: string;
   complete?: boolean;
+};
+
+type AttentionGuidance = {
+  title: string;
+  explanation: string;
+  tip: string;
+  sectionId?: string;
 };
 
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
@@ -247,6 +255,8 @@ export function AgreementPanel({
             agreement={agreement}
             sectionState={sectionState}
             mutuallyAgreedCount={mutuallyAgreedCount}
+            artefacts={artefacts}
+            onSelectSection={onSelectSection}
           />
         )}
 
@@ -758,11 +768,17 @@ function AgreementOverview({
   agreement,
   sectionState,
   mutuallyAgreedCount,
+  artefacts,
+  onSelectSection,
 }: {
   agreement: Agreement;
   sectionState: Record<string, SectionAgreementState>;
   mutuallyAgreedCount: number;
+  artefacts: AgreementArtefact[];
+  onSelectSection: (sectionId: string) => void;
 }) {
+  const [guidance, setGuidance] = useState<AttentionGuidance | null>(null);
+  const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
   const allAgreed = mutuallyAgreedCount === agreement.sections.length;
   const sectionAgreed = (id: string) => {
     const state = sectionState[id];
@@ -774,6 +790,8 @@ function AgreementOverview({
   const paddockAgreed = sectionAgreed("paddock");
   const termsAgreed = sectionAgreed("terms");
   const transportAgreed = sectionAgreed("transport");
+  const activeArtefact =
+    artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
 
   return (
     <div className="space-y-5">
@@ -797,6 +815,13 @@ function AgreementOverview({
           <AlignmentRow
             complete={allAgreed}
             label={`${mutuallyAgreedCount} of ${agreement.sections.length} sections mutually agreed`}
+            guidance={{
+              title: "Agreement sections still need mutual sign-off",
+              explanation:
+                "This caution means at least one section has not been agreed by both Dale and Brett.",
+              tip: "Open the Terms tab, check the sections marked awaiting a party, then have that party tap their agree control once the wording is right.",
+            }}
+            onOpenGuidance={setGuidance}
           />
           <AlignmentRow
             complete={paddockAgreed}
@@ -805,6 +830,14 @@ function AgreementOverview({
                 ? "Feed, water and fencing details match"
                 : "Feed, water and fencing details still under review"
             }
+            guidance={{
+              title: "Paddock details need confirmation",
+              explanation:
+                "The feed, water, and fencing row turns green once the paddock section is agreed by both parties.",
+              tip: "Review the paddock photos and details, then confirm the Paddock section if both sides accept them.",
+              sectionId: "paddock",
+            }}
+            onOpenGuidance={setGuidance}
           />
           <AlignmentRow
             complete={termsAgreed}
@@ -813,6 +846,14 @@ function AgreementOverview({
                 ? "Rate and final terms agreed"
                 : "Rate and final terms require attention"
             }
+            guidance={{
+              title: "Rate and final terms need attention",
+              explanation:
+                "The commercial terms have not been accepted by both parties yet, so the agreement cannot be finalised.",
+              tip: "Settle the weekly rate, feed top-up, water, and fencing responsibilities, then mark the Rate and terms section agreed.",
+              sectionId: "terms",
+            }}
+            onOpenGuidance={setGuidance}
           />
           {agreement.transportRequired && (
             <AlignmentRow
@@ -822,12 +863,42 @@ function AgreementOverview({
                   ? "Transport plan confirmed by both parties"
                   : "Transport plan still being arranged"
               }
+              guidance={{
+                title: "Transport plan is not fully confirmed",
+                explanation:
+                  "The transport section still has at least one party waiting to confirm pickup, delivery, or operator details.",
+                tip: "Open the transport room or the Transport section, confirm the pickup window and driver, then have the remaining party agree.",
+                sectionId: "transport",
+              }}
+              onOpenGuidance={setGuidance}
             />
           )}
         </div>
       </section>
 
-      <ReadinessChecklist agreement={agreement} />
+      <ReadinessChecklist
+        agreement={agreement}
+        artefacts={artefacts}
+        onOpenGuidance={setGuidance}
+        onOpenArtefact={setActiveArtefactId}
+      />
+      <AttentionDialog
+        guidance={guidance}
+        onClose={() => setGuidance(null)}
+        onOpenSection={(sectionId) => {
+          onSelectSection(sectionId);
+          setGuidance(null);
+        }}
+      />
+      <ArtefactViewer
+        artefact={activeArtefact ? toViewableArtefact(activeArtefact) : null}
+        sections={agreement.sections.map((section) => ({
+          id: section.id,
+          label: section.label,
+        }))}
+        onClose={() => setActiveArtefactId(null)}
+        onSelectSection={onSelectSection}
+      />
     </div>
   );
 }
@@ -835,11 +906,27 @@ function AgreementOverview({
 function AlignmentRow({
   complete,
   label,
+  guidance,
+  onOpenGuidance,
 }: {
   complete: boolean;
   label: string;
+  guidance: AttentionGuidance;
+  onOpenGuidance: (guidance: AttentionGuidance) => void;
 }) {
   const Icon = complete ? CheckCircle : AlertTriangle;
+  if (!complete) {
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenGuidance(guidance)}
+        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3 text-left transition hover:border-amber/45 hover:bg-amber-light/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+      >
+        <span className="text-sm font-semibold text-bark">{label}</span>
+        <Icon className="h-5 w-5 shrink-0 text-amber" aria-hidden />
+      </button>
+    );
+  }
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3">
       <span className="text-sm font-semibold text-bark">{label}</span>
@@ -851,34 +938,163 @@ function AlignmentRow({
   );
 }
 
-function ReadinessChecklist({ agreement }: { agreement: Agreement }) {
+const readinessGuidance: Record<string, AttentionGuidance> = {
+  "Transport ready": {
+    title: "Transport is not ready yet",
+    explanation:
+      "This caution means the stock movement is still provisional and the agreement is waiting on transport confirmation.",
+    tip: "Open the transport room, confirm pickup and delivery details with Wayne, then return here once the plan is confirmed.",
+    sectionId: "transport",
+  },
+};
+
+const readinessArtefacts: Record<string, string> = {
+  "NLIS tagged": "art-nlis-doc",
+  "Vaccination records uploaded": "art-vaccination-doc",
+};
+
+function ReadinessChecklist({
+  agreement,
+  artefacts,
+  onOpenGuidance,
+  onOpenArtefact,
+}: {
+  agreement: Agreement;
+  artefacts: AgreementArtefact[];
+  onOpenGuidance: (guidance: AttentionGuidance) => void;
+  onOpenArtefact: (artefactId: string) => void;
+}) {
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
       <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
         Livestock readiness checklist
       </h3>
       <div className="space-y-2">
-        {agreement.readinessChecklist.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3"
-          >
-            <span className="font-semibold text-bark">{item.label}</span>
-            {item.complete ? (
-              <CheckCircle
-                className="h-5 w-5 text-match"
-                aria-label="Complete"
-              />
-            ) : (
-              <AlertTriangle
-                className="h-5 w-5 text-amber"
-                aria-label="Needs attention"
-              />
-            )}
-          </div>
-        ))}
+        {agreement.readinessChecklist.map((item) => {
+          const artefactId = readinessArtefacts[item.label];
+          const hasArtefact =
+            !!artefactId && artefacts.some((artefact) => artefact.id === artefactId);
+          const guidance = readinessGuidance[item.label] ?? {
+            title: `${item.label} needs attention`,
+            explanation:
+              "This item is required before the agreement can move cleanly into operation.",
+            tip: "Upload or confirm the missing detail, then return to this checklist.",
+          };
+          const interactive = hasArtefact || !item.complete;
+          const Icon = item.complete ? CheckCircle : AlertTriangle;
+          const iconClass = item.complete ? "text-match" : "text-amber";
+
+          if (!interactive) {
+            return (
+              <div
+                key={item.label}
+                className="flex items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3"
+              >
+                <span className="font-semibold text-bark">{item.label}</span>
+                <Icon className={cn("h-5 w-5", iconClass)} aria-hidden />
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                if (hasArtefact) {
+                  onOpenArtefact(artefactId);
+                  return;
+                }
+                onOpenGuidance(guidance);
+              }}
+              className={cn(
+                "flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-sage-deep/10 bg-warm-white px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                item.complete
+                  ? "hover:border-match/35 hover:bg-match-light/25 focus-visible:ring-match"
+                  : "hover:border-amber/45 hover:bg-amber-light/35 focus-visible:ring-amber"
+              )}
+            >
+              <span className="font-semibold text-bark">{item.label}</span>
+              <span className="inline-flex items-center gap-2">
+                {hasArtefact && (
+                  <FileText className="h-4 w-4 text-sage-deep" aria-hidden />
+                )}
+                <Icon className={cn("h-5 w-5", iconClass)} aria-hidden />
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+function AttentionDialog({
+  guidance,
+  onClose,
+  onOpenSection,
+}: {
+  guidance: AttentionGuidance | null;
+  onClose: () => void;
+  onOpenSection: (sectionId: string) => void;
+}) {
+  if (!guidance) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="attention-dialog-title"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-sage-deep/35 px-3 py-6 backdrop-blur-sm sm:items-center sm:px-6"
+    >
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_24px_60px_rgba(34,84,52,0.25)]">
+        <div className="flex items-start gap-3 border-b border-sage-deep/15 bg-amber-light/45 px-5 py-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              Needs attention
+            </p>
+            <h2 id="attention-dialog-title" className="mt-1 text-lg font-bold text-sage-deep">
+              {guidance.title}
+            </h2>
+          </div>
+        </div>
+        <div className="space-y-4 px-5 py-5">
+          <p className="text-sm leading-relaxed text-bark/75">
+            {guidance.explanation}
+          </p>
+          <div className="rounded-xl border border-mist bg-cream/65 px-4 py-3">
+            <div className="mb-1 flex items-center gap-2 text-sage-deep">
+              <ClipboardCheck className="h-4 w-4" aria-hidden />
+              <p className="text-xs font-bold uppercase tracking-wide">Tip</p>
+            </div>
+            <p className="text-sm leading-relaxed text-bark/75">{guidance.tip}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-sage-deep/15 bg-cream/45 px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            Close
+          </button>
+          {guidance.sectionId && (
+            <button
+              type="button"
+              onClick={() => onOpenSection(guidance.sectionId!)}
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-sage-deep px-4 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            >
+              Open section
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1026,8 +1242,38 @@ function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
     description: artefact.description,
     uploaderLabel: artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B",
     sectionId: artefact.sectionId,
+    recordDetails: artefactRecordDetails[artefact.id],
   };
 }
+
+const artefactRecordDetails: Record<string, ViewableArtefact["recordDetails"]> = {
+  "art-vaccination-doc": {
+    title: "Vaccination certificate - Mob DM-100",
+    status: "Checked",
+    rows: [
+      { label: "Stock", value: "100 Angus cattle" },
+      { label: "Treatment", value: "5-in-1 vaccination" },
+      { label: "Administered", value: "04 May 2026" },
+      { label: "Batch", value: "VAX-5IN1-0426" },
+      { label: "Withholding", value: "Nil withholding noted" },
+      { label: "Vet / certifier", value: "Central West Large Animal Clinic" },
+    ],
+    notes:
+      "Record matches the Stock section and supports Dale's readiness checklist. Drenching note is attached to the same certificate pack.",
+  },
+  "art-nlis-doc": {
+    title: "NLIS movement list - Mob DM-100",
+    status: "Checked",
+    rows: [
+      { label: "Head count", value: "100 cattle" },
+      { label: "PIC of origin", value: "NA123456" },
+      { label: "Tag range", value: "982 000402100001 to 982 000402100100" },
+      { label: "Uploaded by", value: "Dale Morgan" },
+    ],
+    notes:
+      "The tag list is on file for the current movement and can be checked against the transport manifest before loading.",
+  },
+};
 
 function ArtefactStrip({
   artefacts,
