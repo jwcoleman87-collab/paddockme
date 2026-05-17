@@ -19,6 +19,11 @@ export default function TransportListPage() {
         eyebrow="Transport coordination"
         title="Stock movements in flight."
         description="Each card is a 3-party transport room. Tap through to coordinate pickup, route, delivery, and the return move."
+        action={
+          <ButtonLink href="/transport/available" variant="secondary">
+            Browse trucks
+          </ButtonLink>
+        }
       />
 
       {transportJobs.length === 0 ? (

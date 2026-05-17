@@ -1013,6 +1013,101 @@ export const transportMessages: Message[] = [
   },
 ];
 
+/**
+ * A run-of-truck a driver has publicly available - origin to destination,
+ * date window, capacity. Lives in /transport/available, parallel to /listings
+ * for paddocks. Visible to all farmers (no privacy wall - this is marketplace
+ * discovery), but only the owning driver can edit / withdraw.
+ */
+export type TransportCapacityStatus = "published" | "booked" | "withdrawn" | "expired";
+
+export type TransportCapacity = {
+  id: string;
+  driverId: string;
+  /** Display label for the truck. Null when irrelevant (single-truck operator). */
+  truckLabel: string | null;
+  originRegion: string;
+  destinationRegion: string;
+  earliestDate: string;
+  latestDate: string;
+  headCapacity: number;
+  stockTypes: string[];
+  /** Indicative rate. Quote chain is still the source of truth for the agreed price. */
+  rateBasis: TransportQuoteBasis | null;
+  rateAmount: number | null;
+  notes: string | null;
+  status: TransportCapacityStatus;
+  /** Display string for "posted X minutes ago" feel. */
+  postedAt: string;
+};
+
+export const transportCapacities: TransportCapacity[] = [
+  {
+    id: "cap-wayne-wagga-toowoomba",
+    driverId: "driver-1",
+    truckLabel: "B-double, double-deck",
+    originRegion: "Riverina NSW",
+    destinationRegion: "Darling Downs QLD",
+    earliestDate: "Fri 22 May",
+    latestDate: "Sat 23 May",
+    headCapacity: 56,
+    stockTypes: ["Cattle", "Sheep"],
+    rateBasis: "per_head",
+    rateAmount: 8.5,
+    notes: "Returning from Glenbarra drop. Backload preferred to keep the truck full.",
+    status: "published",
+    postedAt: "Tue 13 May, 9:14 AM",
+  },
+  {
+    id: "cap-sharon-toowoomba-tamworth",
+    driverId: "driver-2",
+    truckLabel: "B-triple, SM B-T 01",
+    originRegion: "Darling Downs QLD",
+    destinationRegion: "Northern Tablelands NSW",
+    earliestDate: "Mon 25 May",
+    latestDate: "Wed 27 May",
+    headCapacity: 84,
+    stockTypes: ["Cattle"],
+    rateBasis: "per_head",
+    rateAmount: 7.2,
+    notes: "Full deck. Crate config locked - can't take sheep on this run.",
+    status: "published",
+    postedAt: "Mon 12 May, 4:32 PM",
+  },
+  {
+    id: "cap-sharon-goondiwindi-roma",
+    driverId: "driver-2",
+    truckLabel: "Road train, SM RT 02",
+    originRegion: "Darling Downs QLD",
+    destinationRegion: "Maranoa QLD",
+    earliestDate: "Thu 28 May",
+    latestDate: "Sat 30 May",
+    headCapacity: 120,
+    stockTypes: ["Cattle"],
+    rateBasis: "per_km",
+    rateAmount: 4.6,
+    notes: "Long-haul, road-train rated only on permitted routes.",
+    status: "published",
+    postedAt: "Wed 14 May, 7:48 AM",
+  },
+  {
+    id: "cap-wayne-tamworth-armidale",
+    driverId: "driver-1",
+    truckLabel: "B-double, double-deck",
+    originRegion: "Northern Tablelands NSW",
+    destinationRegion: "Hunter NSW",
+    earliestDate: "Mon 1 Jun",
+    latestDate: "Wed 3 Jun",
+    headCapacity: 56,
+    stockTypes: ["Cattle", "Sheep", "Horses"],
+    rateBasis: "flat",
+    rateAmount: 1850,
+    notes: "Flat rate for the whole truck. Happy to split load if needed.",
+    status: "published",
+    postedAt: "Wed 14 May, 3:21 PM",
+  },
+];
+
 export const regionalInsights = [
   { region: "Southern NSW", availability: 78, feed: "Strong", pressure: "Low" },
   { region: "Central West", availability: 54, feed: "Patchy", pressure: "Medium" },
@@ -1051,4 +1146,14 @@ export function getMessages(threadId: string) {
 
 export function getTransportMessages(threadId: string) {
   return transportMessages.filter((message) => message.threadId === threadId);
+}
+
+export function getTransportCapacity(id: string) {
+  return transportCapacities.find((capacity) => capacity.id === id);
+}
+
+export function listTransportCapacities() {
+  return transportCapacities.filter(
+    (capacity) => capacity.status === "published"
+  );
 }
