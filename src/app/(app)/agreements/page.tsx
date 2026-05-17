@@ -75,7 +75,7 @@ export default async function AgreementsPage({
       <PageHeader
         eyebrow="Home"
         title="Your work, by role."
-        description="Switch personas to see how the home view adapts. Livestock owners and landowners see their agreements; transport providers see their jobs."
+        description="Livestock owners and landowners see their agreements; transport providers see their jobs."
         action={<ButtonLink href="/request/new">New request</ButtonLink>}
       />
 

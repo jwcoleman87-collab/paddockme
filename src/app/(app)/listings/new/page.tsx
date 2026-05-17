@@ -3,8 +3,8 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
+import { stockTypes } from "@/lib/dummyData";
 
-const livestock = ["Cattle", "Sheep", "Horses", "Goats"];
 const feed = ["Excellent", "Good", "Tight", "Needs rain"];
 const water = ["Permanent", "Seasonal", "Tank", "Creek access"];
 const fencing = ["Secure", "Good", "Needs inspection"];
@@ -30,7 +30,7 @@ export default function NewListingPage() {
             </div>
           </Card>
 
-          <ChoiceSection title="Suitable livestock" options={livestock} selected={["Cattle", "Sheep"]} />
+          <ChoiceSection title="Suitable livestock" options={stockTypes} selected={["Cattle", "Sheep"]} />
           <ChoiceSection title="Feed quality" options={feed} selected={["Excellent"]} />
           <ChoiceSection title="Water availability" options={water} selected={["Permanent"]} />
           <ChoiceSection title="Fencing condition" options={fencing} selected={["Secure"]} />

@@ -19,7 +19,7 @@ export function SelectablePill({
   ...props
 }: SelectablePillProps) {
   const pillClassName = cn(
-    "min-h-11 rounded-md border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
+    "inline-flex min-h-11 items-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
     selected
       ? "border-sage-deep bg-sage-deep text-cream"
       : "border-stone/45 bg-warm-white text-bark hover:border-sage/60 hover:bg-sage-mist",

@@ -7,7 +7,7 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 /**
  * Refreshes the Supabase session on every request.
  *
- * Foundation Build 01 uses dummy data so James can click through the product
+ * Foundation Build 01 uses dummy data so the personas can click through the product
  * skeleton without needing a real account. Auth route redirects stay in place,
  * but app routes are intentionally browseable until real data gates return.
  */

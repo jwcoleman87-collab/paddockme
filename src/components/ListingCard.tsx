@@ -65,6 +65,17 @@ export function ListingCard({
 
       <p className="text-sm font-medium leading-snug text-bark/90">{listing.summary}</p>
 
+      <div className="flex flex-wrap gap-1.5" aria-label="Suitable livestock">
+        {listing.suitableLivestock.map((stockType) => (
+          <span
+            key={stockType}
+            className="rounded-sm bg-sage-mist px-2 py-1 text-xs font-bold text-sage-deep"
+          >
+            {stockType}
+          </span>
+        ))}
+      </div>
+
       <PaddockSignalStrip listing={listing} />
 
       <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`} className="mt-auto">

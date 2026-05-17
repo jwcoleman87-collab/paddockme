@@ -9,19 +9,10 @@ import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
+import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-const stockTypes = ["Cattle", "Sheep", "Horses", "Goats"];
-const breeds = [
-  "Angus",
-  "Hereford",
-  "Brahman",
-  "Charolais",
-  "Murray Grey",
-  "Mixed",
-  "Other",
-];
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
 const regions = [
   "Southern NSW",
@@ -36,7 +27,7 @@ const transport = ["Yes", "No", "Unsure"];
 export default function NewRequestPage() {
   const router = useRouter();
   const flash = useFlash();
-  const [stockType, setStockType] = useState("Cattle");
+  const [stockType, setStockType] = useState<StockType>("Cattle");
   const [breed, setBreed] = useState("Angus");
   const [duration, setDuration] = useState("3-6 months");
   const [selectedRegions, setSelectedRegions] = useState(["Southern NSW"]);
@@ -57,9 +48,11 @@ export default function NewRequestPage() {
       if (
         parsed.stockTypes &&
         parsed.stockTypes.length > 0 &&
-        stockTypes.includes(parsed.stockTypes[0])
+        stockTypes.includes(parsed.stockTypes[0] as StockType)
       ) {
-        setStockType(parsed.stockTypes[0]);
+        const nextStockType = parsed.stockTypes[0] as StockType;
+        setStockType(nextStockType);
+        setBreed(animalOptions[nextStockType][0]);
         applied = true;
       }
       if (parsed.region) {
@@ -157,6 +150,15 @@ export default function NewRequestPage() {
     router.push(`/matches?${params.toString()}`);
   }
 
+  function selectStockType(value: StockType) {
+    setStockType(value);
+    setBreed(animalOptions[value][0]);
+  }
+
+  const breedOptions = animalOptions[stockType];
+  const countUnit =
+    stockType === "Bees" ? "hives" : stockType === "Poultry" ? "birds" : "head";
+
   return (
     <>
       <PageHeader
@@ -172,15 +174,15 @@ export default function NewRequestPage() {
               <SelectablePill
                 key={value}
                 selected={stockType === value}
-                onClick={() => setStockType(value)}
+                onClick={() => selectStockType(value)}
               >
                 {value}
               </SelectablePill>
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Breed">
-            {breeds.map((value) => (
+          <ChoiceSection title={stockType === "Bees" ? "Bee or hive type" : "Breed or class"}>
+            {breedOptions.map((value) => (
               <SelectablePill
                 key={value}
                 selected={breed === value}
@@ -195,7 +197,9 @@ export default function NewRequestPage() {
             <div className="mb-4 flex items-baseline justify-between">
               <div>
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-                <p className="text-sm text-bark/65">Big touch target now, smarter selector later.</p>
+                <p className="text-sm text-bark/65">
+                  Set the approximate {countUnit === "head" ? "head count" : countUnit}.
+                </p>
               </div>
               <p className="text-4xl font-extrabold text-sage-deep">
                 {headCount}
@@ -254,7 +258,7 @@ export default function NewRequestPage() {
           <Card className="sticky top-24">
             <h2 className="text-xl font-bold text-sage-deep">Request summary</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${breed} ${stockType}`} />
+              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${countUnit} ${breed} ${stockType}`} />
               <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
               <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
               <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />

@@ -22,7 +22,7 @@ The following belong to later milestones. Not day one.
 
 ## Day-one definition of done
 
-When the day-one foundation finishes, James must be able to:
+When the day-one foundation finishes, the persona walkthrough must be able to:
 
 | Item | Status |
 | --- | --- |

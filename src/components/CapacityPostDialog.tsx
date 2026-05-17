@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Banknote, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/Button";
 import { SelectablePill } from "@/components/SelectablePill";
-import type { TransportQuoteBasis } from "@/lib/dummyData";
+import { stockTypes as stockTypeOptions, type TransportQuoteBasis } from "@/lib/dummyData";
 
 const focusableSelector =
   'button:not([disabled]), input, select, textarea, [href], [tabindex]:not([tabindex="-1"])';
@@ -31,7 +31,6 @@ type CapacityPostDialogProps = {
   onSubmit: (draft: CapacityDraft) => void;
 };
 
-const stockTypeOptions = ["Cattle", "Sheep", "Horses", "Goats"];
 const rateBasisOptions: { id: TransportQuoteBasis; label: string }[] = [
   { id: "per_head", label: "Per head" },
   { id: "per_km", label: "Per km" },

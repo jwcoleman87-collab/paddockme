@@ -12,6 +12,7 @@ import {
   Truck,
 } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
+import { stockTypes as stockTypeOptions } from "@/lib/dummyData";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -82,7 +83,6 @@ const regions = [
   "Wheatbelt WA",
 ];
 
-const stockTypeOptions = ["Cattle", "Sheep", "Horses", "Goats"];
 const headCountBrackets = ["1-20", "20-100", "100-500", "500+"];
 const propertyAcresBrackets = ["Under 100 ac", "100-500 ac", "500-2,000 ac", "2,000+ ac"];
 const fleetSizeOptions = ["1 truck", "2-5 trucks", "6-15 trucks", "16+ trucks"];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowRight,
   CirclePlus,
@@ -9,7 +9,6 @@ import {
   Sprout,
   Tractor,
   Truck,
-  UserRound,
   X,
 } from "lucide-react";
 import { ActivityFeed } from "./ActivityFeed";
@@ -18,7 +17,6 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
-import { cn } from "@/lib/utils";
 import type {
   Agreement,
   AgreementLifecycleState,
@@ -60,45 +58,9 @@ export function AgreementsClient({
   showOnboardingWelcome?: boolean;
   initialFarmerId?: string;
 }) {
-  const [activeId, setActiveId] = useState<string>(
-    initialFarmerId ?? farmers[0]?.id ?? ""
-  );
+  const activeId = initialFarmerId ?? farmers[0]?.id ?? "";
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
-
-  const storageKey = "paddockme.agreements.persona";
-  const hydratedRef = useRef(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // URL hint wins over stored value - if the user just came from onboarding
-    // with ?role=transport we shouldn't drop them back on the last-viewed
-    // persona.
-    if (initialFarmerId) {
-      hydratedRef.current = true;
-      return;
-    }
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored && farmers.some((f) => f.id === stored)) {
-        setActiveId(stored);
-      }
-    } catch {
-      // ignore
-    }
-    hydratedRef.current = true;
-  }, [initialFarmerId, farmers]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!hydratedRef.current) return;
-    try {
-      window.localStorage.setItem(storageKey, activeId);
-    } catch {
-      // ignore
-    }
-    window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
-  }, [activeId]);
 
   const visibleAgreements = useMemo(() => {
     if (!farmer) return [];
@@ -137,9 +99,8 @@ export function AgreementsClient({
               Welcome to PaddockME.
             </p>
             <p className="mt-1 text-sm leading-relaxed text-bark/75">
-              Your answers are noted. While persistence is still wiring up,
-              browse the personas below to see how the home view adapts to
-              each side of the marketplace.
+              Your answers are noted. The home view is using your selected role
+              while persistence wiring continues.
             </p>
           </div>
           <button
@@ -152,66 +113,6 @@ export function AgreementsClient({
           </button>
         </section>
       )}
-      <section
-        aria-label="Persona switcher"
-        className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
-      >
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sage-deep">
-            <UserRound className="h-5 w-5" aria-hidden />
-            <h2 className="text-sm font-bold uppercase tracking-wide">
-              Sign in as
-            </h2>
-          </div>
-          <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
-          </span>
-        </div>
-        <div
-          role="radiogroup"
-          aria-label="Choose a persona for the home view"
-          className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {farmers.map((option) => {
-            const active = option.id === activeId;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setActiveId(option.id)}
-                className={cn(
-                  "flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
-                  active
-                    ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
-                    : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
-                )}
-              >
-                <Avatar
-                  name={option.name}
-                  src={option.avatarUrl}
-                  size="md"
-                  ring={active}
-                  className="shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold">{option.name}</p>
-                  <p
-                    className={cn(
-                      "truncate text-xs",
-                      active ? "text-sage-glow" : "text-bark/65"
-                    )}
-                  >
-                    {option.role}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <Card className="mb-5 bg-sage-deep text-cream">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">

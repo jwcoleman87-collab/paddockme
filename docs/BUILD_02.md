@@ -2,7 +2,7 @@
 
 This brief covers the second build phase. Foundation Build 01 (see [SCOPE.md](./SCOPE.md)) delivered the skeleton — routes scaffolded, brand applied, Supabase schema in place, Vercel auto-deploying. Build 02 makes PaddockME **feel like a real product instead of a prototype**: visual polish, the workspace fleshed out, the transport room introduced, and dummy data replaced with persisted, role-aware Supabase flows.
 
-By the end of Build 02, James should be able to sign in as any of the six personas, land on a coherent workspace or transport room with the right surfaces and access rules, and watch the agreement lifecycle move through its states with real data.
+By the end of Build 02, each of the six personas should land on a coherent workspace or transport room with the right surfaces and access rules, and the agreement lifecycle should move through its states with real data.
 
 > Guiding principle for this build: **the app needs to feel right before it gets clever.** Polish first, persistence second, cleverness later.
 
@@ -101,11 +101,11 @@ The app needs to feel right before it gets clever.
 
 ## Definition of done
 
-When Build 02 finishes, James must be able to:
+When Build 02 finishes, the persona walkthrough must be able to:
 
 | Item | Status |
 | --- | --- |
-| Sign in as each of the six personas and land on a persona-appropriate home view | partial (persona switcher on /profile and /transport; auth-gated home view still pending Supabase) |
+| Land on persona-appropriate home, profile, and transport views | partial (profile and transport persona views exist; auth-gated home view still pending Supabase) |
 | Visit every route at consistent typography, spacing, and component patterns | done |
 | Pass the "one-handed in a ute" test on a real 6.1" phone | pending (manual test) |
 | Open a 2-party workspace and see the agreement state pulled from Supabase | partial (workspace renders, persistence still pending Supabase) |
