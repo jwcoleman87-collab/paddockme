@@ -22,6 +22,8 @@ import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Farmer, TransportCapacity } from "@/lib/dummyData";
 
@@ -145,7 +147,8 @@ export function CapacityClient({
   function postCapacity(draft: CapacityDraft) {
     const newCapacity: TransportCapacity = {
       id: `local-cap-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      // For the prototype, post as Wayne. Real wiring uses auth.uid().
+      // Default to Wayne for the unauthed prototype path. Replaced with the
+      // real auth.uid() in persistCapacityToSupabase when a session exists.
       driverId: "driver-1",
       truckLabel: draft.truckLabel,
       originRegion: draft.originRegion,
@@ -166,6 +169,57 @@ export function CapacityClient({
       `Posted: ${draft.originRegion} -> ${draft.destinationRegion}.`,
       "success"
     );
+    // Fire-and-forget dual-write. The localStorage entry above is the
+    // source of truth for the prototype UI either way.
+    void persistCapacityToSupabase(draft);
+  }
+
+  async function persistCapacityToSupabase(draft: CapacityDraft) {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      // Ensure the profile row exists - handle_new_user trigger normally
+      // takes care of this on signup, but the upsert covers projects that
+      // haven't applied that migration yet.
+      const metaName =
+        (user.user_metadata as { full_name?: string } | null)?.full_name ??
+        null;
+      await supabase
+        .from("profiles")
+        .upsert({ id: user.id, full_name: metaName }, { onConflict: "id" });
+      // The DB stores ISO dates; our draft carries display strings already.
+      // For now we send what we have - a follow-up wires the dialog to emit
+      // ISO directly so the column type matches.
+      const insertPayload: Record<string, unknown> = {
+        driver_id: user.id,
+        truck_label: draft.truckLabel,
+        origin_region: draft.originRegion,
+        destination_region: draft.destinationRegion,
+        earliest_date: draft.earliestDate,
+        latest_date: draft.latestDate,
+        head_capacity: draft.headCapacity,
+        stock_types: draft.stockTypes,
+        rate_basis: draft.rateBasis,
+        rate_amount: draft.rateAmount,
+        notes: draft.notes,
+        status: "published",
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("transport_capacity")
+        .insert(insertPayload);
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn("transport_capacity insert failed", error.message);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn("transport_capacity insert threw", error);
+    }
   }
 
   const activeFilterCount =
