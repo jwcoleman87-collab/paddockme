@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AppShellHeaderUser } from "@/components/AppShellHeaderUser";
 import { BottomNav } from "@/components/BottomNav";
 import { FlashProvider } from "@/components/FlashProvider";
@@ -20,7 +21,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-label="Open profile"
               className="inline-flex min-h-11 items-center gap-2 rounded-full border border-mist bg-cream pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
             >
-              <AppShellHeaderUser />
+              <Suspense fallback={null}>
+                <AppShellHeaderUser />
+              </Suspense>
             </Link>
           </div>
         </header>
