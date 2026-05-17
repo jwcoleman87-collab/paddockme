@@ -70,12 +70,13 @@ export function TransportClient({
   const [acceptedQuoteId, setAcceptedQuoteId] = useState<string | undefined>(
     job.acceptedQuoteId
   );
-  // Possible backloads = this driver's other published capacity rows. The
-  // BackloadsPanel only renders when role === "driver", so we still compute
-  // for everyone (cheap) and let the panel filter.
+  // Possible backloads = this driver's other published capacity rows that
+  // could chain off the current job's destination. getDriverBackloads
+  // filters by geographic adjacency when destinationRegion is set, falling
+  // back to "all this driver's runs" when it isn't.
   const backloads: TransportCapacity[] = useMemo(
-    () => getDriverBackloads(job.driverId),
-    [job.driverId]
+    () => getDriverBackloads(job.driverId, job.destinationRegion),
+    [job.driverId, job.destinationRegion]
   );
 
   const hydratedRef = useRef(false);

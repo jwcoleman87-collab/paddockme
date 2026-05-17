@@ -270,6 +270,10 @@ export type TransportJob = {
   driverId: string;
   pickup: string;
   destination: string;
+  /** Structured pickup region for backload matching. Free-text `pickup` stays the display. */
+  pickupRegion?: string;
+  /** Structured destination region for backload matching. */
+  destinationRegion?: string;
   livestockCount: string;
   preferredDate: string;
   driver: string;
@@ -818,6 +822,8 @@ export const transportJobs: TransportJob[] = [
     driverId: "driver-1",
     pickup: "Dale Morgan, Central West NSW",
     destination: "Glenbarra River Paddocks, Southern NSW",
+    pickupRegion: "Central West NSW",
+    destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
     preferredDate: "Friday 22 May",
     driver: "Wayne Hayes",
@@ -1159,15 +1165,64 @@ export function listTransportCapacities() {
 }
 
 /**
- * Possible-backload lookup for a driver. Returns the driver's own published
- * capacity rows - the runs they've posted that could chain off the current
- * job's delivery point. The geographic proximity / date-window filtering
- * lives in the UI for the prototype; the schema is shaped to support it
- * when matched is wired against live data.
+ * Geographic adjacency map. A region is "near" another when its capacity
+ * row can plausibly chain off the other's destination - same broad area,
+ * road-network reachable in a reasonable backload window.
+ *
+ * Hand-curated for the seed regions; real data should drive this off a
+ * geo-lookup later. Symmetric by construction (regions appear in each
+ * other's neighbour lists).
  */
-export function getDriverBackloads(driverId: string) {
-  return transportCapacities.filter(
+const regionAdjacency: Record<string, string[]> = {
+  "Southern NSW": ["Riverina NSW", "Central West NSW"],
+  "Riverina NSW": ["Southern NSW", "Central West NSW", "Western VIC"],
+  "Central West NSW": [
+    "Southern NSW",
+    "Riverina NSW",
+    "Northern Tablelands NSW",
+    "Northern NSW",
+  ],
+  "Northern NSW": ["Central West NSW", "Northern Tablelands NSW", "Darling Downs QLD"],
+  "Northern Tablelands NSW": [
+    "Hunter NSW",
+    "Northern NSW",
+    "Central West NSW",
+    "Darling Downs QLD",
+  ],
+  "Hunter NSW": ["Northern Tablelands NSW", "Central West NSW"],
+  "Darling Downs QLD": [
+    "Northern Tablelands NSW",
+    "Northern NSW",
+    "Maranoa QLD",
+    "SE QLD",
+  ],
+  "Maranoa QLD": ["Darling Downs QLD"],
+  "SE QLD": ["Darling Downs QLD"],
+  "Gippsland VIC": ["Western VIC"],
+  "Western VIC": ["Gippsland VIC", "Riverina NSW"],
+};
+
+export function regionsNear(region: string): string[] {
+  return [region, ...(regionAdjacency[region] ?? [])];
+}
+
+/**
+ * Possible-backload lookup for a driver. Returns the driver's own published
+ * capacity rows that could chain off the supplied region.
+ *
+ * When `nearRegion` is supplied, only capacities whose origin is in that
+ * region or its adjacency set are returned - so a job ending in Southern
+ * NSW surfaces backloads originating in Riverina but not in Hunter.
+ *
+ * When no anchor region is supplied (or it's unknown), returns all of the
+ * driver's published rows - safer fallback than silently empty.
+ */
+export function getDriverBackloads(driverId: string, nearRegion?: string) {
+  const all = transportCapacities.filter(
     (capacity) =>
       capacity.driverId === driverId && capacity.status === "published"
   );
+  if (!nearRegion || !regionAdjacency[nearRegion]) return all;
+  const neighbours = new Set(regionsNear(nearRegion));
+  return all.filter((capacity) => neighbours.has(capacity.originRegion));
 }
