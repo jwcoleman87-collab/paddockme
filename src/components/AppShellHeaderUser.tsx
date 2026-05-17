@@ -22,25 +22,38 @@ export function AppShellHeaderUser() {
   const [supabaseLabel, setSupabaseLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored =
-        window.localStorage.getItem("paddockme.agreements.persona") ??
-        window.localStorage.getItem("paddockme.profile.persona");
-      if (stored) setActivePersonaId(stored);
-    } catch {
-      // ignore
+    function read(): string | null {
+      try {
+        return (
+          window.localStorage.getItem("paddockme.agreements.persona") ??
+          window.localStorage.getItem("paddockme.profile.persona") ??
+          farmers[0]?.id ??
+          null
+        );
+      } catch {
+        return farmers[0]?.id ?? null;
+      }
     }
 
+    setActivePersonaId(read());
+
+    function onPersonaChange() {
+      setActivePersonaId(read());
+    }
     function onStorage(event: StorageEvent) {
       if (
         event.key === "paddockme.agreements.persona" ||
         event.key === "paddockme.profile.persona"
       ) {
-        setActivePersonaId(event.newValue);
+        setActivePersonaId(event.newValue ?? farmers[0]?.id ?? null);
       }
     }
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("paddockme:persona-change", onPersonaChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("paddockme:persona-change", onPersonaChange);
+    };
   }, []);
 
   useEffect(() => {

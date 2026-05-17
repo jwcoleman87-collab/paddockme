@@ -72,6 +72,7 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
     } catch {
       // ignore
     }
+    window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
   }, [activeId]);
 
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];

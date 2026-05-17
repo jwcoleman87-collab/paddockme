@@ -97,6 +97,7 @@ export function AgreementsClient({
     } catch {
       // ignore
     }
+    window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
   }, [activeId]);
 
   const visibleAgreements = useMemo(() => {
