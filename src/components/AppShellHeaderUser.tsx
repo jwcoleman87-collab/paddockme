@@ -1,23 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { User } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
+import { farmers } from "@/lib/dummyData";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 /**
  * Tiny client-only component for the AppShell header.
  *
- * Reads the current Supabase session (if configured) and renders the user's
- * full_name / email next to the User icon. Renders nothing when:
- *   - Supabase env vars aren't set
- *   - the call errors
- *   - no user is signed in
+ * Renders the avatar + name for whichever persona the prototype is currently
+ * "signed in as" (per the persona switcher on /agreements and /profile).
+ * Falls back to the generic User icon when no persona is selected yet.
  *
- * Kept as a client component so the server-rendered AppShell doesn't have to
- * wait on a network round-trip to display the page shell.
+ * If Supabase is configured + signed in, the user's real name overrides the
+ * persona label.
  */
 export function AppShellHeaderUser() {
-  const [label, setLabel] = useState<string | null>(null);
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  const [supabaseLabel, setSupabaseLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored =
+        window.localStorage.getItem("paddockme.agreements.persona") ??
+        window.localStorage.getItem("paddockme.profile.persona");
+      if (stored) setActivePersonaId(stored);
+    } catch {
+      // ignore
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (
+        event.key === "paddockme.agreements.persona" ||
+        event.key === "paddockme.profile.persona"
+      ) {
+        setActivePersonaId(event.newValue);
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -30,23 +54,47 @@ export function AppShellHeaderUser() {
           if (cancelled || !user) return;
           const metaName = (user.user_metadata as { full_name?: string } | null)
             ?.full_name;
-          setLabel(metaName ?? user.email ?? null);
+          setSupabaseLabel(metaName ?? user.email ?? null);
         })
         .catch(() => {
-          // ignore - keep the generic icon-only header
+          // ignore
         });
     } catch {
-      // ignore - createClient can throw if env vars vanish at runtime
+      // ignore
     }
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!label) return null;
+  const persona = activePersonaId
+    ? farmers.find((f) => f.id === activePersonaId)
+    : undefined;
+
+  if (persona) {
+    return (
+      <>
+        <Avatar
+          name={persona.name}
+          src={persona.avatarUrl}
+          size="sm"
+          className="shrink-0"
+        />
+        <span className="hidden max-w-[8rem] truncate text-xs font-semibold sm:inline">
+          {supabaseLabel ?? persona.name.split(" ")[0]}
+        </span>
+      </>
+    );
+  }
+
   return (
-    <span className="hidden max-w-[8rem] truncate text-xs font-semibold sm:inline">
-      {label}
-    </span>
+    <>
+      <User className="h-5 w-5" aria-hidden />
+      {supabaseLabel && (
+        <span className="hidden max-w-[8rem] truncate text-xs font-semibold sm:inline">
+          {supabaseLabel}
+        </span>
+      )}
+    </>
   );
 }

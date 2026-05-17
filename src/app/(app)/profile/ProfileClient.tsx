@@ -13,6 +13,7 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import { useFlash } from "@/components/FlashProvider";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -102,7 +103,6 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
         >
           {farmers.map((option) => {
             const active = option.id === activeId;
-            const Icon = roleIcon[option.role];
             return (
               <button
                 key={option.id}
@@ -111,18 +111,18 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
                 aria-checked={active}
                 onClick={() => setActiveId(option.id)}
                 className={cn(
-                  "flex min-h-16 items-start gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  "flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
                 )}
               >
-                <Icon
-                  className={cn(
-                    "mt-0.5 h-5 w-5 shrink-0",
-                    active ? "text-sage-glow" : "text-sage-deep"
-                  )}
-                  aria-hidden
+                <Avatar
+                  name={option.name}
+                  src={option.avatarUrl}
+                  size="md"
+                  ring={active}
+                  className="shrink-0"
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold">{option.name}</p>
@@ -143,27 +143,35 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
 
       <Card className="mb-5">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
-                <RoleIcon className="h-3.5 w-3.5" aria-hidden />
-                {farmer.role}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-white px-3 py-1 text-xs font-bold text-bark">
-                <MapPin className="h-3.5 w-3.5" aria-hidden />
-                {farmer.region}
-              </span>
-              {farmer.mobileVerified && (
-                <StatusBadge tone="success">Mobile verified</StatusBadge>
-              )}
+          <div className="flex min-w-0 items-start gap-4">
+            <Avatar
+              name={farmer.name}
+              src={farmer.avatarUrl}
+              size="xl"
+              className="shrink-0"
+            />
+            <div className="min-w-0">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
+                  <RoleIcon className="h-3.5 w-3.5" aria-hidden />
+                  {farmer.role}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-white px-3 py-1 text-xs font-bold text-bark">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden />
+                  {farmer.region}
+                </span>
+                {farmer.mobileVerified && (
+                  <StatusBadge tone="success">Mobile verified</StatusBadge>
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-sage-deep">{farmer.name}</h2>
+              <p className="mt-1 text-sm font-semibold text-bark/70">
+                {farmer.tagline}
+              </p>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bark/75">
+                {farmer.bio}
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-sage-deep">{farmer.name}</h2>
-            <p className="mt-1 text-sm font-semibold text-bark/70">
-              {farmer.tagline}
-            </p>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bark/75">
-              {farmer.bio}
-            </p>
           </div>
           <div className="rounded-2xl border border-sage-deep/15 bg-warm-white px-5 py-4 text-center md:min-w-44">
             <div className="mb-2 flex items-center justify-center gap-2 text-sage-deep">
