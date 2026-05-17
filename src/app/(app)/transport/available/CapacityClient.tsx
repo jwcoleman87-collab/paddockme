@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Banknote,
@@ -66,11 +67,15 @@ const filterGroups: {
 export function CapacityClient({
   capacities: seedCapacities,
   drivers,
+  driverActiveRoom,
 }: {
   capacities: TransportCapacity[];
   drivers: Record<string, Farmer | undefined>;
+  /** Map of driverId -> existing transport job id (if any) for routing on "Request this run". */
+  driverActiveRoom: Record<string, string | undefined>;
 }) {
   const flash = useFlash();
+  const router = useRouter();
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [userPosted, setUserPosted] = useState<TransportCapacity[]>([]);
   const [postOpen, setPostOpen] = useState(false);
@@ -184,7 +189,17 @@ export function CapacityClient({
 
   function requestRun(capacity: TransportCapacity) {
     const driverName = drivers[capacity.driverId]?.name ?? "the driver";
-    flash(`Quote request sent to ${driverName}.`, "success");
+    const existingRoom = driverActiveRoom[capacity.driverId];
+    if (existingRoom) {
+      flash(`Quote request sent to ${driverName}. Opening the room...`, "success");
+      // Small delay so the toast is visible before the navigation.
+      setTimeout(() => router.push(`/transport/${existingRoom}`), 600);
+    } else {
+      flash(
+        `Quote request sent to ${driverName}. They'll be in touch when a room opens.`,
+        "success"
+      );
+    }
   }
 
   return (

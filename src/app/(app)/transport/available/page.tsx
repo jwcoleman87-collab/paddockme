@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import {
   farmers,
   listTransportCapacities,
+  transportJobs,
   type Farmer,
 } from "@/lib/dummyData";
 import { CapacityClient } from "./CapacityClient";
@@ -20,6 +21,17 @@ export default function TransportAvailablePage() {
     }
   }
 
+  // Map driverId -> the transport job they're currently on (if any). The
+  // "Request this run" CTA routes the farmer into that room when the driver
+  // is already in flight on something, so the conversation gets a real
+  // surface to land on.
+  const driverActiveRoom: Record<string, string | undefined> = {};
+  for (const job of transportJobs) {
+    if (!driverActiveRoom[job.driverId]) {
+      driverActiveRoom[job.driverId] = job.id;
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -33,7 +45,11 @@ export default function TransportAvailablePage() {
         }
       />
 
-      <CapacityClient capacities={capacities} drivers={driverLookup} />
+      <CapacityClient
+        capacities={capacities}
+        drivers={driverLookup}
+        driverActiveRoom={driverActiveRoom}
+      />
     </>
   );
 }
