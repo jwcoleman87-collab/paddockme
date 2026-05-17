@@ -1,16 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Banknote,
   Calendar,
   Filter,
   MapPin,
+  Plus,
   Truck,
   X,
 } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
+import {
+  CapacityPostDialog,
+  type CapacityDraft,
+} from "@/components/CapacityPostDialog";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
@@ -59,7 +64,7 @@ const filterGroups: {
 ];
 
 export function CapacityClient({
-  capacities,
+  capacities: seedCapacities,
   drivers,
 }: {
   capacities: TransportCapacity[];
@@ -67,12 +72,96 @@ export function CapacityClient({
 }) {
   const flash = useFlash();
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [userPosted, setUserPosted] = useState<TransportCapacity[]>([]);
+  const [postOpen, setPostOpen] = useState(false);
+  const hydratedRef = useRef(false);
+  const storageKey = "paddockme.transport_capacity.posted";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as TransportCapacity[];
+        if (Array.isArray(parsed)) setUserPosted(parsed);
+      }
+    } catch {
+      // ignore - private mode / corrupt JSON
+    }
+    hydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hydratedRef.current) return;
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(userPosted));
+    } catch {
+      // ignore
+    }
+  }, [userPosted]);
+
+  // User-posted rows render first so freshly published runs appear at the top.
+  const capacities = useMemo(
+    () => [...userPosted, ...seedCapacities],
+    [userPosted, seedCapacities]
+  );
 
   const filtered = useMemo(
     () =>
       capacities.filter((capacity) => matchesFilters(capacity, filters)),
     [capacities, filters]
   );
+
+  const regionOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const capacity of capacities) {
+      set.add(capacity.originRegion);
+      set.add(capacity.destinationRegion);
+    }
+    // Pad with a few common regions when the seed list is sparse so the
+    // dialog still has useful chip options out of the box.
+    for (const region of [
+      "Central West NSW",
+      "Southern NSW",
+      "Northern NSW",
+      "Hunter NSW",
+      "Northern Tablelands NSW",
+      "Riverina NSW",
+      "Gippsland VIC",
+      "Darling Downs QLD",
+      "Maranoa QLD",
+    ]) {
+      set.add(region);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [capacities]);
+
+  function postCapacity(draft: CapacityDraft) {
+    const newCapacity: TransportCapacity = {
+      id: `local-cap-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      // For the prototype, post as Wayne. Real wiring uses auth.uid().
+      driverId: "driver-1",
+      truckLabel: draft.truckLabel,
+      originRegion: draft.originRegion,
+      destinationRegion: draft.destinationRegion,
+      earliestDate: draft.earliestDate,
+      latestDate: draft.latestDate,
+      headCapacity: draft.headCapacity,
+      stockTypes: draft.stockTypes,
+      rateBasis: draft.rateBasis,
+      rateAmount: draft.rateAmount,
+      notes: draft.notes,
+      status: "published",
+      postedAt: nowLabel(),
+    };
+    setUserPosted((current) => [newCapacity, ...current]);
+    setPostOpen(false);
+    flash(
+      `Posted: ${draft.originRegion} -> ${draft.destinationRegion}.`,
+      "success"
+    );
+  }
 
   const activeFilterCount =
     filters.origins.length +
@@ -100,6 +189,26 @@ export function CapacityClient({
 
   return (
     <>
+      <section
+        aria-label="Driver tools"
+        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sage-deep/15 bg-sage-mist/35 px-4 py-3"
+      >
+        <div className="flex items-center gap-2 text-sage-deep">
+          <Truck className="h-5 w-5" aria-hidden />
+          <p className="text-sm font-semibold">
+            Driver? Post a run so farmers can find you.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPostOpen(true)}
+          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full bg-sage-deep px-4 text-sm font-bold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Post a run
+        </button>
+      </section>
+
       <section
         aria-label="Filter capacity"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
@@ -167,6 +276,14 @@ export function CapacityClient({
       ) : (
         <EmptyState onClear={clearAll} hasFilters={activeFilterCount > 0} />
       )}
+
+      <CapacityPostDialog
+        open={postOpen}
+        driverLabel="Driver (prototype)"
+        regionOptions={regionOptions}
+        onClose={() => setPostOpen(false)}
+        onSubmit={postCapacity}
+      />
     </>
   );
 }
@@ -331,4 +448,14 @@ function matchesFilters(
 
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+}
+
+function nowLabel(): string {
+  return new Date().toLocaleString("en-AU", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
