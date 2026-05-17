@@ -6,12 +6,12 @@ type ButtonVariant = "primary" | "secondary" | "ghost";
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-sage-deep text-cream hover:bg-sage-dark",
   secondary:
-    "border border-sage-deep/25 bg-cream text-sage-deep hover:bg-sage-mist",
+    "border border-sage-deep/40 bg-warm-white text-sage-deep hover:bg-sage-mist",
   ghost: "text-sage-deep hover:bg-sage-mist",
 };
 
 const baseClasses =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white disabled:pointer-events-none disabled:opacity-55";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white disabled:pointer-events-none disabled:opacity-55";
 
 export function Button({
   variant = "primary",

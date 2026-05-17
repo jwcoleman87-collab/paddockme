@@ -1,17 +1,26 @@
-import { Droplets, Fence, MapPin, Sprout } from "lucide-react";
+import { Droplets, Fence, LandPlot, MapPin, Sprout } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
-import { InfoTile } from "@/components/InfoTile";
 import { StateMiniMap } from "@/components/StateMiniMap";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { PaddockListing } from "@/lib/dummyData";
 
-export function ListingCard({ listing }: { listing: PaddockListing }) {
+export function ListingCard({
+  listing,
+  matchScore,
+  matchReasons = [],
+  mapImageSrc,
+}: {
+  listing: PaddockListing;
+  matchScore?: number;
+  matchReasons?: string[];
+  mapImageSrc?: string;
+}) {
   return (
-    <Card className="flex h-full flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem] sm:items-start">
+    <Card className="flex h-full flex-col gap-3 p-4">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.25rem] sm:items-start">
         <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             <StatusBadge
               tone={
                 listing.verificationStatus === "Verified provider"
@@ -21,57 +30,190 @@ export function ListingCard({ listing }: { listing: PaddockListing }) {
             >
               {listing.verificationStatus}
             </StatusBadge>
-            <span className="rounded-full bg-warm-white px-3 py-1 text-xs font-semibold text-stone">
+            <span className="rounded-md border border-stone/25 bg-warm-white px-3 py-1 text-xs font-bold text-bark/85">
               {listing.guideTerms}
             </span>
           </div>
-          <h2 className="text-xl font-bold text-sage-deep">{listing.title}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-bark/65">
+          <h2 className="text-lg font-bold leading-tight text-sage-deep">{listing.title}</h2>
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-bark/85">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
             {listing.location}
           </p>
         </div>
 
-        <StateMiniMap
-          state={listing.state}
-          regionLabel={listing.regionLabel}
-          placeLabel={listing.mapPlaceLabel}
-          dotPosition={listing.mapDot}
-          nearbyPlaces={listing.mapNearbyPlaces}
-          className="order-first h-32 sm:order-none sm:h-36"
-        />
+        {mapImageSrc ? (
+          <LocationMapImage
+            src={mapImageSrc}
+            label={`${listing.mapPlaceLabel} map`}
+            placeLabel={listing.mapPlaceLabel}
+          />
+        ) : (
+          <StateMiniMap
+            state={listing.state}
+            regionLabel={listing.regionLabel}
+            placeLabel={listing.mapPlaceLabel}
+            dotPosition={listing.mapDot}
+            nearbyPlaces={listing.mapNearbyPlaces}
+            className="order-first h-24 sm:order-none sm:h-28"
+          />
+        )}
       </div>
 
-      <p className="text-sm leading-relaxed text-bark/75">{listing.summary}</p>
+      {typeof matchScore === "number" && (
+        <FitInline score={matchScore} reasons={matchReasons} />
+      )}
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <InfoTile
-          size="sm"
-          iconPlacement="inline"
-          icon={<Sprout className="h-4 w-4" />}
-          label="Feed"
-          value={listing.feedStatus}
-        />
-        <InfoTile
-          size="sm"
-          iconPlacement="inline"
-          icon={<Droplets className="h-4 w-4" />}
-          label="Water"
-          value={listing.waterStatus}
-        />
-        <InfoTile
-          size="sm"
-          iconPlacement="inline"
-          icon={<Fence className="h-4 w-4" />}
-          label="Fencing"
-          value={listing.fencingStatus}
-        />
-        <InfoTile size="sm" label="Acres" value={`${listing.acres}`} />
-      </div>
+      <p className="text-sm font-medium leading-snug text-bark/90">{listing.summary}</p>
 
-      <ButtonLink href={`/listings/${listing.id}`} className="mt-auto">
+      <PaddockSignalStrip listing={listing} />
+
+      <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`} className="mt-auto">
         View details
       </ButtonLink>
     </Card>
   );
+}
+
+function FitInline({
+  score,
+  reasons,
+}: {
+  score: number;
+  reasons: string[];
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-y border-mist/80 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-bark/75">
+          Fit
+        </span>
+        <div className="flex min-w-0 flex-wrap gap-1">
+          {reasons.slice(0, 3).map((reason) => (
+            <span
+              key={reason}
+              className="rounded-sm bg-cream px-2 py-1 text-xs font-bold text-bark/85"
+            >
+              {reason}
+            </span>
+          ))}
+        </div>
+      </div>
+      <span className="shrink-0 text-lg font-extrabold text-sage-deep">
+        {score}%
+      </span>
+    </div>
+  );
+}
+
+function LocationMapImage({
+  src,
+  label,
+  placeLabel,
+}: {
+  src: string;
+  label: string;
+  placeLabel: string;
+}) {
+  return (
+    <div className="relative order-first h-24 overflow-hidden rounded-md border border-stone/35 bg-warm-white sm:order-none sm:h-28">
+      <img
+        src={src}
+        alt={label}
+        className="h-full w-full object-cover"
+      />
+      <span className="absolute bottom-1.5 left-1.5 max-w-[calc(100%-0.75rem)] truncate rounded-sm bg-cream/95 px-2 py-0.5 text-[0.68rem] font-bold leading-4 text-sage-deep shadow-sm">
+        {placeLabel}
+      </span>
+    </div>
+  );
+}
+
+function PaddockSignalStrip({ listing }: { listing: PaddockListing }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <SignalTile
+        icon={<Sprout className="h-4 w-4" />}
+        label="Feed"
+        value={listing.feedStatus}
+        strength={signalStrength(listing.feedStatus, {
+          Excellent: 3,
+          Good: 2,
+          Tight: 1,
+        })}
+      />
+      <SignalTile
+        icon={<Droplets className="h-4 w-4" />}
+        label="Water"
+        value={listing.waterStatus}
+        strength={signalStrength(listing.waterStatus, {
+          Permanent: 3,
+          Tank: 2,
+          Seasonal: 1,
+        })}
+      />
+      <SignalTile
+        icon={<Fence className="h-4 w-4" />}
+        label="Fence"
+        value={listing.fencingStatus}
+        strength={signalStrength(listing.fencingStatus, {
+          Secure: 3,
+          Good: 2,
+          "Needs inspection": 1,
+        })}
+      />
+      <SignalTile
+        icon={<LandPlot className="h-4 w-4" />}
+        label="Area"
+        value={`${listing.acres} ac`}
+        strength={listing.acres >= 280 ? 3 : listing.acres >= 160 ? 2 : 1}
+      />
+    </div>
+  );
+}
+
+function SignalTile({
+  icon,
+  label,
+  value,
+  strength,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  strength: 1 | 2 | 3;
+}) {
+  return (
+    <div className="flex min-h-[5.35rem] flex-col justify-between rounded-md border border-mist bg-warm-white p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-bark/75">
+          {label}
+        </span>
+        <span className="text-sage-deep" aria-hidden>
+          {icon}
+        </span>
+      </div>
+      <div>
+        <p className="truncate text-sm font-extrabold text-bark">{value}</p>
+        <span className="mt-2 flex gap-1" aria-label={`${label} strength ${strength} of 3`}>
+          {[1, 2, 3].map((level) => (
+            <span
+              key={level}
+              className={
+                level <= strength
+                  ? "h-1.5 flex-1 rounded-sm bg-sage-deep"
+                  : "h-1.5 flex-1 rounded-sm bg-mist"
+              }
+            />
+          ))}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function signalStrength<T extends string>(
+  value: T,
+  lookup: Record<T, 1 | 2 | 3>
+): 1 | 2 | 3 {
+  return lookup[value] ?? 1;
 }

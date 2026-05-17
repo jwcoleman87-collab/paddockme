@@ -26,7 +26,7 @@ export default function SignInPage() {
         <h1 className="font-display text-3xl text-sage-deep mb-2">
           Welcome back.
         </h1>
-        <p className="text-bark/70 mb-8">
+        <p className="text-bark/85 mb-8">
           Sign in to your account to keep coordinating.
         </p>
 
@@ -34,7 +34,7 @@ export default function SignInPage() {
           <SignInForm />
         </Suspense>
 
-        <p className="mt-8 text-center text-sm text-bark/70">
+        <p className="mt-8 text-center text-sm text-bark/85">
           New here?{" "}
           <Link href="/sign-up" className="text-sage-deep underline">
             Create an account
@@ -163,7 +163,7 @@ function SignInForm() {
         Sign in
       </button>
 
-      <div className="relative my-6 text-center text-sm text-stone">
+      <div className="relative my-6 text-center text-sm font-medium text-bark/80">
         <span className="bg-cream px-3 relative z-10">or</span>
         <span className="absolute inset-x-0 top-1/2 h-px bg-mist" />
       </div>

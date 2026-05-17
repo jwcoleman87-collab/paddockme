@@ -20,7 +20,7 @@ export function SplitWorkspace({
 
   return (
     <div>
-      <div className="mb-4 grid grid-cols-2 rounded-full border border-mist bg-cream p-1 md:hidden">
+      <div className="mb-4 grid grid-cols-2 rounded-lg border border-mist bg-cream p-1 md:hidden">
         <TabButton active={active === "left"} onClick={() => setActive("left")}>
           {leftLabel}
         </TabButton>
@@ -65,8 +65,8 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition",
-        active ? "bg-sage-deep text-cream" : "text-bark/65",
+        "min-h-11 rounded-md px-4 py-2 text-sm font-semibold transition",
+        active ? "bg-sage-deep text-cream" : "text-bark/85",
         "cursor-pointer"
       )}
     >
