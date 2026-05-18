@@ -398,6 +398,15 @@ export type TransportQuote = {
   note?: string;
 };
 
+export type TransportJobStatus =
+  | "available"
+  | "accepted"
+  | "loading"
+  | "in_transit"
+  | "arrived"
+  | "completed"
+  | "cancelled";
+
 export type TransportJob = {
   id: string;
   agreementId: string;
@@ -413,7 +422,7 @@ export type TransportJob = {
   livestockCount: string;
   preferredDate: string;
   driver: string;
-  status: "Loading" | "In Transit" | "Arrived";
+  status: TransportJobStatus;
   routeSummary: string;
   /** Visible to farmers only - hidden from driver per the driver-visibility rule. */
   agreementContext: {
@@ -966,7 +975,7 @@ export const transportJobs: TransportJob[] = [
     livestockCount: "100 cattle",
     preferredDate: "Friday 22 May",
     driver: "Wayne Hayes",
-    status: "Loading",
+    status: "accepted",
     routeSummary: "Central West to Gundagai via Wagga corridor",
     agreementContext: {
       duration: "3 months",

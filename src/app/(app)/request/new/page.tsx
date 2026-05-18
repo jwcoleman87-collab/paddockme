@@ -10,6 +10,7 @@ import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
+import { createLivestockRequest } from "@/lib/prototypeStore";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -146,6 +147,15 @@ export default function NewRequestPage() {
     if (transportRequired) {
       params.set("transport", transportRequired);
     }
+    createLivestockRequest({
+      stockType,
+      breed,
+      headCount,
+      duration,
+      preferredRegions: selectedRegions,
+      transportRequired: transportRequired as "Yes" | "No" | "Unsure",
+    });
+    flash("Request created. Matching paddocks now.", "success");
     await persistRequest();
     router.push(`/matches?${params.toString()}`);
   }
@@ -164,7 +174,7 @@ export default function NewRequestPage() {
       <PageHeader
         eyebrow="Need agistment"
         title="Tell us what needs placing."
-        description="A low-typing request flow for Farmer A. These choices will become match inputs later; for now they drive the clickable skeleton."
+        description="Choose the stock, count, timing, regions and transport need so the app can line up suitable paddocks."
       />
 
       <form onSubmit={submit} className="grid gap-5 lg:grid-cols-[0.95fr_0.55fr]">

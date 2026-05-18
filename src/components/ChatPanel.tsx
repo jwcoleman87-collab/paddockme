@@ -55,7 +55,7 @@ export function ChatPanel({
     ? `Reply in "${activeSection.label}"${composerSenderLabel ? ` as ${composerSenderLabel}` : ""}`
     : composerSenderLabel
       ? `Message as ${composerSenderLabel}`
-      : "Message field placeholder";
+      : "Write a message";
 
   function handleSend(event: React.FormEvent) {
     event.preventDefault();

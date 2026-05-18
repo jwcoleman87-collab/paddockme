@@ -37,7 +37,7 @@ export default function TransportAvailablePage() {
       <PageHeader
         eyebrow="Transport marketplace"
         title="Trucks with capacity."
-        description="Browse runs drivers have posted. Filter by origin, destination, and stock fit - same chip pattern as paddock browse. Tap to send a quote request."
+        description="Browse runs drivers have posted, filter by route and stock fit, then send a quote request from the run that suits."
         action={
           <ButtonLink href="/transport" variant="secondary">
             Live transport jobs

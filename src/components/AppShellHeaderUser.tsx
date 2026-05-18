@@ -20,18 +20,19 @@ export function AppShellHeaderUser() {
 
   useEffect(() => {
     function read(): string | null {
+      try {
+        const stored =
+          window.localStorage.getItem("paddockme.agreements.persona") ??
+          window.localStorage.getItem("paddockme.profile.persona");
+        if (stored) return stored;
+      } catch {
+        // ignore
+      }
+      const cookiePersona = readPersonaCookie();
+      if (cookiePersona) return cookiePersona;
       const routePersona = personaForRoute(pathname, searchParams);
       if (routePersona) return routePersona;
-      try {
-        return (
-          window.localStorage.getItem("paddockme.agreements.persona") ??
-          window.localStorage.getItem("paddockme.profile.persona") ??
-          farmers[0]?.id ??
-          null
-        );
-      } catch {
-        return farmers[0]?.id ?? null;
-      }
+      return farmers[0]?.id ?? null;
     }
 
     setActivePersonaId(read());
@@ -80,6 +81,14 @@ export function AppShellHeaderUser() {
       <User className="h-5 w-5" aria-hidden />
     </>
   );
+}
+
+function readPersonaCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("paddockme_persona="));
+  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
 }
 
 function personaForRoute(

@@ -50,16 +50,23 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
   const flash = useFlash();
   const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
   const hydratedRef = useRef(false);
+  const skipInitialWriteRef = useRef(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const cookiePersona = readPersonaCookie();
     try {
-      const stored = window.localStorage.getItem("paddockme.profile.persona");
+      const stored =
+        window.localStorage.getItem("paddockme.agreements.persona") ??
+        window.localStorage.getItem("paddockme.profile.persona") ??
+        cookiePersona;
       if (stored && farmers.some((f) => f.id === stored)) {
         setActiveId(stored);
       }
     } catch {
-      // ignore
+      if (cookiePersona && farmers.some((f) => f.id === cookiePersona)) {
+        setActiveId(cookiePersona);
+      }
     }
     hydratedRef.current = true;
   }, [farmers]);
@@ -67,13 +74,32 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!hydratedRef.current) return;
+    if (skipInitialWriteRef.current) {
+      skipInitialWriteRef.current = false;
+      return;
+    }
+    writePersonaCookie(activeId);
     try {
       window.localStorage.setItem("paddockme.profile.persona", activeId);
+      window.localStorage.setItem("paddockme.agreements.persona", activeId);
     } catch {
       // ignore
     }
     window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
   }, [activeId]);
+
+  function selectPersona(nextId: string) {
+    setActiveId(nextId);
+    writePersonaCookie(nextId);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("paddockme.profile.persona", nextId);
+      window.localStorage.setItem("paddockme.agreements.persona", nextId);
+      window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
+    } catch {
+      // ignore
+    }
+  }
 
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
   if (!farmer) return null;
@@ -110,7 +136,7 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
                 type="button"
                 role="radio"
                 aria-checked={active}
-                onClick={() => setActiveId(option.id)}
+                onClick={() => selectPersona(option.id)}
                 className={cn(
                   "flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
                   active
@@ -240,6 +266,19 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
       </section>
     </>
   );
+}
+
+function readPersonaCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("paddockme_persona="));
+  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
+}
+
+function writePersonaCookie(personaId: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 function resetPrototypeState(flash: (message: string, tone?: "info" | "success" | "warning") => void) {

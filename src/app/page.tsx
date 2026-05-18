@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Handshake, Map, Sprout, Truck } from "lucide-react";
 import { Card } from "@/components/Card";
+import { FlashProvider } from "@/components/FlashProvider";
+import { PrototypePersonaButtons } from "@/components/PrototypePersonaButtons";
 
 const homeActions = [
   {
@@ -35,6 +37,7 @@ const homeActions = [
 
 export default function HomePage() {
   return (
+    <FlashProvider>
     <main className="min-h-dvh overflow-x-hidden bg-warm-white pb-28 text-bark">
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-5 md:px-8">
         <Link href="/" className="font-display text-2xl text-sage-deep">
@@ -84,6 +87,7 @@ export default function HomePage() {
                 Skip to the app
               </Link>
             </div>
+            <PrototypePersonaButtons />
           </div>
 
           <div className="hidden min-w-0 gap-4 md:grid">
@@ -97,7 +101,7 @@ export default function HomePage() {
             </Card>
             <div className="grid gap-4 sm:grid-cols-2">
               <Feature icon={<Truck />} title="Transport" text="Coordinate pickup, destination and driver updates separately." />
-              <Feature icon={<Map />} title="Regions" text="See availability and pressure as a placeholder intelligence layer." />
+              <Feature icon={<Map />} title="Regions" text="See availability, feed pressure, and uploaded regional maps in one view." />
             </div>
           </div>
         </div>
@@ -128,6 +132,7 @@ export default function HomePage() {
         </div>
       </nav>
     </main>
+    </FlashProvider>
   );
 }
 

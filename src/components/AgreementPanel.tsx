@@ -60,6 +60,7 @@ type AgreementPanelProps = {
   onCancelLifecycle: () => void;
   /** href of the transport room linked to this agreement, when one exists. */
   transportHref?: string;
+  onRequestTransport?: () => void;
   /** The party the current viewer represents. Drives which agree button is interactive. */
   viewerParty: WorkspaceParty;
   /** Live artefacts list (allows the workspace client to lift state above the panel). */
@@ -183,6 +184,7 @@ export function AgreementPanel({
   onAdvanceLifecycle,
   onCancelLifecycle,
   transportHref,
+  onRequestTransport,
   viewerParty,
   artefacts,
   onAddArtefact,
@@ -339,6 +341,11 @@ export function AgreementPanel({
           <ButtonLink href={transportHref} variant="secondary">
             Open transport room
           </ButtonLink>
+        ) : onRequestTransport ? (
+          <Button type="button" variant="secondary" onClick={onRequestTransport}>
+            Request transport
+            <Truck className="h-4 w-4" aria-hidden />
+          </Button>
         ) : (
           <span className="text-sm font-semibold text-bark/55">
             No transport room linked yet.
@@ -1118,20 +1125,7 @@ function SectionCard({
   const Icon = sectionIcons[section.id] ?? Sprout;
   const { agreedByA, agreedByB } = state;
 
-  const summaryTone: "success" | "warning" | "neutral" =
-    agreedByA && agreedByB
-      ? "success"
-      : agreedByA || agreedByB
-        ? "warning"
-        : "neutral";
-  const summaryLabel =
-    agreedByA && agreedByB
-      ? "Both parties agree"
-      : agreedByA
-        ? "Awaiting Farmer B"
-        : agreedByB
-          ? "Awaiting Farmer A"
-          : "Pending";
+  const alignment = getSectionAlignment(section, agreedByA, agreedByB);
 
   return (
     <article
@@ -1159,7 +1153,7 @@ function SectionCard({
             <Icon className="h-5 w-5" aria-hidden />
             <h3 className="text-lg font-bold">{section.label}</h3>
           </div>
-          <StatusBadge tone={summaryTone}>{summaryLabel}</StatusBadge>
+          <StatusBadge tone={alignment.tone}>{alignment.label}</StatusBadge>
         </div>
         <p className="text-sm text-bark/70">{section.summary}</p>
       </button>
@@ -1244,6 +1238,21 @@ function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
     sectionId: artefact.sectionId,
     recordDetails: artefactRecordDetails[artefact.id],
   };
+}
+
+function getSectionAlignment(
+  section: AgreementSection,
+  agreedByA: boolean,
+  agreedByB: boolean
+): { label: "agreed" | "pending" | "needs attention"; tone: "success" | "warning" | "neutral" } {
+  if (agreedByA && agreedByB) return { label: "agreed", tone: "success" };
+  const farmerAValue = section.detail.find((row) => row.label === "Farmer A value")?.value;
+  const farmerBValue = section.detail.find((row) => row.label === "Farmer B value")?.value;
+  if (!farmerAValue || !farmerBValue) return { label: "pending", tone: "neutral" };
+  if (farmerAValue.trim().toLowerCase() !== farmerBValue.trim().toLowerCase()) {
+    return { label: "needs attention", tone: "warning" };
+  }
+  return { label: "pending", tone: "neutral" };
 }
 
 const artefactRecordDetails: Record<string, ViewableArtefact["recordDetails"]> = {

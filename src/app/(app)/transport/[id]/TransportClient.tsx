@@ -22,6 +22,12 @@ import {
   type TransportRole,
   type TransportTimelineEntry,
 } from "@/lib/dummyData";
+import {
+  formatTransportStatus,
+  loadPrototypeState,
+  updateTransportStatus,
+} from "@/lib/prototypeStore";
+import type { TransportJobStatus } from "@/lib/dummyData";
 
 const roles: { id: TransportRole; label: string; helper: string }[] = [
   {
@@ -58,6 +64,7 @@ export function TransportClient({
   messages: Message[];
 }) {
   const flash = useFlash();
+  const [jobState, setJobState] = useState(job);
   const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -76,8 +83,8 @@ export function TransportClient({
   // filters by geographic adjacency when destinationRegion is set, falling
   // back to "all this driver's runs" when it isn't.
   const backloads: TransportCapacity[] = useMemo(
-    () => getDriverBackloads(job.driverId, job.destinationRegion),
-    [job.driverId, job.destinationRegion]
+    () => getDriverBackloads(jobState.driverId, jobState.destinationRegion),
+    [jobState.driverId, jobState.destinationRegion]
   );
 
   const hydratedRef = useRef(false);
@@ -89,6 +96,8 @@ export function TransportClient({
       const stored = window.localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
+        const localJob = loadPrototypeState().transportJobs.find((item) => item.id === job.id);
+        if (localJob) setJobState(localJob);
         if (parsed.confirmations) setConfirmations(parsed.confirmations);
         if (parsed.messages) setMessages(parsed.messages);
         if (parsed.artefacts) setArtefacts(parsed.artefacts);
@@ -323,8 +332,41 @@ export function TransportClient({
 
   const composerSenderLabel = `${senderProfile[role].name} (${senderProfile[role].role})`;
 
+  function setStatus(status: TransportJobStatus) {
+    const { job: updated } = updateTransportStatus(jobState.id, status);
+    if (updated) setJobState(updated);
+    flash(`Status updated: ${formatTransportStatus(status)}.`, "success");
+    appendSystemMessage(`${senderProfile[role].name} updated transport status to ${formatTransportStatus(status)}.`);
+  }
+
   return (
     <div className="space-y-5">
+      <section className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              Job status
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-sage-deep">
+              {formatTransportStatus(jobState.status)}
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["accepted", "loading", "in_transit", "arrived", "completed"] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setStatus(status)}
+                disabled={role !== "driver" || jobState.status === status}
+                className="inline-flex min-h-10 cursor-pointer items-center rounded-full border border-mist bg-warm-white px-3 py-1 text-xs font-bold text-bark transition hover:border-sage/40 hover:bg-sage-mist disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {formatTransportStatus(status)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section
         aria-label="Prototype role switcher"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
@@ -390,7 +432,7 @@ export function TransportClient({
         rightLabel="Group chat"
         left={
           <TransportPanel
-            job={job}
+            job={jobState}
             role={role}
             activeSectionId={activeSectionId}
             onSelectSection={(id) => setActiveSectionId(id)}

@@ -1,6 +1,5 @@
-import { PageHeader } from "@/components/PageHeader";
-import { getTransportJob, getTransportMessages } from "@/lib/dummyData";
-import { TransportClient } from "./TransportClient";
+import { getTransportJob } from "@/lib/dummyData";
+import { TransportRouteClient } from "./TransportRouteClient";
 
 export default async function TransportDetailPage({
   params,
@@ -8,17 +7,5 @@ export default async function TransportDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const job = getTransportJob(id);
-  const messages = getTransportMessages(job.id);
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Transport coordination"
-        title="Three-party transport room."
-        description="Farmer A, Farmer B and the driver coordinate the move here. Pricing and contract terms stay in the agreement workspace - this surface only carries logistics."
-      />
-      <TransportClient job={job} messages={messages} />
-    </>
-  );
+  return <TransportRouteClient id={id} seedJob={getTransportJob(id)} />;
 }

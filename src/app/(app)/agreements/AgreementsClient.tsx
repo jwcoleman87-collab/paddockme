@@ -24,6 +24,7 @@ import type {
   PaddockListing,
   TransportJob,
 } from "@/lib/dummyData";
+import { loadPrototypeState } from "@/lib/prototypeStore";
 
 const lifecycleTone: Record<
   AgreementLifecycleState,
@@ -59,8 +60,12 @@ export function AgreementsClient({
   initialFarmerId?: string;
 }) {
   const [activeId, setActiveId] = useState(initialFarmerId ?? farmers[0]?.id ?? "");
+  const [localAgreements, setLocalAgreements] = useState(agreements);
+  const [localTransportJobs, setLocalTransportJobs] = useState(transportJobs);
+  const [localListings, setLocalListings] = useState(listings);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const hydratedRef = useRef(false);
+  const skipInitialWriteRef = useRef(!initialFarmerId);
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
   useEffect(() => {
@@ -70,19 +75,44 @@ export function AgreementsClient({
       return;
     }
     try {
+      const state = loadPrototypeState();
+      setLocalAgreements(state.agreements);
+      setLocalTransportJobs(state.transportJobs);
+      setLocalListings(state.paddockListings);
       const stored = window.localStorage.getItem("paddockme.agreements.persona");
-      if (stored && farmers.some((f) => f.id === stored)) {
-        setActiveId(stored);
+      const persona = stored ?? readPersonaCookie();
+      if (persona && farmers.some((f) => f.id === persona)) {
+        setActiveId(persona);
       }
     } catch {
-      // ignore
+      const persona = readPersonaCookie();
+      if (persona && farmers.some((f) => f.id === persona)) {
+        setActiveId(persona);
+      }
     }
     hydratedRef.current = true;
   }, [farmers, initialFarmerId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const sync = () => {
+      const state = loadPrototypeState();
+      setLocalAgreements(state.agreements);
+      setLocalTransportJobs(state.transportJobs);
+      setLocalListings(state.paddockListings);
+    };
+    window.addEventListener("paddockme:prototype-change", sync);
+    return () => window.removeEventListener("paddockme:prototype-change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     if (!hydratedRef.current) return;
+    if (skipInitialWriteRef.current) {
+      skipInitialWriteRef.current = false;
+      return;
+    }
+    writePersonaCookie(activeId);
     try {
       window.localStorage.setItem("paddockme.agreements.persona", activeId);
     } catch {
@@ -93,19 +123,19 @@ export function AgreementsClient({
 
   const visibleAgreements = useMemo(() => {
     if (!farmer) return [];
-    return agreements.filter((agreement) =>
+    return localAgreements.filter((agreement) =>
       farmer.role === "Livestock Owner"
         ? agreement.farmerAId === farmer.id
         : farmer.role === "Landowner"
           ? agreement.farmerBId === farmer.id
           : false
     );
-  }, [agreements, farmer]);
+  }, [localAgreements, farmer]);
 
   const visibleJobs = useMemo(() => {
     if (!farmer || farmer.role !== "Transport Provider") return [];
-    return transportJobs.filter((job) => job.driverId === farmer.id);
-  }, [transportJobs, farmer]);
+    return localTransportJobs.filter((job) => job.driverId === farmer.id);
+  }, [localTransportJobs, farmer]);
 
   if (!farmer) return null;
 
@@ -180,12 +210,25 @@ export function AgreementsClient({
       ) : (
         <AgreementsBody
           agreements={visibleAgreements}
-          listings={listings}
+          listings={localListings}
           farmer={farmer}
         />
       )}
     </>
   );
+}
+
+function readPersonaCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("paddockme_persona="));
+  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
+}
+
+function writePersonaCookie(personaId: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 function PersonaCallout({

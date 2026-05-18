@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Users } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
+import { Card } from "@/components/Card";
 import {
   AgreementPanel,
   type SectionAgreementState,
@@ -14,12 +15,17 @@ import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
+import {
+  loadPrototypeState,
+  requestTransportForAgreement,
+} from "@/lib/prototypeStore";
 import type {
   Agreement,
   AgreementArtefact,
   AgreementLifecycleEvent,
   AgreementLifecycleState,
   Message,
+  TransportJob,
 } from "@/lib/dummyData";
 
 const partyProfile: Record<
@@ -63,7 +69,9 @@ export function WorkspaceClient({
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const linkedTransport = getTransportJobForAgreement(agreement.id);
+  const [linkedTransport, setLinkedTransport] = useState<TransportJob | undefined>(
+    () => getTransportJobForAgreement(agreement.id)
+  );
   const transportHref = linkedTransport
     ? `/transport/${linkedTransport.id}`
     : undefined;
@@ -93,6 +101,18 @@ export function WorkspaceClient({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const cookiePersona = readPersonaCookie();
+    try {
+      const stored =
+        window.localStorage.getItem("paddockme.agreements.persona") ??
+        window.localStorage.getItem("paddockme.profile.persona") ??
+        cookiePersona;
+      if (stored === "farmer-b") setViewerPartyState("B");
+      if (stored === "farmer-a") setViewerPartyState("A");
+    } catch {
+      if (cookiePersona === "farmer-b") setViewerPartyState("B");
+      if (cookiePersona === "farmer-a") setViewerPartyState("A");
+    }
     if (!linkedTransport) return;
     try {
       const raw = window.localStorage.getItem(
@@ -117,9 +137,26 @@ export function WorkspaceClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedTransport?.id]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const localJob = loadPrototypeState().transportJobs.find(
+      (job) => job.agreementId === agreement.id
+    );
+    if (localJob) setLinkedTransport(localJob);
+  }, [agreement.id]);
+
   function setViewerParty(next: WorkspaceParty) {
     if (next === viewerParty) return;
     setViewerPartyState(next);
+    writePersonaCookie(partyProfile[next].id);
+    try {
+      const personaId = partyProfile[next].id;
+      window.localStorage.setItem("paddockme.profile.persona", personaId);
+      window.localStorage.setItem("paddockme.agreements.persona", personaId);
+      window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
+    } catch {
+      // ignore
+    }
     flash(`Viewing as ${partyProfile[next].label}.`, "info");
   }
 
@@ -241,56 +278,51 @@ export function WorkspaceClient({
     // Guard - the panel only renders the viewer's own button as
     // interactive, but defend against rogue calls just in case.
     if (party !== viewerParty) return;
-    setSectionState((current) => {
-      const previous = current[sectionId] ?? {
-        agreedByA: false,
-        agreedByB: false,
-      };
-      const next: SectionAgreementState =
-        party === "A"
-          ? { ...previous, agreedByA: !previous.agreedByA }
-          : { ...previous, agreedByB: !previous.agreedByB };
-      const justMutuallyAgreed =
-        next.agreedByA &&
-        next.agreedByB &&
-        !(previous.agreedByA && previous.agreedByB);
-      if (justMutuallyAgreed) {
-        const section = agreement.sections.find((s) => s.id === sectionId);
-        if (section) {
-          flash(
-            `Both parties agree on ${section.label}.`,
-            "success"
-          );
-          appendSystemMessage(
-            `Both parties agree on "${section.label}".`,
-            section.id
-          );
-        }
+    const previous = sectionState[sectionId] ?? {
+      agreedByA: false,
+      agreedByB: false,
+    };
+    const next: SectionAgreementState =
+      party === "A"
+        ? { ...previous, agreedByA: !previous.agreedByA }
+        : { ...previous, agreedByB: !previous.agreedByB };
+    setSectionState((current) => ({ ...current, [sectionId]: next }));
+
+    const justMutuallyAgreed =
+      next.agreedByA &&
+      next.agreedByB &&
+      !(previous.agreedByA && previous.agreedByB);
+    if (justMutuallyAgreed) {
+      const section = agreement.sections.find((s) => s.id === sectionId);
+      if (section) {
+        flash(`Both parties agree on ${section.label}.`, "success");
+        appendSystemMessage(
+          `Both parties agree on "${section.label}".`,
+          section.id
+        );
       }
-      return { ...current, [sectionId]: next };
-    });
+    }
   };
 
   const advanceLifecycle = (to: AgreementLifecycleState) => {
     const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
-    setLifecycleState((from) => {
-      setLifecycleHistory((history) => [
-        ...history,
-        {
-          at: nowLabel(),
-          from,
-          to,
-          byParty,
-          note: `Advanced from ${from} to ${to}.`,
-        },
-      ]);
-      appendSystemMessage(
-        from
-          ? `Agreement moved from ${from} to ${to} by ${byParty}.`
-          : `Agreement entered ${to}.`
-      );
-      return to;
-    });
+    const from = lifecycleState;
+    setLifecycleState(to);
+    setLifecycleHistory((history) => [
+      ...history,
+      {
+        at: nowLabel(),
+        from,
+        to,
+        byParty,
+        note: `Advanced from ${from} to ${to}.`,
+      },
+    ]);
+    appendSystemMessage(
+      from
+        ? `Agreement moved from ${from} to ${to} by ${byParty}.`
+        : `Agreement entered ${to}.`
+    );
     flash(
       to === "Completed"
         ? "Agreement marked complete."
@@ -318,22 +350,41 @@ export function WorkspaceClient({
 
   const cancelLifecycle = () => {
     const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
-    setLifecycleState((from) => {
-      if (from === "Cancelled" || from === "Completed") return from;
-      setLifecycleHistory((history) => [
-        ...history,
-        {
-          at: nowLabel(),
-          from,
-          to: "Cancelled",
-          byParty,
-          note: "Agreement cancelled from the workspace.",
-        },
-      ]);
-      appendSystemMessage(`Agreement cancelled by ${byParty}.`);
-      flash("Agreement cancelled.", "warning");
-      return "Cancelled";
-    });
+    const from = lifecycleState;
+    if (from === "Cancelled" || from === "Completed") return;
+    setLifecycleState("Cancelled");
+    setLifecycleHistory((history) => [
+      ...history,
+      {
+        at: nowLabel(),
+        from,
+        to: "Cancelled",
+        byParty,
+        note: "Agreement cancelled from the workspace.",
+      },
+    ]);
+    appendSystemMessage(`Agreement cancelled by ${byParty}.`);
+    flash("Agreement cancelled.", "warning");
+  };
+
+  const requestTransport = () => {
+    const { job } = requestTransportForAgreement(agreement.id);
+    setLinkedTransport(job);
+    setTransportConfirmations(
+      Object.fromEntries(
+        job.sections.map((section) => [
+          section.id,
+          { ...section.confirmations },
+        ])
+      )
+    );
+    setTransportQuotes(job.quotes);
+    setAcceptedTransportQuoteId(job.acceptedQuoteId);
+    appendSystemMessage(
+      `Transport requested. ${job.driver} can now accept the job.`,
+      "transport"
+    );
+    flash("Transport requested.", "success");
   };
 
   const timelineItems = useMemo(() => {
@@ -366,6 +417,15 @@ export function WorkspaceClient({
 
   return (
     <div className="space-y-5">
+      <Card className="border-sage/30 bg-sage-mist/70">
+        <p className="text-sm font-bold text-sage-deep">
+          You are {partyProfile[viewerParty].name} ({partyProfile[viewerParty].role}).
+        </p>
+        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
+          You are working with {partyProfile[viewerParty === "A" ? "B" : "A"].name} ({partyProfile[viewerParty === "A" ? "B" : "A"].role}).
+          The agreement becomes real only after both sides agree the open sections.
+        </p>
+      </Card>
       <section
         aria-label="Prototype party switcher"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
@@ -444,6 +504,7 @@ export function WorkspaceClient({
               onAdvanceLifecycle={advanceLifecycle}
               onCancelLifecycle={cancelLifecycle}
               transportHref={transportHref}
+              onRequestTransport={requestTransport}
               viewerParty={viewerParty}
               artefacts={artefacts}
               onAddArtefact={addArtefact}
@@ -469,6 +530,19 @@ export function WorkspaceClient({
       />
     </div>
   );
+}
+
+function readPersonaCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("paddockme_persona="));
+  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
+}
+
+function writePersonaCookie(personaId: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 function mergeArtefacts(

@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Map, MessageSquare, Search, Sprout } from "lucide-react";
+import { Home, Map, Search, Sprout, Truck } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/agreements", label: "Home", icon: Home, match: ["/agreements", "/home"] },
+  {
+    href: "/agreements",
+    label: "My work",
+    icon: Home,
+    match: ["/agreements", "/home", "/workspace"],
+  },
   { href: "/request/new", label: "Request", icon: Search },
   { href: "/listings", label: "Paddocks", icon: Sprout },
   {
-    href: "/workspace",
-    label: "Workspace",
-    icon: MessageSquare,
-    match: ["/workspace"],
+    href: "/transport",
+    label: "Transport",
+    icon: Truck,
+    match: ["/transport"],
   },
   { href: "/map", label: "Map", icon: Map },
 ];

@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Minus, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Minus, Sparkles } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -23,6 +23,7 @@ type ScoredListing = {
   listing: PaddockListing;
   score: number;
   signals: MatchSignal[];
+  capacityWarning?: string;
 };
 
 type SearchParams = {
@@ -66,7 +67,7 @@ export default async function MatchesPage({
       <PageHeader
         eyebrow="Matches"
         title="Paddocks scored against your request."
-        description="Each card shows which signals matched and which didn't. Higher score, closer fit - it's still chips, not algorithms."
+        description="Each card shows which signals match your request so the best-fit paddocks rise to the top."
         action={
           <ButtonLink href="/request/new" variant="secondary">
             Edit request
@@ -218,6 +219,19 @@ function ScoredCard({
         listing={entry.listing}
         mapImageSrc={getListingMapImageSrc(entry.listing.id)}
       />
+      {entry.capacityWarning && (
+        <Card className="mt-3 border-amber-700/30 bg-amber-50">
+          <div className="flex items-start gap-2 text-amber-950">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden />
+            <div>
+              <h3 className="text-sm font-bold">Capacity needs checking</h3>
+              <p className="mt-1 text-sm leading-relaxed">
+                {entry.capacityWarning}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
       <Card className="mt-3">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Why this match
@@ -266,6 +280,7 @@ function scoreListing(
     listing.feedStatus === "Excellent" || listing.feedStatus === "Good";
   const permanentWater = listing.waterStatus === "Permanent";
   const secureFencing = listing.fencingStatus === "Secure";
+  const capacityWarning = getCapacityWarning(listing, request);
 
   const signals: MatchSignal[] = [
     { label: `${request.stockType} suitable`, matched: stockMatch },
@@ -276,15 +291,39 @@ function scoreListing(
     { label: "Secure fencing", matched: secureFencing },
   ];
 
-  const score =
+  const rawScore =
     (stockMatch ? 30 : 0) +
     (regionMatch ? 25 : 0) +
     (verified ? 15 : 0) +
     (goodFeed ? 10 : 0) +
     (permanentWater ? 10 : 0) +
     (secureFencing ? 10 : 0);
+  const score = capacityWarning ? Math.min(rawScore - 20, 80) : rawScore;
 
-  return { listing, score, signals };
+  return { listing, score: Math.max(score, 0), signals, capacityWarning };
+}
+
+function getCapacityWarning(
+  listing: PaddockListing,
+  request: LivestockRequest
+): string | undefined {
+  const maxHead = Math.floor(
+    listing.acres * headPerAcreFor(request.stockType)
+  );
+  if (request.headCount <= maxHead) return undefined;
+  return `${listing.title} is rated well on quality, but ${request.headCount} ${request.stockType.toLowerCase()} would exceed the rough ${maxHead}-head capacity estimate for ${listing.acres} acres. Confirm stocking rate, feed plan and rotation with the landowner before relying on this match.`;
+}
+
+function headPerAcreFor(stockType: string): number {
+  const normalised = stockType.toLowerCase();
+  if (normalised.includes("cattle")) return 0.8;
+  if (normalised.includes("sheep")) return 1;
+  if (normalised.includes("horse")) return 0.5;
+  if (normalised.includes("goat")) return 1.5;
+  if (normalised.includes("alpaca")) return 1;
+  if (normalised.includes("deer")) return 1;
+  if (normalised.includes("pig")) return 0.8;
+  return 1;
 }
 
 function badgeForRank(

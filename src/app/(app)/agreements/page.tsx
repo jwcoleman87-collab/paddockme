@@ -38,7 +38,7 @@ export default async function AgreementsPage({
   return (
     <>
       <PageHeader
-        eyebrow="Home"
+        eyebrow="My work"
         title="Your work, by role."
         description="Livestock owners and landowners see their agreements; transport providers see their jobs."
         action={<ButtonLink href="/request/new">New request</ButtonLink>}

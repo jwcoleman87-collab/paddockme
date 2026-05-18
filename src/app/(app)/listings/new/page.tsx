@@ -1,21 +1,48 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Camera, CheckCircle } from "lucide-react";
-import { ButtonLink } from "@/components/Button";
+import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { useFlash } from "@/components/FlashProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes } from "@/lib/dummyData";
+import { createPaddockListing } from "@/lib/prototypeStore";
 
 const feed = ["Excellent", "Good", "Tight", "Needs rain"];
 const water = ["Permanent", "Seasonal", "Tank", "Creek access"];
 const fencing = ["Secure", "Good", "Needs inspection"];
 
 export default function NewListingPage() {
+  const router = useRouter();
+  const flash = useFlash();
+
+  function publishListing() {
+    const { listing } = createPaddockListing({
+      title: "Glenbarra River Paddocks",
+      location: "Near Gundagai, NSW",
+      region: "Southern NSW",
+      acres: 280,
+      suitableLivestock: ["Cattle", "Sheep"],
+      feedStatus: "Excellent",
+      waterStatus: "Permanent",
+      fencingStatus: "Secure",
+      availabilityWindow: "18 May to 30 September",
+      guideTerms: "Discuss terms",
+      summary:
+        "River flats with strong autumn feed, permanent troughs, and north-gate truck access.",
+    });
+    flash("Listing published.", "success");
+    router.push(`/listings/${listing.id}?published=1`);
+  }
+
   return (
     <>
       <PageHeader
         eyebrow="Offer agistment"
         title="List spare paddock capacity."
-        description="Farmer B creates the available paddock record. This is a static prototype form with the real fields we expect later."
+        description="Add the location, acres, livestock fit, feed, water, fencing and access notes farmers need before they enquire."
       />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_0.55fr]">
@@ -40,9 +67,9 @@ export default function NewListingPage() {
           <Card>
             <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-sage/35 bg-sage-mist text-center">
               <Camera className="mb-3 h-8 w-8 text-sage-deep" aria-hidden />
-              <p className="font-semibold text-sage-deep">Photos placeholder</p>
+              <p className="font-semibold text-sage-deep">Paddock photos</p>
               <p className="mt-1 max-w-xs text-sm font-medium text-bark/85">
-                Later this becomes paddock, water point, fencing and yards photos.
+                Add paddock, water point, fencing and yards photos when they are available.
               </p>
             </div>
           </Card>
@@ -57,12 +84,9 @@ export default function NewListingPage() {
                 </div>
               ))}
             </div>
-            <ButtonLink
-              href="/listings/paddock-glenbarra?as=landowner&published=1"
-              className="mt-5 w-full"
-            >
+            <Button type="button" onClick={publishListing} className="mt-5 w-full">
               Publish listing
-            </ButtonLink>
+            </Button>
           </Card>
         </aside>
       </div>

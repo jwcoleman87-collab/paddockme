@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Filter, X } from "lucide-react";
 import { useFlash } from "@/components/FlashProvider";
 import { ListingCard } from "@/components/ListingCard";
@@ -8,6 +8,7 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { cn } from "@/lib/utils";
 import type { PaddockListing } from "@/lib/dummyData";
+import { loadPrototypeState } from "@/lib/prototypeStore";
 
 type FilterGroupKey =
   | "regions"
@@ -81,14 +82,22 @@ export function ListingsClient({
   initialFilters?: InitialFilters;
 }) {
   const flash = useFlash();
+  const [allListings, setAllListings] = useState(listings);
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...emptyFilters,
     ...initialFilters,
   }));
 
+  useEffect(() => {
+    setAllListings(loadPrototypeState().paddockListings);
+    const sync = () => setAllListings(loadPrototypeState().paddockListings);
+    window.addEventListener("paddockme:prototype-change", sync);
+    return () => window.removeEventListener("paddockme:prototype-change", sync);
+  }, []);
+
   const filtered = useMemo(
-    () => listings.filter((listing) => matchesFilters(listing, filters)),
-    [listings, filters]
+    () => allListings.filter((listing) => matchesFilters(listing, filters)),
+    [allListings, filters]
   );
 
   const activeFilterCount =
@@ -135,7 +144,7 @@ export function ListingsClient({
           </div>
           <div className="flex items-center gap-3">
             <p className="text-sm font-semibold text-bark/70">
-              {filtered.length} of {listings.length} paddocks
+              {filtered.length} of {allListings.length} paddocks
             </p>
             {activeFilterCount > 0 && (
               <button
@@ -152,7 +161,7 @@ export function ListingsClient({
 
         <div className="space-y-3">
           {filterGroups.map((group) => {
-            const options = group.getOptions(listings);
+            const options = group.getOptions(allListings);
             if (options.length === 0) return null;
             return (
               <div key={group.key}>

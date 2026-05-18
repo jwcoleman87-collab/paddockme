@@ -348,7 +348,7 @@ export function CapacityClient({
 
       <CapacityPostDialog
         open={postOpen}
-        driverLabel="Driver (prototype)"
+        driverLabel="Driver"
         regionOptions={regionOptions}
         onClose={() => setPostOpen(false)}
         onSubmit={postCapacity}
