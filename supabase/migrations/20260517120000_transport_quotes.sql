@@ -19,7 +19,7 @@
 -- transport_quotes ----------------------------------------------------------
 
 create table if not exists public.transport_quotes (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   transport_job_id uuid not null references public.transport_jobs(id) on delete cascade,
   -- The party who proposed this rate. Must be either the livestock_owner_id
   -- or the driver_id of the parent transport job. Enforced by the insert

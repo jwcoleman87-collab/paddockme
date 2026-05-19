@@ -17,7 +17,7 @@
 -- transport_capacity --------------------------------------------------------
 
 create table if not exists public.transport_capacity (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   driver_id uuid not null references public.profiles(id) on delete cascade,
   -- Optional truck identifier. Single-truck operators leave null; multi-
   -- truck businesses use it to tag the specific vehicle the capacity belongs

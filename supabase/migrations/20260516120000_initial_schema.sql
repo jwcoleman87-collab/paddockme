@@ -42,7 +42,7 @@ alter table public.profiles enable row level security;
 -- paddocks ------------------------------------------------------------------
 
 create table if not exists public.paddocks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   owner_id uuid not null references public.profiles(id) on delete cascade,
   title text not null,
   description text,
@@ -75,7 +75,7 @@ alter table public.paddocks enable row level security;
 -- agistment_requests --------------------------------------------------------
 
 create table if not exists public.agistment_requests (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   requester_id uuid not null references public.profiles(id) on delete cascade,
   stock_type text not null,
   breed text,
@@ -104,7 +104,7 @@ alter table public.agistment_requests enable row level security;
 -- matches -------------------------------------------------------------------
 
 create table if not exists public.matches (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   request_id uuid not null references public.agistment_requests(id) on delete cascade,
   paddock_id uuid not null references public.paddocks(id) on delete cascade,
   match_score numeric not null,
@@ -124,7 +124,7 @@ alter table public.matches enable row level security;
 -- agreements ----------------------------------------------------------------
 
 create table if not exists public.agreements (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   match_id uuid not null references public.matches(id) on delete cascade,
   livestock_owner_id uuid not null references public.profiles(id) on delete cascade,
   landowner_id uuid not null references public.profiles(id) on delete cascade,

@@ -21,7 +21,7 @@
 -- transport_jobs ------------------------------------------------------------
 
 create table if not exists public.transport_jobs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   agreement_id uuid not null references public.agreements(id) on delete cascade,
   livestock_owner_id uuid not null references public.profiles(id) on delete cascade,
   landowner_id uuid not null references public.profiles(id) on delete cascade,
@@ -69,7 +69,7 @@ create trigger transport_jobs_set_updated_at
 -- messages ------------------------------------------------------------------
 
 create table if not exists public.messages (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   /*
    * A message belongs to either an agreement (workspace chat - 2
    * parties) or a transport job (transport room chat - 3 parties).

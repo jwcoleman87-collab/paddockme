@@ -49,7 +49,7 @@ end $$;
 -- agreement_sections --------------------------------------------------------
 
 create table if not exists public.agreement_sections (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   agreement_id uuid not null references public.agreements(id) on delete cascade,
   section_key text not null,
   label text not null,
@@ -82,7 +82,7 @@ create trigger agreement_sections_set_updated_at
 -- agreement_artefacts -------------------------------------------------------
 
 create table if not exists public.agreement_artefacts (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   agreement_id uuid not null references public.agreements(id) on delete cascade,
   section_key text,
   uploaded_by uuid not null references public.profiles(id) on delete cascade,
@@ -111,7 +111,7 @@ create trigger agreement_artefacts_set_updated_at
 -- transport_artefacts -------------------------------------------------------
 
 create table if not exists public.transport_artefacts (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   transport_job_id uuid not null references public.transport_jobs(id) on delete cascade,
   section_key text,
   uploaded_by uuid not null references public.profiles(id) on delete cascade,
@@ -140,7 +140,7 @@ create trigger transport_artefacts_set_updated_at
 -- transport_status_events ---------------------------------------------------
 
 create table if not exists public.transport_status_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   transport_job_id uuid not null references public.transport_jobs(id) on delete cascade,
   from_status text,
   to_status text not null check (
