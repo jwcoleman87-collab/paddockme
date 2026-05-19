@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Inbox } from "lucide-react";
 import { AppShellHeaderUser } from "@/components/AppShellHeaderUser";
 import { BottomNav } from "@/components/BottomNav";
 import { FlashProvider } from "@/components/FlashProvider";
@@ -16,15 +17,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               PaddockME
             </Link>
-            <Link
-              href="/profile"
-              aria-label="Open profile"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-mist bg-cream pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
-            >
-              <Suspense fallback={null}>
-                <AppShellHeaderUser />
-              </Suspense>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/messages"
+                aria-label="Open inbox"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-mist bg-cream text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
+                <Inbox className="h-5 w-5" aria-hidden />
+              </Link>
+              <Link
+                href="/profile"
+                aria-label="Open profile"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-mist bg-cream pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
+                <Suspense fallback={null}>
+                  <AppShellHeaderUser />
+                </Suspense>
+              </Link>
+            </div>
           </div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-7xl px-5 py-7 pb-32 md:px-8 md:py-10 md:pb-36">
