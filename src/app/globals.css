@@ -86,3 +86,31 @@ h3:not(.font-display) {
   border-radius: 999px;
   background: #cfc9bb;
 }
+
+/* Print: drop the app shell chrome so /workspace/[id]/snapshot prints
+ * as a clean, single-page record. The PrintButton itself adds
+ * print:hidden via Tailwind, so it doesn't appear on the page either. */
+@media print {
+  header, nav, footer {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  body {
+    background: #ffffff !important;
+  }
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+  /* Avoid printing card shadows; rely on borders instead. */
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  [class*="shadow-["] {
+    box-shadow: none !important;
+  }
+}

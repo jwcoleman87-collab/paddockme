@@ -5,7 +5,7 @@ import { Sprout, Tractor, Truck } from "lucide-react";
 import { featuredFarmers, type Farmer } from "@/lib/dummyData";
 import { cn } from "@/lib/utils";
 
-type Page = "listings" | "capacity" | "transport-portal" | "runs";
+type Page = "listings" | "capacity" | "transport-portal" | "runs" | "map";
 
 type Copy = {
   body: string;
@@ -63,6 +63,17 @@ const COPY: Record<Page, Record<Farmer["role"], Copy>> = {
     },
     "Transport Provider": {
       body: "Your live work, top to bottom: next run, three-bucket pipeline, jobs, and the capacity you've posted.",
+    },
+  },
+  map: {
+    "Livestock Owner": {
+      body: "Switch modes to follow your agreement geography, or trace a driver's route. Layers stack so you can compare supply and demand at a glance.",
+    },
+    Landowner: {
+      body: "Your paddocks sit in the regional view. Switch to Agreement mode to see the route a confirmed transport job is running.",
+    },
+    "Transport Provider": {
+      body: "Driver mode traces your run from pickup to delivery. Regional layers show feed pressure and incoming demand for return-leg planning.",
     },
   },
 };
