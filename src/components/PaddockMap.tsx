@@ -335,6 +335,12 @@ export function PaddockMap({
     if (!map) return;
     (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
     (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(context.routes as never);
+  }, [context.routes, ready, visiblePointData]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const map = mapRef.current;
+    if (!map) return;
     if (mode === "regional" && !region) {
       map.easeTo({
         center: australiaCentre,
@@ -350,7 +356,7 @@ export function PaddockMap({
         duration: 650,
       });
     }
-  }, [context.bounds, context.routes, mode, ready, visiblePointData]);
+  }, [agreementId, context.bounds, driverId, mode, ready, region, transportId]);
 
   function locateOperationalView() {
     const map = mapRef.current;
