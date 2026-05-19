@@ -478,11 +478,31 @@ function LayerControls({
             aria-pressed={layers[key]}
           >
             <Icon className="h-4 w-4" aria-hidden />
-            {label}
+            <span className="min-w-0 flex-1 text-left">{label}</span>
+            <LayerSwatch kind={key} active={layers[key]} />
           </button>
         ))}
       </div>
     </div>
+  );
+}
+
+function LayerSwatch({ kind, active }: { kind: LayerKey; active: boolean }) {
+  return (
+    <span
+      className={cn(
+        "relative h-6 w-6 shrink-0 rounded-full border border-warm-white shadow-sm transition",
+        active ? "opacity-100" : "opacity-35 grayscale"
+      )}
+      style={{ backgroundColor: colourForKind(kind) }}
+      aria-hidden
+    >
+      <span
+        className="absolute inset-[-0.35rem] rounded-full"
+        style={{ backgroundColor: colourForKind(kind), opacity: fieldOpacityForKind(kind) }}
+      />
+      <span className="absolute inset-[0.32rem] rounded-full border border-warm-white bg-current" />
+    </span>
   );
 }
 
