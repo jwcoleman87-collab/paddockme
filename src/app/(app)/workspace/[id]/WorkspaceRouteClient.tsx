@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Map } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { FlowContextBar } from "@/components/FlowContextBar";
@@ -51,6 +52,12 @@ export function WorkspaceRouteClient({
         eyebrow="Agreement workspace"
         title="Resolve the shared agreement."
         description="Work through each section, chat beside the agreement, and only finalise when both sides have resolved the important details."
+        action={
+          <ButtonLink href={`/map?mode=agreement&agreement=${agreement.id}`} variant="secondary">
+            <Map className="h-4 w-4" aria-hidden />
+            Agreement map
+          </ButtonLink>
+        }
       />
       <FlowContextBar
         label="Closed-loop prototype"

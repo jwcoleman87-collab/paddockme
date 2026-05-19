@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Map } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
@@ -47,6 +48,12 @@ export function TransportRouteClient({
         eyebrow="Transport coordination"
         title="Three-party transport room."
         description="Farmer A, Farmer B and the driver coordinate the move here. Agistment pricing stays hidden from Wayne."
+        action={
+          <ButtonLink href={`/map?mode=driver&transport=${job.id}&driver=${job.driverId}`} variant="secondary">
+            <Map className="h-4 w-4" aria-hidden />
+            Driver map
+          </ButtonLink>
+        }
       />
       <TransportClient job={job} messages={messages} />
     </>
