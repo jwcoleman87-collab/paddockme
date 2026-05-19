@@ -11,6 +11,7 @@ import {
   TransportPanel,
   type TransportQuoteDraft,
 } from "@/components/TransportPanel";
+import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import {
   getDriverBackloads,
@@ -71,6 +72,13 @@ export function TransportClient({
   const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  // Inbox unread tracker - mark the transport room as seen up to the current
+  // count whenever it changes while the room is open.
+  useEffect(() => {
+    markThreadSeen(job.id, messages.length);
+  }, [job.id, messages.length]);
+
   const [confirmations, setConfirmations] = useState(() =>
     Object.fromEntries(
       job.sections.map((section) => [section.id, { ...section.confirmations }])

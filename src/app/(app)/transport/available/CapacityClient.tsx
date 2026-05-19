@@ -109,10 +109,14 @@ export function CapacityClient({
   }, [userPosted]);
 
   // User-posted rows render first so freshly published runs appear at the top.
-  const capacities = useMemo(
-    () => [...userPosted, ...seedCapacities],
-    [userPosted, seedCapacities]
-  );
+  // Drop any row whose date window has already closed so the board doesn't
+  // surface stale capacity to farmers.
+  const capacities = useMemo(() => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    return [...userPosted, ...seedCapacities].filter(
+      (capacity) => !capacity.latestDateIso || capacity.latestDateIso >= todayIso
+    );
+  }, [userPosted, seedCapacities]);
 
   const filtered = useMemo(
     () =>
@@ -155,6 +159,8 @@ export function CapacityClient({
       destinationRegion: draft.destinationRegion,
       earliestDate: draft.earliestDate,
       latestDate: draft.latestDate,
+      earliestDateIso: draft.earliestDateIso,
+      latestDateIso: draft.latestDateIso,
       headCapacity: draft.headCapacity,
       stockTypes: draft.stockTypes,
       rateBasis: draft.rateBasis,
