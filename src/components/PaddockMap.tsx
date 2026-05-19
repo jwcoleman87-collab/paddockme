@@ -88,6 +88,7 @@ export function PaddockMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [selected, setSelected] = useState<MapFeatureProperties | null>(null);
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     paddocks: true,
@@ -109,33 +110,59 @@ export function PaddockMap({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "OpenStreetMap contributors",
+    const supportCheck = (maplibregl as unknown as {
+      supported?: (options?: { failIfMajorPerformanceCaveat?: boolean }) => boolean;
+    }).supported;
+    if (supportCheck && !supportCheck({ failIfMajorPerformanceCaveat: false })) {
+      setMapError("Interactive WebGL map is not available in this browser.");
+      return;
+    }
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: {
+          version: 8,
+          glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: "OpenStreetMap contributors",
+            },
           },
+          layers: [
+            {
+              id: "map-background",
+              type: "background",
+              paint: { "background-color": "#eef3e8" },
+            },
+            {
+              id: "osm",
+              type: "raster",
+              source: "osm",
+              paint: { "raster-opacity": 0.9 },
+            },
+          ],
         },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm",
-          },
-        ],
-      },
-      center: [147.3, -32.7],
-      zoom: mode === "regional" ? 4.2 : 6.3,
-      minZoom: 3,
-      maxZoom: 13,
-      cooperativeGestures: true,
-    });
+        center: [147.3, -32.7],
+        zoom: mode === "regional" ? 4.2 : 6.3,
+        minZoom: 3,
+        maxZoom: 13,
+        cooperativeGestures: true,
+      });
+    } catch (error) {
+      setMapError(error instanceof Error ? error.message : "The interactive map failed to start.");
+      return;
+    }
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.on("error", (event) => {
+      const message = event.error?.message ?? "";
+      if (message.toLowerCase().includes("webgl")) {
+        setMapError(message);
+      }
+    });
     map.on("load", () => {
       map.addSource(pointSourceId, {
         type: "geojson",
@@ -328,6 +355,12 @@ export function PaddockMap({
       <div className="grid min-h-[72dvh] lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="relative min-h-[68dvh]">
           <div ref={containerRef} className="absolute inset-0" />
+          <FallbackOperationalMap
+            points={visiblePointData.features}
+            routes={context.routes.features}
+            active={!ready || !!mapError}
+            onSelect={setSelected}
+          />
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
             <div className="pointer-events-auto max-w-[min(32rem,calc(100vw-2rem))] rounded-[8px] border border-mist bg-warm-white/95 p-3 shadow-lg shadow-bark/10 backdrop-blur">
               <div className="flex items-start gap-2">
@@ -351,6 +384,11 @@ export function PaddockMap({
               <LocateFixed className="h-4 w-4" aria-hidden />
               Re-centre
             </button>
+            {mapError ? (
+              <div className="pointer-events-auto rounded-[8px] border border-amber/30 bg-amber-light px-3 py-2 text-sm font-semibold text-amber shadow-lg shadow-bark/10">
+                Fallback map active
+              </div>
+            ) : null}
           </div>
 
           <div className="absolute bottom-3 left-3 right-3 z-10 lg:hidden">
@@ -513,6 +551,114 @@ function MapSheet({
   );
 }
 
+function FallbackOperationalMap({
+  points,
+  routes,
+  active,
+  onSelect,
+}: {
+  points: Feature[];
+  routes: LineFeature[];
+  active: boolean;
+  onSelect: (properties: MapFeatureProperties) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 bg-[#eef3e8] transition-opacity duration-300",
+        active ? "z-[1] opacity-100" : "pointer-events-none z-0 opacity-0"
+      )}
+      aria-hidden={!active}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        className="h-full w-full"
+        role="img"
+        aria-label="PaddockME operational map fallback"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <pattern id="map-grid" width="8" height="8" patternUnits="userSpaceOnUse">
+            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="#d9d4c8" strokeWidth="0.22" opacity="0.75" />
+          </pattern>
+          <filter id="pin-shadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="1.6" stdDeviation="1.2" floodColor="#2c5030" floodOpacity="0.24" />
+          </filter>
+        </defs>
+        <rect width="100" height="100" fill="#eef3e8" />
+        <rect width="100" height="100" fill="url(#map-grid)" opacity="0.8" />
+        <path
+          d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
+          fill="#dfe9d8"
+          stroke="#9fb99b"
+          strokeWidth="0.65"
+        />
+        <path
+          d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
+          fill="none"
+          stroke="#c3b98d"
+          strokeWidth="0.45"
+          strokeDasharray="1.4 1.1"
+          opacity="0.8"
+        />
+        {routes.map((route) => {
+          const path = route.geometry.coordinates
+            .map((coordinate, index) => {
+              const projected = projectCoordinate(coordinate);
+              return `${index === 0 ? "M" : "L"} ${projected.x} ${projected.y}`;
+            })
+            .join(" ");
+          return (
+            <path
+              key={route.properties.id}
+              d={path}
+              fill="none"
+              stroke="#2c5030"
+              strokeWidth="1.1"
+              strokeLinecap="round"
+              strokeDasharray="2.2 1.3"
+              opacity="0.88"
+            />
+          );
+        })}
+        {points.map((point) => {
+          const projected = projectCoordinate(point.geometry.coordinates);
+          return (
+            <g key={point.properties.id} filter="url(#pin-shadow)">
+              <circle
+                cx={projected.x}
+                cy={projected.y}
+                r="2.2"
+                fill={colourForKind(point.properties.kind)}
+                stroke="#fdfcf9"
+                strokeWidth="0.8"
+              />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="absolute inset-0">
+        {points.map((point) => {
+          const projected = projectCoordinate(point.geometry.coordinates);
+          return (
+            <button
+              key={point.properties.id}
+              type="button"
+              onClick={() => onSelect(point.properties)}
+              className="absolute h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              style={{ left: `${projected.x}%`, top: `${projected.y}%` }}
+              aria-label={`Open ${point.properties.title}`}
+            />
+          );
+        })}
+      </div>
+      <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
+        Operational fallback map. The live tile map will replace this when WebGL and tiles are available.
+      </div>
+    </div>
+  );
+}
+
 type MapContext = {
   eyebrow: string;
   title: string;
@@ -528,6 +674,30 @@ type MapContext = {
     icon: React.ReactNode;
   }[];
 };
+
+function projectCoordinate([longitude, latitude]: [number, number]) {
+  const minLng = 112;
+  const maxLng = 154;
+  const minLat = -44.5;
+  const maxLat = -10;
+  const x = 12 + ((longitude - minLng) / (maxLng - minLng)) * 76;
+  const y = 12 + ((maxLat - latitude) / (maxLat - minLat)) * 76;
+  return {
+    x: Math.min(91, Math.max(9, x)),
+    y: Math.min(91, Math.max(9, y)),
+  };
+}
+
+function colourForKind(kind: LayerKey) {
+  const colours: Record<LayerKey, string> = {
+    paddocks: "#5b8c5a",
+    requests: "#c47b5a",
+    transport: "#2c5030",
+    profiles: "#d4a853",
+    weather: "#6d6257",
+  };
+  return colours[kind];
+}
 
 function buildMapContext(input: {
   mode: PaddockMapMode;
