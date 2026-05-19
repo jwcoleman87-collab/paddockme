@@ -354,11 +354,17 @@ export function PaddockMap({
     <section className="overflow-hidden rounded-[8px] border border-mist bg-cream shadow-sm shadow-bark/5">
       <div className="grid min-h-[72dvh] lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="relative min-h-[68dvh]">
-          <div ref={containerRef} className="absolute inset-0" />
-          <FallbackOperationalMap
+          <div
+            ref={containerRef}
+            className={cn(
+              "absolute inset-0 z-0 transition-opacity duration-300",
+              ready && !mapError ? "opacity-100" : "opacity-0"
+            )}
+          />
+          <OperationalMapLayer
             points={visiblePointData.features}
             routes={context.routes.features}
-            active={!ready || !!mapError}
+            enhanced={ready && !mapError}
             onSelect={setSelected}
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
@@ -386,7 +392,11 @@ export function PaddockMap({
             </button>
             {mapError ? (
               <div className="pointer-events-auto rounded-[8px] border border-amber/30 bg-amber-light px-3 py-2 text-sm font-semibold text-amber shadow-lg shadow-bark/10">
-                Fallback map active
+                Stable map active
+              </div>
+            ) : ready ? (
+              <div className="pointer-events-auto rounded-[8px] border border-sage/25 bg-sage-mist px-3 py-2 text-sm font-semibold text-sage-deep shadow-lg shadow-bark/10">
+                Live tile layer connected
               </div>
             ) : null}
           </div>
@@ -551,24 +561,24 @@ function MapSheet({
   );
 }
 
-function FallbackOperationalMap({
+function OperationalMapLayer({
   points,
   routes,
-  active,
+  enhanced,
   onSelect,
 }: {
   points: Feature[];
   routes: LineFeature[];
-  active: boolean;
+  enhanced: boolean;
   onSelect: (properties: MapFeatureProperties) => void;
 }) {
   return (
     <div
       className={cn(
-        "absolute inset-0 bg-[#eef3e8] transition-opacity duration-300",
-        active ? "z-[1] opacity-100" : "pointer-events-none z-0 opacity-0"
+        "absolute inset-0 z-[1] transition-colors duration-300",
+        enhanced ? "bg-transparent" : "bg-[#eef3e8]"
       )}
-      aria-hidden={!active}
+      aria-label="PaddockME stable operational map"
     >
       <svg
         viewBox="0 0 100 100"
@@ -585,13 +595,14 @@ function FallbackOperationalMap({
             <feDropShadow dx="0" dy="1.6" stdDeviation="1.2" floodColor="#2c5030" floodOpacity="0.24" />
           </filter>
         </defs>
-        <rect width="100" height="100" fill="#eef3e8" />
-        <rect width="100" height="100" fill="url(#map-grid)" opacity="0.8" />
+        <rect width="100" height="100" fill="#eef3e8" opacity={enhanced ? "0.52" : "1"} />
+        <rect width="100" height="100" fill="url(#map-grid)" opacity={enhanced ? "0.45" : "0.8"} />
         <path
           d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
           fill="#dfe9d8"
           stroke="#9fb99b"
           strokeWidth="0.65"
+          opacity={enhanced ? "0.72" : "1"}
         />
         <path
           d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
@@ -653,7 +664,7 @@ function FallbackOperationalMap({
         })}
       </div>
       <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
-        Operational fallback map. The live tile map will replace this when WebGL and tiles are available.
+        Stable operational map. Live map tiles enhance this view when available, but the pins and routes do not depend on them.
       </div>
     </div>
   );
