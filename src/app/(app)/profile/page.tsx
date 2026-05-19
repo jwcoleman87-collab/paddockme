@@ -1,6 +1,6 @@
 import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
-import { farmers } from "@/lib/dummyData";
+import { featuredFarmers } from "@/lib/dummyData";
 import { ProfileClient } from "./ProfileClient";
 
 export default function ProfilePage() {
@@ -9,11 +9,11 @@ export default function ProfilePage() {
       <PageHeader
         eyebrow="Profile and verification"
         title="Persona profiles."
-        description="Six personas across livestock, land and transport. Same profile schema - the role and the sub-profile carry the difference between Wayne (single-truck) and Sharon (multi-truck)."
+        description="Three personas - one livestock owner, one landowner, one driver - sharing the same profile schema. The role and sub-profile carry the difference."
         action={<ButtonLink href="/agreements" variant="secondary">Back to agreements</ButtonLink>}
       />
 
-      <ProfileClient farmers={farmers} />
+      <ProfileClient farmers={featuredFarmers} />
     </>
   );
 }

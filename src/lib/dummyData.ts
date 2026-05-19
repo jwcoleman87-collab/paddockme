@@ -680,6 +680,17 @@ export const farmers: Farmer[] = [
   },
 ];
 
+/**
+ * The three personas surfaced in the prototype's persona switcher.
+ * Dale (livestock owner), Brett (landowner), Wayne (driver) - the trio whose
+ * profile photos are wired up. Other seed farmers stay in `farmers` so
+ * downstream data (Sharon's transport capacity rows, Lyn's listings, etc.)
+ * still has people to attach to.
+ */
+export const featuredFarmers: Farmer[] = farmers.filter((farmer) =>
+  ["farmer-a", "farmer-b", "driver-1"].includes(farmer.id)
+);
+
 export const paddockListings: PaddockListing[] = [
   {
     id: "paddock-glenbarra",
