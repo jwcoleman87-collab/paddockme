@@ -81,6 +81,8 @@ const australiaBounds: [[number, number], [number, number]] = [
   [111.5, -44.5],
   [154.5, -10],
 ];
+const australiaCentre: [number, number] = [134.5, -25.5];
+const australiaZoom = 3.62;
 
 export function PaddockMap({
   mode = "regional",
@@ -150,8 +152,8 @@ export function PaddockMap({
             },
           ],
         },
-        center: [147.3, -32.7],
-        zoom: mode === "regional" ? 4.2 : 6.3,
+        center: mode === "regional" && !region ? australiaCentre : [147.3, -32.7],
+        zoom: mode === "regional" && !region ? australiaZoom : 6.3,
         minZoom: 3,
         maxZoom: 13,
         cooperativeGestures: true,
@@ -335,6 +337,14 @@ export function PaddockMap({
     if (!map) return;
     (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
     (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(context.routes as never);
+    if (mode === "regional" && !region) {
+      map.easeTo({
+        center: australiaCentre,
+        zoom: australiaZoom,
+        duration: 650,
+      });
+      return;
+    }
     if (context.bounds) {
       map.fitBounds(context.bounds, {
         padding: { top: 62, right: 44, bottom: 220, left: 44 },
@@ -346,7 +356,16 @@ export function PaddockMap({
 
   function locateOperationalView() {
     const map = mapRef.current;
-    if (!map || !context.bounds) return;
+    if (!map) return;
+    if (mode === "regional" && !region) {
+      map.easeTo({
+        center: australiaCentre,
+        zoom: australiaZoom,
+        duration: 650,
+      });
+      return;
+    }
+    if (!context.bounds) return;
     map.fitBounds(context.bounds, {
       padding: { top: 62, right: 44, bottom: 220, left: 44 },
       maxZoom: mode === "regional" ? 4.35 : 8.5,
@@ -368,7 +387,7 @@ export function PaddockMap({
           <OperationalMapLayer
             points={visiblePointData.features}
             routes={context.routes.features}
-            enhanced={ready && !mapError}
+            active={!ready || !!mapError}
             onSelect={setSelected}
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
@@ -568,21 +587,22 @@ function MapSheet({
 function OperationalMapLayer({
   points,
   routes,
-  enhanced,
+  active,
   onSelect,
 }: {
   points: Feature[];
   routes: LineFeature[];
-  enhanced: boolean;
+  active: boolean;
   onSelect: (properties: MapFeatureProperties) => void;
 }) {
   return (
     <div
       className={cn(
-        "absolute inset-0 z-[1] transition-colors duration-300",
-        enhanced ? "bg-transparent" : "bg-[#eef3e8]"
+        "absolute inset-0 z-[1] bg-[#eef3e8] transition-opacity duration-300",
+        active ? "opacity-100" : "pointer-events-none opacity-0"
       )}
       aria-label="PaddockME stable operational map"
+      aria-hidden={!active}
     >
       <svg
         viewBox="0 0 100 100"
@@ -599,26 +619,22 @@ function OperationalMapLayer({
             <feDropShadow dx="0" dy="1.6" stdDeviation="1.2" floodColor="#2c5030" floodOpacity="0.24" />
           </filter>
         </defs>
-        {!enhanced ? (
-          <>
-            <rect width="100" height="100" fill="#eef3e8" />
-            <rect width="100" height="100" fill="url(#map-grid)" opacity="0.8" />
-            <path
-              d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
-              fill="#dfe9d8"
-              stroke="#9fb99b"
-              strokeWidth="0.65"
-            />
-            <path
-              d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
-              fill="none"
-              stroke="#c3b98d"
-              strokeWidth="0.45"
-              strokeDasharray="1.4 1.1"
-              opacity="0.8"
-            />
-          </>
-        ) : null}
+        <rect width="100" height="100" fill="#eef3e8" />
+        <rect width="100" height="100" fill="url(#map-grid)" opacity="0.8" />
+        <path
+          d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
+          fill="#dfe9d8"
+          stroke="#9fb99b"
+          strokeWidth="0.65"
+        />
+        <path
+          d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
+          fill="none"
+          stroke="#c3b98d"
+          strokeWidth="0.45"
+          strokeDasharray="1.4 1.1"
+          opacity="0.8"
+        />
         {routes.map((route) => {
           const path = route.geometry.coordinates
             .map((coordinate, index) => {
@@ -670,11 +686,9 @@ function OperationalMapLayer({
           );
         })}
       </div>
-      {!enhanced ? (
-        <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
-          Stable operational map. Live map tiles enhance this view when available, but the pins and routes do not depend on them.
-        </div>
-      ) : null}
+      <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
+        Stable operational map. Live map tiles enhance this view when available, but the pins and routes do not depend on them.
+      </div>
     </div>
   );
 }
