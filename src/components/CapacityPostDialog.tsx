@@ -13,8 +13,12 @@ export type CapacityDraft = {
   truckLabel: string | null;
   originRegion: string;
   destinationRegion: string;
+  /** Human display, e.g. "Fri 22 May". */
   earliestDate: string;
   latestDate: string;
+  /** ISO YYYY-MM-DD - used by /transport/available to expire past rows. */
+  earliestDateIso: string;
+  latestDateIso: string;
   headCapacity: number;
   stockTypes: string[];
   rateBasis: TransportQuoteBasis | null;
@@ -146,6 +150,8 @@ export function CapacityPostDialog({
       destinationRegion: destinationRegion!,
       earliestDate: formatDateDisplay(earliestDate),
       latestDate: formatDateDisplay(latestDate),
+      earliestDateIso: earliestDate,
+      latestDateIso: latestDate,
       headCapacity: parsedHead,
       stockTypes,
       rateBasis: parsedRate !== null ? rateBasis : null,

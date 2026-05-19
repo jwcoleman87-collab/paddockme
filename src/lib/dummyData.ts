@@ -1218,8 +1218,15 @@ export type TransportCapacity = {
   truckLabel: string | null;
   originRegion: string;
   destinationRegion: string;
+  /** Human-readable date for display, e.g. "Fri 22 May". */
   earliestDate: string;
   latestDate: string;
+  /**
+   * ISO date (YYYY-MM-DD) used for expiry filtering. Optional so the prototype
+   * remains backwards compatible with seed rows that pre-date this field.
+   */
+  earliestDateIso?: string;
+  latestDateIso?: string;
   headCapacity: number;
   stockTypes: string[];
   /** Indicative rate. Quote chain is still the source of truth for the agreed price. */
@@ -1240,6 +1247,8 @@ export const transportCapacities: TransportCapacity[] = [
     destinationRegion: "Darling Downs QLD",
     earliestDate: "Fri 22 May",
     latestDate: "Sat 23 May",
+    earliestDateIso: "2026-05-22",
+    latestDateIso: "2026-05-23",
     headCapacity: 56,
     stockTypes: ["Cattle", "Sheep"],
     rateBasis: "per_head",
@@ -1256,6 +1265,8 @@ export const transportCapacities: TransportCapacity[] = [
     destinationRegion: "Northern Tablelands NSW",
     earliestDate: "Mon 25 May",
     latestDate: "Wed 27 May",
+    earliestDateIso: "2026-05-25",
+    latestDateIso: "2026-05-27",
     headCapacity: 84,
     stockTypes: ["Cattle"],
     rateBasis: "per_head",
@@ -1272,6 +1283,8 @@ export const transportCapacities: TransportCapacity[] = [
     destinationRegion: "Maranoa QLD",
     earliestDate: "Thu 28 May",
     latestDate: "Sat 30 May",
+    earliestDateIso: "2026-05-28",
+    latestDateIso: "2026-05-30",
     headCapacity: 120,
     stockTypes: ["Cattle"],
     rateBasis: "per_km",
@@ -1288,6 +1301,8 @@ export const transportCapacities: TransportCapacity[] = [
     destinationRegion: "Hunter NSW",
     earliestDate: "Mon 1 Jun",
     latestDate: "Wed 3 Jun",
+    earliestDateIso: "2026-06-01",
+    latestDateIso: "2026-06-03",
     headCapacity: 56,
     stockTypes: ["Cattle", "Sheep", "Horses"],
     rateBasis: "flat",
@@ -1343,9 +1358,14 @@ export function getTransportCapacity(id: string) {
 }
 
 export function listTransportCapacities() {
-  return transportCapacities.filter(
-    (capacity) => capacity.status === "published"
-  );
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return transportCapacities.filter((capacity) => {
+    if (capacity.status !== "published") return false;
+    // Hide rows whose window has already closed. Rows without an ISO date
+    // (legacy / display-only seed) stay visible.
+    if (capacity.latestDateIso && capacity.latestDateIso < todayIso) return false;
+    return true;
+  });
 }
 
 /**
@@ -1402,9 +1422,12 @@ export function regionsNear(region: string): string[] {
  * driver's published rows - safer fallback than silently empty.
  */
 export function getDriverBackloads(driverId: string, nearRegion?: string) {
+  const todayIso = new Date().toISOString().slice(0, 10);
   const all = transportCapacities.filter(
     (capacity) =>
-      capacity.driverId === driverId && capacity.status === "published"
+      capacity.driverId === driverId &&
+      capacity.status === "published" &&
+      (!capacity.latestDateIso || capacity.latestDateIso >= todayIso)
   );
   if (!nearRegion || !regionAdjacency[nearRegion]) return all;
   const neighbours = new Set(regionsNear(nearRegion));
