@@ -41,6 +41,12 @@ export type PaddockMapMode = "regional" | "agreement" | "driver";
 
 type LayerKey = "paddocks" | "requests" | "transport" | "profiles" | "weather";
 
+type MapFeatureItem = {
+  label: string;
+  detail: string;
+  href?: string;
+};
+
 type MapFeatureProperties = {
   id: string;
   kind: LayerKey;
@@ -50,6 +56,9 @@ type MapFeatureProperties = {
   href?: string;
   privacy?: string;
   modeHint?: string;
+  display?: "point" | "hotspot" | "route-endpoint";
+  count?: number;
+  items?: MapFeatureItem[];
 };
 
 type Feature = {
@@ -86,6 +95,7 @@ const australiaBounds: [[number, number], [number, number]] = [
 ];
 const australiaCentre: [number, number] = [134.5, -25.5];
 const australiaZoom = 3.62;
+const transportRouteZoomThreshold = 6;
 
 export function PaddockMap({
   mode = "regional",
@@ -96,9 +106,11 @@ export function PaddockMap({
 }: PaddockMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const featureLookupRef = useRef<Map<string, MapFeatureProperties>>(new Map());
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [selected, setSelected] = useState<MapFeatureProperties | null>(null);
+  const [mapZoom, setMapZoom] = useState(mode === "regional" && !region ? australiaZoom : 6.3);
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     paddocks: true,
     requests: true,
@@ -173,7 +185,9 @@ export function PaddockMap({
         setMapError(message);
       }
     });
+    map.on("zoomend", () => setMapZoom(map.getZoom()));
     map.on("load", () => {
+      setMapZoom(map.getZoom());
       map.addSource(pointSourceId, {
         type: "geojson",
         data: emptyFeatureCollection(),
@@ -322,9 +336,35 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            ["match", ["get", "kind"], "weather", 42, "transport", 34, 26],
+            [
+              "case",
+              ["==", ["get", "display"], "hotspot"],
+              [
+                "interpolate",
+                ["linear"],
+                ["coalesce", ["get", "count"], 1],
+                1,
+                34,
+                5,
+                50,
+              ],
+              ["match", ["get", "kind"], "weather", 42, "transport", 34, 26],
+            ],
             7,
-            ["match", ["get", "kind"], "weather", 58, "transport", 46, 34],
+            [
+              "case",
+              ["==", ["get", "display"], "hotspot"],
+              [
+                "interpolate",
+                ["linear"],
+                ["coalesce", ["get", "count"], 1],
+                1,
+                46,
+                5,
+                64,
+              ],
+              ["match", ["get", "kind"], "weather", 58, "transport", 46, 34],
+            ],
           ],
           "circle-stroke-width": 0,
         },
@@ -349,16 +389,37 @@ export function PaddockMap({
             "#9b7adf",
             "#6d6257",
           ],
-          "circle-radius": 6,
+          "circle-radius": [
+            "case",
+            ["==", ["get", "display"], "hotspot"],
+            13,
+            6,
+          ],
           "circle-stroke-color": "#fdfcf9",
           "circle-stroke-width": 2,
+        },
+      });
+      map.addLayer({
+        id: "transport-hotspot-count",
+        type: "symbol",
+        source: pointSourceId,
+        filter: ["all", ["==", ["get", "kind"], "transport"], ["==", ["get", "display"], "hotspot"]],
+        layout: {
+          "text-field": ["to-string", ["get", "count"]],
+          "text-size": 13,
+          "text-allow-overlap": true,
+        },
+        paint: {
+          "text-color": "#5c3217",
+          "text-halo-color": "#fdfcf9",
+          "text-halo-width": 1.8,
         },
       });
       map.addLayer({
         id: "point-label",
         type: "symbol",
         source: pointSourceId,
-        filter: ["!", ["has", "point_count"]],
+        filter: ["!=", ["get", "display"], "hotspot"],
         layout: {
           "text-field": ["get", "title"],
           "text-size": 11,
@@ -374,17 +435,20 @@ export function PaddockMap({
       map.on("click", "unclustered-point", (event) => {
         const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
         if (!feature) return;
-        setSelected(feature.properties as MapFeatureProperties);
+        const id = feature.properties?.id;
+        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
       });
       map.on("click", "route-line", (event) => {
         const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
         if (!feature) return;
-        setSelected(feature.properties as MapFeatureProperties);
+        const id = feature.properties?.id;
+        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
       });
       map.on("click", "route-start", (event) => {
         const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
         if (!feature) return;
-        setSelected(feature.properties as MapFeatureProperties);
+        const id = feature.properties?.id;
+        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
       });
       map.on("mouseenter", "unclustered-point", () => {
         map.getCanvas().style.cursor = "pointer";
@@ -438,14 +502,24 @@ export function PaddockMap({
     );
     return {
       type: "FeatureCollection",
-      features: context.points.filter((feature) => enabled.has(feature.properties.kind)),
+      features: context.points.filter((feature) => {
+        if (!enabled.has(feature.properties.kind)) return false;
+        if (feature.properties.kind !== "transport") return true;
+        const isHotspot = feature.properties.display === "hotspot";
+        const shouldSummariseTransport =
+          (mode === "regional" || mode === "driver") && mapZoom < transportRouteZoomThreshold;
+        return shouldSummariseTransport ? isHotspot : !isHotspot;
+      }),
     } satisfies FeatureCollection<Feature>;
-  }, [context.points, layers]);
+  }, [context.points, layers, mapZoom, mode]);
 
   const visibleRoutes = useMemo(() => {
     if (!layers.transport) return emptyLineCollection();
+    if ((mode === "regional" || mode === "driver") && mapZoom < transportRouteZoomThreshold) {
+      return emptyLineCollection();
+    }
     return context.routes;
-  }, [context.routes, layers.transport]);
+  }, [context.routes, layers.transport, mapZoom, mode]);
 
   const visibleRouteEndpoints = useMemo(
     () => routeEndpointCollection(visibleRoutes.features),
@@ -456,6 +530,13 @@ export function PaddockMap({
     if (!ready) return;
     const map = mapRef.current;
     if (!map) return;
+    featureLookupRef.current = new Map(
+      [
+        ...visiblePointData.features,
+        ...visibleRoutes.features,
+        ...visibleRouteEndpoints.features,
+      ].map((feature) => [feature.properties.id, feature.properties])
+    );
     (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
     (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRoutes as never);
     (map.getSource(routeEndpointSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRouteEndpoints as never);
@@ -718,6 +799,30 @@ function MapSheet({
         <p className="text-xs font-bold uppercase tracking-wide text-stone">Signal</p>
         <p className="mt-1 text-sm font-semibold text-bark">{selected.metric}</p>
       </div>
+      {selected.items?.length ? (
+        <div className="mt-3 rounded-[8px] border border-mist bg-cream p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-stone">
+            Jobs in this hotspot
+          </p>
+          <div className="mt-2 space-y-2">
+            {selected.items.map((item) => (
+              <div
+                key={`${item.label}-${item.detail}`}
+                className="rounded-[8px] border border-mist/80 bg-warm-white p-2"
+              >
+                <p className="text-sm font-bold text-bark">{item.label}</p>
+                <p className="mt-0.5 text-xs text-stone">{item.detail}</p>
+                {item.href ? (
+                  <ButtonLink href={item.href} variant="ghost" className="mt-2 w-full">
+                    <Navigation className="h-4 w-4" aria-hidden />
+                    Open job
+                  </ButtonLink>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {selected.privacy ? (
         <p className="mt-3 text-xs font-semibold text-sage-deep">{selected.privacy}</p>
       ) : null}
@@ -843,19 +948,38 @@ function OperationalMapLayer({
               <circle
                 cx={projected.x}
                 cy={projected.y}
-                r={fieldRadiusForKind(point.properties.kind)}
+                r={
+                  point.properties.display === "hotspot"
+                    ? fieldRadiusForKind(point.properties.kind) + Math.min(point.properties.count ?? 1, 6) * 0.9
+                    : fieldRadiusForKind(point.properties.kind)
+                }
                 fill={colourForKind(point.properties.kind)}
                 opacity={fieldOpacityForKind(point.properties.kind)}
               />
               <circle
                 cx={projected.x}
                 cy={projected.y}
-                r="1.55"
+                r={point.properties.display === "hotspot" ? "2.8" : "1.55"}
                 fill={colourForKind(point.properties.kind)}
                 stroke="#fdfcf9"
                 strokeWidth="0.55"
                 filter="url(#pin-shadow)"
               />
+              {point.properties.display === "hotspot" ? (
+                <text
+                  x={projected.x}
+                  y={projected.y + 0.45}
+                  textAnchor="middle"
+                  fontSize="2.35"
+                  fontWeight="700"
+                  fill="#5c3217"
+                  stroke="#fdfcf9"
+                  strokeWidth="0.28"
+                  paintOrder="stroke"
+                >
+                  {point.properties.count}
+                </text>
+              ) : null}
             </g>
           );
         })}
@@ -1000,6 +1124,7 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
     ...input.jobs
       .filter((job) => !regionFilter || sameRegion(job.pickupRegion ?? "", regionFilter) || sameRegion(job.destinationRegion ?? "", regionFilter))
       .map((job) => transportFeature(job, "Regional transport")),
+    ...transportHotspotFeatures(input.jobs, input.capacities, regionFilter),
     ...regionalInsights.map(regionFeature),
   ].filter(Boolean) as Feature[];
   return {
@@ -1100,6 +1225,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
   const points = [
     driver ? profileFeature(driver) : null,
     ...jobs.map((job) => transportFeature(job, job.status === "available" ? "Available job" : "Accepted job")),
+    ...transportHotspotFeatures(jobs, [], undefined, "Driver route hotspot"),
   ].filter(Boolean) as Feature[];
   const routes = routeCollection(
     jobs.map((job) =>
@@ -1222,6 +1348,79 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
   );
 }
 
+function transportHotspotFeatures(
+  jobs: TransportJob[],
+  capacities: TransportCapacity[],
+  regionFilter?: string,
+  modeHint = "Transport hotspot"
+): Feature[] {
+  const groups = new Map<
+    string,
+    {
+      coordinate: Coordinate;
+      items: MapFeatureItem[];
+    }
+  >();
+
+  function addItem(region: string | undefined, item: MapFeatureItem) {
+    if (!region) return;
+    if (regionFilter && !sameRegion(region, regionFilter)) return;
+    const coordinate = coordinateForRegion(region);
+    if (!coordinate) return;
+    const group = groups.get(region) ?? { coordinate, items: [] };
+    group.items.push(item);
+    groups.set(region, group);
+  }
+
+  jobs.forEach((job) => {
+    const visibleInRegion =
+      !regionFilter ||
+      sameRegion(job.pickupRegion ?? "", regionFilter) ||
+      sameRegion(job.destinationRegion ?? "", regionFilter);
+    if (!visibleInRegion) return;
+    addItem(job.pickupRegion ?? job.pickupLocation?.region, {
+      label: `${job.livestockCount} movement`,
+      detail: `${job.pickup} to ${job.destination} - ${job.preferredDate}, ${job.status.replace("_", " ")}`,
+      href: `/transport/${job.id}`,
+    });
+  });
+
+  capacities.forEach((capacity) => {
+    const visibleInRegion =
+      !regionFilter ||
+      sameRegion(capacity.originRegion, regionFilter) ||
+      sameRegion(capacity.destinationRegion, regionFilter);
+    if (!visibleInRegion) return;
+    addItem(capacity.originRegion, {
+      label: `${capacity.originRegion} to ${capacity.destinationRegion}`,
+      detail: `${capacity.headCapacity} head capacity - ${capacity.earliestDate} to ${capacity.latestDate}`,
+      href: "/transport/available",
+    });
+  });
+
+  return Array.from(groups.entries()).map(([regionName, group]) => ({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: [group.coordinate.longitude, group.coordinate.latitude],
+    },
+    properties: {
+      id: `transport-hotspot-${slugify(regionName)}`,
+      kind: "transport",
+      title: `${regionName} transport hotspot`,
+      subtitle:
+        "Zoom in for the actual route corridor, or open one of the jobs listed here.",
+      metric: `${group.items.length} route${group.items.length === 1 ? "" : "s"} in this area`,
+      href: "/transport/jobs",
+      privacy: "Driver map shows logistics only. Private agistment pricing is not included.",
+      modeHint,
+      display: "hotspot",
+      count: group.items.length,
+      items: group.items.slice(0, 6),
+    },
+  }));
+}
+
 function profileFeature(farmer: Farmer): Feature | null {
   const coordinate = farmer.location ?? coordinateForRegion(farmer.region);
   if (!coordinate) return null;
@@ -1276,6 +1475,7 @@ function coordinateFeature(
       href,
       privacy,
       modeHint,
+      display: "point",
     },
   };
 }
@@ -1343,6 +1543,7 @@ function routeEndpointFeature(
       ...route.properties,
       id: `${route.properties.id}-${endpoint.toLowerCase()}`,
       title: `${endpoint}: ${route.properties.title}`,
+      display: "route-endpoint",
     },
   };
 }
@@ -1391,6 +1592,10 @@ function boundsForCoordinates(
 
 function sameRegion(left: string, right: string) {
   return left === right || left.replace(" NSW", "") === right.replace(" NSW", "");
+}
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
 function labelForKind(kind: LayerKey) {
