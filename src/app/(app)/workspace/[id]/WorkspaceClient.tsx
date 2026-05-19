@@ -461,9 +461,17 @@ export function WorkspaceClient({
               Viewing as
             </h2>
           </div>
-          <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
-          </span>
+          <div className="flex items-center gap-2">
+            <a
+              href={`/workspace/${agreement.id}/snapshot`}
+              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-mist bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              View snapshot
+            </a>
+            <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+              Prototype
+            </span>
+          </div>
         </div>
         <div
           role="radiogroup"
