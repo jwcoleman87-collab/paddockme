@@ -79,6 +79,7 @@ type PaddockMapProps = {
 
 const pointSourceId = "paddockme-operational-points";
 const routeSourceId = "paddockme-routes";
+const routeEndpointSourceId = "paddockme-route-endpoints";
 const australiaBounds: [[number, number], [number, number]] = [
   [111.5, -44.5],
   [154.5, -10],
@@ -181,20 +182,47 @@ export function PaddockMap({
         type: "geojson",
         data: emptyLineCollection(),
       });
+      map.addSource(routeEndpointSourceId, {
+        type: "geojson",
+        data: emptyFeatureCollection(),
+      });
       map.addLayer({
         id: "route-shadow",
         type: "line",
         source: routeSourceId,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
-          "line-color": "#f5ecd7",
-          "line-width": 8,
-          "line-opacity": 0.9,
+          "line-color": [
+            "match",
+            ["get", "kind"],
+            "transport",
+            "#f2a35a",
+            "#5b8c5a",
+          ],
+          "line-width": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            9,
+            7,
+            15,
+          ],
+          "line-opacity": 0.2,
+          "line-blur": 1.4,
         },
       });
       map.addLayer({
         id: "route-line",
         type: "line",
         source: routeSourceId,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
           "line-color": [
             "match",
@@ -207,17 +235,27 @@ export function PaddockMap({
             "match",
             ["get", "kind"],
             "transport",
-            3.5,
+            2.25,
             4,
           ],
           "line-opacity": [
             "match",
             ["get", "kind"],
             "transport",
-            0.72,
+            0.88,
             0.9,
           ],
-          "line-dasharray": [1.4, 0.8],
+        },
+      });
+      map.addLayer({
+        id: "route-start",
+        type: "circle",
+        source: routeEndpointSourceId,
+        paint: {
+          "circle-color": "#fdfcf9",
+          "circle-radius": 4.5,
+          "circle-stroke-color": "#e88f3f",
+          "circle-stroke-width": 2,
         },
       });
       map.addLayer({
@@ -313,16 +351,27 @@ export function PaddockMap({
         if (!feature) return;
         setSelected(feature.properties as MapFeatureProperties);
       });
+      map.on("click", "route-start", (event) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        if (!feature) return;
+        setSelected(feature.properties as MapFeatureProperties);
+      });
       map.on("mouseenter", "unclustered-point", () => {
         map.getCanvas().style.cursor = "pointer";
       });
       map.on("mouseenter", "route-line", () => {
         map.getCanvas().style.cursor = "pointer";
       });
+      map.on("mouseenter", "route-start", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
       map.on("mouseleave", "unclustered-point", () => {
         map.getCanvas().style.cursor = "";
       });
       map.on("mouseleave", "route-line", () => {
+        map.getCanvas().style.cursor = "";
+      });
+      map.on("mouseleave", "route-start", () => {
         map.getCanvas().style.cursor = "";
       });
       setReady(true);
@@ -368,13 +417,19 @@ export function PaddockMap({
     return context.routes;
   }, [context.routes, layers.transport]);
 
+  const visibleRouteEndpoints = useMemo(
+    () => routeEndpointCollection(visibleRoutes.features),
+    [visibleRoutes]
+  );
+
   useEffect(() => {
     if (!ready) return;
     const map = mapRef.current;
     if (!map) return;
     (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
     (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRoutes as never);
-  }, [ready, visiblePointData, visibleRoutes]);
+    (map.getSource(routeEndpointSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRouteEndpoints as never);
+  }, [ready, visiblePointData, visibleRouteEndpoints, visibleRoutes]);
 
   useEffect(() => {
     if (!ready) return;
@@ -430,6 +485,7 @@ export function PaddockMap({
           <OperationalMapLayer
             points={visiblePointData.features}
             routes={visibleRoutes.features}
+            routeEndpoints={visibleRouteEndpoints.features}
             active={!ready || !!mapError}
             onSelect={setSelected}
           />
@@ -650,11 +706,13 @@ function MapSheet({
 function OperationalMapLayer({
   points,
   routes,
+  routeEndpoints,
   active,
   onSelect,
 }: {
   points: Feature[];
   routes: LineFeature[];
+  routeEndpoints: Feature[];
   active: boolean;
   onSelect: (properties: MapFeatureProperties) => void;
 }) {
@@ -711,10 +769,23 @@ function OperationalMapLayer({
               d={path}
               fill="none"
               stroke={colourForKind(route.properties.kind)}
-              strokeWidth={route.properties.kind === "transport" ? "1.35" : "1.1"}
+              strokeWidth={route.properties.kind === "transport" ? "1.05" : "1.1"}
               strokeLinecap="round"
-              strokeDasharray="2.2 1.3"
-              opacity={route.properties.kind === "transport" ? "0.78" : "0.88"}
+              opacity={route.properties.kind === "transport" ? "0.86" : "0.88"}
+            />
+          );
+        })}
+        {routeEndpoints.map((point) => {
+          const projected = projectCoordinate(point.geometry.coordinates);
+          return (
+            <circle
+              key={point.properties.id}
+              cx={projected.x}
+              cy={projected.y}
+              r="1.35"
+              fill="#fdfcf9"
+              stroke={colourForKind(point.properties.kind)}
+              strokeWidth="0.55"
             />
           );
         })}
@@ -744,6 +815,19 @@ function OperationalMapLayer({
       </svg>
       <div className="absolute inset-0">
         {points.map((point) => {
+          const projected = projectCoordinate(point.geometry.coordinates);
+          return (
+            <button
+              key={point.properties.id}
+              type="button"
+              onClick={() => onSelect(point.properties)}
+              className="absolute h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              style={{ left: `${projected.x}%`, top: `${projected.y}%` }}
+              aria-label={`Open ${point.properties.title}`}
+            />
+          );
+        })}
+        {routeEndpoints.map((point) => {
           const projected = projectCoordinate(point.geometry.coordinates);
           return (
             <button
@@ -1183,6 +1267,37 @@ function lineFromCoordinates(
 
 function routeCollection(lines: (LineFeature | null)[]): FeatureCollection<LineFeature> {
   return { type: "FeatureCollection", features: lines.filter(Boolean) as LineFeature[] };
+}
+
+function routeEndpointCollection(routes: LineFeature[]): FeatureCollection<Feature> {
+  return {
+    type: "FeatureCollection",
+    features: routes.flatMap((route) => {
+      const first = route.geometry.coordinates[0];
+      const last = route.geometry.coordinates[route.geometry.coordinates.length - 1];
+      if (!first || !last) return [];
+      return [
+        routeEndpointFeature(route, first, "Origin"),
+        routeEndpointFeature(route, last, "Destination"),
+      ];
+    }),
+  };
+}
+
+function routeEndpointFeature(
+  route: LineFeature,
+  coordinates: [number, number],
+  endpoint: "Origin" | "Destination"
+): Feature {
+  return {
+    type: "Feature",
+    geometry: { type: "Point", coordinates },
+    properties: {
+      ...route.properties,
+      id: `${route.properties.id}-${endpoint.toLowerCase()}`,
+      title: `${endpoint}: ${route.properties.title}`,
+    },
+  };
 }
 
 function emptyFeatureCollection(): FeatureCollection<Feature> {
