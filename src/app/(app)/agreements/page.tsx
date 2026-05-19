@@ -2,7 +2,7 @@ import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
 import {
   agreements,
-  farmers,
+  featuredFarmers,
   paddockListings,
   transportJobs,
   type Farmer,
@@ -32,7 +32,7 @@ export default async function AgreementsPage({
     : undefined;
 
   const initialFarmerId = hintedRole
-    ? farmers.find((farmer) => farmer.role === hintedRole)?.id
+    ? featuredFarmers.find((farmer) => farmer.role === hintedRole)?.id
     : undefined;
 
   return (
@@ -45,7 +45,7 @@ export default async function AgreementsPage({
       />
 
       <AgreementsClient
-        farmers={farmers}
+        farmers={featuredFarmers}
         agreements={agreements}
         transportJobs={transportJobs}
         listings={paddockListings}

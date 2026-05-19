@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
-import { farmers } from "@/lib/dummyData";
+import { featuredFarmers } from "@/lib/dummyData";
 
 /**
  * Tiny client-only component for the AppShell header.
@@ -32,7 +32,7 @@ export function AppShellHeaderUser() {
       if (cookiePersona) return cookiePersona;
       const routePersona = personaForRoute(pathname, searchParams);
       if (routePersona) return routePersona;
-      return farmers[0]?.id ?? null;
+      return featuredFarmers[0]?.id ?? null;
     }
 
     setActivePersonaId(read());
@@ -45,7 +45,7 @@ export function AppShellHeaderUser() {
         event.key === "paddockme.agreements.persona" ||
         event.key === "paddockme.profile.persona"
       ) {
-        setActivePersonaId(event.newValue ?? farmers[0]?.id ?? null);
+        setActivePersonaId(event.newValue ?? featuredFarmers[0]?.id ?? null);
       }
     }
     window.addEventListener("storage", onStorage);
@@ -57,7 +57,7 @@ export function AppShellHeaderUser() {
   }, [pathname, searchParams]);
 
   const persona = activePersonaId
-    ? farmers.find((f) => f.id === activePersonaId)
+    ? featuredFarmers.find((f) => f.id === activePersonaId)
     : undefined;
 
   if (persona) {
