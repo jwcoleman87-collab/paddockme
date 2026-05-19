@@ -31,6 +31,12 @@ import {
   type PersonaId,
   type PrototypeState,
 } from "@/lib/prototypeStore";
+import {
+  coordinateForRegion,
+  mapCoordinates,
+  parseCoordinate,
+  pointToWkt,
+} from "@/lib/mapCoordinates";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Json, Tables, TablesInsert, TablesUpdate } from "@/lib/types/database";
@@ -53,6 +59,7 @@ function mapProfileRow(row: Tables<"profiles">): Farmer {
     id: row.id,
     name: row.full_name ?? "PaddockME user",
     region: row.regions?.[0] ?? "Australia",
+    location: parseCoordinate(row.location, coordinateForRegion(row.regions?.[0])),
     role: row.account_types?.includes("Transport Provider")
       ? "Transport Provider"
       : row.account_types?.includes("Landowner")
@@ -123,6 +130,7 @@ export async function createLivestockRequestRecord(input: {
       head_count: input.headCount,
       duration: input.duration,
       preferred_regions: input.preferredRegions,
+      location: pointToWkt(mapCoordinates.dale),
       status: "open",
     })
     .select("*")
@@ -176,6 +184,7 @@ export async function createPaddockListingRecord(input: {
       description: input.summary,
       region: input.region,
       state: stateForRegion(input.region),
+      location: pointToWkt(coordinateForRegion(input.region)),
       acres: input.acres,
       capacity_stock_type: input.suitableLivestock[0] ?? null,
       pasture_type: input.feedStatus,
@@ -477,6 +486,7 @@ function mapRequestRow(row: Tables<"agistment_requests">): LivestockRequest {
     breed: row.breed ?? "Mixed",
     headCount: row.head_count,
     duration: row.duration,
+    originLocation: parseCoordinate(row.location, coordinateForRegion(row.preferred_regions?.[0])),
     preferredRegions: row.preferred_regions ?? [],
     transportRequired: "Unsure",
   };
@@ -486,12 +496,14 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
   const stockType = row.capacity_stock_type ?? "Cattle";
   const feedStatus = normaliseFeed(row.pasture_type);
   const waterStatus = normaliseWater(row.water_type?.[0]);
+  const coordinates = parseCoordinate(row.location, coordinateForRegion(row.region));
 
   return {
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
     location: row.region,
+    coordinates,
     region: row.region,
     state: normaliseState(row.state),
     regionLabel: row.region,
@@ -562,6 +574,8 @@ async function createSupabaseAgreementForListing(
       duration_months: durationMonths(request.duration),
       rate_per_head_week: listing.rate_per_head_week,
       transport_required: true,
+      pickup_location: pointToWkt(parseCoordinate(request.location, mapCoordinates.dale)),
+      destination_location: pointToWkt(parseCoordinate(listing.location, coordinateForRegion(listing.region))),
       status: "Draft",
       alignment_state: { source: "mvp_build_03" },
     })
@@ -603,6 +617,9 @@ async function createSupabaseTransportJob(
       livestock_count: agreement.head_count
         ? `${agreement.head_count} head`
         : "Livestock movement",
+      pickup_location: pointToWkt(parseCoordinate(agreement.pickup_location, mapCoordinates.dale)),
+      destination_location: pointToWkt(parseCoordinate(agreement.destination_location, mapCoordinates.gundagai)),
+      current_location: pointToWkt(parseCoordinate(agreement.pickup_location, mapCoordinates.dale)),
       preferred_date: agreement.start_date,
       route_summary: "Pickup to selected agistment paddock",
       status: "available",
@@ -664,6 +681,8 @@ async function mapAgreementRow(
         ? `${row.head_count} head`
         : agreements[0].livestock,
     duration: request?.duration ?? (row.duration_months ? `${row.duration_months} months` : agreements[0].duration),
+    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.dale) : mapCoordinates.dale),
+    destinationLocation: parseCoordinate(row.destination_location, listing ? parseCoordinate(listing.location, coordinateForRegion(listing.region)) : mapCoordinates.gundagai),
     feed: listing?.pasture_type ?? agreements[0].feed,
     water: listing?.water_type?.[0] ?? agreements[0].water,
     fencing: listing?.yards ? "Secure" : agreements[0].fencing,
@@ -739,6 +758,9 @@ function mapTransportJobRow(row: Tables<"transport_jobs">): TransportJob {
     driverId: row.driver_id ?? "driver-1",
     pickup: row.pickup_address ?? "Livestock owner property",
     destination: row.destination_address ?? "Selected paddock",
+    pickupLocation: parseCoordinate(row.pickup_location, mapCoordinates.dale),
+    destinationLocation: parseCoordinate(row.destination_location, mapCoordinates.gundagai),
+    currentLocation: parseCoordinate(row.current_location, parseCoordinate(row.pickup_location, mapCoordinates.dale)),
     livestockCount: row.livestock_count ?? "Livestock movement",
     preferredDate: row.preferred_date ?? "Date to confirm",
     driver: row.driver_id ? "Assigned driver" : "Unassigned",

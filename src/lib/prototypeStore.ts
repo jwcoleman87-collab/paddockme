@@ -13,6 +13,7 @@ import {
   type TransportJob,
   type TransportJobStatus,
 } from "@/lib/dummyData";
+import { coordinateForRegion, mapCoordinates } from "@/lib/mapCoordinates";
 
 export type PersonaId = "farmer-a" | "farmer-b" | "driver-1" | "driver-2";
 
@@ -149,6 +150,7 @@ export function createLivestockRequest(input: {
   const request: LivestockRequest = {
     id: `request-${Date.now()}`,
     requesterId: "farmer-a",
+    originLocation: mapCoordinates.dale,
     ...input,
   };
   let state = loadPrototypeState();
@@ -185,6 +187,7 @@ export function createPaddockListing(input: {
     ownerId: "farmer-b",
     state: stateForRegion(input.region),
     regionLabel: input.region,
+    coordinates: coordinateForRegion(input.region),
     mapPlaceLabel: input.location.replace(/^Near\s+/i, "").split(",")[0] ?? input.region,
     mapDot: { x: 56, y: 58 },
     mapNearbyPlaces: [],
@@ -315,6 +318,8 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
     status: "Draft",
     livestock: `${request.headCount} ${request.breed} ${request.stockType}`,
     duration: request.duration,
+    pickupLocation: request.originLocation ?? mapCoordinates.dale,
+    destinationLocation: listing.coordinates ?? coordinateForRegion(listing.regionLabel),
     feed: listing.feedStatus,
     water: listing.waterStatus,
     fencing: listing.fencingStatus,
@@ -370,6 +375,9 @@ function createTransportJob(agreement: Agreement, listing: PaddockListing): Tran
     driverId: "driver-1",
     pickup: "Dale Morgan property, Central West NSW",
     destination: `${listing.title}, ${listing.regionLabel}`,
+    pickupLocation: agreement.pickupLocation ?? mapCoordinates.dale,
+    destinationLocation: agreement.destinationLocation ?? listing.coordinates,
+    currentLocation: mapCoordinates.wayne,
     pickupRegion: "Central West NSW",
     destinationRegion: listing.regionLabel,
     livestockCount: agreement.livestock,

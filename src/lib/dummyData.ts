@@ -1,3 +1,5 @@
+import { mapCoordinates, type Coordinate } from "@/lib/mapCoordinates";
+
 export type ProfileRole =
   | "Livestock Owner"
   | "Landowner"
@@ -61,6 +63,7 @@ export type Farmer = {
   name: string;
   role: ProfileRole;
   region: string;
+  location?: Coordinate;
   verified: boolean;
   tagline: string;
   bio: string;
@@ -215,6 +218,7 @@ export type PaddockListing = {
   title: string;
   ownerId: string;
   location: string;
+  coordinates?: Coordinate;
   region: string;
   state: AustralianState;
   regionLabel: string;
@@ -246,6 +250,7 @@ export type LivestockRequest = {
   breed: string;
   headCount: number;
   duration: string;
+  originLocation?: Coordinate;
   preferredRegions: string[];
   transportRequired: "Yes" | "No" | "Unsure";
 };
@@ -298,6 +303,8 @@ export type Agreement = {
   status: AgreementLifecycleState;
   livestock: string;
   duration: string;
+  pickupLocation?: Coordinate;
+  destinationLocation?: Coordinate;
   feed: string;
   water: string;
   fencing: string;
@@ -415,6 +422,9 @@ export type TransportJob = {
   driverId: string;
   pickup: string;
   destination: string;
+  pickupLocation?: Coordinate;
+  destinationLocation?: Coordinate;
+  currentLocation?: Coordinate;
   /** Structured pickup region for backload matching. Free-text `pickup` stays the display. */
   pickupRegion?: string;
   /** Structured destination region for backload matching. */
@@ -445,6 +455,7 @@ export const farmers: Farmer[] = [
     name: "Dale Morgan",
     role: "Livestock Owner",
     region: "Central West NSW",
+    location: mapCoordinates.dale,
     verified: true,
     tagline: "Cattle and sheep producer, crisis-mode user.",
     bio: "Mid-size family operation, third-generation. Uses agistment reactively when his country runs dry.",
@@ -477,6 +488,7 @@ export const farmers: Farmer[] = [
     name: "Tash Reilly",
     role: "Livestock Owner",
     region: "Hunter NSW",
+    location: mapCoordinates.tash,
     verified: true,
     tagline: "Off-farm horse owner, continuous-use user.",
     bio: "Owns 2 horses, no land. Uses agistment as everyday operating mode within 45 minutes of home.",
@@ -508,6 +520,7 @@ export const farmers: Farmer[] = [
     name: "Brett Donnelly",
     role: "Landowner",
     region: "Southern NSW",
+    location: mapCoordinates.brett,
     verified: true,
     tagline: "Active farmer with spare paddocks in good seasons.",
     bio: "Third-generation 1,800ha mixed farming operation. Agist out 6-8 months when his own season is kind.",
@@ -544,6 +557,7 @@ export const farmers: Farmer[] = [
     name: "Lyn Whitfield",
     role: "Landowner",
     region: "Northern Tablelands NSW",
+    location: mapCoordinates.lyn,
     verified: true,
     tagline: "Semi-retired with idle paddocks, looking for stable agistment.",
     bio: "320ha family farm, sold the breeding herd 4 years ago. Wants long-term, predictable agistment without managing stock day to day.",
@@ -579,6 +593,7 @@ export const farmers: Farmer[] = [
     name: "Wayne Hayes",
     role: "Transport Provider",
     region: "Riverina NSW",
+    location: mapCoordinates.wayne,
     verified: true,
     tagline: "Owner-operator, single B-double, backloads matter.",
     bio: "Works direct producer to feedlot and saleyard runs. Empty backloads are the structural pain.",
@@ -623,6 +638,7 @@ export const farmers: Farmer[] = [
     name: "Sharon Mackie",
     role: "Transport Provider",
     region: "Goondiwindi QLD",
+    location: mapCoordinates.sharon,
     verified: true,
     tagline: "Multi-truck family business, fleet utilisation is the game.",
     bio: "12-truck operation, depot in Goondiwindi. Same app as Wayne - profile carries the difference (fleet, drivers, accreditations).",
@@ -670,6 +686,7 @@ export const paddockListings: PaddockListing[] = [
     title: "Glenbarra River Paddocks",
     ownerId: "farmer-b",
     location: "Near Gundagai, NSW",
+    coordinates: mapCoordinates.gundagai,
     region: "Southern NSW",
     state: "NSW",
     regionLabel: "Southern NSW",
@@ -696,6 +713,7 @@ export const paddockListings: PaddockListing[] = [
     title: "Wattle Creek Holding Block",
     ownerId: "farmer-b",
     location: "Cowra, NSW",
+    coordinates: mapCoordinates.cowra,
     region: "Central West",
     state: "NSW",
     regionLabel: "Central West",
@@ -722,6 +740,7 @@ export const paddockListings: PaddockListing[] = [
     title: "Hillview Improved Pasture",
     ownerId: "farmer-b",
     location: "Gippsland, VIC",
+    coordinates: mapCoordinates.gippsland,
     region: "Gippsland",
     state: "VIC",
     regionLabel: "Gippsland",
@@ -753,6 +772,7 @@ export const livestockRequests: LivestockRequest[] = [
     breed: "Angus",
     headCount: 100,
     duration: "3 months",
+    originLocation: mapCoordinates.dale,
     preferredRegions: ["Southern NSW", "Central West"],
     transportRequired: "Yes",
   },
@@ -768,6 +788,8 @@ export const agreements: Agreement[] = [
     status: "Negotiating",
     livestock: "100 cattle",
     duration: "3 months",
+    pickupLocation: mapCoordinates.dale,
+    destinationLocation: mapCoordinates.gundagai,
     feed: "Excellent",
     water: "Permanent",
     fencing: "Secure",
@@ -970,6 +992,9 @@ export const transportJobs: TransportJob[] = [
     driverId: "driver-1",
     pickup: "Dale Morgan, Central West NSW",
     destination: "Glenbarra River Paddocks, Southern NSW",
+    pickupLocation: mapCoordinates.dale,
+    destinationLocation: mapCoordinates.gundagai,
+    currentLocation: mapCoordinates.wayne,
     pickupRegion: "Central West NSW",
     destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
