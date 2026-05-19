@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/PageHeader";
+import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import {
   farmers,
   transportCapacities,
@@ -21,6 +22,7 @@ export default function RunsPage() {
         title="Your run pipeline."
         description="Active runs, open offers, and recently delivered jobs - plus capacity you've posted to find more work."
       />
+      <PersonaIntroBanner page="runs" />
       <RunsClient
         drivers={drivers}
         transportJobs={transportJobs}

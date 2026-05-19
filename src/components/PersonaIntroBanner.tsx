@@ -5,7 +5,7 @@ import { Sprout, Tractor, Truck } from "lucide-react";
 import { featuredFarmers, type Farmer } from "@/lib/dummyData";
 import { cn } from "@/lib/utils";
 
-type Page = "listings" | "capacity";
+type Page = "listings" | "capacity" | "transport-portal" | "runs";
 
 type Copy = {
   body: string;
@@ -37,6 +37,32 @@ const COPY: Record<Page, Record<Farmer["role"], Copy>> = {
     },
     "Transport Provider": {
       body: "Your own posted runs sit at the top. Use \"Post a run\" to advertise an empty leg, or open /runs to manage what's already moving.",
+    },
+  },
+  "transport-portal": {
+    "Livestock Owner": {
+      body: "Browse drivers via the capacity board, or open your transport room from the agreement workspace.",
+      tone: "muted",
+    },
+    Landowner: {
+      body: "Transport coordination lives inside your agreement workspace. The portal below is a driver-side workbench.",
+      tone: "muted",
+    },
+    "Transport Provider": {
+      body: "Quick links to available jobs, your calendar, and earnings. Use /runs for the full pipeline view.",
+    },
+  },
+  runs: {
+    "Livestock Owner": {
+      body: "This is the driver's pipeline view. As a livestock owner, you'll see transport status inside each agreement workspace.",
+      tone: "muted",
+    },
+    Landowner: {
+      body: "This is the driver's pipeline view. Landowners don't see driver earnings or rate detail by design.",
+      tone: "muted",
+    },
+    "Transport Provider": {
+      body: "Your live work, top to bottom: next run, three-bucket pipeline, jobs, and the capacity you've posted.",
     },
   },
 };
