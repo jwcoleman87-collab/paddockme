@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import {
   CheckCircle2,
   CircleDot,
-  Download,
   FileText,
   MapPin,
   Truck,
@@ -11,6 +10,7 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
+import { PrintButton } from "@/components/PrintButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   getAgreement,
@@ -69,10 +69,7 @@ export default async function WorkspaceSnapshotPage({
               {listing.location}
             </p>
           </div>
-          <ButtonLink href="javascript:window.print()" variant="secondary">
-            <Download className="h-4 w-4" aria-hidden />
-            Print
-          </ButtonLink>
+          <PrintButton />
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <InfoTile tone="subtle" size="sm" label="Livestock owner" value={farmerA?.name ?? "—"} />
