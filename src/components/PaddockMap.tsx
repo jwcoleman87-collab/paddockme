@@ -77,6 +77,10 @@ type PaddockMapProps = {
 
 const pointSourceId = "paddockme-operational-points";
 const routeSourceId = "paddockme-routes";
+const australiaBounds: [[number, number], [number, number]] = [
+  [111.5, -44.5],
+  [154.5, -10],
+];
 
 export function PaddockMap({
   mode = "regional",
@@ -334,7 +338,7 @@ export function PaddockMap({
     if (context.bounds) {
       map.fitBounds(context.bounds, {
         padding: { top: 62, right: 44, bottom: 220, left: 44 },
-        maxZoom: mode === "regional" ? 6 : 8.5,
+        maxZoom: mode === "regional" ? 4.35 : 8.5,
         duration: 650,
       });
     }
@@ -345,7 +349,7 @@ export function PaddockMap({
     if (!map || !context.bounds) return;
     map.fitBounds(context.bounds, {
       padding: { top: 62, right: 44, bottom: 220, left: 44 },
-      maxZoom: mode === "regional" ? 6 : 8.5,
+      maxZoom: mode === "regional" ? 4.35 : 8.5,
       duration: 650,
     });
   }
@@ -358,7 +362,7 @@ export function PaddockMap({
             ref={containerRef}
             className={cn(
               "absolute inset-0 z-0 transition-opacity duration-300",
-              ready && !mapError ? "opacity-100" : "opacity-0"
+              ready && !mapError ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           />
           <OperationalMapLayer
@@ -595,23 +599,26 @@ function OperationalMapLayer({
             <feDropShadow dx="0" dy="1.6" stdDeviation="1.2" floodColor="#2c5030" floodOpacity="0.24" />
           </filter>
         </defs>
-        <rect width="100" height="100" fill="#eef3e8" opacity={enhanced ? "0.52" : "1"} />
-        <rect width="100" height="100" fill="url(#map-grid)" opacity={enhanced ? "0.45" : "0.8"} />
-        <path
-          d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
-          fill="#dfe9d8"
-          stroke="#9fb99b"
-          strokeWidth="0.65"
-          opacity={enhanced ? "0.72" : "1"}
-        />
-        <path
-          d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
-          fill="none"
-          stroke="#c3b98d"
-          strokeWidth="0.45"
-          strokeDasharray="1.4 1.1"
-          opacity="0.8"
-        />
+        {!enhanced ? (
+          <>
+            <rect width="100" height="100" fill="#eef3e8" />
+            <rect width="100" height="100" fill="url(#map-grid)" opacity="0.8" />
+            <path
+              d="M69 18 C78 23 85 36 86 48 C87 59 80 68 74 78 C67 88 55 90 44 86 C32 82 22 74 18 63 C14 52 18 40 25 31 C35 18 54 11 69 18Z"
+              fill="#dfe9d8"
+              stroke="#9fb99b"
+              strokeWidth="0.65"
+            />
+            <path
+              d="M29 42 C38 35 46 31 58 28 M35 62 C46 58 58 54 74 48 M47 78 C55 70 63 64 77 59"
+              fill="none"
+              stroke="#c3b98d"
+              strokeWidth="0.45"
+              strokeDasharray="1.4 1.1"
+              opacity="0.8"
+            />
+          </>
+        ) : null}
         {routes.map((route) => {
           const path = route.geometry.coordinates
             .map((coordinate, index) => {
@@ -663,9 +670,11 @@ function OperationalMapLayer({
           );
         })}
       </div>
-      <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
-        Stable operational map. Live map tiles enhance this view when available, but the pins and routes do not depend on them.
-      </div>
+      {!enhanced ? (
+        <div className="absolute bottom-32 left-3 max-w-[18rem] rounded-[8px] border border-mist bg-warm-white/92 p-3 text-xs font-semibold text-stone shadow-lg shadow-bark/10 sm:bottom-4 sm:left-4">
+          Stable operational map. Live map tiles enhance this view when available, but the pins and routes do not depend on them.
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -747,7 +756,7 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
       "Paddock supply, livestock demand, transport movement, and early rain/feed pressure signals in one place.",
     points,
     routes: emptyLineCollection(),
-    bounds: boundsForPoints(points),
+    bounds: regionFilter ? boundsForPoints(points) : australiaBounds,
     metrics: [
       { label: "Available paddocks", value: String(input.listings.length) },
       { label: "Livestock requests", value: String(input.requests.length) },
