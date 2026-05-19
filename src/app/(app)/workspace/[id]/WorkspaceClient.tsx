@@ -13,6 +13,7 @@ import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
+import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
@@ -71,6 +72,14 @@ export function WorkspaceClient({
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  // Mark this workspace's thread as "seen up to the current message count"
+  // whenever it changes while the workspace is open. The inbox uses this to
+  // dim cards back to "all caught up" after the user opens the room.
+  useEffect(() => {
+    markThreadSeen(agreement.id, messages.length);
+  }, [agreement.id, messages.length]);
+
   const [linkedTransport, setLinkedTransport] = useState<TransportJob | undefined>(
     () => getTransportJobForAgreement(agreement.id)
   );

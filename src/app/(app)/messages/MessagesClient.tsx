@@ -6,6 +6,11 @@ import { ArrowRight, Inbox, MessageSquare, Truck } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Card } from "@/components/Card";
 import { StatusBadge } from "@/components/StatusBadge";
+import {
+  INBOX_UPDATE_EVENT,
+  getSeenCounts,
+  unreadCountFor,
+} from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import type {
   Agreement,
@@ -23,6 +28,7 @@ type Thread = {
   otherParticipants: Farmer[];
   lastMessage?: Message;
   badge?: { label: string; tone: "success" | "warning" | "info" | "neutral" };
+  unreadCount: number;
 };
 
 type Props = {
@@ -63,6 +69,7 @@ export function MessagesClient({
     agreement: Record<string, Message[]>;
     transport: Record<string, Message[]>;
   }>({ agreement: {}, transport: {} });
+  const [seenCounts, setSeenCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -109,13 +116,20 @@ export function MessagesClient({
       agreement: agreementMessagesById,
       transport: transportMessagesById,
     });
+    setSeenCounts(getSeenCounts());
 
     function onChange() {
       setActivePersonaId(readPersona() ?? serverPersonaId);
     }
+    function onInboxUpdate() {
+      setSeenCounts(getSeenCounts());
+    }
     window.addEventListener("paddockme:persona-change", onChange);
-    return () =>
+    window.addEventListener(INBOX_UPDATE_EVENT, onInboxUpdate);
+    return () => {
       window.removeEventListener("paddockme:persona-change", onChange);
+      window.removeEventListener(INBOX_UPDATE_EVENT, onInboxUpdate);
+    };
   }, [agreements, transportJobs, serverPersonaId]);
 
   const personaId = activePersonaId ?? farmers[0]?.id;
@@ -147,6 +161,7 @@ export function MessagesClient({
         otherParticipants: others,
         lastMessage: messages[messages.length - 1],
         badge: badgeForAgreementStatus(agreement.status),
+        unreadCount: unreadCountFor(agreement.id, messages.length),
       });
     }
 
@@ -172,6 +187,7 @@ export function MessagesClient({
         otherParticipants: others,
         lastMessage: messages[messages.length - 1],
         badge: badgeForTransportStatus(job.status),
+        unreadCount: unreadCountFor(job.id, messages.length),
       });
     }
 
@@ -188,6 +204,7 @@ export function MessagesClient({
     agreementMessages,
     transportMessages,
     localMessages,
+    seenCounts,
   ]);
 
   if (!persona) {
@@ -245,9 +262,19 @@ function ThreadCard({ thread }: { thread: Thread }) {
               </h2>
             </div>
           </div>
-          {thread.badge && (
-            <StatusBadge tone={thread.badge.tone}>{thread.badge.label}</StatusBadge>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            {thread.unreadCount > 0 && (
+              <span
+                aria-label={`${thread.unreadCount} unread ${thread.unreadCount === 1 ? "message" : "messages"}`}
+                className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-full bg-sage-deep px-2 text-[0.7rem] font-bold text-cream"
+              >
+                {thread.unreadCount}
+              </span>
+            )}
+            {thread.badge && (
+              <StatusBadge tone={thread.badge.tone}>{thread.badge.label}</StatusBadge>
+            )}
+          </div>
         </div>
 
         {thread.lastMessage ? (
