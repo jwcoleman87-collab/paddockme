@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Filter, X } from "lucide-react";
 import { useFlash } from "@/components/FlashProvider";
 import { ListingCard } from "@/components/ListingCard";
+import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { cn } from "@/lib/utils";
@@ -131,6 +132,7 @@ export function ListingsClient({
 
   return (
     <>
+      <PersonaIntroBanner page="listings" />
       <section
         aria-label="Filter paddocks"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"

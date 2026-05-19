@@ -20,6 +20,7 @@ import {
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
+import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
@@ -264,6 +265,7 @@ export function CapacityClient({
 
   return (
     <>
+      <PersonaIntroBanner page="capacity" />
       <section
         aria-label="Driver tools"
         className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sage-deep/15 bg-sage-mist/35 px-4 py-3"

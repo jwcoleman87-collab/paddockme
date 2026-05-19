@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { ActivityFeed } from "./ActivityFeed";
+import { WhatNeedsYou } from "./WhatNeedsYou";
 import { Avatar } from "@/components/Avatar";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -213,6 +214,12 @@ export function AgreementsClient({
           />
         </div>
       </Card>
+
+      <WhatNeedsYou
+        farmer={farmer}
+        agreements={visibleAgreements}
+        transportJobs={visibleJobs}
+      />
 
       <ActivityFeed
         agreements={visibleAgreements}

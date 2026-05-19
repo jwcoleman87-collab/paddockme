@@ -897,19 +897,7 @@ function RateNegotiation({
       )}
 
       {quotes.length > 1 && (
-        <section>
-          <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
-            Negotiation history
-          </h4>
-          <ol className="space-y-2">
-            {quotes
-              .slice()
-              .reverse()
-              .map((quote) => (
-                <QuoteHistoryRow key={quote.id} quote={quote} />
-              ))}
-          </ol>
-        </section>
+        <QuoteHistorySection quotes={quotes} />
       )}
     </div>
   );
@@ -1012,6 +1000,44 @@ function PendingQuoteCard({
           )}
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * Negotiation history with collapse-on-long-chains. Per BUILD_03's open
+ * question about long quote chains: when there are 3+ counters we render
+ * the most recent two and tuck the rest behind a "Show earlier" toggle.
+ */
+function QuoteHistorySection({ quotes }: { quotes: TransportQuote[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const reversed = quotes.slice().reverse();
+  const collapseThreshold = 2;
+  const shouldCollapse = reversed.length > collapseThreshold + 1;
+  const head = shouldCollapse && !expanded ? reversed.slice(0, collapseThreshold) : reversed;
+  const tail = shouldCollapse && !expanded ? reversed.slice(collapseThreshold) : [];
+
+  return (
+    <section>
+      <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
+        Negotiation history
+      </h4>
+      <ol className="space-y-2">
+        {head.map((quote) => (
+          <QuoteHistoryRow key={quote.id} quote={quote} />
+        ))}
+        {tail.length > 0 && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-mist bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              Show {tail.length} earlier counter{tail.length === 1 ? "" : "s"}
+            </button>
+          </li>
+        )}
+      </ol>
     </section>
   );
 }
