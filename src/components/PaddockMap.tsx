@@ -181,6 +181,7 @@ export function PaddockMap({
       map.addSource(routeSourceId, {
         type: "geojson",
         data: emptyLineCollection(),
+        lineMetrics: true,
       });
       map.addSource(routeEndpointSourceId, {
         type: "geojson",
@@ -207,12 +208,41 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            9,
+            13,
             7,
-            15,
+            22,
           ],
-          "line-opacity": 0.2,
-          "line-blur": 1.4,
+          "line-opacity": 0.18,
+          "line-blur": 2.8,
+        },
+      });
+      map.addLayer({
+        id: "route-vein",
+        type: "line",
+        source: routeSourceId,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": [
+            "match",
+            ["get", "kind"],
+            "transport",
+            "#f7c27d",
+            "#d0e8cf",
+          ],
+          "line-width": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            6,
+            7,
+            10,
+          ],
+          "line-opacity": 0.42,
+          "line-blur": 0.6,
         },
       });
       map.addLayer({
@@ -228,21 +258,21 @@ export function PaddockMap({
             "match",
             ["get", "kind"],
             "transport",
-            "#e88f3f",
+            "#d86f24",
             "#2c5030",
           ],
           "line-width": [
             "match",
             ["get", "kind"],
             "transport",
-            2.25,
+            2.8,
             4,
           ],
           "line-opacity": [
             "match",
             ["get", "kind"],
             "transport",
-            0.88,
+            0.96,
             0.9,
           ],
         },
@@ -764,15 +794,32 @@ function OperationalMapLayer({
             })
             .join(" ");
           return (
-            <path
-              key={route.properties.id}
-              d={path}
-              fill="none"
-              stroke={colourForKind(route.properties.kind)}
-              strokeWidth={route.properties.kind === "transport" ? "1.05" : "1.1"}
-              strokeLinecap="round"
-              opacity={route.properties.kind === "transport" ? "0.86" : "0.88"}
-            />
+            <g key={route.properties.id}>
+              <path
+                d={path}
+                fill="none"
+                stroke={route.properties.kind === "transport" ? "#f2a35a" : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "4.2" : "2.5"}
+                strokeLinecap="round"
+                opacity={route.properties.kind === "transport" ? "0.2" : "0.18"}
+              />
+              <path
+                d={path}
+                fill="none"
+                stroke={route.properties.kind === "transport" ? "#f7c27d" : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "2.15" : "1.6"}
+                strokeLinecap="round"
+                opacity={route.properties.kind === "transport" ? "0.45" : "0.35"}
+              />
+              <path
+                d={path}
+                fill="none"
+                stroke={route.properties.kind === "transport" ? "#d86f24" : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "0.95" : "1.1"}
+                strokeLinecap="round"
+                opacity={route.properties.kind === "transport" ? "0.96" : "0.88"}
+              />
+            </g>
           );
         })}
         {routeEndpoints.map((point) => {
