@@ -8,7 +8,7 @@ import { useFlash } from "@/components/FlashProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes } from "@/lib/dummyData";
-import { createPaddockListing } from "@/lib/prototypeStore";
+import { createPaddockListingRecord } from "@/lib/data/repositories";
 
 const feed = ["Excellent", "Good", "Tight", "Needs rain"];
 const water = ["Permanent", "Seasonal", "Tank", "Creek access"];
@@ -18,8 +18,8 @@ export default function NewListingPage() {
   const router = useRouter();
   const flash = useFlash();
 
-  function publishListing() {
-    const { listing } = createPaddockListing({
+  async function publishListing() {
+    const { listing } = await createPaddockListingRecord({
       title: "Glenbarra River Paddocks",
       location: "Near Gundagai, NSW",
       region: "Southern NSW",

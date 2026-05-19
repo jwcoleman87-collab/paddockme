@@ -8,7 +8,7 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { cn } from "@/lib/utils";
 import type { PaddockListing } from "@/lib/dummyData";
-import { loadPrototypeState } from "@/lib/prototypeStore";
+import { listPaddockListings } from "@/lib/data/repositories";
 
 type FilterGroupKey =
   | "regions"
@@ -89,8 +89,8 @@ export function ListingsClient({
   }));
 
   useEffect(() => {
-    setAllListings(loadPrototypeState().paddockListings);
-    const sync = () => setAllListings(loadPrototypeState().paddockListings);
+    void listPaddockListings().then(setAllListings);
+    const sync = () => void listPaddockListings().then(setAllListings);
     window.addEventListener("paddockme:prototype-change", sync);
     return () => window.removeEventListener("paddockme:prototype-change", sync);
   }, []);

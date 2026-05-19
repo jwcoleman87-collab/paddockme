@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
-import { getTransportMessages, type TransportJob } from "@/lib/dummyData";
-import { loadPrototypeState } from "@/lib/prototypeStore";
+import { type Message, type TransportJob } from "@/lib/dummyData";
+import {
+  getTransportJobRecord,
+  listTransportMessages,
+} from "@/lib/data/repositories";
 import { TransportClient } from "./TransportClient";
 
 export function TransportRouteClient({
@@ -16,10 +19,15 @@ export function TransportRouteClient({
   seedJob: TransportJob;
 }) {
   const [job, setJob] = useState(seedJob);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
-    const local = loadPrototypeState().transportJobs.find((item) => item.id === id);
-    if (local) setJob(local);
+    void Promise.all([getTransportJobRecord(id), listTransportMessages(id)]).then(
+      ([local, nextMessages]) => {
+        if (local) setJob(local);
+        setMessages(nextMessages);
+      }
+    );
   }, [id]);
 
   if (!job) {
@@ -40,7 +48,7 @@ export function TransportRouteClient({
         title="Three-party transport room."
         description="Farmer A, Farmer B and the driver coordinate the move here. Agistment pricing stays hidden from Wayne."
       />
-      <TransportClient job={job} messages={getTransportMessages(job.id)} />
+      <TransportClient job={job} messages={messages} />
     </>
   );
 }

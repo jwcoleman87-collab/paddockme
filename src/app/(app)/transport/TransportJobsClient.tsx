@@ -10,10 +10,12 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useFlash } from "@/components/FlashProvider";
 import {
   formatTransportStatus,
-  loadPrototypeState,
-  setPrototypePersona,
-  updateTransportStatus,
 } from "@/lib/prototypeStore";
+import {
+  listTransportJobs,
+  selectPersona,
+  updateTransportJobStatus,
+} from "@/lib/data/repositories";
 import type { TransportJob, TransportJobStatus } from "@/lib/dummyData";
 
 type Mode = "portal" | "jobs" | "calendar";
@@ -24,7 +26,7 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
   const [jobs, setJobs] = useState<TransportJob[]>([]);
 
   useEffect(() => {
-    setJobs(loadPrototypeState().transportJobs);
+    void listTransportJobs().then(setJobs);
   }, []);
 
   const available = useMemo(
@@ -36,9 +38,9 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
     [jobs]
   );
 
-  function acceptJob(job: TransportJob) {
-    setPrototypePersona("driver-1");
-    const { state } = updateTransportStatus(job.id, "accepted");
+  async function acceptJob(job: TransportJob) {
+    selectPersona("driver-1");
+    const { state } = await updateTransportJobStatus(job.id, "accepted");
     setJobs(state.transportJobs);
     flash("Job accepted. It has been added to Wayne's calendar.", "success");
     router.push(`/transport/${job.id}`);

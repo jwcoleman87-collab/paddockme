@@ -24,9 +24,11 @@ import {
 } from "@/lib/dummyData";
 import {
   formatTransportStatus,
-  loadPrototypeState,
-  updateTransportStatus,
 } from "@/lib/prototypeStore";
+import {
+  listTransportJobs,
+  updateTransportJobStatus,
+} from "@/lib/data/repositories";
 import type { TransportJobStatus } from "@/lib/dummyData";
 
 const roles: { id: TransportRole; label: string; helper: string }[] = [
@@ -96,8 +98,10 @@ export function TransportClient({
       const stored = window.localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const localJob = loadPrototypeState().transportJobs.find((item) => item.id === job.id);
-        if (localJob) setJobState(localJob);
+        void listTransportJobs().then((jobs) => {
+          const localJob = jobs.find((item) => item.id === job.id);
+          if (localJob) setJobState(localJob);
+        });
         if (parsed.confirmations) setConfirmations(parsed.confirmations);
         if (parsed.messages) setMessages(parsed.messages);
         if (parsed.artefacts) setArtefacts(parsed.artefacts);
@@ -332,8 +336,8 @@ export function TransportClient({
 
   const composerSenderLabel = `${senderProfile[role].name} (${senderProfile[role].role})`;
 
-  function setStatus(status: TransportJobStatus) {
-    const { job: updated } = updateTransportStatus(jobState.id, status);
+  async function setStatus(status: TransportJobStatus) {
+    const { job: updated } = await updateTransportJobStatus(jobState.id, status);
     if (updated) setJobState(updated);
     flash(`Status updated: ${formatTransportStatus(status)}.`, "success");
     appendSystemMessage(`${senderProfile[role].name} updated transport status to ${formatTransportStatus(status)}.`);

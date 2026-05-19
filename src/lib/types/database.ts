@@ -149,6 +149,116 @@ export type Database = {
           },
         ]
       }
+      agreement_artefacts: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          label: string
+          metadata: Json
+          section_key: string | null
+          storage_path: string | null
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          label: string
+          metadata?: Json
+          section_key?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          metadata?: Json
+          section_key?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_artefacts_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_artefacts_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_sections: {
+        Row: {
+          agreed_by_a: boolean
+          agreed_by_b: boolean
+          agreement_id: string
+          created_at: string
+          farmer_a_value: Json
+          farmer_b_value: Json
+          id: string
+          label: string
+          section_key: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_by_a?: boolean
+          agreed_by_b?: boolean
+          agreement_id: string
+          created_at?: string
+          farmer_a_value?: Json
+          farmer_b_value?: Json
+          id?: string
+          label: string
+          section_key: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_by_a?: boolean
+          agreed_by_b?: boolean
+          agreement_id?: string
+          created_at?: string
+          farmer_a_value?: Json
+          farmer_b_value?: Json
+          id?: string
+          label?: string
+          section_key?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_sections_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string | null
@@ -324,6 +434,215 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          agreement_id: string | null
+          body: string
+          created_at: string
+          id: string
+          section_id: string | null
+          sender_id: string
+          transport_job_id: string | null
+        }
+        Insert: {
+          agreement_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          section_id?: string | null
+          sender_id: string
+          transport_job_id?: string | null
+        }
+        Update: {
+          agreement_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          section_id?: string | null
+          sender_id?: string
+          transport_job_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_transport_job_id_fkey"
+            columns: ["transport_job_id"]
+            isOneToOne: false
+            referencedRelation: "transport_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_artefacts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          label: string
+          metadata: Json
+          section_key: string | null
+          storage_path: string | null
+          transport_job_id: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          label: string
+          metadata?: Json
+          section_key?: string | null
+          storage_path?: string | null
+          transport_job_id: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          metadata?: Json
+          section_key?: string | null
+          storage_path?: string | null
+          transport_job_id?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_artefacts_transport_job_id_fkey"
+            columns: ["transport_job_id"]
+            isOneToOne: false
+            referencedRelation: "transport_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_artefacts_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_jobs: {
+        Row: {
+          accepted_quote_id: string | null
+          agreement_id: string
+          coordination_state: Json | null
+          created_at: string
+          destination_address: string | null
+          driver_id: string | null
+          id: string
+          landowner_id: string
+          livestock_count: string | null
+          livestock_owner_id: string
+          pickup_address: string | null
+          preferred_date: string | null
+          route_summary: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_quote_id?: string | null
+          agreement_id: string
+          coordination_state?: Json | null
+          created_at?: string
+          destination_address?: string | null
+          driver_id?: string | null
+          id?: string
+          landowner_id: string
+          livestock_count?: string | null
+          livestock_owner_id: string
+          pickup_address?: string | null
+          preferred_date?: string | null
+          route_summary?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_quote_id?: string | null
+          agreement_id?: string
+          coordination_state?: Json | null
+          created_at?: string
+          destination_address?: string | null
+          driver_id?: string | null
+          id?: string
+          landowner_id?: string
+          livestock_count?: string | null
+          livestock_owner_id?: string
+          pickup_address?: string | null
+          preferred_date?: string | null
+          route_summary?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_jobs_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_status_events: {
+        Row: {
+          changed_by: string
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          to_status: string
+          transport_job_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          to_status: string
+          transport_job_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          to_status?: string
+          transport_job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_status_events_transport_job_id_fkey"
+            columns: ["transport_job_id"]
+            isOneToOne: false
+            referencedRelation: "transport_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

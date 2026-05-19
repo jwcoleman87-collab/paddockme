@@ -5,8 +5,11 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { FlowContextBar } from "@/components/FlowContextBar";
 import { PageHeader } from "@/components/PageHeader";
-import { getMessages, type Agreement } from "@/lib/dummyData";
-import { loadPrototypeState } from "@/lib/prototypeStore";
+import { type Agreement, type Message } from "@/lib/dummyData";
+import {
+  getAgreementRecord,
+  listAgreementMessages,
+} from "@/lib/data/repositories";
 import { WorkspaceClient } from "./WorkspaceClient";
 
 export function WorkspaceRouteClient({
@@ -17,10 +20,15 @@ export function WorkspaceRouteClient({
   seedAgreement: Agreement;
 }) {
   const [agreement, setAgreement] = useState<Agreement | null>(seedAgreement);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
-    const local = loadPrototypeState().agreements.find((item) => item.id === id);
-    if (local) setAgreement(local);
+    void Promise.all([getAgreementRecord(id), listAgreementMessages(id)]).then(
+      ([local, nextMessages]) => {
+        if (local) setAgreement(local);
+        setMessages(nextMessages);
+      }
+    );
   }, [id]);
 
   if (!agreement) {
@@ -50,7 +58,7 @@ export function WorkspaceRouteClient({
         backHref={`/listings/${agreement.listingId}`}
         backLabel="Back to paddock"
       />
-      <WorkspaceClient agreement={agreement} messages={getMessages(agreement.id)} />
+      <WorkspaceClient agreement={agreement} messages={messages} />
     </>
   );
 }

@@ -11,9 +11,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useFlash } from "@/components/FlashProvider";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import {
-  loadPrototypeState,
-  openAgreementForListing,
-} from "@/lib/prototypeStore";
+  listAgreements,
+  listPaddockListings,
+  openAgreementWorkspace,
+} from "@/lib/data/repositories";
 import type { PaddockListing } from "@/lib/dummyData";
 import { ListingPublishedFlash } from "./ListingPublishedFlash";
 
@@ -30,9 +31,14 @@ export function ListingDetailClient({
   const [agreementId, setAgreementId] = useState<string | null>(null);
 
   useEffect(() => {
-    const state = loadPrototypeState();
-    setListings(state.paddockListings);
-    setAgreementId(state.agreements.find((agreement) => agreement.listingId === id)?.id ?? null);
+    void Promise.all([listPaddockListings(), listAgreements()]).then(
+      ([nextListings, nextAgreements]) => {
+        setListings(nextListings);
+        setAgreementId(
+          nextAgreements.find((agreement) => agreement.listingId === id)?.id ?? null
+        );
+      }
+    );
   }, [id]);
 
   const listing = useMemo(
@@ -56,8 +62,8 @@ export function ListingDetailClient({
 
   const mapImageSrc = getListingMapImageSrc(listing.id);
 
-  function openWorkspace() {
-    const { agreement } = openAgreementForListing(listing.id);
+  async function openWorkspace() {
+    const { agreement } = await openAgreementWorkspace(listing.id);
     flash("Agreement opened.", "success");
     router.push(`/workspace/${agreement.id}`);
   }

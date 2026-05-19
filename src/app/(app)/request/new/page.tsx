@@ -10,7 +10,7 @@ import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
-import { createLivestockRequest } from "@/lib/prototypeStore";
+import { createLivestockRequestRecord } from "@/lib/data/repositories";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -147,7 +147,7 @@ export default function NewRequestPage() {
     if (transportRequired) {
       params.set("transport", transportRequired);
     }
-    createLivestockRequest({
+    await createLivestockRequestRecord({
       stockType,
       breed,
       headCount,

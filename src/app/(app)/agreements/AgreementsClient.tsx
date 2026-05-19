@@ -24,7 +24,11 @@ import type {
   PaddockListing,
   TransportJob,
 } from "@/lib/dummyData";
-import { loadPrototypeState } from "@/lib/prototypeStore";
+import {
+  listAgreements,
+  listPaddockListings,
+  listTransportJobs,
+} from "@/lib/data/repositories";
 
 const lifecycleTone: Record<
   AgreementLifecycleState,
@@ -75,10 +79,15 @@ export function AgreementsClient({
       return;
     }
     try {
-      const state = loadPrototypeState();
-      setLocalAgreements(state.agreements);
-      setLocalTransportJobs(state.transportJobs);
-      setLocalListings(state.paddockListings);
+      void Promise.all([
+        listAgreements(),
+        listTransportJobs(),
+        listPaddockListings(),
+      ]).then(([nextAgreements, nextTransportJobs, nextListings]) => {
+        setLocalAgreements(nextAgreements);
+        setLocalTransportJobs(nextTransportJobs);
+        setLocalListings(nextListings);
+      });
       const stored = window.localStorage.getItem("paddockme.agreements.persona");
       const persona = stored ?? readPersonaCookie();
       if (persona && farmers.some((f) => f.id === persona)) {
@@ -96,10 +105,15 @@ export function AgreementsClient({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sync = () => {
-      const state = loadPrototypeState();
-      setLocalAgreements(state.agreements);
-      setLocalTransportJobs(state.transportJobs);
-      setLocalListings(state.paddockListings);
+      void Promise.all([
+        listAgreements(),
+        listTransportJobs(),
+        listPaddockListings(),
+      ]).then(([nextAgreements, nextTransportJobs, nextListings]) => {
+        setLocalAgreements(nextAgreements);
+        setLocalTransportJobs(nextTransportJobs);
+        setLocalListings(nextListings);
+      });
     };
     window.addEventListener("paddockme:prototype-change", sync);
     return () => window.removeEventListener("paddockme:prototype-change", sync);

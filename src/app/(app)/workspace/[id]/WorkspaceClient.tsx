@@ -16,9 +16,9 @@ import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
-  loadPrototypeState,
-  requestTransportForAgreement,
-} from "@/lib/prototypeStore";
+  listTransportJobs,
+  requestTransportJob,
+} from "@/lib/data/repositories";
 import type {
   Agreement,
   AgreementArtefact,
@@ -139,10 +139,12 @@ export function WorkspaceClient({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const localJob = loadPrototypeState().transportJobs.find(
+    void listTransportJobs().then((jobs) => {
+      const localJob = jobs.find(
       (job) => job.agreementId === agreement.id
-    );
-    if (localJob) setLinkedTransport(localJob);
+      );
+      if (localJob) setLinkedTransport(localJob);
+    });
   }, [agreement.id]);
 
   function setViewerParty(next: WorkspaceParty) {
@@ -367,8 +369,8 @@ export function WorkspaceClient({
     flash("Agreement cancelled.", "warning");
   };
 
-  const requestTransport = () => {
-    const { job } = requestTransportForAgreement(agreement.id);
+  const requestTransport = async () => {
+    const { job } = await requestTransportJob(agreement.id);
     setLinkedTransport(job);
     setTransportConfirmations(
       Object.fromEntries(
