@@ -21,11 +21,13 @@ import {
   livestockRequests,
   paddockListings,
   regionalInsights,
+  transportCapacities,
   transportJobs,
   type Agreement,
   type Farmer,
   type LivestockRequest,
   type PaddockListing,
+  type TransportCapacity,
   type TransportJob,
 } from "@/lib/dummyData";
 import {
@@ -59,7 +61,7 @@ type Feature = {
 type LineFeature = {
   type: "Feature";
   geometry: { type: "LineString"; coordinates: [number, number][] };
-  properties: { id: string; title: string };
+  properties: MapFeatureProperties;
 };
 
 type FeatureCollection<TFeature extends Feature | LineFeature> = {
@@ -108,10 +110,11 @@ export function PaddockMap({
     livestockRequests,
     agreements,
     transportJobs,
+    transportCapacities,
   }));
 
   useEffect(() => {
-    setState(loadPrototypeState());
+    setState({ ...loadPrototypeState(), transportCapacities });
   }, []);
 
   useEffect(() => {
@@ -193,8 +196,27 @@ export function PaddockMap({
         type: "line",
         source: routeSourceId,
         paint: {
-          "line-color": "#2c5030",
-          "line-width": 4,
+          "line-color": [
+            "match",
+            ["get", "kind"],
+            "transport",
+            "#e88f3f",
+            "#2c5030",
+          ],
+          "line-width": [
+            "match",
+            ["get", "kind"],
+            "transport",
+            3.5,
+            4,
+          ],
+          "line-opacity": [
+            "match",
+            ["get", "kind"],
+            "transport",
+            0.72,
+            0.9,
+          ],
           "line-dasharray": [1.4, 0.8],
         },
       });
@@ -286,10 +308,21 @@ export function PaddockMap({
         if (!feature) return;
         setSelected(feature.properties as MapFeatureProperties);
       });
+      map.on("click", "route-line", (event) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
+        if (!feature) return;
+        setSelected(feature.properties as MapFeatureProperties);
+      });
       map.on("mouseenter", "unclustered-point", () => {
         map.getCanvas().style.cursor = "pointer";
       });
+      map.on("mouseenter", "route-line", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
       map.on("mouseleave", "unclustered-point", () => {
+        map.getCanvas().style.cursor = "";
+      });
+      map.on("mouseleave", "route-line", () => {
         map.getCanvas().style.cursor = "";
       });
       setReady(true);
@@ -313,6 +346,7 @@ export function PaddockMap({
         requests: state.livestockRequests,
         agreements: state.agreements,
         jobs: state.transportJobs,
+        capacities: state.transportCapacities,
       }),
     [agreementId, driverId, mode, region, state, transportId]
   );
@@ -329,13 +363,18 @@ export function PaddockMap({
     } satisfies FeatureCollection<Feature>;
   }, [context.points, layers]);
 
+  const visibleRoutes = useMemo(() => {
+    if (!layers.transport) return emptyLineCollection();
+    return context.routes;
+  }, [context.routes, layers.transport]);
+
   useEffect(() => {
     if (!ready) return;
     const map = mapRef.current;
     if (!map) return;
     (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
-    (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(context.routes as never);
-  }, [context.routes, ready, visiblePointData]);
+    (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRoutes as never);
+  }, [ready, visiblePointData, visibleRoutes]);
 
   useEffect(() => {
     if (!ready) return;
@@ -390,7 +429,7 @@ export function PaddockMap({
           />
           <OperationalMapLayer
             points={visiblePointData.features}
-            routes={context.routes.features}
+            routes={visibleRoutes.features}
             active={!ready || !!mapError}
             onSelect={setSelected}
           />
@@ -671,11 +710,11 @@ function OperationalMapLayer({
               key={route.properties.id}
               d={path}
               fill="none"
-              stroke="#2c5030"
-              strokeWidth="1.1"
+              stroke={colourForKind(route.properties.kind)}
+              strokeWidth={route.properties.kind === "transport" ? "1.35" : "1.1"}
               strokeLinecap="round"
               strokeDasharray="2.2 1.3"
-              opacity="0.88"
+              opacity={route.properties.kind === "transport" ? "0.78" : "0.88"}
             />
           );
         })}
@@ -787,6 +826,12 @@ function fieldOpacityForKind(kind: LayerKey) {
   return opacity[kind];
 }
 
+function rainTrendForPressure(pressure: string) {
+  if (pressure === "High") return "rain deficit trend rising";
+  if (pressure === "Medium") return "rainfall mixed, watch next 7 days";
+  return "feed cover stable";
+}
+
 function buildMapContext(input: {
   mode: PaddockMapMode;
   agreementId?: string;
@@ -797,6 +842,7 @@ function buildMapContext(input: {
   requests: LivestockRequest[];
   agreements: Agreement[];
   jobs: TransportJob[];
+  capacities: TransportCapacity[];
 }): MapContext {
   if (input.mode === "agreement") return agreementContext(input);
   if (input.mode === "driver") return driverContext(input);
@@ -805,6 +851,14 @@ function buildMapContext(input: {
 
 function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapContext {
   const regionFilter = input.region;
+  const routes = routeCollection([
+    ...input.jobs
+      .filter((job) => !regionFilter || sameRegion(job.pickupRegion ?? "", regionFilter) || sameRegion(job.destinationRegion ?? "", regionFilter))
+      .map((job) => transportJobRouteFeature(job)),
+    ...input.capacities
+      .filter((capacity) => !regionFilter || sameRegion(capacity.originRegion, regionFilter) || sameRegion(capacity.destinationRegion, regionFilter))
+      .map((capacity) => transportCapacityRouteFeature(capacity)),
+  ]);
   const points = [
     ...input.listings
       .filter((listing) => !regionFilter || sameRegion(listing.regionLabel, regionFilter))
@@ -821,15 +875,15 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
     eyebrow: "Regional intelligence map",
     title: regionFilter ? `${regionFilter} operating hub` : "Australian operating hub",
     description:
-      "Paddock supply, livestock demand, transport movement, and early rain/feed pressure signals in one place.",
+      "Paddock supply, livestock demand, driver route availability, transport movement, and early rain/feed pressure signals in one place.",
     points,
-    routes: emptyLineCollection(),
+    routes,
     bounds: regionFilter ? boundsForPoints(points) : australiaBounds,
     metrics: [
       { label: "Available paddocks", value: String(input.listings.length) },
       { label: "Livestock requests", value: String(input.requests.length) },
-      { label: "Transport jobs", value: String(input.jobs.length) },
-      { label: "Weather layer", value: "MVP regional signal, live BOM later" },
+      { label: "Transport routes", value: String(routes.features.length) },
+      { label: "Rain/feed hotspots", value: String(regionalInsights.length) },
     ],
     actions: [
       {
@@ -865,6 +919,10 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
     lineFromCoordinates(
       "agreement-route",
       "Pickup to paddock",
+      "transport",
+      "Dale to Brett movement",
+      "Private agreement transport corridor",
+      "/transport/jobs",
       agreement.pickupLocation ?? request?.originLocation ?? mapCoordinates.dale,
       agreement.destinationLocation ?? listing?.coordinates ?? mapCoordinates.gundagai
     ),
@@ -917,6 +975,10 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       lineFromCoordinates(
         `route-${job.id}`,
         job.routeSummary,
+        "transport",
+        `${job.livestockCount}, ${job.preferredDate}`,
+        `${job.pickup} to ${job.destination}`,
+        `/transport/${job.id}`,
         job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
         job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
       )
@@ -1003,6 +1065,32 @@ function transportFeature(job: TransportJob, modeHint?: string): Feature | null 
   );
 }
 
+function transportJobRouteFeature(job: TransportJob): LineFeature | null {
+  return lineFromCoordinates(
+    `transport-job-route-${job.id}`,
+    `${job.livestockCount} route`,
+    "transport",
+    `${job.status.replace("_", " ")}, ${job.preferredDate}`,
+    `${job.pickup} to ${job.destination}`,
+    `/transport/${job.id}`,
+    job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
+    job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
+  );
+}
+
+function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature | null {
+  return lineFromCoordinates(
+    `transport-capacity-route-${capacity.id}`,
+    `${capacity.originRegion} to ${capacity.destinationRegion}`,
+    "transport",
+    `${capacity.headCapacity} head capacity, ${capacity.earliestDate} to ${capacity.latestDate}`,
+    `${capacity.stockTypes.join(", ")} availability from ${capacity.driverId === "driver-1" ? "Wayne" : "Sharon"}.`,
+    "/transport/available",
+    coordinateForRegion(capacity.originRegion),
+    coordinateForRegion(capacity.destinationRegion)
+  );
+}
+
 function profileFeature(farmer: Farmer): Feature | null {
   const coordinate = farmer.location ?? coordinateForRegion(farmer.region);
   if (!coordinate) return null;
@@ -1026,7 +1114,7 @@ function regionFeature(insight: (typeof regionalInsights)[number]): Feature | nu
     "weather",
     insight.region,
     `Feed ${insight.feed.toLowerCase()}, pressure ${insight.pressure.toLowerCase()}`,
-    `${insight.availability}% paddock availability`,
+    `${insight.availability}% paddock availability, ${rainTrendForPressure(insight.pressure)}`,
     `/listings?regions=${encodeURIComponent(insight.region)}`,
     "MVP regional rain/feed signal. Live weather integration comes later."
   );
@@ -1064,6 +1152,10 @@ function coordinateFeature(
 function lineFromCoordinates(
   id: string,
   title: string,
+  kind: LayerKey,
+  metric: string,
+  subtitle: string,
+  href: string | undefined,
   from?: Coordinate,
   to?: Coordinate
 ): LineFeature | null {
@@ -1077,7 +1169,15 @@ function lineFromCoordinates(
         [to.longitude, to.latitude],
       ],
     },
-    properties: { id, title },
+    properties: {
+      id,
+      kind,
+      title,
+      subtitle,
+      metric,
+      href,
+      privacy: kind === "transport" ? "Transport route detail only. Private agistment pricing is not shown." : undefined,
+    },
   };
 }
 
