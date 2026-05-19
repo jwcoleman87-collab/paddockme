@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/PageHeader";
+import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { TransportJobsClient } from "./TransportJobsClient";
 
 export default function TransportPortalPage() {
@@ -6,9 +7,10 @@ export default function TransportPortalPage() {
     <>
       <PageHeader
         eyebrow="Driver portal"
-        title="Wayne's transport workbench."
+        title="Transport workbench."
         description="Browse available stock movements, open accepted jobs, and keep the transport leg moving."
       />
+      <PersonaIntroBanner page="transport-portal" />
       <TransportJobsClient mode="portal" />
     </>
   );

@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
-  CircleDashed,
   CircleDot,
   PackageCheck,
   Plus,
@@ -147,33 +146,11 @@ export function RunsClient({
     );
   }
 
-  const isViewingAsDriver = activePersonaId === activeDriver.id;
   const firstActive = buckets.find((bucket) => bucket.key === "active")
     ?.jobs[0];
 
   return (
     <>
-      {!isViewingAsDriver && (
-        <Card className="mb-5 flex items-start gap-3 border-amber/40 bg-amber-light/60">
-          <CircleDashed
-            className="mt-0.5 h-5 w-5 shrink-0 text-amber"
-            aria-hidden
-          />
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-bark">
-              Showing {activeDriver.name.split(" ")[0]}&apos;s pipeline.
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-bark/75">
-              Switch persona to{" "}
-              <span className="font-semibold">
-                {activeDriver.name.split(" ")[0]}
-              </span>{" "}
-              from the home view to see the rest of the driver-only surfaces.
-            </p>
-          </div>
-        </Card>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-[0.85fr_1fr]">
         <NextRunCard job={firstActive} farmersById={farmersById} />
         <div className="grid gap-4 sm:grid-cols-3">
