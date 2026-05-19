@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { ModeIndicator } from "@/components/shared/ModeIndicator";
 
 /**
  * Main application shell for the Foundation Build 01 clickable skeleton.
@@ -10,5 +11,10 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <ModeIndicator />
+      {children}
+    </AppShell>
+  );
 }
