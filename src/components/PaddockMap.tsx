@@ -173,9 +173,6 @@ export function PaddockMap({
       map.addSource(pointSourceId, {
         type: "geojson",
         data: emptyFeatureCollection(),
-        cluster: true,
-        clusterRadius: 42,
-        clusterMaxZoom: 9,
       });
       map.addSource(routeSourceId, {
         type: "geojson",
@@ -202,35 +199,9 @@ export function PaddockMap({
         },
       });
       map.addLayer({
-        id: "clusters",
+        id: "signal-field",
         type: "circle",
         source: pointSourceId,
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": "#2c5030",
-          "circle-radius": ["step", ["get", "point_count"], 18, 8, 24, 20, 30],
-          "circle-stroke-color": "#fdfcf9",
-          "circle-stroke-width": 3,
-        },
-      });
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: pointSourceId,
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": ["get", "point_count_abbreviated"],
-          "text-size": 12,
-        },
-        paint: {
-          "text-color": "#fdfcf9",
-        },
-      });
-      map.addLayer({
-        id: "unclustered-point",
-        type: "circle",
-        source: pointSourceId,
-        filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-color": [
             "match",
@@ -240,14 +211,57 @@ export function PaddockMap({
             "requests",
             "#c47b5a",
             "transport",
-            "#2c5030",
+            "#e88f3f",
             "profiles",
             "#d4a853",
+            "weather",
+            "#9b7adf",
             "#6d6257",
           ],
-          "circle-radius": 9,
+          "circle-opacity": [
+            "match",
+            ["get", "kind"],
+            "weather",
+            0.24,
+            "transport",
+            0.22,
+            0.18,
+          ],
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            ["match", ["get", "kind"], "weather", 42, "transport", 34, 26],
+            7,
+            ["match", ["get", "kind"], "weather", 58, "transport", 46, 34],
+          ],
+          "circle-stroke-width": 0,
+        },
+      });
+      map.addLayer({
+        id: "unclustered-point",
+        type: "circle",
+        source: pointSourceId,
+        paint: {
+          "circle-color": [
+            "match",
+            ["get", "kind"],
+            "paddocks",
+            "#5b8c5a",
+            "requests",
+            "#c47b5a",
+            "transport",
+            "#e88f3f",
+            "profiles",
+            "#d4a853",
+            "weather",
+            "#9b7adf",
+            "#6d6257",
+          ],
+          "circle-radius": 6,
           "circle-stroke-color": "#fdfcf9",
-          "circle-stroke-width": 3,
+          "circle-stroke-width": 2,
         },
       });
       map.addLayer({
@@ -267,29 +281,13 @@ export function PaddockMap({
           "text-halo-width": 1.6,
         },
       });
-      map.on("click", "clusters", async (event) => {
-        const feature = map.queryRenderedFeatures(event.point, {
-          layers: ["clusters"],
-        })[0];
-        const clusterId = feature.properties?.cluster_id;
-        const source = map.getSource(pointSourceId) as maplibregl.GeoJSONSource;
-        const zoom = await source.getClusterExpansionZoom(clusterId);
-        const coordinates = (feature.geometry as unknown as { coordinates: [number, number] }).coordinates;
-        map.easeTo({ center: coordinates, zoom });
-      });
       map.on("click", "unclustered-point", (event) => {
         const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
         if (!feature) return;
         setSelected(feature.properties as MapFeatureProperties);
       });
-      map.on("mouseenter", "clusters", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
       map.on("mouseenter", "unclustered-point", () => {
         map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "clusters", () => {
-        map.getCanvas().style.cursor = "";
       });
       map.on("mouseleave", "unclustered-point", () => {
         map.getCanvas().style.cursor = "";
@@ -658,14 +656,22 @@ function OperationalMapLayer({
         {points.map((point) => {
           const projected = projectCoordinate(point.geometry.coordinates);
           return (
-            <g key={point.properties.id} filter="url(#pin-shadow)">
+            <g key={point.properties.id}>
               <circle
                 cx={projected.x}
                 cy={projected.y}
-                r="2.2"
+                r={fieldRadiusForKind(point.properties.kind)}
+                fill={colourForKind(point.properties.kind)}
+                opacity={fieldOpacityForKind(point.properties.kind)}
+              />
+              <circle
+                cx={projected.x}
+                cy={projected.y}
+                r="1.55"
                 fill={colourForKind(point.properties.kind)}
                 stroke="#fdfcf9"
-                strokeWidth="0.8"
+                strokeWidth="0.55"
+                filter="url(#pin-shadow)"
               />
             </g>
           );
@@ -726,11 +732,33 @@ function colourForKind(kind: LayerKey) {
   const colours: Record<LayerKey, string> = {
     paddocks: "#5b8c5a",
     requests: "#c47b5a",
-    transport: "#2c5030",
+    transport: "#e88f3f",
     profiles: "#d4a853",
-    weather: "#6d6257",
+    weather: "#9b7adf",
   };
   return colours[kind];
+}
+
+function fieldRadiusForKind(kind: LayerKey) {
+  const radii: Record<LayerKey, number> = {
+    paddocks: 5.8,
+    requests: 5.8,
+    transport: 7.2,
+    profiles: 4.8,
+    weather: 9,
+  };
+  return radii[kind];
+}
+
+function fieldOpacityForKind(kind: LayerKey) {
+  const opacity: Record<LayerKey, number> = {
+    paddocks: 0.16,
+    requests: 0.16,
+    transport: 0.2,
+    profiles: 0.18,
+    weather: 0.24,
+  };
+  return opacity[kind];
 }
 
 function buildMapContext(input: {
