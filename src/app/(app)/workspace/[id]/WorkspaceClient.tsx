@@ -16,8 +16,10 @@ import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
+  createAgreementMessage,
   listTransportJobs,
   requestTransportJob,
+  updateAgreementSectionAgreement,
 } from "@/lib/data/repositories";
 import type {
   Agreement,
@@ -164,6 +166,11 @@ export function WorkspaceClient({
 
   function sendMessage(body: string) {
     const sender = partyProfile[viewerParty];
+    void createAgreementMessage({
+      agreementId: agreement.id,
+      body,
+      sectionId: activeSectionId ?? undefined,
+    });
     setMessages((current) => [
       ...current,
       {
@@ -289,6 +296,12 @@ export function WorkspaceClient({
         ? { ...previous, agreedByA: !previous.agreedByA }
         : { ...previous, agreedByB: !previous.agreedByB };
     setSectionState((current) => ({ ...current, [sectionId]: next }));
+    void updateAgreementSectionAgreement({
+      agreementId: agreement.id,
+      sectionId,
+      agreedByA: next.agreedByA,
+      agreedByB: next.agreedByB,
+    });
 
     const justMutuallyAgreed =
       next.agreedByA &&

@@ -26,6 +26,7 @@ import {
   formatTransportStatus,
 } from "@/lib/prototypeStore";
 import {
+  createTransportMessage,
   listTransportJobs,
   updateTransportJobStatus,
 } from "@/lib/data/repositories";
@@ -318,6 +319,11 @@ export function TransportClient({
 
   function sendMessage(body: string) {
     const sender = senderProfile[role];
+    void createTransportMessage({
+      transportJobId: jobState.id,
+      body,
+      sectionId: activeSectionId ?? undefined,
+    });
     setMessages((current) => [
       ...current,
       {

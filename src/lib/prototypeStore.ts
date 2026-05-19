@@ -13,11 +13,6 @@ import {
   type TransportJob,
   type TransportJobStatus,
 } from "@/lib/dummyData";
-import {
-  persistLivestockRequestToSupabase,
-  persistPaddockListingToSupabase,
-  persistTransportStatusEventToSupabase,
-} from "@/lib/data/prototypePersistence";
 
 export type PersonaId = "farmer-a" | "farmer-b" | "driver-1" | "driver-2";
 
@@ -169,7 +164,6 @@ export function createLivestockRequest(input: {
     "/listings"
   );
   savePrototypeState(state);
-  void persistLivestockRequestToSupabase(request);
   return { state, request };
 }
 
@@ -210,7 +204,6 @@ export function createPaddockListing(input: {
     `/listings/${listing.id}`
   );
   savePrototypeState(state);
-  void persistPaddockListingToSupabase(listing);
   return { state, listing };
 }
 
@@ -275,12 +268,10 @@ export function updateTransportStatus(
 ): { state: PrototypeState; job?: TransportJob } {
   let state = loadPrototypeState();
   let updated: TransportJob | undefined;
-  let previousStatus: TransportJobStatus | undefined;
   state = {
     ...state,
     transportJobs: state.transportJobs.map((job) => {
       if (job.id !== jobId) return job;
-      previousStatus = job.status;
       updated = { ...job, status };
       return updated;
     }),
@@ -293,12 +284,6 @@ export function updateTransportStatus(
       `/transport/${updated.id}`
     );
     savePrototypeState(state);
-    void persistTransportStatusEventToSupabase({
-      transportJobId: updated.id,
-      fromStatus: previousStatus,
-      toStatus: status,
-      note: `Prototype status update to ${formatTransportStatus(status)}.`,
-    });
   }
   return { state, job: updated };
 }
