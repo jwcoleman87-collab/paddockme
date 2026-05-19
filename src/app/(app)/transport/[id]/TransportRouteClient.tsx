@@ -12,6 +12,10 @@ import {
 } from "@/lib/data/repositories";
 import { TransportClient } from "./TransportClient";
 
+function formatTransportStatus(status: TransportJob["status"]): string {
+  return status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
 export function TransportRouteClient({
   id,
   seedJob,
@@ -45,9 +49,9 @@ export function TransportRouteClient({
   return (
     <>
       <PageHeader
-        eyebrow="Transport coordination"
-        title="Three-party transport room."
-        description="Farmer A, Farmer B and the driver coordinate the move here. Agistment pricing stays hidden from Wayne."
+        eyebrow={`Transport room · ${formatTransportStatus(job.status)}`}
+        title={job.routeSummary}
+        description={`${job.livestockCount} from ${job.pickup} to ${job.destination}. Pickup ${job.preferredDate}. Driver: ${job.driver}. Agistment rate stays hidden from the driver.`}
         action={
           <ButtonLink href={`/map?mode=driver&transport=${job.id}&driver=${job.driverId}`} variant="secondary">
             <Map className="h-4 w-4" aria-hidden />
