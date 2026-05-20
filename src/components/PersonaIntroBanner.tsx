@@ -5,7 +5,13 @@ import { Sprout, Tractor, Truck } from "lucide-react";
 import { featuredFarmers, type Farmer } from "@/lib/dummyData";
 import { cn } from "@/lib/utils";
 
-type Page = "listings" | "capacity" | "transport-portal" | "runs" | "map";
+type Page =
+  | "listings"
+  | "capacity"
+  | "transport-portal"
+  | "runs"
+  | "map"
+  | "requests";
 
 type Copy = {
   body: string;
@@ -20,7 +26,7 @@ const COPY: Record<Page, Record<Farmer["role"], Copy>> = {
       body: "Browse paddocks open for agistment. Tap a card to start a workspace with the landowner.",
     },
     Landowner: {
-      body: "These are listings already on the market. Use \"Create listing\" above to publish yours.",
+      body: "These are listings already on the market. Use \"Create listing\" to publish yours, or open /requests to see livestock owners looking for paddocks right now.",
     },
     "Transport Provider": {
       body: "Landowners use this surface. As a driver, browse /transport/available for backloads.",
@@ -74,6 +80,19 @@ const COPY: Record<Page, Record<Farmer["role"], Copy>> = {
     },
     "Transport Provider": {
       body: "Driver mode traces your run from pickup to delivery. Regional layers show feed pressure and incoming demand for return-leg planning.",
+    },
+  },
+  requests: {
+    "Livestock Owner": {
+      body: "These are open inquiries from other livestock owners. Your own requests live here too - landowners see them and can offer paddocks.",
+      tone: "muted",
+    },
+    Landowner: {
+      body: "Open inquiries from livestock owners. Tap \"Offer a paddock\" to start a workspace with the requester, or list a new paddock that fits.",
+    },
+    "Transport Provider": {
+      body: "Livestock owners post requests here. Drivers don't appear in this loop until an agreement reaches the transport step.",
+      tone: "muted",
     },
   },
 };

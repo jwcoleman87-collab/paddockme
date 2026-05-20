@@ -787,6 +787,28 @@ export const livestockRequests: LivestockRequest[] = [
     preferredRegions: ["Southern NSW", "Central West"],
     transportRequired: "Yes",
   },
+  {
+    id: "request-tash-horses",
+    requesterId: "farmer-tash",
+    stockType: "Horses",
+    breed: "Mixed thoroughbred",
+    headCount: 8,
+    duration: "6+ months",
+    originLocation: mapCoordinates.tash,
+    preferredRegions: ["Hunter NSW", "Southern NSW"],
+    transportRequired: "No",
+  },
+  {
+    id: "request-dale-weaners",
+    requesterId: "farmer-a",
+    stockType: "Cattle",
+    breed: "Hereford weaners",
+    headCount: 220,
+    duration: "9 months",
+    originLocation: mapCoordinates.dale,
+    preferredRegions: ["Central West", "Northern Tablelands NSW"],
+    transportRequired: "Yes",
+  },
 ];
 
 export const agreements: Agreement[] = [

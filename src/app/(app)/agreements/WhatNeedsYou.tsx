@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import {
   getMessages,
   getTransportMessages,
+  livestockRequests,
   type Agreement,
   type Farmer,
   type Message,
@@ -224,6 +225,44 @@ function buildTiles({
     transportJobs,
   });
 
+  if (role === "Livestock Owner") {
+    return [
+      unreadTile,
+      {
+        icon: ListChecks,
+        label: "Sections to confirm",
+        count: openSections,
+        detail:
+          openSections > 0
+            ? "Open the workspace to agree the remaining sections."
+            : "Every section is mutually agreed.",
+        href:
+          myAgreements.length > 0
+            ? `/workspace/${myAgreements[0].id}`
+            : "/agreements",
+        emphasize: openSections > 0,
+      },
+      {
+        icon: DollarSign,
+        label: "Transport quotes to review",
+        count: quotesAwaitingMe,
+        detail:
+          quotesAwaitingMe > 0
+            ? "Driver has proposed a rate - your call to accept or counter."
+            : "No outstanding driver quotes.",
+        href:
+          quotesAwaitingMe > 0
+            ? transportRoomForLivestockOwner(transportJobs, personaId) ??
+              "/agreements"
+            : "/transport/available",
+        emphasize: quotesAwaitingMe > 0,
+      },
+    ];
+  }
+
+  // Landowner: surface open requests from livestock owners alongside the
+  // sections-to-confirm tile so Brett has a proactive offer surface.
+  const openRequestCount = countOpenRequestsForLandowner();
   return [
     unreadTile,
     {
@@ -241,34 +280,23 @@ function buildTiles({
       emphasize: openSections > 0,
     },
     {
-      icon: role === "Livestock Owner" ? DollarSign : CheckCheck,
-      label:
-        role === "Livestock Owner"
-          ? "Transport quotes to review"
-          : "Workspaces in your name",
-      count:
-        role === "Livestock Owner" ? quotesAwaitingMe : myAgreements.length,
+      icon: CheckCheck,
+      label: "Open livestock requests",
+      count: openRequestCount,
       detail:
-        role === "Livestock Owner"
-          ? quotesAwaitingMe > 0
-            ? "Driver has proposed a rate - your call to accept or counter."
-            : "No outstanding driver quotes."
-          : myAgreements.length > 0
-            ? "Open one to confirm sections or post artefacts."
-            : "List a paddock to start matching with livestock owners.",
-      href:
-        role === "Livestock Owner"
-          ? quotesAwaitingMe > 0
-            ? transportRoomForLivestockOwner(transportJobs, personaId) ??
-              "/agreements"
-            : "/transport/available"
-          : myAgreements.length > 0
-            ? `/workspace/${myAgreements[0].id}`
-            : "/listings/new",
-      emphasize:
-        role === "Livestock Owner" ? quotesAwaitingMe > 0 : myAgreements.length > 0,
+        openRequestCount > 0
+          ? "Livestock owners looking for paddocks - offer yours."
+          : "No open requests right now.",
+      href: "/requests",
+      emphasize: openRequestCount > 0,
     },
   ];
+}
+
+function countOpenRequestsForLandowner(): number {
+  // Until we model "responded" state per landowner, treat every seeded
+  // request as a fresh inquiry. Good enough for the prototype.
+  return livestockRequests.length;
 }
 
 function transportRoomForLivestockOwner(
