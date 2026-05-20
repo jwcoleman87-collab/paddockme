@@ -25,24 +25,28 @@ export default async function MapPage({
 
   return (
     <>
-      <PageHeader
-        eyebrow="Operational map"
-        title="PaddockME control tower."
-        description="A real map surface for paddock supply, livestock demand, agreement movement, driver jobs, and regional rain/feed pressure. Live GPS and weather APIs come later; the map architecture is ready for them."
-        action={
-          <div className="flex flex-wrap gap-2">
-            <ButtonLink href={`/map?mode=agreement&agreement=${agreementId}`} variant={mode === "agreement" ? "primary" : "secondary"}>
-              <Route className="h-4 w-4" aria-hidden />
-              Agreement
-            </ButtonLink>
-            <ButtonLink href={`/map?mode=driver&transport=${transportId}&driver=driver-1`} variant={mode === "driver" ? "primary" : "secondary"}>
-              <Truck className="h-4 w-4" aria-hidden />
-              Driver
-            </ButtonLink>
-          </div>
-        }
-      />
-      <PersonaIntroBanner page="map" />
+      {mode === "driver" ? null : (
+        <>
+          <PageHeader
+            eyebrow="Operational map"
+            title="PaddockME control tower."
+            description="A real map surface for paddock supply, livestock demand, agreement movement, driver jobs, and regional rain/feed pressure. Live GPS and weather APIs come later; the map architecture is ready for them."
+            action={
+              <div className="flex flex-wrap gap-2">
+                <ButtonLink href={`/map?mode=agreement&agreement=${agreementId}`} variant={mode === "agreement" ? "primary" : "secondary"}>
+                  <Route className="h-4 w-4" aria-hidden />
+                  Agreement
+                </ButtonLink>
+                <ButtonLink href={`/map?mode=driver&transport=${transportId}&driver=driver-1`} variant="secondary">
+                  <Truck className="h-4 w-4" aria-hidden />
+                  Driver
+                </ButtonLink>
+              </div>
+            }
+          />
+          <PersonaIntroBanner page="map" />
+        </>
+      )}
       <PaddockMap
         mode={mode}
         agreementId={agreementId}

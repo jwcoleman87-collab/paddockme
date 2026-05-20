@@ -253,12 +253,12 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            5,
+            6.5,
             7,
-            8,
+            10,
           ],
-          "line-opacity": 0.16,
-          "line-blur": 1.6,
+          "line-opacity": 0.2,
+          "line-blur": 1.2,
         },
       });
       map.addLayer({
@@ -288,11 +288,11 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            2.6,
+            3.2,
             7,
-            4.2,
+            5.2,
           ],
-          "line-opacity": 0.34,
+          "line-opacity": 0.44,
           "line-blur": 0.35,
         },
       });
@@ -323,9 +323,9 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            1.15,
+            1.55,
             7,
-            2.15,
+            2.75,
           ],
           "line-opacity": [
             "match",
@@ -667,8 +667,8 @@ export function PaddockMap({
 
   return (
     <section className="overflow-hidden rounded-[8px] border border-mist bg-cream shadow-sm shadow-bark/5">
-      <div className="grid min-h-[72dvh] lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="relative min-h-[68dvh]">
+      <div className={cn("grid lg:grid-cols-[minmax(0,1fr)_22rem]", mode === "driver" ? "min-h-[82dvh]" : "min-h-[72dvh]")}>
+        <div className={cn("relative", mode === "driver" ? "min-h-[78dvh]" : "min-h-[68dvh]")}>
           <div
             ref={containerRef}
             className={cn(
@@ -684,7 +684,10 @@ export function PaddockMap({
             onSelect={setSelected}
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
-            <div className="pointer-events-auto max-w-[min(32rem,calc(100vw-2rem))] rounded-[8px] border border-mist bg-warm-white/95 p-3 shadow-lg shadow-bark/10 backdrop-blur">
+            <div className={cn(
+              "pointer-events-auto rounded-[8px] border border-mist bg-warm-white/95 shadow-lg shadow-bark/10 backdrop-blur",
+              mode === "driver" ? "max-w-[min(24rem,calc(100vw-2rem))] p-2.5" : "max-w-[min(32rem,calc(100vw-2rem))] p-3"
+            )}>
               <div className="flex items-start gap-2">
                 <ModeIcon mode={mode} />
                 <div>
@@ -694,7 +697,7 @@ export function PaddockMap({
                   <h2 className="text-base font-bold text-bark sm:text-lg">
                     {context.title}
                   </h2>
-                  <p className="mt-1 text-sm text-stone">{context.description}</p>
+                  <p className={cn("mt-1 text-sm text-stone", mode === "driver" ? "hidden sm:block" : "")}>{context.description}</p>
                 </div>
               </div>
             </div>
@@ -717,9 +720,11 @@ export function PaddockMap({
             ) : null}
           </div>
 
-          <div className="absolute bottom-3 left-3 right-3 z-10 lg:hidden">
-            <MapSheet selected={selected} onClose={() => setSelected(null)} />
-          </div>
+          {mode === "driver" && !selected ? null : (
+            <div className="absolute bottom-3 left-3 right-3 z-10 lg:hidden">
+              <MapSheet selected={selected} onClose={() => setSelected(null)} />
+            </div>
+          )}
         </div>
 
         <aside className="border-t border-mist bg-warm-white p-4 lg:border-l lg:border-t-0">
