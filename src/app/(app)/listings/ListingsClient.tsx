@@ -7,8 +7,13 @@ import { ListingCard } from "@/components/ListingCard";
 import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
+import { scoreListing } from "@/lib/listingMatch";
 import { cn } from "@/lib/utils";
-import type { PaddockListing } from "@/lib/dummyData";
+import {
+  livestockRequests,
+  type LivestockRequest,
+  type PaddockListing,
+} from "@/lib/dummyData";
 import { listPaddockListings } from "@/lib/data/repositories";
 
 type FilterGroupKey =
@@ -88,6 +93,9 @@ export function ListingsClient({
     ...emptyFilters,
     ...initialFilters,
   }));
+  const [activeRequest, setActiveRequest] = useState<
+    LivestockRequest | undefined
+  >();
 
   useEffect(() => {
     void listPaddockListings().then(setAllListings);
@@ -96,10 +104,50 @@ export function ListingsClient({
     return () => window.removeEventListener("paddockme:prototype-change", sync);
   }, []);
 
-  const filtered = useMemo(
-    () => allListings.filter((listing) => matchesFilters(listing, filters)),
-    [allListings, filters]
-  );
+  // Pick up the current persona's open request so the cards can score
+  // themselves against it. Only the livestock owner has a request to match
+  // against; landowners and drivers see the same cards without scores.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function read() {
+      try {
+        const personaId =
+          window.localStorage.getItem("paddockme.agreements.persona") ??
+          window.localStorage.getItem("paddockme.profile.persona");
+        if (!personaId) {
+          setActiveRequest(undefined);
+          return;
+        }
+        const request = livestockRequests.find(
+          (r) => r.requesterId === personaId
+        );
+        setActiveRequest(request);
+      } catch {
+        setActiveRequest(undefined);
+      }
+    }
+    read();
+    window.addEventListener("paddockme:persona-change", read);
+    return () =>
+      window.removeEventListener("paddockme:persona-change", read);
+  }, []);
+
+  type Row = {
+    listing: PaddockListing;
+    match?: ReturnType<typeof scoreListing>;
+  };
+  const filtered = useMemo<Row[]>(() => {
+    const matched = allListings.filter((listing) =>
+      matchesFilters(listing, filters)
+    );
+    if (!activeRequest) return matched.map((listing) => ({ listing }));
+    return matched
+      .map((listing) => ({
+        listing,
+        match: scoreListing(listing, activeRequest),
+      }))
+      .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
+  }, [allListings, filters, activeRequest]);
 
   const activeFilterCount =
     filters.regions.length +
@@ -202,10 +250,12 @@ export function ListingsClient({
 
       {filtered.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((listing) => (
+          {filtered.map(({ listing, match }) => (
             <ListingCard
               key={listing.id}
               listing={listing}
+              matchScore={match?.score}
+              matchReasons={match?.reasons}
               mapImageSrc={getListingMapImageSrc(listing.id)}
             />
           ))}
