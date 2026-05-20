@@ -59,7 +59,7 @@ type MapFeatureProperties = {
   display?: "point" | "hotspot" | "route-endpoint";
   count?: number;
   items?: MapFeatureItem[];
-  routeState?: "available" | "accepted" | "capacity";
+  routeState?: "available" | "negotiation" | "accepted" | "capacity";
 };
 
 type Feature = {
@@ -223,9 +223,11 @@ export function PaddockMap({
           "line-color": [
             "match",
             ["get", "routeState"],
-            "accepted",
-            "#5b8c5a",
             "available",
+            "#8fcf9a",
+            "negotiation",
+            "#e88f3f",
+            "accepted",
             "#e88f3f",
             "capacity",
             "#d4a853",
@@ -256,9 +258,11 @@ export function PaddockMap({
           "line-color": [
             "match",
             ["get", "routeState"],
-            "accepted",
-            "#b7d8af",
             "available",
+            "#d7f0d6",
+            "negotiation",
+            "#f7c27d",
+            "accepted",
             "#f7c27d",
             "capacity",
             "#f3ddb0",
@@ -289,9 +293,11 @@ export function PaddockMap({
           "line-color": [
             "match",
             ["get", "routeState"],
-            "accepted",
-            "#2f6b3a",
             "available",
+            "#4e9f5b",
+            "negotiation",
+            "#d86f24",
+            "accepted",
             "#d86f24",
             "capacity",
             "#a97924",
@@ -1353,9 +1359,9 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
   const driverBoardItems: DriverBoardItem[] = [
     ...jobs.map((job) => ({
       id: `job-${job.id}`,
-      label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} accepted job`,
+      label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} negotiation route`,
       detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${job.preferredDate}`,
-      status: job.status.replace("_", " "),
+      status: routeStateForTransportJob(job) === "negotiation" ? "negotiation" : job.status.replace("_", " "),
       href: `/transport/${job.id}`,
       featureId: `route-${job.id}`,
     })),
@@ -1490,6 +1496,12 @@ function driverJobRouteFeature(job: TransportJob): LineFeature | null {
   );
   if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
   return route;
+}
+
+function routeStateForTransportJob(job: TransportJob): NonNullable<MapFeatureProperties["routeState"]> {
+  if (job.status === "available") return "available";
+  if (job.agreementContext.agreementStatus === "Negotiating") return "negotiation";
+  return "accepted";
 }
 
 function driverRequestRouteFeature(request: LivestockRequest): LineFeature | null {
