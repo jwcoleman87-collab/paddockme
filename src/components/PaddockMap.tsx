@@ -88,6 +88,11 @@ type DriverBoardItem = {
   featureId: string;
 };
 
+type DriverBoardState = {
+  label: string;
+  bounds: [[number, number], [number, number]];
+};
+
 type PaddockMapProps = {
   mode?: PaddockMapMode;
   agreementId?: string;
@@ -106,6 +111,16 @@ const australiaBounds: [[number, number], [number, number]] = [
 const australiaCentre: [number, number] = [134.5, -25.5];
 const australiaZoom = 3.62;
 const transportRouteZoomThreshold = 6;
+const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]]> = {
+  NSW: [
+    [140.6, -37.8],
+    [153.9, -28],
+  ],
+  QLD: [
+    [137.6, -29.6],
+    [153.9, -9.8],
+  ],
+};
 
 export function PaddockMap({
   mode = "regional",
@@ -238,12 +253,12 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            13,
+            5,
             7,
-            22,
+            8,
           ],
-          "line-opacity": 0.18,
-          "line-blur": 2.8,
+          "line-opacity": 0.16,
+          "line-blur": 1.6,
         },
       });
       map.addLayer({
@@ -273,12 +288,12 @@ export function PaddockMap({
             ["linear"],
             ["zoom"],
             3,
-            6,
+            2.6,
             7,
-            10,
+            4.2,
           ],
-          "line-opacity": 0.42,
-          "line-blur": 0.6,
+          "line-opacity": 0.34,
+          "line-blur": 0.35,
         },
       });
       map.addLayer({
@@ -304,11 +319,13 @@ export function PaddockMap({
             "#2c5030",
           ],
           "line-width": [
-            "match",
-            ["get", "kind"],
-            "transport",
-            2.8,
-            4,
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            1.15,
+            7,
+            2.15,
           ],
           "line-opacity": [
             "match",
@@ -638,6 +655,16 @@ export function PaddockMap({
     }
   }
 
+  function focusMapState(bounds: [[number, number], [number, number]]) {
+    const map = mapRef.current;
+    if (!map) return;
+    map.fitBounds(bounds, {
+      padding: { top: 86, right: 56, bottom: 170, left: 56 },
+      maxZoom: 6,
+      duration: 650,
+    });
+  }
+
   return (
     <section className="overflow-hidden rounded-[8px] border border-mist bg-cream shadow-sm shadow-bark/5">
       <div className="grid min-h-[72dvh] lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -699,7 +726,11 @@ export function PaddockMap({
           <div className="space-y-4">
             <LayerControls layers={layers} onChange={setLayers} />
             {context.driverBoard ? (
-              <DriverRouteBoard board={context.driverBoard} onFocus={focusMapFeature} />
+              <DriverRouteBoard
+                board={context.driverBoard}
+                onFocus={focusMapFeature}
+                onFocusState={focusMapState}
+              />
             ) : null}
             <ContextPanel context={context} />
             <div className="hidden lg:block">
@@ -814,9 +845,11 @@ function ContextPanel({ context }: { context: MapContext }) {
 function DriverRouteBoard({
   board,
   onFocus,
+  onFocusState,
 }: {
   board: NonNullable<MapContext["driverBoard"]>;
   onFocus: (featureId: string) => void;
+  onFocusState: (bounds: [[number, number], [number, number]]) => void;
 }) {
   return (
     <div className="rounded-[8px] border border-mist bg-cream p-4">
@@ -828,6 +861,18 @@ function DriverRouteBoard({
           <p className="mt-1 text-sm text-stone">{board.helper}</p>
         </div>
         <Truck className="mt-0.5 h-5 w-5 text-sage-deep" aria-hidden />
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        {board.states.map((state) => (
+          <button
+            key={state.label}
+            type="button"
+            onClick={() => onFocusState(state.bounds)}
+            className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            {state.label}
+          </button>
+        ))}
       </div>
       <div className="space-y-2">
         {board.items.map((item) => (
@@ -1013,24 +1058,24 @@ function OperationalMapLayer({
               <path
                 d={path}
                 fill="none"
-                stroke={route.properties.kind === "transport" ? "#f2a35a" : colourForKind(route.properties.kind)}
-                strokeWidth={route.properties.kind === "transport" ? "4.2" : "2.5"}
+                stroke={route.properties.kind === "transport" ? routeColourForState(route.properties.routeState, "shadow") : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "2.4" : "2.5"}
                 strokeLinecap="round"
-                opacity={route.properties.kind === "transport" ? "0.2" : "0.18"}
+                opacity={route.properties.kind === "transport" ? "0.16" : "0.18"}
               />
               <path
                 d={path}
                 fill="none"
-                stroke={route.properties.kind === "transport" ? "#f7c27d" : colourForKind(route.properties.kind)}
-                strokeWidth={route.properties.kind === "transport" ? "2.15" : "1.6"}
+                stroke={route.properties.kind === "transport" ? routeColourForState(route.properties.routeState, "vein") : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "1.3" : "1.6"}
                 strokeLinecap="round"
-                opacity={route.properties.kind === "transport" ? "0.45" : "0.35"}
+                opacity={route.properties.kind === "transport" ? "0.34" : "0.35"}
               />
               <path
                 d={path}
                 fill="none"
-                stroke={route.properties.kind === "transport" ? "#d86f24" : colourForKind(route.properties.kind)}
-                strokeWidth={route.properties.kind === "transport" ? "0.95" : "1.1"}
+                stroke={route.properties.kind === "transport" ? routeColourForState(route.properties.routeState, "core") : colourForKind(route.properties.kind)}
+                strokeWidth={route.properties.kind === "transport" ? "0.62" : "1.1"}
                 strokeLinecap="round"
                 opacity={route.properties.kind === "transport" ? "0.96" : "0.88"}
               />
@@ -1139,6 +1184,7 @@ type MapContext = {
   driverBoard?: {
     title: string;
     helper: string;
+    states: DriverBoardState[];
     items: DriverBoardItem[];
   };
   metrics: { label: string; value: string }[];
@@ -1172,6 +1218,19 @@ function colourForKind(kind: LayerKey) {
     weather: "#9b7adf",
   };
   return colours[kind];
+}
+
+function routeColourForState(
+  state: MapFeatureProperties["routeState"],
+  layer: "shadow" | "vein" | "core"
+) {
+  const colours = {
+    available: { shadow: "#8fcf9a", vein: "#d7f0d6", core: "#4e9f5b" },
+    negotiation: { shadow: "#e88f3f", vein: "#f7c27d", core: "#d86f24" },
+    accepted: { shadow: "#e88f3f", vein: "#f7c27d", core: "#d86f24" },
+    capacity: { shadow: "#d4a853", vein: "#f3ddb0", core: "#a97924" },
+  } satisfies Record<NonNullable<MapFeatureProperties["routeState"]>, Record<"shadow" | "vein" | "core", string>>;
+  return colours[state ?? "accepted"][layer];
 }
 
 function fieldRadiusForKind(kind: LayerKey) {
@@ -1360,7 +1419,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...jobs.map((job) => ({
       id: `job-${job.id}`,
       label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} negotiation route`,
-      detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${job.preferredDate}`,
+      detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${routeDistanceLabel(driverJobRouteFeature(job))} - ${monthFromText(job.preferredDate)}`,
       status: routeStateForTransportJob(job) === "negotiation" ? "negotiation" : job.status.replace("_", " "),
       href: `/transport/${job.id}`,
       featureId: `route-${job.id}`,
@@ -1368,7 +1427,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...availableRequests.map((request) => ({
       id: `request-route-${request.id}`,
       label: `${request.headCount} ${request.stockType.toLowerCase()} available route`,
-      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${request.duration}`,
+      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${routeDistanceLabel(driverRequestRouteFeature(request))} - ${monthFromText("")}`,
       status: "available",
       href: "/transport/jobs",
       featureId: `driver-request-route-${request.id}`,
@@ -1376,7 +1435,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...driverCapacities.map((capacity) => ({
       id: `capacity-${capacity.id}`,
       label: `${capacity.headCapacity} head backload lane`,
-      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${capacity.earliestDate} to ${capacity.latestDate}`,
+      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${routeDistanceLabel(driverCapacityRouteFeature(capacity))} - ${monthFromText(`${capacity.earliestDate} ${capacity.latestDate}`)}`,
       status: "capacity",
       href: "/transport/available",
       featureId: `driver-capacity-route-${capacity.id}`,
@@ -1389,10 +1448,14 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       "Available work, accepted runs, route corridors, dates, and backload lanes without exposing private agistment terms.",
     points,
     routes,
-    bounds: boundsForPointsAndLines(points, routes),
+    bounds: stateViewBounds.NSW,
     driverBoard: {
       title: "Wayne's route board",
-      helper: "Tap a run to centre the map on the route, then open the transport room when it fits the day.",
+      helper: "Start state-by-state. NSW is the default; switch to QLD for northern work, then focus a route.",
+      states: [
+        { label: "NSW routes", bounds: stateViewBounds.NSW },
+        { label: "QLD routes", bounds: stateViewBounds.QLD },
+      ],
       items: driverBoardItems,
     },
     metrics: [
@@ -1479,7 +1542,10 @@ function transportJobRouteFeature(job: TransportJob): LineFeature | null {
     job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
     job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
   );
-  if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
+  if (route) {
+    route.properties.routeState = routeStateForTransportJob(job);
+    route.properties.metric = routeMetric(job.status.replace("_", " "), job.preferredDate, route);
+  }
   return route;
 }
 
@@ -1494,7 +1560,10 @@ function driverJobRouteFeature(job: TransportJob): LineFeature | null {
     job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
     job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
   );
-  if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
+  if (route) {
+    route.properties.routeState = routeStateForTransportJob(job);
+    route.properties.metric = routeMetric(job.livestockCount, job.preferredDate, route);
+  }
   return route;
 }
 
@@ -1520,6 +1589,7 @@ function driverRequestRouteFeature(request: LivestockRequest): LineFeature | nul
   );
   if (route) {
     route.properties.routeState = "available";
+    route.properties.metric = routeMetric(request.duration, "", route);
     route.properties.privacy = "Available transport lead. Wayne sees pickup, destination region, stock, and timing only.";
   }
   return route;
@@ -1536,7 +1606,10 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
     coordinateForRegion(capacity.originRegion),
     coordinateForRegion(capacity.destinationRegion)
   );
-  if (route) route.properties.routeState = "capacity";
+  if (route) {
+    route.properties.routeState = "capacity";
+    route.properties.metric = routeMetric(`${capacity.headCapacity} head capacity`, `${capacity.earliestDate} ${capacity.latestDate}`, route);
+  }
   return route;
 }
 
@@ -1551,7 +1624,10 @@ function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | 
     coordinateForRegion(capacity.originRegion),
     coordinateForRegion(capacity.destinationRegion)
   );
-  if (route) route.properties.routeState = "capacity";
+  if (route) {
+    route.properties.routeState = "capacity";
+    route.properties.metric = routeMetric(`${capacity.headCapacity} head backload lane`, `${capacity.earliestDate} ${capacity.latestDate}`, route);
+  }
   return route;
 }
 
@@ -1698,14 +1774,12 @@ function lineFromCoordinates(
   to?: Coordinate
 ): LineFeature | null {
   if (!from || !to) return null;
+  const coordinates = roadCoordinatesForRoute(from, to);
   return {
     type: "Feature",
     geometry: {
       type: "LineString",
-      coordinates: [
-        [from.longitude, from.latitude],
-        [to.longitude, to.latitude],
-      ],
+      coordinates,
     },
     properties: {
       id,
@@ -1718,6 +1792,95 @@ function lineFromCoordinates(
       routeState: kind === "transport" ? "accepted" : undefined,
     },
   };
+}
+
+function roadCoordinatesForRoute(from: Coordinate, to: Coordinate): [number, number][] {
+  const waypointLookup: Record<string, Coordinate[]> = {
+    "Central West NSW>Southern NSW": [
+      roadPoint(148.3, -34.3, "Young"),
+      roadPoint(147.37, -35.12, "Wagga Wagga"),
+    ],
+    "Southern NSW>Central West NSW": [
+      roadPoint(147.37, -35.12, "Wagga Wagga"),
+      roadPoint(148.3, -34.3, "Young"),
+    ],
+    "Riverina NSW>Darling Downs QLD": [
+      roadPoint(148.61, -32.25, "Dubbo"),
+      roadPoint(149.84, -29.47, "Moree"),
+      roadPoint(150.31, -28.55, "Goondiwindi"),
+    ],
+    "Darling Downs QLD>Riverina NSW": [
+      roadPoint(150.31, -28.55, "Goondiwindi"),
+      roadPoint(149.84, -29.47, "Moree"),
+      roadPoint(148.61, -32.25, "Dubbo"),
+    ],
+    "Northern Tablelands NSW>Hunter NSW": [
+      roadPoint(150.93, -31.09, "Tamworth"),
+      roadPoint(150.89, -32.57, "Singleton"),
+    ],
+    "Hunter NSW>Northern Tablelands NSW": [
+      roadPoint(150.89, -32.57, "Singleton"),
+      roadPoint(150.93, -31.09, "Tamworth"),
+    ],
+    "Darling Downs QLD>Northern Tablelands NSW": [
+      roadPoint(151.21, -27.56, "Toowoomba"),
+      roadPoint(151.95, -28.22, "Warwick"),
+      roadPoint(151.92, -29.73, "Glen Innes"),
+    ],
+    "Darling Downs QLD>Maranoa QLD": [
+      roadPoint(150.31, -28.55, "Goondiwindi"),
+      roadPoint(149.07, -27.18, "Surat"),
+    ],
+  };
+  const key = `${from.region ?? ""}>${to.region ?? ""}`;
+  const waypoints = waypointLookup[key] ?? [
+    roadPoint((from.longitude + to.longitude) / 2, from.latitude, "Route bend"),
+    roadPoint((from.longitude + to.longitude) / 2, to.latitude, "Route bend"),
+  ];
+  return [from, ...waypoints, to].map((point) => [point.longitude, point.latitude]);
+}
+
+function roadPoint(longitude: number, latitude: number, label: string): Coordinate {
+  return { longitude, latitude, label };
+}
+
+function routeMetric(label: string, dateText: string, route: LineFeature) {
+  return `${label} - ${routeDistanceLabel(route)} - ${monthFromText(dateText)}`;
+}
+
+function routeDistanceLabel(route: LineFeature | null) {
+  if (!route) return "distance pending";
+  return `${routeDistanceKm(route.geometry.coordinates)} km`;
+}
+
+function routeDistanceKm(coordinates: [number, number][]) {
+  const total = coordinates.slice(1).reduce((sum, coordinate, index) => {
+    return sum + haversineKm(coordinates[index], coordinate);
+  }, 0);
+  return Math.max(1, Math.round(total * 1.08));
+}
+
+function haversineKm([fromLng, fromLat]: [number, number], [toLng, toLat]: [number, number]) {
+  const radiusKm = 6371;
+  const dLat = degreesToRadians(toLat - fromLat);
+  const dLng = degreesToRadians(toLng - fromLng);
+  const lat1 = degreesToRadians(fromLat);
+  const lat2 = degreesToRadians(toLat);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * radiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function degreesToRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function monthFromText(value: string) {
+  const match = value.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b/i);
+  if (!match) return "May";
+  const [month] = match;
+  return month.slice(0, 3).replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function routeCollection(lines: (LineFeature | null)[]): FeatureCollection<LineFeature> {
