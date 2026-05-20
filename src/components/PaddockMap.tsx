@@ -1331,17 +1331,22 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       job.status === "available" ||
       job.driverId === input.driverId
   );
+  const availableRequests = input.requests.filter(
+    (request) => request.transportRequired !== "No"
+  );
   const driverCapacities = input.capacities.filter(
     (capacity) => capacity.status === "published" && capacity.driverId === input.driverId
   );
   const points = [
     driver ? profileFeature(driver) : null,
     ...jobs.map((job) => transportFeature(job, job.status === "available" ? "Available job" : "Accepted job")),
+    ...availableRequests.map((request) => requestFeature(request, "Available transport lead")),
     ...transportHotspotFeatures(jobs, driverCapacities, undefined, "Driver route hotspot"),
   ].filter(Boolean) as Feature[];
   const routes = routeCollection(
     [
       ...jobs.map((job) => driverJobRouteFeature(job)),
+      ...availableRequests.map((request) => driverRequestRouteFeature(request)),
       ...driverCapacities.map((capacity) => driverCapacityRouteFeature(capacity)),
     ]
   );
@@ -1353,6 +1358,14 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       status: job.status.replace("_", " "),
       href: `/transport/${job.id}`,
       featureId: `route-${job.id}`,
+    })),
+    ...availableRequests.map((request) => ({
+      id: `request-route-${request.id}`,
+      label: `${request.headCount} ${request.stockType.toLowerCase()} available route`,
+      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${request.duration}`,
+      status: "available",
+      href: "/transport/jobs",
+      featureId: `driver-request-route-${request.id}`,
     })),
     ...driverCapacities.map((capacity) => ({
       id: `capacity-${capacity.id}`,
@@ -1377,7 +1390,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       items: driverBoardItems,
     },
     metrics: [
-      { label: "Available jobs", value: String(jobs.filter((job) => job.status === "available").length) },
+      { label: "Available routes", value: String(jobs.filter((job) => job.status === "available").length + availableRequests.length) },
       { label: "Accepted jobs", value: String(jobs.filter((job) => job.status !== "available").length) },
       { label: "Backload lanes", value: String(driverCapacities.length) },
       { label: "Driver privacy", value: "No agistment rate layer" },
@@ -1476,6 +1489,27 @@ function driverJobRouteFeature(job: TransportJob): LineFeature | null {
     job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
   );
   if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
+  return route;
+}
+
+function driverRequestRouteFeature(request: LivestockRequest): LineFeature | null {
+  const destinationRegion =
+    request.preferredRegions.find((candidate) => !sameRegion(candidate, request.originLocation?.region ?? "")) ??
+    request.preferredRegions[0];
+  const route = lineFromCoordinates(
+    `driver-request-route-${request.id}`,
+    `${request.headCount} ${request.stockType.toLowerCase()} available route`,
+    "transport",
+    `${request.duration}, transport ${request.transportRequired.toLowerCase()}`,
+    `${request.originLocation?.label ?? "Livestock pickup"} to ${destinationRegion ?? "preferred paddock region"}`,
+    "/transport/jobs",
+    request.originLocation ?? coordinateForRegion(request.preferredRegions[0]) ?? mapCoordinates.dale,
+    coordinateForRegion(destinationRegion) ?? mapCoordinates.gundagai
+  );
+  if (route) {
+    route.properties.routeState = "available";
+    route.properties.privacy = "Available transport lead. Wayne sees pickup, destination region, stock, and timing only.";
+  }
   return route;
 }
 
