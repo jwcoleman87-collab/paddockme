@@ -5,9 +5,9 @@ export default function TransportJobsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Available transport jobs"
-        title="Jobs Wayne can accept."
-        description="Transport requests created from agreement workspaces appear here until a driver accepts them."
+        eyebrow="Transport jobs map"
+        title="Wayne's operational jobs board."
+        description="Browse available, accepted, in-transit, and completed stock transport work with routes, status, distance, timing, and totals."
       />
       <TransportJobsClient mode="jobs" />
     </>
