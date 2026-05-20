@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Filter, MapPin, Truck, X } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Button, ButtonLink } from "@/components/Button";
@@ -9,8 +10,13 @@ import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
+import { offerPaddockForRequest } from "@/lib/data/repositories";
 import { cn } from "@/lib/utils";
-import type { Farmer, LivestockRequest } from "@/lib/dummyData";
+import type {
+  Farmer,
+  LivestockRequest,
+  PaddockListing,
+} from "@/lib/dummyData";
 
 type Filters = {
   stockTypes: string[];
@@ -23,6 +29,9 @@ const empty: Filters = { stockTypes: [], regions: [], transport: [] };
 type Props = {
   requests: LivestockRequest[];
   requestersById: Record<string, Farmer>;
+  /** All published paddock listings; the client filters to the active
+   * persona's so the "Offer a paddock" picker lists only what they own. */
+  paddockListings: PaddockListing[];
 };
 
 /**
@@ -33,9 +42,47 @@ type Props = {
  * the marketplace symmetry so landowners can proactively offer paddocks
  * against open requests rather than waiting to be found.
  */
-export function RequestsClient({ requests, requestersById }: Props) {
+export function RequestsClient({
+  requests,
+  requestersById,
+  paddockListings,
+}: Props) {
+  const router = useRouter();
   const flash = useFlash();
   const [filters, setFilters] = useState<Filters>(empty);
+  const [activePersonaId, setActivePersonaId] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function read() {
+      try {
+        return (
+          window.localStorage.getItem("paddockme.agreements.persona") ??
+          window.localStorage.getItem("paddockme.profile.persona") ??
+          undefined
+        );
+      } catch {
+        return undefined;
+      }
+    }
+    setActivePersonaId(read());
+    function onChange() {
+      setActivePersonaId(read());
+    }
+    window.addEventListener("paddockme:persona-change", onChange);
+    return () =>
+      window.removeEventListener("paddockme:persona-change", onChange);
+  }, []);
+
+  const myPaddocks = useMemo(
+    () =>
+      activePersonaId
+        ? paddockListings.filter(
+            (listing) => listing.ownerId === activePersonaId
+          )
+        : [],
+    [paddockListings, activePersonaId]
+  );
 
   const stockOptions = useMemo(
     () => uniqueSorted(requests.map((r) => r.stockType)),
@@ -87,14 +134,16 @@ export function RequestsClient({ requests, requestersById }: Props) {
     setFilters(empty);
   }
 
-  function offerPaddock(request: LivestockRequest) {
+  async function offerPaddock(request: LivestockRequest, listingId: string) {
+    const { agreement } = await offerPaddockForRequest(request.id, listingId);
     const requester = requestersById[request.requesterId];
     flash(
-      `Inquiry sent to ${
+      `Workspace opened with ${
         requester?.name.split(" ")[0] ?? "the livestock owner"
-      }. Open the workspace once they reply.`,
+      }. Confirm the open sections to lock the deal in.`,
       "success"
     );
+    router.push(`/workspace/${agreement.id}`);
   }
 
   return (
@@ -156,7 +205,8 @@ export function RequestsClient({ requests, requestersById }: Props) {
               key={request.id}
               request={request}
               requester={requestersById[request.requesterId]}
-              onOffer={() => offerPaddock(request)}
+              myPaddocks={myPaddocks}
+              onOffer={(listingId) => offerPaddock(request, listingId)}
             />
           ))}
         </div>
@@ -221,12 +271,15 @@ function FilterRow({
 function RequestCard({
   request,
   requester,
+  myPaddocks,
   onOffer,
 }: {
   request: LivestockRequest;
   requester?: Farmer;
-  onOffer: () => void;
+  myPaddocks: PaddockListing[];
+  onOffer: (listingId: string) => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <Card className="flex h-full flex-col gap-3">
       <div className="flex items-start gap-3">
@@ -286,10 +339,61 @@ function RequestCard({
         </p>
       )}
 
+      {pickerOpen && myPaddocks.length > 0 && (
+        <div
+          aria-label="Pick a paddock to offer"
+          className="rounded-xl border border-sage-deep/15 bg-cream/55 p-3"
+        >
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-bark/65">
+            Pick a paddock to offer
+          </p>
+          <ul className="space-y-1.5">
+            {myPaddocks.map((paddock) => (
+              <li key={paddock.id}>
+                <button
+                  type="button"
+                  onClick={() => onOffer(paddock.id)}
+                  className="flex w-full min-h-10 cursor-pointer items-center justify-between gap-3 rounded-lg border border-mist bg-warm-white px-3 text-left text-sm transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-bold text-sage-deep">
+                      {paddock.title}
+                    </span>
+                    <span className="block truncate text-xs text-bark/65">
+                      {paddock.location}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs font-bold text-sage-deep">
+                    Offer →
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(false)}
+            className="mt-2 cursor-pointer text-xs font-bold text-bark/65 underline-offset-2 hover:text-sage-deep hover:underline"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div className="mt-auto flex flex-wrap gap-2">
-        <Button type="button" onClick={onOffer} className="min-h-10">
-          Offer a paddock
-        </Button>
+        {myPaddocks.length > 0 ? (
+          <Button
+            type="button"
+            onClick={() => setPickerOpen((open) => !open)}
+            className="min-h-10"
+          >
+            {pickerOpen ? "Hide paddocks" : "Offer a paddock"}
+          </Button>
+        ) : (
+          <ButtonLink href="/listings/new" className="min-h-10">
+            List a paddock to offer
+          </ButtonLink>
+        )}
         <ButtonLink href="/listings/new" variant="secondary" className="min-h-10">
           List a new paddock
         </ButtonLink>

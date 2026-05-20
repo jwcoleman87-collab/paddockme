@@ -25,6 +25,7 @@ import {
   createPaddockListing,
   loadPrototypeState,
   openAgreementForListing,
+  openAgreementForRequest,
   requestTransportForAgreement,
   setPrototypePersona,
   updateTransportStatus,
@@ -239,6 +240,18 @@ export async function openAgreementWorkspace(listingId: string) {
     if (created) return { state: loadPrototypeState(), agreement: created };
   }
   return openAgreementForListing(listingId);
+}
+
+/**
+ * Landowner offers one of their paddocks against an open livestock request.
+ * Local-only for the prototype; Supabase wiring lands when we add a row
+ * shape that captures the request<->listing pairing on the server.
+ */
+export async function offerPaddockForRequest(
+  requestId: string,
+  listingId: string
+) {
+  return openAgreementForRequest(requestId, listingId);
 }
 
 export async function listAgreementSections(agreementId: string) {

@@ -238,6 +238,42 @@ export function openAgreementForListing(listingId: string): {
   return { state, agreement };
 }
 
+/**
+ * Landowner-initiated agreement: Brett picks one of his paddocks to offer
+ * against a livestock owner's open request. Mirrors openAgreementForListing
+ * but starts from the request side.
+ */
+export function openAgreementForRequest(
+  requestId: string,
+  listingId: string
+): { state: PrototypeState; agreement: Agreement } {
+  let state = loadPrototypeState();
+  const existing = state.agreements.find(
+    (agreement) =>
+      agreement.requestId === requestId && agreement.listingId === listingId
+  );
+  if (existing) return { state, agreement: existing };
+  const listing =
+    state.paddockListings.find((item) => item.id === listingId) ??
+    state.paddockListings[0];
+  const request =
+    state.livestockRequests.find((item) => item.id === requestId) ??
+    state.livestockRequests[0];
+  const agreement = createAgreement(listing, request);
+  state = {
+    ...state,
+    agreements: [agreement, ...state.agreements],
+  };
+  state = addTimeline(
+    state,
+    "Paddock offered against open request",
+    `${listing.title} offered for ${request.headCount} ${request.breed} ${request.stockType}.`,
+    `/workspace/${agreement.id}`
+  );
+  savePrototypeState(state);
+  return { state, agreement };
+}
+
 export function requestTransportForAgreement(agreementId: string): {
   state: PrototypeState;
   job: TransportJob;
@@ -313,7 +349,7 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
     id,
     listingId: listing.id,
     requestId: request.id,
-    farmerAId: "farmer-a",
+    farmerAId: request.requesterId,
     farmerBId: listing.ownerId,
     status: "Draft",
     livestock: `${request.headCount} ${request.breed} ${request.stockType}`,

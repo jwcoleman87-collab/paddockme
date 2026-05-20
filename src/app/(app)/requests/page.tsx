@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import {
   farmers,
   livestockRequests,
+  paddockListings,
   type Farmer,
 } from "@/lib/dummyData";
 import { RequestsClient } from "./RequestsClient";
@@ -26,6 +27,7 @@ export default function RequestsPage() {
       <RequestsClient
         requests={livestockRequests}
         requestersById={requestersById}
+        paddockListings={paddockListings}
       />
     </>
   );
