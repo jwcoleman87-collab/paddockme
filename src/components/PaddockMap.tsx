@@ -59,6 +59,7 @@ type MapFeatureProperties = {
   display?: "point" | "hotspot" | "route-endpoint";
   count?: number;
   items?: MapFeatureItem[];
+  routeState?: "available" | "accepted" | "capacity";
 };
 
 type Feature = {
@@ -76,6 +77,15 @@ type LineFeature = {
 type FeatureCollection<TFeature extends Feature | LineFeature> = {
   type: "FeatureCollection";
   features: TFeature[];
+};
+
+type DriverBoardItem = {
+  id: string;
+  label: string;
+  detail: string;
+  status: string;
+  href: string;
+  featureId: string;
 };
 
 type PaddockMapProps = {
@@ -212,9 +222,13 @@ export function PaddockMap({
         paint: {
           "line-color": [
             "match",
-            ["get", "kind"],
-            "transport",
-            "#f2a35a",
+            ["get", "routeState"],
+            "accepted",
+            "#5b8c5a",
+            "available",
+            "#e88f3f",
+            "capacity",
+            "#d4a853",
             "#5b8c5a",
           ],
           "line-width": [
@@ -241,9 +255,13 @@ export function PaddockMap({
         paint: {
           "line-color": [
             "match",
-            ["get", "kind"],
-            "transport",
+            ["get", "routeState"],
+            "accepted",
+            "#b7d8af",
+            "available",
             "#f7c27d",
+            "capacity",
+            "#f3ddb0",
             "#d0e8cf",
           ],
           "line-width": [
@@ -270,9 +288,13 @@ export function PaddockMap({
         paint: {
           "line-color": [
             "match",
-            ["get", "kind"],
-            "transport",
+            ["get", "routeState"],
+            "accepted",
+            "#2f6b3a",
+            "available",
             "#d86f24",
+            "capacity",
+            "#a97924",
             "#2c5030",
           ],
           "line-width": [
@@ -507,7 +529,7 @@ export function PaddockMap({
         if (feature.properties.kind !== "transport") return true;
         const isHotspot = feature.properties.display === "hotspot";
         const shouldSummariseTransport =
-          (mode === "regional" || mode === "driver") && mapZoom < transportRouteZoomThreshold;
+          mode === "regional" && mapZoom < transportRouteZoomThreshold;
         return shouldSummariseTransport ? isHotspot : !isHotspot;
       }),
     } satisfies FeatureCollection<Feature>;
@@ -515,7 +537,7 @@ export function PaddockMap({
 
   const visibleRoutes = useMemo(() => {
     if (!layers.transport) return emptyLineCollection();
-    if ((mode === "regional" || mode === "driver") && mapZoom < transportRouteZoomThreshold) {
+    if (mode === "regional" && mapZoom < transportRouteZoomThreshold) {
       return emptyLineCollection();
     }
     return context.routes;
@@ -582,6 +604,34 @@ export function PaddockMap({
     });
   }
 
+  function focusMapFeature(featureId: string) {
+    const map = mapRef.current;
+    const route = context.routes.features.find((feature) => feature.properties.id === featureId);
+    if (route) {
+      setSelected(route.properties);
+      const bounds = boundsForCoordinates(route.geometry.coordinates);
+      if (bounds && map) {
+        map.fitBounds(bounds, {
+          padding: { top: 86, right: 56, bottom: 170, left: 56 },
+          maxZoom: 8.25,
+          duration: 650,
+        });
+      }
+      return;
+    }
+    const point = context.points.find((feature) => feature.properties.id === featureId);
+    if (point) {
+      setSelected(point.properties);
+      if (map) {
+        map.easeTo({
+          center: point.geometry.coordinates,
+          zoom: Math.max(map.getZoom(), 7),
+          duration: 650,
+        });
+      }
+    }
+  }
+
   return (
     <section className="overflow-hidden rounded-[8px] border border-mist bg-cream shadow-sm shadow-bark/5">
       <div className="grid min-h-[72dvh] lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -642,6 +692,9 @@ export function PaddockMap({
         <aside className="border-t border-mist bg-warm-white p-4 lg:border-l lg:border-t-0">
           <div className="space-y-4">
             <LayerControls layers={layers} onChange={setLayers} />
+            {context.driverBoard ? (
+              <DriverRouteBoard board={context.driverBoard} onFocus={focusMapFeature} />
+            ) : null}
             <ContextPanel context={context} />
             <div className="hidden lg:block">
               <MapSheet selected={selected} onClose={() => setSelected(null)} docked />
@@ -746,6 +799,57 @@ function ContextPanel({ context }: { context: MapContext }) {
             {action.icon}
             {action.label}
           </ButtonLink>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DriverRouteBoard({
+  board,
+  onFocus,
+}: {
+  board: NonNullable<MapContext["driverBoard"]>;
+  onFocus: (featureId: string) => void;
+}) {
+  return (
+    <div className="rounded-[8px] border border-mist bg-cream p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
+            {board.title}
+          </h3>
+          <p className="mt-1 text-sm text-stone">{board.helper}</p>
+        </div>
+        <Truck className="mt-0.5 h-5 w-5 text-sage-deep" aria-hidden />
+      </div>
+      <div className="space-y-2">
+        {board.items.map((item) => (
+          <div key={item.id} className="rounded-[8px] border border-mist bg-warm-white p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-bark">{item.label}</p>
+                <p className="mt-1 text-xs text-stone">{item.detail}</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-sage-mist px-2 py-1 text-[0.68rem] font-bold uppercase text-sage-deep">
+                {item.status}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onFocus(item.featureId)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-sage-deep bg-sage-mist px-3 text-sm font-bold text-sage-deep transition hover:bg-[#dcebd9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
+                <Route className="h-4 w-4" aria-hidden />
+                Focus route
+              </button>
+              <ButtonLink href={item.href} variant="secondary" className="w-full">
+                <Navigation className="h-4 w-4" aria-hidden />
+                Open
+              </ButtonLink>
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -1026,6 +1130,11 @@ type MapContext = {
   points: Feature[];
   routes: FeatureCollection<LineFeature>;
   bounds?: [[number, number], [number, number]];
+  driverBoard?: {
+    title: string;
+    helper: string;
+    items: DriverBoardItem[];
+  };
   metrics: { label: string; value: string }[];
   actions: {
     href: string;
@@ -1222,38 +1331,56 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       job.status === "available" ||
       job.driverId === input.driverId
   );
+  const driverCapacities = input.capacities.filter(
+    (capacity) => capacity.status === "published" && capacity.driverId === input.driverId
+  );
   const points = [
     driver ? profileFeature(driver) : null,
     ...jobs.map((job) => transportFeature(job, job.status === "available" ? "Available job" : "Accepted job")),
-    ...transportHotspotFeatures(jobs, [], undefined, "Driver route hotspot"),
+    ...transportHotspotFeatures(jobs, driverCapacities, undefined, "Driver route hotspot"),
   ].filter(Boolean) as Feature[];
   const routes = routeCollection(
-    jobs.map((job) =>
-      lineFromCoordinates(
-        `route-${job.id}`,
-        job.routeSummary,
-        "transport",
-        `${job.livestockCount}, ${job.preferredDate}`,
-        `${job.pickup} to ${job.destination}`,
-        `/transport/${job.id}`,
-        job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
-        job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
-      )
-    )
+    [
+      ...jobs.map((job) => driverJobRouteFeature(job)),
+      ...driverCapacities.map((capacity) => driverCapacityRouteFeature(capacity)),
+    ]
   );
+  const driverBoardItems: DriverBoardItem[] = [
+    ...jobs.map((job) => ({
+      id: `job-${job.id}`,
+      label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} accepted job`,
+      detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${job.preferredDate}`,
+      status: job.status.replace("_", " "),
+      href: `/transport/${job.id}`,
+      featureId: `route-${job.id}`,
+    })),
+    ...driverCapacities.map((capacity) => ({
+      id: `capacity-${capacity.id}`,
+      label: `${capacity.headCapacity} head backload lane`,
+      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${capacity.earliestDate} to ${capacity.latestDate}`,
+      status: "capacity",
+      href: "/transport/available",
+      featureId: `driver-capacity-route-${capacity.id}`,
+    })),
+  ];
   return {
     eyebrow: "Driver job map",
-    title: `${driver?.name ?? "Driver"} route board`,
+    title: `${driver?.name ?? "Driver"} job radar`,
     description:
-      "Available and accepted jobs, route corridors, dates, and backload context without exposing private agistment terms.",
+      "Available work, accepted runs, route corridors, dates, and backload lanes without exposing private agistment terms.",
     points,
     routes,
     bounds: boundsForPointsAndLines(points, routes),
+    driverBoard: {
+      title: "Wayne's route board",
+      helper: "Tap a run to centre the map on the route, then open the transport room when it fits the day.",
+      items: driverBoardItems,
+    },
     metrics: [
       { label: "Available jobs", value: String(jobs.filter((job) => job.status === "available").length) },
       { label: "Accepted jobs", value: String(jobs.filter((job) => job.status !== "available").length) },
+      { label: "Backload lanes", value: String(driverCapacities.length) },
       { label: "Driver privacy", value: "No agistment rate layer" },
-      { label: "Live GPS", value: "Prepared, not active yet" },
     ],
     actions: [
       {
@@ -1323,7 +1450,7 @@ function transportFeature(job: TransportJob, modeHint?: string): Feature | null 
 }
 
 function transportJobRouteFeature(job: TransportJob): LineFeature | null {
-  return lineFromCoordinates(
+  const route = lineFromCoordinates(
     `transport-job-route-${job.id}`,
     `${job.livestockCount} route`,
     "transport",
@@ -1333,10 +1460,27 @@ function transportJobRouteFeature(job: TransportJob): LineFeature | null {
     job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
     job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
   );
+  if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
+  return route;
+}
+
+function driverJobRouteFeature(job: TransportJob): LineFeature | null {
+  const route = lineFromCoordinates(
+    `route-${job.id}`,
+    job.routeSummary,
+    "transport",
+    `${job.livestockCount}, ${job.preferredDate}`,
+    `${job.pickup} to ${job.destination}`,
+    `/transport/${job.id}`,
+    job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
+    job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai
+  );
+  if (route) route.properties.routeState = job.status === "available" ? "available" : "accepted";
+  return route;
 }
 
 function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature | null {
-  return lineFromCoordinates(
+  const route = lineFromCoordinates(
     `transport-capacity-route-${capacity.id}`,
     `${capacity.originRegion} to ${capacity.destinationRegion}`,
     "transport",
@@ -1346,6 +1490,23 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
     coordinateForRegion(capacity.originRegion),
     coordinateForRegion(capacity.destinationRegion)
   );
+  if (route) route.properties.routeState = "capacity";
+  return route;
+}
+
+function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | null {
+  const route = lineFromCoordinates(
+    `driver-capacity-route-${capacity.id}`,
+    `${capacity.originRegion} to ${capacity.destinationRegion}`,
+    "transport",
+    `${capacity.headCapacity} head backload lane, ${capacity.earliestDate} to ${capacity.latestDate}`,
+    `${capacity.stockTypes.join(", ")} capacity on ${capacity.truckLabel ?? "Wayne's truck"}.`,
+    "/transport/available",
+    coordinateForRegion(capacity.originRegion),
+    coordinateForRegion(capacity.destinationRegion)
+  );
+  if (route) route.properties.routeState = "capacity";
+  return route;
 }
 
 function transportHotspotFeatures(
@@ -1508,6 +1669,7 @@ function lineFromCoordinates(
       metric,
       href,
       privacy: kind === "transport" ? "Transport route detail only. Private agistment pricing is not shown." : undefined,
+      routeState: kind === "transport" ? "accepted" : undefined,
     },
   };
 }
