@@ -13,6 +13,7 @@ import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
 import { createLivestockRequestRecord } from "@/lib/data/repositories";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { TablesInsert } from "@/lib/types/database";
 
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
 const regions = [
@@ -113,7 +114,7 @@ export default function NewRequestPage() {
       // the URL into /matches and will land as a column in a follow-up
       // migration. Skipping it here keeps the insert aligned with
       // database.ts as it stands.
-      const { error } = await supabase.from("agistment_requests").insert({
+      const payload: TablesInsert<"agistment_requests"> = {
         requester_id: user.id,
         stock_type: stockType,
         breed,
@@ -121,7 +122,8 @@ export default function NewRequestPage() {
         duration,
         preferred_regions: selectedRegions,
         status: "open",
-      });
+      };
+      const { error } = await supabase.from("agistment_requests").insert(payload);
       if (error) {
         // eslint-disable-next-line no-console
         console.warn("agistment_requests insert failed", error.message);
