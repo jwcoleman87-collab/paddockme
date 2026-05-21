@@ -11,9 +11,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
 import { createLivestockRequestRecord } from "@/lib/data/repositories";
-import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { TablesInsert } from "@/lib/types/database";
 
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
 const regions = [
@@ -90,52 +87,6 @@ export default function NewRequestPage() {
     );
   }
 
-  async function persistRequest(): Promise<void> {
-    // Dual-write: if Supabase is configured AND the user is signed in,
-    // also insert into agistment_requests. Failures are swallowed - the
-    // URL-driven flow below works either way.
-    if (!isSupabaseConfigured()) return;
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      // Ensure the profile row exists before the FK insert. With the
-      // handle_new_user trigger applied this is a no-op upsert; without
-      // it this is the row creation.
-      const metaName =
-        (user.user_metadata as { full_name?: string } | null)?.full_name ??
-        null;
-      await supabase
-        .from("profiles")
-        .upsert({ id: user.id, full_name: metaName }, { onConflict: "id" });
-      // transportRequired isn't on the day-one schema yet - it carries via
-      // the URL into /matches and will land as a column in a follow-up
-      // migration. Skipping it here keeps the insert aligned with
-      // database.ts as it stands.
-      const payload: TablesInsert<"agistment_requests"> = {
-        requester_id: user.id,
-        stock_type: stockType,
-        breed,
-        head_count: headCount,
-        duration,
-        preferred_regions: selectedRegions,
-        status: "open",
-      };
-      const { error } = await supabase.from("agistment_requests").insert(payload);
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.warn("agistment_requests insert failed", error.message);
-        return;
-      }
-      flash("Request saved.", "success");
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn("agistment_requests insert threw", error);
-    }
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -149,7 +100,11 @@ export default function NewRequestPage() {
     if (transportRequired) {
       params.set("transport", transportRequired);
     }
-    await createLivestockRequestRecord({
+    // Single Supabase write happens inside createLivestockRequestRecord
+    // when the user is signed in. Returns supabaseError when the insert
+    // was attempted but failed so we can flag it to the user rather than
+    // pretending everything saved.
+    const result = await createLivestockRequestRecord({
       stockType,
       breed,
       headCount,
@@ -157,8 +112,16 @@ export default function NewRequestPage() {
       preferredRegions: selectedRegions,
       transportRequired: transportRequired as "Yes" | "No" | "Unsure",
     });
-    flash("Request created. Matching paddocks now.", "success");
-    await persistRequest();
+    if (result.attemptedSupabase && result.supabaseError) {
+      // eslint-disable-next-line no-console
+      console.warn("agistment_requests insert failed", result.supabaseError);
+      flash(
+        "Request created locally - saving to your account failed. Try again or check your connection.",
+        "warning"
+      );
+    } else {
+      flash("Request created. Matching paddocks now.", "success");
+    }
     router.push(`/matches?${params.toString()}`);
   }
 

@@ -114,12 +114,18 @@ export async function createLivestockRequestRecord(input: {
   preferredRegions: string[];
   transportRequired: LivestockRequest["transportRequired"];
 }) {
+  // Always create the local prototype row so demo state stays consistent and
+  // the page can fall through to /matches even when Supabase isn't available.
   const local = createLivestockRequest(input);
   const supabase = await getAuthedClient();
-  if (!supabase) return local;
+  if (!supabase) {
+    return { ...local, attemptedSupabase: false, supabaseError: null };
+  }
 
   const user = await getCurrentUser(supabase);
-  if (!user) return local;
+  if (!user) {
+    return { ...local, attemptedSupabase: false, supabaseError: null };
+  }
   await ensureProfile(supabase, user);
 
   const { data, error } = await supabase
@@ -137,8 +143,30 @@ export async function createLivestockRequestRecord(input: {
     .select("*")
     .single();
 
-  if (error || !data) return local;
-  return { state: local.state, request: mapRequestRow(data) };
+  if (error) {
+    // Surface the failure to the caller so signed-in users see a warning
+    // rather than silently believing their request was saved. The local
+    // prototype row stays in state so the rest of the demo flow keeps
+    // working.
+    return {
+      ...local,
+      attemptedSupabase: true,
+      supabaseError: error.message,
+    };
+  }
+  if (!data) {
+    return {
+      ...local,
+      attemptedSupabase: true,
+      supabaseError: "Insert returned no row.",
+    };
+  }
+  return {
+    state: local.state,
+    request: mapRequestRow(data),
+    attemptedSupabase: true,
+    supabaseError: null,
+  };
 }
 
 export async function listPaddockListings(): Promise<PaddockListing[]> {
