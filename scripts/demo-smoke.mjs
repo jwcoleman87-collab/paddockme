@@ -68,7 +68,7 @@ const manualChecks = [
   "Click Open transport room and confirm it opens /transport/transport-glenbarra.",
   "In the transport room, switch to Driver and confirm the quote/backload moment is visible.",
   "Switch to Farmer A and confirm Accept the quote changes the room state.",
-  "Open /requests as Brett and confirm Offer a paddock opens the paddock picker.",
+  "Switch persona to Brett before opening /requests; confirm Offer a paddock opens the paddock picker.",
 ];
 
 let failures = 0;

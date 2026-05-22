@@ -88,6 +88,8 @@ surface that this script touches, update the script.
 ### 6. Switch personas (4:00 - 5:00)
 
 - Back to `/agreements`, switch persona to **Brett**.
+- Wait until the app shell shows **Brett** before opening `/requests`;
+  otherwise the request browser will not know which paddocks he can offer.
 - Same home view, re-framed. "Open livestock requests" tile.
 - Tap -> `/requests`. Brett sees Dale's open request, Tash's horse
   request. Filter chips.

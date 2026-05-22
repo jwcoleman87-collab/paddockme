@@ -34,6 +34,7 @@ Remaining Day 1 checks:
 - Rehearse the full five-minute script once on production.
 - Confirm every named button in `docs/DEMO_SCRIPT.md` still exists after Claude's authenticated-app changes.
 - Capture rough screenshots only after the demo path is stable.
+- For the Brett `/requests` step, confirm the active persona has changed to Brett before testing "Offer a paddock".
 
 Helpful command:
 
