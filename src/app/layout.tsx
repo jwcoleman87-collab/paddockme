@@ -29,13 +29,22 @@ export const metadata: Metadata = {
       "Investor-ready MVP for coordinating agistment agreements and stock transport across regional Australia.",
     url: "https://paddockme-oz51.vercel.app",
     siteName: "PaddockME",
+    images: [
+      {
+        url: "/demo/workspace.png",
+        width: 1248,
+        height: 720,
+        alt: "PaddockME agreement workspace screenshot",
+      },
+    ],
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "PaddockME - Feed, paddocks and trucks in one room",
     description:
       "Australian agistment coordination for livestock owners, landowners and stock transport.",
+    images: ["/demo/workspace.png"],
   },
 };
 
