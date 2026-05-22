@@ -26,6 +26,7 @@ Done:
 - Personas are visible: Dale, Brett, Wayne.
 - Product screenshots from the live demo path are on the landing page.
 - Demo script exists at `docs/DEMO_SCRIPT.md`.
+- Investor talk track exists at `docs/INVESTOR_PITCH_NOTES.md`.
 - Marketing/auth pages pass the 375px, 768px, and 1280px sweep.
 - Production metadata describes the investor MVP cleanly.
 
