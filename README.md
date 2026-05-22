@@ -4,7 +4,9 @@
 
 **PaddockME is an Australian agistment marketplace** — connecting livestock owners who need pasture, landowners with spare paddocks, and transport drivers who move stock between them. Replaces the phone tag, Facebook posts, and saleyard hand-shakes with one workspace per match.
 
-**Next build:** [Foundation Build 02 — Workspace and Agreement Flow Polish](docs/BUILD_02.md).
+**Current sprint:** [Investor MVP Sprint](docs/INVESTOR_MVP_SPRINT.md) - a three-day push toward a tight, pitch-ready demo.
+
+**Live demo:** https://paddockme-oz51.vercel.app
 
 ## Stack
 
@@ -31,6 +33,31 @@ npm run dev
 ```
 
 The app boots at `http://localhost:3000`.
+
+### Useful scripts
+
+```bash
+npm run dev          # Local development server
+npm run build        # Production build check
+npm run demo:smoke   # Production demo route/content smoke test
+npm run db:types     # Regenerate Supabase database types
+```
+
+## Investor demo workflow
+
+Use these docs as the single source of truth for the current pitch path:
+
+- [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) - five-minute narrated product demo
+- [`docs/DEMO_REHEARSAL_LOG.md`](docs/DEMO_REHEARSAL_LOG.md) - latest local/live rehearsal notes
+- [`docs/INVESTOR_MVP_SPRINT.md`](docs/INVESTOR_MVP_SPRINT.md) - Day 1/2/3 readiness tracker
+- [`docs/INVESTOR_PITCH_NOTES.md`](docs/INVESTOR_PITCH_NOTES.md) - founder talk track and close
+
+Before pushing pitch-facing changes:
+
+```bash
+npm run build
+npm run demo:smoke
+```
 
 ### Required environment variables
 
@@ -100,6 +127,12 @@ docs/
   PERSONAS.md              # Dale, Tash, Brett, Lyn, Wayne, Sharon
   DESIGN_INTELLIGENCE.md   # ui-ux-pro-max recommendations + brand deviations
   BUILD_02.md              # Foundation Build 02 — workspace and agreement flow polish
+  DEMO_SCRIPT.md           # Investor demo path
+  DEMO_REHEARSAL_LOG.md    # Latest smoke/rehearsal results
+  INVESTOR_MVP_SPRINT.md   # Three-day MVP tracker
+  INVESTOR_PITCH_NOTES.md  # Pitch talk track
+scripts/
+  demo-smoke.mjs           # Production smoke test for the demo route set
 ```
 
 ## Deployment
