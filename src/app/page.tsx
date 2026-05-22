@@ -23,10 +23,19 @@ const personas = [
   },
 ];
 
-const screenshotSlots = [
-  "Workspace screenshot - captured Tuesday",
-  "Transport room screenshot - captured Tuesday",
-  "Request matching screenshot - captured Tuesday",
+const productScreens = [
+  {
+    label: "Agreement workspace",
+    image: "/demo/workspace.png",
+  },
+  {
+    label: "Transport room",
+    image: "/demo/transport.png",
+  },
+  {
+    label: "Landowner request board",
+    image: "/demo/requests.png",
+  },
 ];
 
 export default function HomePage() {
@@ -143,17 +152,26 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="max-w-xl text-sm leading-relaxed text-bark/70">
-            Final screenshots land once Claude locks the authenticated demo path.
+            Captured from the live demo path: agreement, transport, and supply-side matching.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {screenshotSlots.map((label) => (
+          {productScreens.map((screen) => (
             <div
-              key={label}
-              className="flex aspect-[4/3] min-h-48 items-center justify-center rounded-2xl border border-sage-glow bg-sage-mist p-5 text-center"
+              key={screen.label}
+              className="overflow-hidden rounded-2xl border border-sage-glow bg-sage-mist"
             >
-              <p className="max-w-48 text-sm font-bold leading-relaxed text-sage-deep">
-                {label}
+              <div className="relative aspect-[4/3]">
+                <Image
+                  src={screen.image}
+                  alt={`${screen.label} screenshot`}
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover object-top"
+                />
+              </div>
+              <p className="border-t border-sage-glow bg-cream px-4 py-3 text-sm font-bold text-sage-deep">
+                {screen.label}
               </p>
             </div>
           ))}
