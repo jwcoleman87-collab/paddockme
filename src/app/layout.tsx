@@ -19,9 +19,24 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "PaddockME — Reduce agricultural coordination friction",
+  metadataBase: new URL("https://paddockme-oz51.vercel.app"),
+  title: "PaddockME - Agistment coordination for livestock, land and transport",
   description:
-    "Australian agistment marketplace. Match livestock with feed, paddocks, and transport — without the phone tag.",
+    "Australian agistment marketplace replacing phone tag with one workflow for livestock owners, landowners and stock transport.",
+  openGraph: {
+    title: "PaddockME - Feed, paddocks and trucks in one room",
+    description:
+      "Investor-ready MVP for coordinating agistment agreements and stock transport across regional Australia.",
+    url: "https://paddockme-oz51.vercel.app",
+    siteName: "PaddockME",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "PaddockME - Feed, paddocks and trucks in one room",
+    description:
+      "Australian agistment coordination for livestock owners, landowners and stock transport.",
+  },
 };
 
 export default function RootLayout({

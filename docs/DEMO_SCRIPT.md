@@ -59,7 +59,9 @@ surface that this script touches, update the script.
 - Note: "Brett, as the landowner, doesn't see the transport rate.
   That's enforced at the database with row-level security, not just the
   UI."
-// TODO: Verify the transport-rate privacy claim against the current Supabase policies before saying "enforced at the database" in the pitch.
+  Verification note: migrations `20260516120200_transport_and_messages.sql`
+  and `20260517120000_transport_quotes.sql` enforce this with separate
+  transport-job and quote policies.
 - Tap **Open transport room** -> `/transport/transport-glenbarra`.
 
 ### 4. The three-party transport room (2:30 - 3:30)
