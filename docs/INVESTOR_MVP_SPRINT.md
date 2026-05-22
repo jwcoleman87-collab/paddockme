@@ -29,12 +29,9 @@ Done:
 - Investor talk track exists at `docs/INVESTOR_PITCH_NOTES.md`.
 - Marketing/auth pages pass the 375px, 768px, and 1280px sweep.
 - Production metadata describes the investor MVP cleanly.
-
-Remaining Day 1 checks:
-
-- Rehearse the full five-minute script once on production.
-- Confirm every named button in `docs/DEMO_SCRIPT.md` still exists after Claude's authenticated-app changes.
-- For the Brett `/requests` step, confirm the active persona has changed to Brett before testing "Offer a paddock".
+- The five-minute script has been rehearsed against the current product labels.
+- Named demo controls match the current UI: `Sections to confirm`, `Tap to agree`, `Open transport room`, `Accept rate`, and `Offer a paddock`.
+- Brett's `/requests` step is documented with the required persona switch before testing `Offer a paddock`.
 
 Helpful command:
 
