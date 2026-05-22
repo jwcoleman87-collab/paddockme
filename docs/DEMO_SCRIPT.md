@@ -42,14 +42,15 @@ surface that this script touches, update the script.
 ### 2. The agreement workspace (0:50 - 2:00)
 
 - Header reads "Glenbarra River Paddocks. Dale Morgan & Brett Donnelly.
-  100 cattle for 6-12 months."
-- Point at the section list (Pickup, Route, Delivery, Return, etc.).
-- Tap a section that isn't yet mutually agreed.
+  100 cattle for 3 months."
+- Point at the section list: Parties, Stock, Paddock, Dates and duration,
+  Rate and terms, Transport.
+- Tap **Rate and terms** or another section that isn't yet mutually agreed.
 - Chat panel on the right anchors to that section.
-- Tap Dale's **Tap to agree** control on a section -> check turns sage
+- Tap Dale's **Farmer A: Tap to agree** control on a section -> check turns sage
   on Dale's side.
-- Switch party to Brett at the top -> tap Brett's **Tap to agree** control
-  on the same section
+- Switch party to Brett at the top -> tap Brett's **Farmer B: Tap to agree**
+  control on the same section
   -> flash "Both parties agree on X" plus a system message in chat.
 - Say: "Once both sides agree every section, this becomes the binding
   record."
@@ -95,7 +96,8 @@ surface that this script touches, update the script.
 - Same home view, re-framed. "Open livestock requests" tile.
 - Tap -> `/requests`. Brett sees Dale's open request, Tash's horse
   request. Filter chips.
-- Tap **Offer a paddock** on Tash's horse request -> picker shows
+- Tap **Offer a paddock** on Tash's horse request -> `Pick a paddock to offer`
+  picker shows
   Brett's paddocks -> pick one -> lands in a new workspace with Tash
   as Farmer A. Say: "The marketplace works both directions. Brett can
   offer his paddock against an open request, not just wait to be
