@@ -35,6 +35,14 @@ Remaining Day 1 checks:
 - Confirm every named button in `docs/DEMO_SCRIPT.md` still exists after Claude's authenticated-app changes.
 - Capture rough screenshots only after the demo path is stable.
 
+Helpful command:
+
+```bash
+npm run demo:smoke
+```
+
+This checks the production demo route spine and prints the manual click checks that still need a browser rehearsal.
+
 ## Day 2 - Demo Reliability
 
 Goal: make the five-minute walkthrough boringly repeatable.
@@ -97,4 +105,3 @@ Avoid these during the sprint unless they directly protect the demo:
 - Schema changes.
 - Broad UI redesigns.
 - Anything that touches Claude's branch or PR unless explicitly coordinated.
-
