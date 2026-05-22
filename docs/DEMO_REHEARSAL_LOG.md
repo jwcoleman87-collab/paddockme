@@ -41,3 +41,9 @@ Demo notes:
 - The current UI says `Accept rate`, not `Accept the quote`.
 - The current agreement control says `Tap to agree`, not just `Agree`.
 
+Live marketing/auth sweep:
+
+- Checked `/`, `/sign-in`, `/sign-up`, and `/onboarding` on production at 375px, 768px, and 1280px.
+- No horizontal overflow found.
+- No clipped key text found across links, buttons, headings, paragraphs, labels, and form controls.
+- No console errors observed during the sweep.
