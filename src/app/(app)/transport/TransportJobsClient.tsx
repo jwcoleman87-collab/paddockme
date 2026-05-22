@@ -100,7 +100,7 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
         <PortalCard
           icon={<CircleDollarSign />}
           title="Earnings"
-          value="Prototype"
+          value="Coming soon"
           href="/transport/earnings"
           cta="Open earnings"
         />

@@ -85,7 +85,7 @@ export function ChatPanel({
             ? activeSection
               ? `Anchored to "${activeSection.label}" - replies are tagged to this section.`
               : "Tap any section in the agreement to anchor the conversation."
-            : "Dummy conversation for the clickable prototype."}
+            : "Three-way conversation, anchored to the agreement section you tap."}
         </p>
 
         {hasSections && (

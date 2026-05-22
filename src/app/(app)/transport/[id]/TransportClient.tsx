@@ -397,7 +397,7 @@ export function TransportClient({
             </h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
+            Demo
           </span>
         </div>
         <div

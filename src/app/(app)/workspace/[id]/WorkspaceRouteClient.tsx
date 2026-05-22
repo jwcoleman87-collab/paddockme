@@ -65,7 +65,7 @@ export function WorkspaceRouteClient({
         }
       />
       <FlowContextBar
-        label="Closed-loop prototype"
+        label="Coordination flow"
         step="Dale request -> Brett paddock -> agreement -> transport"
         backHref={`/listings/${agreement.listingId}`}
         backLabel="Back to paddock"
