@@ -47,3 +47,15 @@ Live marketing/auth sweep:
 - No horizontal overflow found.
 - No clipped key text found across links, buttons, headings, paragraphs, labels, and form controls.
 - No console errors observed during the sweep.
+
+Production manual click rehearsal:
+
+- `/agreements` tile `Sections to confirm` opened `/workspace/agreement-glenbarra`.
+- Agreement `Terms` tab uses party-specific controls, e.g. `Farmer A: Tap to agree` and `Farmer B: Tap to agree`.
+- Brett can agree the rate section after switching to `Farmer B (Brett) Landowner`.
+- `Open transport room` opened `/transport/transport-glenbarra`.
+- Transport role labels are `Farmer A Livestock owner (Dale)`, `Farmer B Landowner (Brett)`, and `Driver Transporter (Wayne)`.
+- Transport rate state can already be accepted from stored prototype state; when accepted, `Rate accepted` is visible.
+- `/requests` as Brett showed three `Offer a paddock` buttons.
+- Clicking the first `Offer a paddock` opened the live picker labelled `Pick a paddock to offer`.
+- No console errors observed during the manual click rehearsal.
