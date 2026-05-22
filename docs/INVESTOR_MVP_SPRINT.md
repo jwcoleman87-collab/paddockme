@@ -24,7 +24,7 @@ Done:
 - Landing page tells the investor story in one scroll.
 - Primary CTA routes to `/agreements`.
 - Personas are visible: Dale, Brett, Wayne.
-- Screenshot slots are placeholders until the authenticated demo path settles.
+- Product screenshots from the live demo path are on the landing page.
 - Demo script exists at `docs/DEMO_SCRIPT.md`.
 - Marketing/auth pages pass the 375px, 768px, and 1280px sweep.
 - Production metadata describes the investor MVP cleanly.
@@ -33,7 +33,6 @@ Remaining Day 1 checks:
 
 - Rehearse the full five-minute script once on production.
 - Confirm every named button in `docs/DEMO_SCRIPT.md` still exists after Claude's authenticated-app changes.
-- Capture rough screenshots only after the demo path is stable.
 - For the Brett `/requests` step, confirm the active persona has changed to Brett before testing "Offer a paddock".
 
 Helpful command:
@@ -74,7 +73,7 @@ Goal: make the pitch feel intentional rather than assembled.
 
 Acceptance criteria:
 
-- Replace the three screenshot placeholders on `/` with final captured product images.
+- Replace the three screenshot placeholders on `/` with final captured product images. Day 1 rough captures are already live; replace only if Claude changes the demo path visuals.
 - Confirm the landing page, demo script, and actual app labels match.
 - Run production smoke test on `/`, `/agreements`, `/workspace/agreement-glenbarra`, `/transport/transport-glenbarra`, `/messages`, and `/requests`.
 - Rehearse the pitch twice against production with a timer.
