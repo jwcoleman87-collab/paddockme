@@ -1,6 +1,6 @@
 # Scope — Day One
 
-This doc captures (a) what is explicitly OUT of scope right now, and (b) the definition of done for the day-one foundation. When in doubt, default to "not yet".
+This doc captures (a) what was explicitly OUT of scope for the day-one foundation, and (b) the definition of done for that foundation pass. For the current investor sprint, use [`INVESTOR_MVP_SPRINT.md`](./INVESTOR_MVP_SPRINT.md) as the active tracker.
 
 ## What NOT to build yet
 
@@ -17,7 +17,7 @@ The following belong to later milestones. Not day one.
 - Admin panels.
 - Testing frameworks (Vitest comes later).
 - Over-engineering of any kind.
-- Building out the request creation flow on day one — the route is scaffolded as a placeholder only.
+- Expanding the request creation flow beyond the MVP insert path.
 - Building out the match engine logic on day one — placeholder only.
 
 ## Day-one definition of done
