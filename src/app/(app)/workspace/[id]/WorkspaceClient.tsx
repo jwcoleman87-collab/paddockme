@@ -22,34 +22,72 @@ import {
   requestTransportJob,
   updateAgreementSectionAgreement,
 } from "@/lib/data/repositories";
+import {
+  farmers,
+} from "@/lib/dummyData";
 import type {
   Agreement,
   AgreementArtefact,
   AgreementLifecycleEvent,
   AgreementLifecycleState,
+  Farmer,
   Message,
   TransportJob,
 } from "@/lib/dummyData";
 
-const partyProfile: Record<
-  WorkspaceParty,
-  { id: string; name: string; role: string; label: string; avatarUrl: string }
-> = {
-  A: {
-    id: "farmer-a",
-    name: "Dale",
-    role: "Livestock owner",
-    label: "Farmer A (Dale)",
-    avatarUrl: "/avatars/dale.jpg",
-  },
-  B: {
-    id: "farmer-b",
-    name: "Brett",
-    role: "Landowner",
-    label: "Farmer B (Brett)",
-    avatarUrl: "/avatars/brett.jpg",
-  },
+type PartyProfile = {
+  id: string;
+  name: string;
+  role: string;
+  label: string;
+  avatarUrl?: string;
 };
+
+const DEFAULT_FARMER_A: PartyProfile = {
+  id: "farmer-a",
+  name: "Dale",
+  role: "Livestock owner",
+  label: "Farmer A (Dale)",
+  avatarUrl: "/avatars/dale.jpg",
+};
+const DEFAULT_FARMER_B: PartyProfile = {
+  id: "farmer-b",
+  name: "Brett",
+  role: "Landowner",
+  label: "Farmer B (Brett)",
+  avatarUrl: "/avatars/brett.jpg",
+};
+
+/**
+ * Build per-party metadata for whichever farmers are actually on this
+ * agreement. Falls back to the canonical Dale/Brett pair when the lookup
+ * fails - so an unfamiliar agreement still renders sensibly.
+ */
+function buildPartyProfile(agreement: Agreement): Record<WorkspaceParty, PartyProfile> {
+  const farmerA = farmers.find((f) => f.id === agreement.farmerAId);
+  const farmerB = farmers.find((f) => f.id === agreement.farmerBId);
+  return {
+    A: farmerA ? toPartyProfile(farmerA, "A") : DEFAULT_FARMER_A,
+    B: farmerB ? toPartyProfile(farmerB, "B") : DEFAULT_FARMER_B,
+  };
+}
+
+function toPartyProfile(farmer: Farmer, slot: WorkspaceParty): PartyProfile {
+  const role =
+    farmer.role === "Livestock Owner"
+      ? "Livestock owner"
+      : farmer.role === "Landowner"
+        ? "Landowner"
+        : farmer.role;
+  const firstName = farmer.name.split(" ")[0];
+  return {
+    id: farmer.id,
+    name: firstName,
+    role,
+    label: `Farmer ${slot} (${firstName})`,
+    avatarUrl: farmer.avatarUrl,
+  };
+}
 
 /**
  * Client wrapper for the workspace page.
@@ -72,6 +110,10 @@ export function WorkspaceClient({
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // Party metadata derived from the agreement, not hardcoded. Lets the
+  // workspace render correctly when the parties aren't Dale + Brett (e.g.
+  // Tash offering against a landowner's paddock).
+  const partyProfile = useMemo(() => buildPartyProfile(agreement), [agreement]);
 
   // Mark this workspace's thread as "seen up to the current message count"
   // whenever it changes while the workspace is open. The inbox uses this to
@@ -113,17 +155,20 @@ export function WorkspaceClient({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const cookiePersona = readPersonaCookie();
+    let stored: string | null = null;
     try {
-      const stored =
+      stored =
         window.localStorage.getItem("paddockme.agreements.persona") ??
         window.localStorage.getItem("paddockme.profile.persona") ??
         cookiePersona;
-      if (stored === "farmer-b") setViewerPartyState("B");
-      if (stored === "farmer-a") setViewerPartyState("A");
     } catch {
-      if (cookiePersona === "farmer-b") setViewerPartyState("B");
-      if (cookiePersona === "farmer-a") setViewerPartyState("A");
+      stored = cookiePersona;
     }
+    // Match the active persona against the agreement's actual parties so
+    // the viewer lands on their own side when they navigate in - even when
+    // those parties aren't the canonical Dale/Brett pair.
+    if (stored === agreement.farmerBId) setViewerPartyState("B");
+    else if (stored === agreement.farmerAId) setViewerPartyState("A");
     if (!linkedTransport) return;
     try {
       const raw = window.localStorage.getItem(
