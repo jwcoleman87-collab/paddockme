@@ -42,6 +42,7 @@ npm run demo:smoke
 ```
 
 This checks the production demo route spine and prints the manual click checks that still need a browser rehearsal.
+Manual rehearsal notes live in `docs/DEMO_REHEARSAL_LOG.md`.
 
 ## Day 2 - Demo Reliability
 
