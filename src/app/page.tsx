@@ -1,157 +1,183 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Handshake, Map, Sprout, Truck } from "lucide-react";
-import { Card } from "@/components/Card";
-import { FlashProvider } from "@/components/FlashProvider";
-import { PrototypePersonaButtons } from "@/components/PrototypePersonaButtons";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
-const homeActions = [
+const personas = [
   {
-    href: "/request/new",
-    label: "Need Agistment",
-    shortLabel: "Need Agistment",
-    helper: "Place livestock",
-    icon: ArrowRight,
+    name: "Dale",
+    role: "Livestock owner",
+    image: "/avatars/dale.jpg",
+    value: "Find feed, agree terms, and move stock before the season turns.",
   },
   {
-    href: "/listings/new",
-    label: "Offer Agistment",
-    shortLabel: "Offer Agistment",
-    helper: "List paddocks",
-    icon: Sprout,
+    name: "Brett",
+    role: "Landowner",
+    image: "/avatars/brett.jpg",
+    value: "Turn spare paddocks into vetted agistment without nightly phone calls.",
   },
   {
-    href: "/transport/available",
-    label: "Find Transport Work",
-    shortLabel: "Transport",
-    helper: "List truck capacity",
-    icon: Truck,
+    name: "Wayne",
+    role: "Driver",
+    image: "/avatars/wayne.jpg",
+    value: "Match stock movements to real capacity and reduce empty kilometres.",
   },
-  {
-    href: "/map",
-    label: "Regional map",
-    shortLabel: "Map",
-    helper: "View pressure",
-    icon: Map,
-  },
+];
+
+const screenshotSlots = [
+  "Workspace screenshot - captured Tuesday",
+  "Transport room screenshot - captured Tuesday",
+  "Request matching screenshot - captured Tuesday",
 ];
 
 export default function HomePage() {
   return (
-    <FlashProvider>
-    <main className="min-h-dvh overflow-x-hidden bg-warm-white pb-28 text-bark">
-      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-5 md:px-8">
-        <Link href="/" className="font-display text-2xl text-sage-deep">
+    <main className="min-h-dvh overflow-x-hidden bg-warm-white text-bark">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-5 sm:px-8">
+        <Link href="/" className="inline-flex min-h-11 items-center font-display text-2xl text-sage-deep">
           PaddockME
         </Link>
-        <div className="flex items-center gap-3">
+        <nav aria-label="Public navigation" className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/sign-in"
-            className="text-sm font-semibold text-bark/75 transition hover:text-sage-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-bark/75 transition hover:text-sage-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex min-h-9 items-center rounded-full bg-sage-deep px-4 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            className="inline-flex min-h-11 items-center rounded-full bg-sage-deep px-4 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
           >
-            Create account
+            Sign up
           </Link>
-        </div>
+        </nav>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100dvh-5.25rem)] max-w-7xl flex-col px-5 pb-5 md:px-8">
-        <div className="grid flex-1 items-center gap-10 py-8 md:grid-cols-[1.05fr_0.95fr] md:py-14">
-          <div className="min-w-0">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-ochre">
-              Australian agistment coordination
-            </p>
-            <h1 className="font-display text-5xl leading-tight text-sage-deep md:text-7xl">
-              Coordination is expensive.
-            </h1>
-            <p className="mt-6 max-w-[21rem] break-words text-lg leading-relaxed text-bark/75 sm:max-w-2xl md:text-xl">
-              PaddockME removes hidden coordination costs between livestock,
-              land and transport.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link
-                href="/onboarding"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
-              >
-                Take the tour
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-              <Link
-                href="/agreements"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-sage-deep/25 bg-cream px-5 py-2 text-sm font-semibold text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
-              >
-                Skip to the app
-              </Link>
-            </div>
-            <PrototypePersonaButtons />
-          </div>
-
-          <div className="hidden min-w-0 gap-4 md:grid">
-            <Card className="min-w-0 bg-sage-deep text-cream">
-              <Handshake className="mb-5 h-8 w-8 text-sage-glow" aria-hidden />
-              <h2 className="text-2xl font-bold">Agreement-first workflow</h2>
-              <p className="mt-3 break-words leading-relaxed text-sage-glow">
-                Requests, paddock details, transport needs and agreement terms
-                move into one shared workspace.
-              </p>
-            </Card>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Feature icon={<Truck />} title="Transport" text="Coordinate pickup, destination and driver updates separately." />
-              <Feature icon={<Map />} title="Regions" text="See availability, feed pressure, and uploaded regional maps in one view." />
-            </div>
+      <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-10 pt-4 sm:px-8 md:grid-cols-[1.05fr_0.95fr] md:items-center md:pb-14 md:pt-10">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ochre">
+            Investor demo sprint
+          </p>
+          <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[1.05] text-sage-deep sm:text-6xl lg:text-7xl">
+            Feed, paddocks and trucks in one room.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-bark/80 sm:text-xl">
+            PaddockME replaces agistment phone tag with a shared workflow for livestock owners, landowners and stock transport.
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/agreements"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sage-deep px-6 text-sm font-bold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            >
+              Try the demo
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link
+              href="/sign-up"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-sage-deep/30 bg-cream px-6 text-sm font-bold text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            >
+              Sign up
+            </Link>
           </div>
         </div>
 
+        <div className="rounded-2xl border border-mist bg-cream p-4 shadow-[0_18px_45px_rgba(44,80,48,0.08)] sm:p-5">
+          <div className="rounded-xl bg-sage-deep p-5 text-cream">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-sage-glow" aria-hidden />
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.16em] text-sage-glow">
+                  Demo story
+                </p>
+                <p className="mt-3 text-2xl font-bold leading-tight">
+                  Dale needs feed. Brett has country. Wayne can move the cattle.
+                </p>
+              </div>
+            </div>
+          </div>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-3">
+            <Metric label="Parties" value="3" />
+            <Metric label="Demo path" value="5 min" />
+            <Metric label="Next unlock" value="Payments" />
+          </dl>
+        </div>
       </section>
 
-      <nav
-        aria-label="Choose a starting point"
-        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="grid max-w-[25rem] grid-cols-4 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
-          {homeActions.map(({ href, label, shortLabel, helper, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-18"
+      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+        <div className="grid gap-4 md:grid-cols-3">
+          {personas.map((persona) => (
+            <article
+              key={persona.name}
+              className="grid min-w-0 grid-cols-[4.5rem_1fr] gap-4 rounded-2xl border border-mist bg-cream p-4 sm:grid-cols-[5rem_1fr]"
             >
-              <Icon className="h-5 w-5" aria-hidden />
-              <span className="max-w-[5.75rem] whitespace-normal text-[0.82rem] font-bold leading-tight sm:max-w-none sm:text-sm">
-                <span className="sm:hidden">{shortLabel}</span>
-                <span className="hidden sm:inline">{label}</span>
-              </span>
-              <span className="hidden text-xs font-medium text-bark/55 sm:inline">
-                {helper}
-              </span>
-            </Link>
+              <Image
+                src={persona.image}
+                alt={`${persona.name}, ${persona.role}`}
+                width={96}
+                height={96}
+                className="h-18 w-18 rounded-xl object-cover sm:h-20 sm:w-20"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone">
+                  {persona.role}
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-sage-deep">
+                  {persona.name}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-bark/75">
+                  {persona.value}
+                </p>
+              </div>
+            </article>
           ))}
         </div>
-      </nav>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-ochre">
+              Product proof
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-sage-deep sm:text-3xl">
+              Three screens investors can follow.
+            </h2>
+          </div>
+          <p className="max-w-xl text-sm leading-relaxed text-bark/70">
+            Final screenshots land once Claude locks the authenticated demo path.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {screenshotSlots.map((label) => (
+            <div
+              key={label}
+              className="flex aspect-[4/3] min-h-48 items-center justify-center rounded-2xl border border-sage-glow bg-sage-mist p-5 text-center"
+            >
+              <p className="max-w-48 text-sm font-bold leading-relaxed text-sage-deep">
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 pb-12 pt-8 sm:px-8">
+        <div className="rounded-2xl border border-mist bg-cream p-5 sm:p-6">
+          <p className="max-w-3xl text-lg font-semibold leading-relaxed text-sage-deep">
+            Next on the roadmap: secure payment and settlement rails, with Stripe-style escrow patterns after the agreement workflow is investor-demo stable.
+          </p>
+        </div>
+      </section>
     </main>
-    </FlashProvider>
   );
 }
 
-function Feature({
-  icon,
-  title,
-  text,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="min-w-0">
-      <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
-        {icon}
-      </div>
-      <h2 className="font-bold text-sage-deep">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-bark/70">{text}</p>
-    </Card>
+    <div className="rounded-xl border border-mist bg-warm-white px-4 py-3">
+      <dt className="text-xs font-bold uppercase tracking-[0.14em] text-stone">
+        {label}
+      </dt>
+      <dd className="mt-1 text-lg font-bold text-sage-deep">{value}</dd>
+    </div>
   );
 }

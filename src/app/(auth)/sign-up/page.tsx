@@ -45,11 +45,11 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cream px-6 py-12">
+    <div className="flex min-h-dvh items-center justify-center bg-cream px-5 py-8 sm:px-6 sm:py-12">
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="font-display text-3xl text-sage-deep block mb-8"
+          className="mb-7 inline-flex min-h-11 items-center font-display text-3xl text-sage-deep sm:mb-8"
         >
           PaddockME
         </Link>
@@ -74,11 +74,13 @@ export default function SignUpPage() {
         ) : (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-bark mb-1">
+              <label htmlFor="sign-up-name" className="mb-1 block text-sm font-medium text-bark">
                 Full name
               </label>
               <input
+                id="sign-up-name"
                 type="text"
+                autoComplete="name"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -87,11 +89,13 @@ export default function SignUpPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-bark mb-1">
+              <label htmlFor="sign-up-email" className="mb-1 block text-sm font-medium text-bark">
                 Email
               </label>
               <input
+                id="sign-up-email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -100,11 +104,13 @@ export default function SignUpPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-bark mb-1">
+              <label htmlFor="sign-up-password" className="mb-1 block text-sm font-medium text-bark">
                 Password
               </label>
               <input
+                id="sign-up-password"
                 type="password"
+                autoComplete="new-password"
                 required
                 minLength={8}
                 value={password}
@@ -123,7 +129,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream hover:bg-sage-dark transition disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream transition hover:bg-sage-dark disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create account
@@ -133,7 +139,7 @@ export default function SignUpPage() {
 
         <p className="mt-8 text-center text-sm text-bark/85">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-sage-deep underline">
+          <Link href="/sign-in" className="inline-flex min-h-11 min-w-11 items-center justify-center text-sage-deep underline">
             Sign in
           </Link>
         </p>

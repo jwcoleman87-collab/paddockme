@@ -125,11 +125,11 @@ export function OnboardingClient() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-warm-white px-5 py-8 sm:px-8">
+    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-warm-white px-5 py-7 sm:px-8 sm:py-8">
       <header className="mb-6">
         <Link
           href="/"
-          className="font-display text-2xl text-sage-deep"
+          className="inline-flex min-h-11 items-center font-display text-2xl text-sage-deep"
         >
           PaddockME
         </Link>
@@ -179,13 +179,13 @@ export function OnboardingClient() {
 
       <nav
         aria-label="Onboarding navigation"
-        className="mt-8 flex flex-wrap items-center justify-between gap-3"
+        className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between"
       >
         <button
           type="button"
           onClick={back}
           disabled={step === 0}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Back
@@ -195,7 +195,7 @@ export function OnboardingClient() {
             type="button"
             onClick={next}
             disabled={!canAdvance}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white sm:w-auto"
           >
             Next
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -204,7 +204,7 @@ export function OnboardingClient() {
           <button
             type="button"
             onClick={finish}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white sm:w-auto"
           >
             <Check className="h-4 w-4" aria-hidden />
             Take me to the app
@@ -284,7 +284,7 @@ function RoleStep({
               onClick={() => onSelect(option.id)}
               aria-pressed={active}
               className={cn(
-                "flex items-start gap-4 rounded-2xl border p-5 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white",
+                "flex min-h-24 cursor-pointer items-start gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white sm:p-5",
                 active
                   ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                   : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"

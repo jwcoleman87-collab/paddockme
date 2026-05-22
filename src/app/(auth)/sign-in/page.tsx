@@ -15,11 +15,11 @@ import { Loader2, Mail } from "lucide-react";
  */
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cream px-6 py-12">
+    <div className="flex min-h-dvh items-center justify-center bg-cream px-5 py-8 sm:px-6 sm:py-12">
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="font-display text-3xl text-sage-deep block mb-8"
+          className="mb-7 inline-flex min-h-11 items-center font-display text-3xl text-sage-deep sm:mb-8"
         >
           PaddockME
         </Link>
@@ -36,7 +36,7 @@ export default function SignInPage() {
 
         <p className="mt-8 text-center text-sm text-bark/85">
           New here?{" "}
-          <Link href="/sign-up" className="text-sage-deep underline">
+          <Link href="/sign-up" className="inline-flex min-h-11 items-center text-sage-deep underline">
             Create an account
           </Link>
         </p>
@@ -123,11 +123,13 @@ function SignInForm() {
   return (
     <form onSubmit={handlePassword} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-bark mb-1">
+        <label htmlFor="sign-in-email" className="mb-1 block text-sm font-medium text-bark">
           Email
         </label>
         <input
+          id="sign-in-email"
           type="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -136,11 +138,13 @@ function SignInForm() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-bark mb-1">
+        <label htmlFor="sign-in-password" className="mb-1 block text-sm font-medium text-bark">
           Password
         </label>
         <input
+          id="sign-in-password"
           type="password"
+          autoComplete="current-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -157,7 +161,7 @@ function SignInForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream hover:bg-sage-dark transition disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream transition hover:bg-sage-dark disabled:opacity-60"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Sign in
@@ -172,7 +176,7 @@ function SignInForm() {
         type="button"
         onClick={handleMagicLink}
         disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-sage-deep/30 px-5 py-3 font-medium text-sage-deep hover:bg-sage-mist transition disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-sage-deep/30 px-5 py-3 font-medium text-sage-deep transition hover:bg-sage-mist disabled:opacity-60"
       >
         <Mail className="h-4 w-4" />
         Send me a magic link
