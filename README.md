@@ -38,6 +38,7 @@ The app boots at `http://localhost:3000`.
 
 ```bash
 npm run dev          # Local development server
+npm run verify:pitch # Typecheck, build, and production demo smoke
 npm run build        # Production build check
 npm run demo:smoke   # Production demo route/content smoke test
 npm run db:types     # Regenerate Supabase database types
@@ -55,8 +56,7 @@ Use these docs as the single source of truth for the current pitch path:
 Before pushing pitch-facing changes:
 
 ```bash
-npm run build
-npm run demo:smoke
+npm run verify:pitch
 ```
 
 ### Required environment variables
