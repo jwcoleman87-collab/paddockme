@@ -64,10 +64,10 @@ const checks = [
 
 const manualChecks = [
   "On /agreements, click Sections to confirm and confirm it opens /workspace/agreement-glenbarra.",
-  "In /workspace/agreement-glenbarra, click Agree as Dale, switch to Brett, and confirm the same section.",
+  "In /workspace/agreement-glenbarra, use Dale's Tap to agree control, switch to Brett, and confirm the same section.",
   "Click Open transport room and confirm it opens /transport/transport-glenbarra.",
   "In the transport room, switch to Driver and confirm the quote/backload moment is visible.",
-  "Switch to Farmer A and confirm Accept the quote changes the room state.",
+  "Switch to Farmer A, open the Rate tab, and confirm Accept rate changes the room state.",
   "Switch persona to Brett before opening /requests; confirm Offer a paddock opens the paddock picker.",
 ];
 

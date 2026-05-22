@@ -46,8 +46,10 @@ surface that this script touches, update the script.
 - Point at the section list (Pickup, Route, Delivery, Return, etc.).
 - Tap a section that isn't yet mutually agreed.
 - Chat panel on the right anchors to that section.
-- Tap **Agree** as Dale on a section -> check turns sage on Dale's side.
-- Switch party to Brett at the top -> tap **Agree** on the same section
+- Tap Dale's **Tap to agree** control on a section -> check turns sage
+  on Dale's side.
+- Switch party to Brett at the top -> tap Brett's **Tap to agree** control
+  on the same section
   -> flash "Both parties agree on X" plus a system message in chat.
 - Say: "Once both sides agree every section, this becomes the binding
   record."
@@ -72,8 +74,8 @@ surface that this script touches, update the script.
   Possible Backloads panel: "Wayne sees a return-leg job ready to
   chain. Empty kilometres are profit deleted - this is the single
   biggest dial for transport business utilisation."
-- Switch to Farmer A (Dale) -> **Accept the quote** -> system message
-  fires in chat, status flips.
+- Switch to Farmer A (Dale), open the **Rate** tab, then tap
+  **Accept rate** -> system message fires in chat, status flips.
 
 ### 5. Inbox and snapshot (3:30 - 4:00)
 

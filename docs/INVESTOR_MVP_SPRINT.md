@@ -52,9 +52,11 @@ Acceptance criteria:
 
 - `/agreements` opens directly into the intended Dale state.
 - The "Sections to confirm" path lands in the correct workspace.
-- Agreement section agreement works for Dale and Brett.
+- Agreement section agreement works for Dale and Brett via the party
+  "Tap to agree" controls.
 - Transport tab opens the correct transport room.
 - Driver view shows a credible quote/backload moment.
+- Farmer A can open the Rate tab and accept the driver's rate.
 - Inbox and snapshot are reachable without dead ends.
 - Brett can offer a paddock against an open request.
 - Wayne can show the transport pipeline.
