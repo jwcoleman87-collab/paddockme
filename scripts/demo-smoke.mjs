@@ -15,6 +15,26 @@ const checks = [
     ],
   },
   {
+    path: "/sign-in",
+    name: "Sign-in entry",
+    mustInclude: ["Welcome back.", "Sign in", "Create an account"],
+  },
+  {
+    path: "/sign-up",
+    name: "Sign-up entry",
+    mustInclude: ["Make a new account.", "Create account", "Sign in"],
+  },
+  {
+    path: "/onboarding",
+    name: "Onboarding role picker",
+    mustInclude: [
+      "What brings you here?",
+      "I have livestock that need paddocks",
+      "I have paddocks that could take stock",
+      "I move stock for a living",
+    ],
+  },
+  {
     path: "/agreements",
     name: "Dale agreements home",
     mustInclude: ["Dale", "Brett", "Wayne"],
