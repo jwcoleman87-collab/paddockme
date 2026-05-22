@@ -6,6 +6,10 @@ Live app:
 
 https://paddockme-oz51.vercel.app
 
+Current built-product inventory:
+
+[`docs/CURRENT_PRODUCT_AUDIT.md`](./CURRENT_PRODUCT_AUDIT.md)
+
 ## Working Rule
 
 Do not blur ownership.
