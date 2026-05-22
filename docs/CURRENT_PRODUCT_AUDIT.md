@@ -275,8 +275,8 @@ Current seed counts:
 - Farmers/personas: 6.
 - Paddock listings: 3.
 - Livestock requests: 3.
-- Agreements: 13 id entries in the agreement seed block.
-- Transport jobs: 12 id entries in the transport job seed block.
+- Agreements: 1 top-level seeded agreement, with nested sections, artefacts, messages, and lifecycle entries.
+- Transport jobs: 1 top-level seeded transport job, with nested sections, quotes, artefacts, and timeline entries.
 - Transport capacity posts: 4.
 
 Prototype store: `src/lib/prototypeStore.ts`.
@@ -387,4 +387,3 @@ For the three-day investor sprint, the next useful moves are:
 - Rehearse production twice with a timer and update `docs/DEMO_REHEARSAL_LOG.md`.
 - Replace demo screenshots only if Claude changes the authenticated app visuals.
 - Decide the Day 2/Day 3 commercial story for payments and settlement without building payment UI yet.
-
