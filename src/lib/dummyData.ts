@@ -1355,8 +1355,8 @@ export function getAgreement(id: string): Agreement | undefined {
   return agreements.find((agreement) => agreement.id === id);
 }
 
-export function getTransportJob(id: string) {
-  return transportJobs.find((job) => job.id === id) ?? transportJobs[0];
+export function getTransportJob(id: string): TransportJob | undefined {
+  return transportJobs.find((job) => job.id === id);
 }
 
 export function getTransportJobForAgreement(agreementId: string) {
