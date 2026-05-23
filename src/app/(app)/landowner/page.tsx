@@ -11,7 +11,7 @@ export default function LandownerHomePage() {
       <PageHeader
         eyebrow="Landowner home"
         title="Brett's paddock inbox."
-        description="A prototype home for Farmer B: manage listings, see incoming stock requests, and decide what needs a reply."
+        description="Manage listings, see incoming stock requests, and decide what needs a reply."
         action={<ButtonLink href="/listings/new">List another paddock</ButtonLink>}
       />
 
@@ -67,9 +67,9 @@ export default function LandownerHomePage() {
             </div>
             <h2 className="text-xl font-bold text-sage-deep">Demand signal</h2>
             <p className="mt-2 text-sm font-medium leading-relaxed text-bark/85">
-              Southern NSW has active cattle demand in this prototype. Later,
-              this becomes "boost visibility here" and "see requests from this
-              region."
+              Southern NSW has active cattle demand right now. The next
+              iteration adds "boost visibility here" and "see all requests
+              from this region" as paid affordances.
             </p>
             <ButtonLink href="/map?as=landowner" variant="secondary" className="mt-4">
               View regional demand
