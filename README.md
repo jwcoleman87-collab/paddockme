@@ -60,6 +60,7 @@ Use these docs as the single source of truth for the current pitch path:
 - [`docs/INVESTOR_DILIGENCE_QA.md`](docs/INVESTOR_DILIGENCE_QA.md) - honest Q&A for investor follow-up
 - [`docs/CUSTOMER_VALIDATION_GUIDE.md`](docs/CUSTOMER_VALIDATION_GUIDE.md) - interview guide for Dale/Brett/Wayne validation
 - [`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md) - next commercial unlock without claiming it is built
+- [`docs/INVESTOR_FREEZE_CHECKLIST.md`](docs/INVESTOR_FREEZE_CHECKLIST.md) - final pre-call freeze checklist
 
 Before pushing pitch-facing changes:
 
@@ -145,6 +146,7 @@ docs/
   INVESTOR_DILIGENCE_QA.md # Investor follow-up Q&A
   CUSTOMER_VALIDATION_GUIDE.md # Customer interview guide
   PAYMENTS_SETTLEMENT_BLUEPRINT.md # Payments/settlement product blueprint
+  INVESTOR_FREEZE_CHECKLIST.md # Final pre-call checklist
 scripts/
   demo-smoke.mjs           # Production smoke test for the demo route set
   demo-click.mjs           # Production browser click rehearsal for the demo path

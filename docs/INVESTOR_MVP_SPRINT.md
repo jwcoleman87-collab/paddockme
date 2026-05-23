@@ -30,6 +30,10 @@ Current AI handoff:
 
 [`docs/AI_HANDOFF_CURRENT.md`](./AI_HANDOFF_CURRENT.md)
 
+Final freeze checklist:
+
+[`docs/INVESTOR_FREEZE_CHECKLIST.md`](./INVESTOR_FREEZE_CHECKLIST.md)
+
 ## Working Rule
 
 Do not blur ownership.
