@@ -6,9 +6,9 @@ export default function TransportPortalPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Driver portal"
-        title="Transport workbench."
-        description="Browse available stock movements, open accepted jobs, and keep the transport leg moving."
+        eyebrow="Transport"
+        title="Transport coordination."
+        description="Track carrier details and movement status, or manage driver jobs when you are operating transport."
       />
       <PersonaIntroBanner page="transport-portal" />
       <TransportJobsClient mode="portal" />

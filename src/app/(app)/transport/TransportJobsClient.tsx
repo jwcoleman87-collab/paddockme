@@ -27,7 +27,7 @@ import {
   selectPersona,
   updateTransportJobStatus,
 } from "@/lib/data/repositories";
-import type { TransportJob, TransportJobStatus } from "@/lib/dummyData";
+import { farmers, type Farmer, type TransportJob, type TransportJobStatus } from "@/lib/dummyData";
 
 type Mode = "portal" | "jobs" | "calendar";
 type JobsView = "map" | "list" | "calendar";
@@ -58,9 +58,36 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
   const [jobs, setJobs] = useState<TransportJob[]>([]);
   const [view, setView] = useState<JobsView>("map");
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
+  const [activeProfileId, setActiveProfileId] = useState<string>("farmer-a");
 
   useEffect(() => {
     void listTransportJobs().then(setJobs);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function readActiveProfile() {
+      try {
+        return (
+          window.localStorage.getItem("paddockme.agreements.persona") ??
+          window.localStorage.getItem("paddockme.profile.persona") ??
+          readPersonaCookie() ??
+          "farmer-a"
+        );
+      } catch {
+        return readPersonaCookie() ?? "farmer-a";
+      }
+    }
+    setActiveProfileId(readActiveProfile());
+    function onProfileChange() {
+      setActiveProfileId(readActiveProfile());
+    }
+    window.addEventListener("paddockme:persona-change", onProfileChange);
+    window.addEventListener("storage", onProfileChange);
+    return () => {
+      window.removeEventListener("paddockme:persona-change", onProfileChange);
+      window.removeEventListener("storage", onProfileChange);
+    };
   }, []);
 
   const available = useMemo(
@@ -70,6 +97,18 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
   const accepted = useMemo(
     () => jobs.filter((job) => job.status !== "available" && job.status !== "cancelled"),
     [jobs]
+  );
+  const activeProfile = useMemo(
+    () => farmers.find((farmer) => farmer.id === activeProfileId) ?? farmers[0],
+    [activeProfileId]
+  );
+  const farmerTransportJobs = useMemo(
+    () =>
+      jobs.filter(
+        (job) =>
+          job.farmerAId === activeProfileId || job.farmerBId === activeProfileId
+      ),
+    [activeProfileId, jobs]
   );
 
   async function acceptJob(job: TransportJob) {
@@ -81,6 +120,15 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
   }
 
   if (mode === "portal") {
+    if (activeProfile?.role !== "Transport Provider") {
+      return (
+        <FarmerTransportPortal
+          activeProfile={activeProfile}
+          jobs={farmerTransportJobs}
+        />
+      );
+    }
+
     return (
       <div className="grid gap-5 md:grid-cols-3">
         <PortalCard
@@ -180,6 +228,90 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
         ))}
       </div>
     </>
+  );
+}
+
+function FarmerTransportPortal({
+  activeProfile,
+  jobs,
+}: {
+  activeProfile?: Farmer;
+  jobs: TransportJob[];
+}) {
+  const latestJob = jobs[0];
+
+  if (!latestJob) {
+    return (
+      <Card className="text-center">
+        <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+          <Truck className="h-6 w-6" aria-hidden />
+        </div>
+        <h2 className="text-lg font-bold text-sage-deep">
+          No transport linked yet.
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
+          Once an agreement needs stock moved, the carrier and transport room
+          will appear here.
+        </p>
+        <ButtonLink href="/agreements" className="mt-4 inline-flex">
+          Open agreements
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </ButtonLink>
+      </Card>
+    );
+  }
+
+  const isLivestockOwner = latestJob.farmerAId === activeProfile?.id;
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr]">
+      <Card>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <StatusBadge tone="info">{formatTransportStatus(latestJob.status)}</StatusBadge>
+          <StatusBadge tone="neutral">
+            {isLivestockOwner ? "Your stock movement" : "Incoming stock movement"}
+          </StatusBadge>
+        </div>
+        <h2 className="text-2xl font-bold text-sage-deep">
+          {latestJob.routeSummary}
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/75">
+          {latestJob.livestockCount} moving from {latestJob.pickup} to{" "}
+          {latestJob.destination}. Pickup is planned for {latestJob.preferredDate}.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <InfoTile label="Transport company" value={latestJob.driver} />
+          <InfoTile label="Pickup" value={latestJob.pickup} />
+          <InfoTile label="Destination" value={latestJob.destination} />
+          <InfoTile label="Agreement status" value={latestJob.agreementContext.agreementStatus} />
+        </div>
+        <ButtonLink href={`/transport/${latestJob.id}`} className="mt-5">
+          Open transport room
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </ButtonLink>
+      </Card>
+
+      <Card>
+        <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-sage-mist text-sage-deep">
+          <Truck className="h-5 w-5" aria-hidden />
+        </div>
+        <h2 className="text-xl font-bold text-sage-deep">
+          Last transport used
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-bark/75">
+          {latestJob.driver} is attached to your latest agistment movement.
+          Farmer views show carrier details and movement status, not driver
+          job boards or earnings.
+        </p>
+        <div className="mt-4 space-y-3">
+          <InfoTile label="Route" value={latestJob.routeSummary} />
+          <InfoTile label="Livestock" value={latestJob.livestockCount} />
+        </div>
+        <ButtonLink href="/transport/available" variant="secondary" className="mt-5">
+          Browse transport capacity
+        </ButtonLink>
+      </Card>
+    </div>
   );
 }
 
@@ -302,6 +434,14 @@ function JobsMapView({
       </div>
     </section>
   );
+}
+
+function readPersonaCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("paddockme_persona="));
+  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
 }
 
 function PortalCard({

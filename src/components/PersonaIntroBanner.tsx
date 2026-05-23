@@ -47,12 +47,10 @@ const COPY: Record<Page, Record<Farmer["role"], Copy>> = {
   },
   "transport-portal": {
     "Livestock Owner": {
-      body: "Browse drivers via the capacity board, or open your transport room from the agreement workspace.",
-      tone: "muted",
+      body: "Your transport view shows the carriers and rooms connected to your agreements.",
     },
     Landowner: {
-      body: "Transport coordination lives inside your agreement workspace. The portal below is a driver-side workbench.",
-      tone: "muted",
+      body: "Your transport view shows movement details for stock coming onto your paddocks, without driver earnings.",
     },
     "Transport Provider": {
       body: "Quick links to available jobs, your calendar, and earnings. Use /runs for the full pipeline view.",
