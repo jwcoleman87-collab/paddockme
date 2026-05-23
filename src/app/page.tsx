@@ -5,19 +5,16 @@ const homeActions = [
   {
     href: "/request/new",
     label: "Need agistment",
-    helper: "Place livestock",
     icon: ArrowRight,
   },
   {
     href: "/listings/new",
-    label: "Have agistment",
-    helper: "List paddocks",
+    label: "Have Agistment",
     icon: Sprout,
   },
   {
     href: "/transport/available",
-    label: "Need transport",
-    helper: "Find a run",
+    label: "Need Transport",
     icon: Truck,
   },
 ];
@@ -48,21 +45,18 @@ export default function HomePage() {
 
       <nav
         aria-label="Choose a starting point"
-        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="fixed inset-x-0 bottom-6 z-40 px-3 sm:bottom-8"
       >
         <div className="mx-auto grid max-w-[24rem] grid-cols-3 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:max-w-4xl">
-          {homeActions.map(({ href, label, helper, icon: Icon }) => (
+          {homeActions.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-18"
+              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-18"
             >
               <Icon className="h-5 w-5" aria-hidden />
               <span className="max-w-[6rem] whitespace-normal text-[0.82rem] font-bold leading-tight sm:max-w-none sm:text-sm">
                 {label}
-              </span>
-              <span className="hidden text-xs font-medium text-bark/55 sm:inline">
-                {helper}
               </span>
             </Link>
           ))}

@@ -43,7 +43,7 @@ Built:
 - Simple brand entry screen.
 - Hero headline: "Coordination is expensive."
 - Supporting copy about hidden coordination costs between livestock, land, and transport.
-- Bottom action bar with `Need agistment`, `Have agistment`, and `Need transport`.
+- Bottom action bar with `Need agistment`, `Have Agistment`, and `Need Transport`.
 
 ### `/sign-in`
 

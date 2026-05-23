@@ -9,8 +9,8 @@ const checks = [
     mustInclude: [
       "Coordination is expensive.",
       "Need agistment",
-      "Have agistment",
-      "Need transport",
+      "Have Agistment",
+      "Need Transport",
     ],
   },
   {
