@@ -362,6 +362,7 @@ Use these as the active operating set:
 
 - `docs/INVESTOR_MVP_SPRINT.md`
 - `docs/DEMO_SCRIPT.md`
+- `docs/DEMO_CHEATSHEET.md`
 - `docs/DEMO_REHEARSAL_LOG.md`
 - `docs/INVESTOR_PITCH_NOTES.md`
 - `docs/INVESTOR_DILIGENCE_QA.md`

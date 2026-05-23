@@ -50,6 +50,7 @@ npm run db:types     # Regenerate Supabase database types
 Use these docs as the single source of truth for the current pitch path:
 
 - [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) - five-minute narrated product demo
+- [`docs/DEMO_CHEATSHEET.md`](docs/DEMO_CHEATSHEET.md) - one-page run sheet for the live demo
 - [`docs/DEMO_REHEARSAL_LOG.md`](docs/DEMO_REHEARSAL_LOG.md) - latest local/live rehearsal notes
 - [`docs/CURRENT_PRODUCT_AUDIT.md`](docs/CURRENT_PRODUCT_AUDIT.md) - current inventory of built routes, data, and demo limits
 - [`docs/INVESTOR_MVP_SPRINT.md`](docs/INVESTOR_MVP_SPRINT.md) - Day 1/2/3 readiness tracker
@@ -134,6 +135,7 @@ docs/
   BUILD_02.md              # Foundation Build 02 — workspace and agreement flow polish
   CURRENT_PRODUCT_AUDIT.md # Current built-product inventory
   DEMO_SCRIPT.md           # Investor demo path
+  DEMO_CHEATSHEET.md       # One-page live demo run sheet
   DEMO_REHEARSAL_LOG.md    # Latest smoke/rehearsal results
   INVESTOR_MVP_SPRINT.md   # Three-day MVP tracker
   INVESTOR_PITCH_NOTES.md  # Pitch talk track

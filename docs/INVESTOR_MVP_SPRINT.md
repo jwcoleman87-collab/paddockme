@@ -22,6 +22,10 @@ Payments/settlement blueprint:
 
 [`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](./PAYMENTS_SETTLEMENT_BLUEPRINT.md)
 
+Live demo cheat sheet:
+
+[`docs/DEMO_CHEATSHEET.md`](./DEMO_CHEATSHEET.md)
+
 ## Working Rule
 
 Do not blur ownership.
