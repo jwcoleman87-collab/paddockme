@@ -33,9 +33,9 @@ export function InfoTile({
   className,
 }: InfoTileProps) {
   const container = cn(
-    "bg-warm-white",
-    tone === "default" && "border border-mist",
-    size === "md" ? "rounded-md p-4" : "rounded-sm p-3"
+    "bg-white shadow-[inset_0_0_0_1px_rgba(109,98,87,0.08)]",
+    tone === "default" && "border border-stone/25",
+    size === "md" ? "rounded-md p-4" : "rounded-sm p-3.5"
   );
 
   const showIconAbove = icon && iconPlacement === "above";
@@ -50,7 +50,7 @@ export function InfoTile({
       )}
       <p
         className={cn(
-          "text-xs font-bold uppercase tracking-wide text-bark/85",
+          "text-[0.72rem] font-extrabold uppercase tracking-[0.13em] text-stone",
           showIconInline && "flex items-center gap-1.5"
         )}
       >
@@ -61,7 +61,7 @@ export function InfoTile({
         )}
         {label}
       </p>
-      <p className="mt-1 break-words font-semibold text-bark">{value}</p>
+      <p className="mt-1.5 break-words text-[0.96rem] font-extrabold leading-snug text-bark">{value}</p>
     </div>
   );
 }
