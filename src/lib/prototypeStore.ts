@@ -62,8 +62,8 @@ export function createInitialPrototypeState(): PrototypeState {
       {
         id: "seed-timeline-request",
         at: nowLabel(),
-        title: "Prototype loop ready",
-        detail: "Seed Dale, Brett and Wayne records are loaded.",
+        title: "Agreement workflow ready",
+        detail: "Dale, Brett and Wayne records are loaded.",
         href: "/agreements",
       },
     ],
@@ -342,7 +342,7 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
       from: null,
       to: "Draft",
       byParty: "System",
-      note: "Created from local prototype match.",
+      note: "Created from paddock match.",
     },
   ];
   return {

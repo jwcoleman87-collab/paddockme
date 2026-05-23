@@ -41,8 +41,8 @@ Investor-facing landing page at `src/app/page.tsx`.
 Built:
 
 - One-scroll investor story.
-- Hero headline: "Feed, paddocks and trucks in one room."
-- CTA to `/agreements`.
+- Hero headline: "Farmer A and Farmer B agree the terms. Then the driver joins."
+- CTA to `/agreements` labelled "Start the agreement".
 - Secondary CTA to `/sign-up`.
 - Persona cards for Dale, Brett, and Wayne.
 - Real demo screenshots from `public/demo/workspace.png`, `public/demo/transport.png`, and `public/demo/requests.png`.
@@ -190,12 +190,12 @@ Built:
 - Signed-in Supabase profile summary when an authenticated user has a `profiles` row.
 - Persona browser.
 - Verification/readiness profile surfaces.
-- Prototype reset control.
+- Workspace reset control.
 - Shared profile schema across livestock owner, landowner, and transport provider personas.
 
 Current limitation:
 
-- The Supabase profile summary is read-only. The persona browser below it still drives the investor demo roles and local prototype reset flow.
+- The Supabase profile summary is read-only. The participant records below it still use the current workflow state.
 
 ## Request Creation
 

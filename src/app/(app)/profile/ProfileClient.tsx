@@ -122,23 +122,23 @@ export function ProfileClient({
       )}
 
       <section
-        aria-label="Persona switcher"
+        aria-label="Profile record switcher"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sage-deep">
             <UserRound className="h-5 w-5" aria-hidden />
             <h2 className="text-sm font-bold uppercase tracking-wide">
-              Browse personas
+              Agreement participants
             </h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
+            Profile records
           </span>
         </div>
         <div
           role="radiogroup"
-          aria-label="Choose a persona"
+          aria-label="Choose a participant profile"
           className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
         >
           {farmers.map((option) => {
@@ -253,18 +253,17 @@ export function ProfileClient({
       </div>
 
       <section
-        aria-label="Prototype tools"
+        aria-label="Workspace tools"
         className="mt-7 rounded-xl border border-dashed border-mist bg-cream/45 px-4 py-3"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-stone">
-              Prototype tools
+              Workspace tools
             </p>
             <p className="mt-1 text-sm text-bark/70">
-              Persona, workspace, and transport state are stored in your
-              browser for the duration of the prototype. Wipe them to start
-              clean.
+              Workspace and transport state are stored in this browser. Wipe
+              them to start clean.
             </p>
           </div>
           <button
@@ -273,7 +272,7 @@ export function ProfileClient({
             className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
           >
             <RotateCcw className="h-4 w-4" aria-hidden />
-            Reset prototype state
+            Reset workspace state
           </button>
         </div>
       </section>
@@ -338,9 +337,9 @@ function SupabaseProfileSummary({ profile }: { profile: CurrentUserProfile }) {
             </p>
           )}
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bark/75">
-            This is the live signed-in user record from Supabase. The persona
-            browser below remains available for investor demo roles and reset
-            testing.
+            This is the live signed-in user record from Supabase. The
+            participant profiles below show the agreement parties involved in
+            the current workflow.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3 md:min-w-[28rem]">

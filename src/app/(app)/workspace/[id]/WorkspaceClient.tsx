@@ -451,7 +451,7 @@ export function WorkspaceClient({
         </p>
       </Card>
       <section
-        aria-label="Prototype party switcher"
+        aria-label="Agreement party switcher"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -469,7 +469,7 @@ export function WorkspaceClient({
               View snapshot
             </a>
             <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-              Prototype
+              Role view
             </span>
           </div>
         </div>

@@ -17,8 +17,8 @@ export default function TransportEarningsPage() {
         </div>
         <h2 className="text-lg font-bold text-sage-deep">Coming later.</h2>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
-          This prototype records job status only. Real invoices, payouts, GST,
-          and Stripe are a later sprint.
+          This view records job status only for now. Real invoices, payouts,
+          GST, and Stripe are a later sprint.
         </p>
         <ButtonLink href="/transport/calendar" className="mt-4 inline-flex">
           Back to calendar

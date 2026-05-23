@@ -11,8 +11,8 @@ export default async function ProfilePage() {
     <>
       <PageHeader
         eyebrow="Profile and verification"
-        title="Persona profiles."
-        description="Three personas - one livestock owner, one landowner, one driver - sharing the same profile schema. The role and sub-profile carry the difference."
+        title="Profile records."
+        description="Manage the people involved in the agreement: livestock owner, landowner, and driver."
         action={<ButtonLink href="/agreements" variant="secondary">Back to agreements</ButtonLink>}
       />
 

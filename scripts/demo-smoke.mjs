@@ -7,8 +7,8 @@ const checks = [
     path: "/",
     name: "Investor landing",
     mustInclude: [
-      "Feed, paddocks and trucks in one room.",
-      "Try the demo",
+      "Farmer A and Farmer B agree the terms. Then the driver joins.",
+      "Start the agreement",
       "Dale",
       "Brett",
       "Wayne",
@@ -77,8 +77,8 @@ const checks = [
   },
   {
     path: "/profile",
-    name: "Prototype reset surface",
-    mustInclude: ["Reset prototype state"],
+    name: "Workspace reset surface",
+    mustInclude: ["Reset workspace state"],
   },
 ];
 
@@ -88,7 +88,7 @@ const browserChecks = [
   "Click Open transport room and confirm it opens /transport/transport-glenbarra.",
   "In the transport room, switch to Driver Transporter (Wayne) and confirm the quote/backload moment is visible.",
   "Switch to Farmer A Livestock owner (Dale), open the Rate tab, and confirm Accept rate changes the room state.",
-  "Switch persona to Brett before opening /requests; confirm Offer a paddock opens the Pick a paddock to offer picker.",
+  "Use Brett's role view before opening /requests; confirm Offer a paddock opens the Pick a paddock to offer picker.",
 ];
 
 let failures = 0;

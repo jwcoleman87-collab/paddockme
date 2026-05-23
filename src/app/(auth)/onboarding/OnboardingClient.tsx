@@ -517,7 +517,7 @@ function ReviewStep({ state }: { state: State }) {
       <StepHeader
         eyebrow="Step 4 of 4"
         title="Looks right?"
-        helper="Confirm and we'll drop you on the home view. Real persistence lands once Supabase is wired - for now this is a prototype walkthrough."
+        helper="Confirm and we'll save your profile details before sending you into the workspace."
       />
       <dl className="grid gap-3 sm:grid-cols-2">
         <ReviewRow label="Role" value={roleLabel} />

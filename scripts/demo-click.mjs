@@ -38,7 +38,7 @@ async function clickRole(role, name) {
 
 await step("Landing CTA opens agreements", async () => {
   await goto("/");
-  await clickRole("link", "Try the demo");
+  await clickRole("link", "Start the agreement");
   await page.waitForURL("**/agreements", { waitUntil: "networkidle" });
 });
 

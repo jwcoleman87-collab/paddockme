@@ -17,7 +17,7 @@ https://paddockme-oz51.vercel.app
 Optional reset:
 
 - Go to `/profile`.
-- Click `Reset prototype state`.
+- Click `Reset workspace state`.
 
 ## One-Liner
 
@@ -27,7 +27,7 @@ PaddockME turns agistment from phone tag into one coordinated workspace for live
 
 1. `/`
    - Say: "This is a three-sided workflow: livestock, land, transport."
-   - Click `Try the demo`.
+   - Click `Start the agreement`.
 
 2. `/agreements`
    - Show Dale's work queue.
@@ -94,7 +94,6 @@ Payments and settlement are next after the agreement workflow is stable: quote, 
 If anything looks strange:
 
 1. Go to `/profile`.
-2. Click `Reset prototype state`.
+2. Click `Reset workspace state`.
 3. Reopen `/`.
 4. Run the path again.
-

@@ -386,7 +386,7 @@ export function TransportClient({
       </section>
 
       <section
-        aria-label="Prototype role switcher"
+        aria-label="Transport role switcher"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -397,7 +397,7 @@ export function TransportClient({
             </h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
+            Participant view
           </span>
         </div>
         <div

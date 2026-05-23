@@ -7,7 +7,7 @@ surface that this script touches, update the script.
 ## Setup before the demo
 
 - Open the app fresh in an incognito window so localStorage starts clean.
-- Visit `/profile` once and tap **Reset prototype state** if you want
+- Visit `/profile` once and tap **Reset workspace state** if you want
   the demo to start from the canonical seed (no leftover quote chains,
   read receipts, etc.).
 - Pick your stage URL:
@@ -29,7 +29,7 @@ surface that this script touches, update the script.
 - Say: "The Australian agistment market moves billions of dollars of
   stock a year and it's coordinated on group chat. We replace the
   group chat with one room per movement."
-- Click **Try the demo** -> lands at `/agreements`.
+- Click **Start the agreement** -> lands at `/agreements`.
 
 ### 1. Dale's home (0:20 - 0:50)
 
@@ -124,6 +124,6 @@ Don't go here in the headline pitch. They're roadmap, not MVP:
 
 ## If something breaks mid-demo
 
-- Hit **Reset prototype state** in `/profile` and walk it again.
+- Hit **Reset workspace state** in `/profile` and walk it again.
 - The data layer is feature-flagged: if Supabase is down, the prototype
   state in localStorage carries the demo without missing a beat.
