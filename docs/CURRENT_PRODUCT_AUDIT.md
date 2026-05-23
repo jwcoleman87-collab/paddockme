@@ -300,6 +300,7 @@ npm run verify:pitch
 This runs:
 
 - `npm run typecheck`
+- `npm run docs:check`
 - `npm run build`
 - `npm run demo:smoke`
 - `npm run demo:click`
