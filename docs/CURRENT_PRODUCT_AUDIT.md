@@ -366,6 +366,7 @@ Use these as the active operating set:
 - `docs/INVESTOR_PITCH_NOTES.md`
 - `docs/INVESTOR_DILIGENCE_QA.md`
 - `docs/CUSTOMER_VALIDATION_GUIDE.md`
+- `docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`
 - `docs/CURRENT_PRODUCT_AUDIT.md`
 
 Historical/foundation docs still useful for context:

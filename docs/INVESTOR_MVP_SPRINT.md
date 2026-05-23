@@ -18,6 +18,10 @@ Customer validation guide:
 
 [`docs/CUSTOMER_VALIDATION_GUIDE.md`](./CUSTOMER_VALIDATION_GUIDE.md)
 
+Payments/settlement blueprint:
+
+[`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](./PAYMENTS_SETTLEMENT_BLUEPRINT.md)
+
 ## Working Rule
 
 Do not blur ownership.
