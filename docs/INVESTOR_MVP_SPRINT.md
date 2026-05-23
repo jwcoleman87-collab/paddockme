@@ -26,6 +26,10 @@ Live demo cheat sheet:
 
 [`docs/DEMO_CHEATSHEET.md`](./DEMO_CHEATSHEET.md)
 
+Current AI handoff:
+
+[`docs/AI_HANDOFF_CURRENT.md`](./AI_HANDOFF_CURRENT.md)
+
 ## Working Rule
 
 Do not blur ownership.
