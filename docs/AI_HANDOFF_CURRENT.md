@@ -101,6 +101,7 @@ Real today:
 - Supabase auth wiring.
 - Generated Supabase database types.
 - Type-safe `agistment_requests` insert.
+- Signed-in `/profile` summary loaded from Supabase `profiles`.
 - Investor landing page.
 - Demo route smoke test.
 - Browser click rehearsal.
@@ -127,4 +128,3 @@ Highest value:
 - If labels drift, update scripts/docs immediately.
 - Use `docs/CUSTOMER_VALIDATION_GUIDE.md` for first real interviews.
 - Do not build payments UI until the payment/settlement assumptions are validated.
-

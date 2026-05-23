@@ -1,6 +1,6 @@
 # PaddockME Current Product Audit
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 
 This is the working inventory of what is currently built in the repo and live product. Use it as the handoff map for sprint planning and AI collaboration.
 
@@ -187,10 +187,15 @@ Built:
 
 Built:
 
+- Signed-in Supabase profile summary when an authenticated user has a `profiles` row.
 - Persona browser.
 - Verification/readiness profile surfaces.
 - Prototype reset control.
 - Shared profile schema across livestock owner, landowner, and transport provider personas.
+
+Current limitation:
+
+- The Supabase profile summary is read-only. The persona browser below it still drives the investor demo roles and local prototype reset flow.
 
 ## Request Creation
 

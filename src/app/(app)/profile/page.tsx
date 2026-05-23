@@ -1,9 +1,12 @@
 import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
 import { featuredFarmers } from "@/lib/dummyData";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { ProfileClient } from "./ProfileClient";
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const currentUserProfile = await getCurrentUserProfile();
+
   return (
     <>
       <PageHeader
@@ -13,7 +16,7 @@ export default function ProfilePage() {
         action={<ButtonLink href="/agreements" variant="secondary">Back to agreements</ButtonLink>}
       />
 
-      <ProfileClient farmers={featuredFarmers} />
+      <ProfileClient farmers={featuredFarmers} currentUserProfile={currentUserProfile} />
     </>
   );
 }

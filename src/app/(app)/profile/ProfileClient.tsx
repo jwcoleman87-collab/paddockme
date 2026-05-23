@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle,
   CircleDot,
+  Database,
+  Mail,
   MapPin,
   RotateCcw,
   ShieldCheck,
@@ -19,6 +21,7 @@ import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
+import type { CurrentUserProfile } from "@/lib/supabase/currentUser";
 import type {
   Farmer,
   LivestockSubProfile,
@@ -46,7 +49,13 @@ const roleIcon: Record<Farmer["role"], React.ComponentType<{ className?: string 
   "Transport Provider": Truck,
 };
 
-export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
+export function ProfileClient({
+  farmers,
+  currentUserProfile,
+}: {
+  farmers: Farmer[];
+  currentUserProfile?: CurrentUserProfile | null;
+}) {
   const flash = useFlash();
   const [activeId, setActiveId] = useState<string>(farmers[0]?.id ?? "");
   const hydratedRef = useRef(false);
@@ -108,6 +117,10 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
 
   return (
     <>
+      {currentUserProfile && (
+        <SupabaseProfileSummary profile={currentUserProfile} />
+      )}
+
       <section
         aria-label="Persona switcher"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
@@ -297,6 +310,51 @@ function resetPrototypeState(flash: (message: string, tone?: "info" | "success" 
   } catch {
     flash("Couldn't access local storage.", "warning");
   }
+}
+
+function SupabaseProfileSummary({ profile }: { profile: CurrentUserProfile }) {
+  const accountTypes = formatList(profile.accountTypes);
+  const regions = formatList(profile.regions);
+  const stockTypes = formatList(profile.stockTypes);
+
+  return (
+    <Card className="mb-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
+              <Database className="h-3.5 w-3.5" aria-hidden />
+              Supabase profile
+            </span>
+            <StatusBadge tone="success">Signed in</StatusBadge>
+          </div>
+          <h2 className="text-2xl font-bold text-sage-deep">
+            {profile.fullName ?? "Profile name pending"}
+          </h2>
+          {profile.email && (
+            <p className="mt-1 flex min-w-0 items-center gap-2 text-sm font-semibold text-bark/70">
+              <Mail className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{profile.email}</span>
+            </p>
+          )}
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bark/75">
+            This is the live signed-in user record from Supabase. The persona
+            browser below remains available for investor demo roles and reset
+            testing.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 md:min-w-[28rem]">
+          <InfoTile label="Account types" value={accountTypes} />
+          <InfoTile label="Regions" value={regions} />
+          <InfoTile label="Stock types" value={stockTypes} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function formatList(values: string[]) {
+  return values.length ? values.join(", ") : "Not set";
 }
 
 function LivestockCard({ livestock }: { livestock: LivestockSubProfile }) {
