@@ -70,10 +70,15 @@ Commands run:
 
 ```bash
 npm run demo:click
+npm run verify:pitch
 ```
 
 Results:
 
+- `npm run verify:pitch` passed.
+- Markdown link check passed across the tracked repo docs.
+- Production route smoke passed.
+- Production browser click rehearsal passed.
 - Landing CTA opened `/agreements`.
 - `Sections to confirm` opened `/workspace/agreement-glenbarra`.
 - Dale agreed the `Rate and terms` section.
