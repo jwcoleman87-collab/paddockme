@@ -67,10 +67,10 @@ export default function HomePage() {
             Agistment agreement workflow
           </p>
           <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[1.05] text-sage-deep sm:text-6xl lg:text-7xl">
-            Farmer A and Farmer B agree the terms. Then the driver joins.
+            Feed, paddocks and trucks in one room.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-bark/80 sm:text-xl">
-            PaddockME turns agistment from scattered calls into one shared workflow: request, paddock offer, agreed terms, transport coordination.
+            PaddockME replaces agistment phone tag with a shared workflow for livestock owners, landowners and stock transport.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link

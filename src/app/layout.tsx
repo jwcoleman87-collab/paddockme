@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description:
     "Australian agistment marketplace replacing phone tag with one workflow for livestock owners, landowners and stock transport.",
   openGraph: {
-    title: "PaddockME - Agistment agreement and transport workflow",
+    title: "PaddockME - Feed, paddocks and trucks in one room",
     description:
       "Investor-ready MVP for coordinating agistment agreements and stock transport across regional Australia.",
     url: "https://paddockme-oz51.vercel.app",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "PaddockME - Agistment agreement and transport workflow",
+    title: "PaddockME - Feed, paddocks and trucks in one room",
     description:
       "Australian agistment coordination for livestock owners, landowners and stock transport.",
     images: ["/demo/workspace.png"],
