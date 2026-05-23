@@ -14,6 +14,10 @@ Investor follow-up Q&A:
 
 [`docs/INVESTOR_DILIGENCE_QA.md`](./INVESTOR_DILIGENCE_QA.md)
 
+Customer validation guide:
+
+[`docs/CUSTOMER_VALIDATION_GUIDE.md`](./CUSTOMER_VALIDATION_GUIDE.md)
+
 ## Working Rule
 
 Do not blur ownership.
