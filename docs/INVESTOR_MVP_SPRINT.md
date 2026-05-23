@@ -48,6 +48,7 @@ Done:
 - The five-minute script has been rehearsed against the current product labels.
 - Named demo controls match the current UI: `Sections to confirm`, `Tap to agree`, `Open transport room`, `Accept rate`, and `Offer a paddock`.
 - Brett's `/requests` step is documented with the required persona switch before testing `Offer a paddock`.
+- Product audit, diligence Q&A, customer validation guide, and payments/settlement blueprint exist as sprint operating docs.
 
 Helpful command:
 
@@ -64,16 +65,16 @@ Goal: make the five-minute walkthrough boringly repeatable.
 
 Acceptance criteria:
 
-- `/agreements` opens directly into the intended Dale state.
-- The "Sections to confirm" path lands in the correct workspace.
+- `/agreements` opens directly into the intended Dale state. Automated in `npm run demo:click`.
+- The "Sections to confirm" path lands in the correct workspace. Automated in `npm run demo:click`.
 - Agreement section agreement works for Dale and Brett via the party
   "Tap to agree" controls.
-- Transport tab opens the correct transport room.
-- Driver view shows a credible quote/backload moment.
-- Farmer A can open the Rate tab and accept the driver's rate.
+- Transport tab opens the correct transport room. Automated in `npm run demo:click`.
+- Driver view shows a credible quote/backload moment. Automated in `npm run demo:click`.
+- Farmer A can open the Rate tab and accept the driver's rate. Automated in `npm run demo:click`.
 - Inbox and snapshot are reachable without dead ends.
-- Brett can offer a paddock against an open request.
-- Wayne can show the transport pipeline.
+- Brett can offer a paddock against an open request. Automated in `npm run demo:click`.
+- Wayne can show the transport pipeline. Automated in `npm run demo:click`.
 - Resetting prototype state restores the canonical demo.
 - Automated browser click rehearsal covers the canonical pitch path via `npm run demo:click`.
 
