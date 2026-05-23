@@ -10,6 +10,10 @@ Current built-product inventory:
 
 [`docs/CURRENT_PRODUCT_AUDIT.md`](./CURRENT_PRODUCT_AUDIT.md)
 
+Investor follow-up Q&A:
+
+[`docs/INVESTOR_DILIGENCE_QA.md`](./INVESTOR_DILIGENCE_QA.md)
+
 ## Working Rule
 
 Do not blur ownership.

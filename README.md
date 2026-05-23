@@ -54,6 +54,7 @@ Use these docs as the single source of truth for the current pitch path:
 - [`docs/CURRENT_PRODUCT_AUDIT.md`](docs/CURRENT_PRODUCT_AUDIT.md) - current inventory of built routes, data, and demo limits
 - [`docs/INVESTOR_MVP_SPRINT.md`](docs/INVESTOR_MVP_SPRINT.md) - Day 1/2/3 readiness tracker
 - [`docs/INVESTOR_PITCH_NOTES.md`](docs/INVESTOR_PITCH_NOTES.md) - founder talk track and close
+- [`docs/INVESTOR_DILIGENCE_QA.md`](docs/INVESTOR_DILIGENCE_QA.md) - honest Q&A for investor follow-up
 
 Before pushing pitch-facing changes:
 
@@ -134,6 +135,7 @@ docs/
   DEMO_REHEARSAL_LOG.md    # Latest smoke/rehearsal results
   INVESTOR_MVP_SPRINT.md   # Three-day MVP tracker
   INVESTOR_PITCH_NOTES.md  # Pitch talk track
+  INVESTOR_DILIGENCE_QA.md # Investor follow-up Q&A
 scripts/
   demo-smoke.mjs           # Production smoke test for the demo route set
   demo-click.mjs           # Production browser click rehearsal for the demo path

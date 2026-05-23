@@ -364,6 +364,7 @@ Use these as the active operating set:
 - `docs/DEMO_SCRIPT.md`
 - `docs/DEMO_REHEARSAL_LOG.md`
 - `docs/INVESTOR_PITCH_NOTES.md`
+- `docs/INVESTOR_DILIGENCE_QA.md`
 - `docs/CURRENT_PRODUCT_AUDIT.md`
 
 Historical/foundation docs still useful for context:
