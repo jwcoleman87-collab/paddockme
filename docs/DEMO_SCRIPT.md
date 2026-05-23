@@ -29,7 +29,7 @@ surface that this script touches, update the script.
 - Say: "The Australian agistment market moves billions of dollars of
   stock a year and it's coordinated on group chat. We replace the
   group chat with one room per movement."
-- Click **Start the agreement** -> lands at `/agreements`.
+- Click **Need agistment** to confirm the request entry is obvious, then use `/agreements` for the pitch walkthrough.
 
 ### 1. Dale's home (0:20 - 0:50)
 

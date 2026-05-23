@@ -36,10 +36,11 @@ async function clickRole(role, name) {
   await page.getByRole(role, { name, exact: true }).click();
 }
 
-await step("Landing CTA opens agreements", async () => {
+await step("Landing action opens request flow", async () => {
   await goto("/");
-  await clickRole("link", "Start the agreement");
-  await page.waitForURL("**/agreements", { waitUntil: "networkidle" });
+  await page.getByRole("link", { name: /Need agistment/ }).click();
+  await page.waitForURL("**/request/new", { waitUntil: "networkidle" });
+  await goto("/agreements");
 });
 
 await step("Sections to confirm opens Glenbarra workspace", async () => {

@@ -36,17 +36,14 @@ The app is not yet a fully database-native marketplace. Several demo surfaces in
 
 ### `/`
 
-Investor-facing landing page at `src/app/page.tsx`.
+Public landing page at `src/app/page.tsx`.
 
 Built:
 
-- One-scroll investor story.
-- Hero headline: "Farmer A and Farmer B agree the terms. Then the driver joins."
-- CTA to `/agreements` labelled "Start the agreement".
-- Secondary CTA to `/sign-up`.
-- Persona cards for Dale, Brett, and Wayne.
-- Real demo screenshots from `public/demo/workspace.png`, `public/demo/transport.png`, and `public/demo/requests.png`.
-- Roadmap line that names payments as next without claiming it is built.
+- Simple brand entry screen.
+- Hero headline: "Coordination is expensive."
+- Supporting copy about hidden coordination costs between livestock, land, and transport.
+- Bottom action bar with `Need agistment`, `Have agistment`, and `Need transport`.
 
 ### `/sign-in`
 

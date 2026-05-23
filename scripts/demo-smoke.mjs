@@ -7,11 +7,10 @@ const checks = [
     path: "/",
     name: "Investor landing",
     mustInclude: [
-      "Agistment coordination, made simple.",
-      "Start the agreement",
-      "Dale",
-      "Brett",
-      "Wayne",
+      "Coordination is expensive.",
+      "Need agistment",
+      "Have agistment",
+      "Need transport",
     ],
   },
   {

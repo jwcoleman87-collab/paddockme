@@ -27,7 +27,7 @@ PaddockME turns agistment from phone tag into one coordinated workspace for live
 
 1. `/`
    - Say: "This is a three-sided workflow: livestock, land, transport."
-   - Click `Start the agreement`.
+   - Confirm the bottom bar shows `Need agistment`, `Have agistment`, and `Need transport`.
 
 2. `/agreements`
    - Show Dale's work queue.
