@@ -12,6 +12,7 @@ import {
   unreadCountFor,
 } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
+import { featuredFarmers } from "@/lib/dummyData";
 import type {
   Agreement,
   Farmer,
@@ -132,7 +133,10 @@ export function MessagesClient({
     };
   }, [agreements, transportJobs, serverPersonaId]);
 
-  const personaId = activePersonaId ?? farmers[0]?.id;
+  // Fall back to the first featured persona (Dale today) when no persona is
+  // active. Avoids landing on a non-featured farmer when /messages is hit
+  // directly without first visiting /agreements.
+  const personaId = activePersonaId ?? featuredFarmers[0]?.id ?? farmers[0]?.id;
   const persona = personaId ? farmerById.get(personaId) : undefined;
 
   const threads = useMemo<Thread[]>(() => {
