@@ -7,7 +7,7 @@ const checks = [
     path: "/",
     name: "Investor landing",
     mustInclude: [
-      "Feed, paddocks and trucks in one room.",
+      "Agistment coordination, made simple.",
       "Start the agreement",
       "Dale",
       "Brett",
