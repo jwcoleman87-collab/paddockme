@@ -246,12 +246,12 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-stone">
-              Prototype tools
+              Demo tools
             </p>
             <p className="mt-1 text-sm text-bark/70">
               Persona, workspace, and transport state are stored in your
-              browser for the duration of the prototype. Wipe them to start
-              clean.
+              browser between visits. Wipe them to walk the demo from a
+              clean slate.
             </p>
           </div>
           <button
