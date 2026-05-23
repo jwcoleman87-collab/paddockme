@@ -290,6 +290,12 @@ function resetPrototypeState(flash: (message: string, tone?: "info" | "success" 
       if (key && key.startsWith("paddockme.")) toRemove.push(key);
     }
     toRemove.forEach((key) => window.localStorage.removeItem(key));
+    // Also clear the persona cookie. Without this the user's previously
+    // selected persona (e.g. Brett) survives the reset and the demo
+    // doesn't restart from Dale's canonical view.
+    if (typeof document !== "undefined") {
+      document.cookie = "paddockme_persona=; path=/; max-age=0; SameSite=Lax";
+    }
     flash(`Cleared ${toRemove.length} stored value${toRemove.length === 1 ? "" : "s"}. Reloading...`, "info");
     setTimeout(() => {
       window.location.href = "/agreements";
