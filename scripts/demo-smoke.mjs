@@ -82,7 +82,7 @@ const checks = [
   },
 ];
 
-const manualChecks = [
+const browserChecks = [
   "On /agreements, click Sections to confirm and confirm it opens /workspace/agreement-glenbarra.",
   "In /workspace/agreement-glenbarra, use Farmer A: Tap to agree, switch to Farmer B (Brett), and confirm the same section.",
   "Click Open transport room and confirm it opens /transport/transport-glenbarra.",
@@ -120,8 +120,8 @@ for (const check of checks) {
 }
 
 console.log("");
-console.log("Manual demo clicks still required:");
-for (const item of manualChecks) {
+console.log("Browser click rehearsal covered by npm run demo:click:");
+for (const item of browserChecks) {
   console.log(`- ${item}`);
 }
 
