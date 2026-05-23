@@ -29,9 +29,14 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-6"
     >
-      <div className="grid max-w-[22.5rem] grid-cols-5 gap-1 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:mx-auto sm:max-w-4xl">
+      <div className="relative mx-auto max-w-[22.5rem] sm:max-w-4xl">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-[2.25rem] bg-[radial-gradient(ellipse_at_center,rgba(245,242,232,0.98)_0%,rgba(245,242,232,0.78)_42%,rgba(221,180,87,0.22)_70%,rgba(34,84,52,0)_100%)] blur-md"
+        />
+        <div className="relative grid grid-cols-5 gap-1 rounded-[1.75rem] border border-stone/25 bg-warm-white/96 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.18)] backdrop-blur">
         {navItems.map(({ href, label, icon: Icon, match }) => {
           const active =
             pathname === href ||
@@ -53,6 +58,7 @@ export function BottomNav() {
             </Link>
           );
         })}
+        </div>
       </div>
     </nav>
   );
