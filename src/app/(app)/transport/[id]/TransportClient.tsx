@@ -200,7 +200,19 @@ export function TransportClient({
   function setRole(next: TransportRole) {
     if (next === role) return;
     setRoleState(next);
-    flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+    // Mirror the workspace party switcher: propagating the role to the
+    // global persona cookie keeps the inbox dot, header pill, and other
+    // surfaces in sync if the user navigates out of the room.
+    const profile = senderProfile[next];
+    writePersonaCookie(profile.id);
+    try {
+      window.localStorage.setItem("paddockme.profile.persona", profile.id);
+      window.localStorage.setItem("paddockme.agreements.persona", profile.id);
+      window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
+    } catch {
+      // ignore
+    }
+    flash(`Viewing as ${profile.name} (${profile.role}).`, "info");
   }
 
   const derivedTimeline: TransportTimelineEntry[] = useMemo(() => {
@@ -553,4 +565,9 @@ function nowLabel(): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function writePersonaCookie(personaId: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
 }
