@@ -18,21 +18,38 @@ export function WorkspaceRouteClient({
   seedAgreement,
 }: {
   id: string;
-  seedAgreement: Agreement;
+  seedAgreement: Agreement | undefined;
 }) {
-  const [agreement, setAgreement] = useState<Agreement | null>(seedAgreement);
+  // Start with seedAgreement if we have one (matches the URL id). Don't
+  // fall back to a random seed agreement - that flashes the wrong record
+  // for a beat when the user has just created a new agreement locally.
+  const [agreement, setAgreement] = useState<Agreement | null>(
+    seedAgreement ?? null
+  );
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     void Promise.all([getAgreementRecord(id), listAgreementMessages(id)]).then(
       ([local, nextMessages]) => {
         if (local) setAgreement(local);
         setMessages(nextMessages);
+        setHydrated(true);
       }
     );
   }, [id]);
 
   if (!agreement) {
+    // While the client lookup is still resolving, show a quiet loading
+    // state instead of jumping straight to "not found" - we may be about
+    // to find this agreement in localStorage / Supabase.
+    if (!hydrated) {
+      return (
+        <Card className="text-center">
+          <p className="text-sm font-medium text-bark/70">Loading workspace...</p>
+        </Card>
+      );
+    }
     return (
       <Card className="text-center">
         <h2 className="text-lg font-bold text-sage-deep">No agreement found.</h2>
@@ -65,7 +82,7 @@ export function WorkspaceRouteClient({
         }
       />
       <FlowContextBar
-        label="Closed-loop prototype"
+        label="Coordination flow"
         step="Dale request -> Brett paddock -> agreement -> transport"
         backHref={`/listings/${agreement.listingId}`}
         backLabel="Back to paddock"

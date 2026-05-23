@@ -51,7 +51,7 @@ export function ListingDetailClient({
       <Card className="text-center">
         <h2 className="text-lg font-bold text-sage-deep">Listing not found.</h2>
         <p className="mt-2 text-sm text-bark/70">
-          This prototype could not find that paddock in local storage.
+          We couldn't find that paddock. It may have been withdrawn.
         </p>
         <ButtonLink href="/listings" className="mt-4 inline-flex">
           Back to paddocks

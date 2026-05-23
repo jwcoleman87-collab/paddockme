@@ -93,6 +93,22 @@ export function AgreementsClient({
       const persona = stored ?? readPersonaCookie();
       if (persona && farmers.some((f) => f.id === persona)) {
         setActiveId(persona);
+      } else if (!stored) {
+        // Cold visit with no stored persona: seed the cookie/localStorage
+        // with whichever persona is currently active (defaults to Dale).
+        // Without this, /requests, /messages, and the header inbox dot
+        // can't tell who's signed in until the user manually clicks the
+        // switcher.
+        try {
+          window.localStorage.setItem(
+            "paddockme.agreements.persona",
+            activeId
+          );
+        } catch {
+          // ignore
+        }
+        writePersonaCookie(activeId);
+        window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
       }
     } catch {
       const persona = readPersonaCookie();

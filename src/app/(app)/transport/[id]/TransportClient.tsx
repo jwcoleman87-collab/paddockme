@@ -14,7 +14,9 @@ import {
 import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import {
+  farmers,
   getDriverBackloads,
+  type Farmer,
   type Message,
   type TransportArtefact,
   type TransportCapacity,
@@ -51,14 +53,59 @@ const roles: { id: TransportRole; label: string; helper: string }[] = [
   },
 ];
 
-const senderProfile: Record<
-  TransportRole,
-  { id: string; name: string; role: string; avatarUrl: string }
-> = {
+type SenderProfile = {
+  id: string;
+  name: string;
+  role: string;
+  avatarUrl?: string;
+};
+
+const DEFAULT_SENDER_PROFILE: Record<TransportRole, SenderProfile> = {
   farmerA: { id: "farmer-a", name: "Dale", role: "Livestock owner", avatarUrl: "/avatars/dale.jpg" },
   farmerB: { id: "farmer-b", name: "Brett", role: "Landowner", avatarUrl: "/avatars/brett.jpg" },
   driver: { id: "driver-1", name: "Wayne", role: "Driver", avatarUrl: "/avatars/wayne.jpg" },
 };
+
+/**
+ * Build per-role identity for whichever farmers / driver are on this
+ * transport job. Falls back to the canonical Dale / Brett / Wayne trio
+ * when the lookup fails so unfamiliar jobs still render.
+ */
+function buildSenderProfile(
+  job: TransportJob
+): Record<TransportRole, SenderProfile> {
+  const farmerA = farmers.find((f) => f.id === job.farmerAId);
+  const farmerB = farmers.find((f) => f.id === job.farmerBId);
+  const driver = farmers.find((f) => f.id === job.driverId);
+  return {
+    farmerA: farmerA
+      ? toSenderProfile(farmerA, "Livestock owner")
+      : DEFAULT_SENDER_PROFILE.farmerA,
+    farmerB: farmerB
+      ? toSenderProfile(farmerB, "Landowner")
+      : DEFAULT_SENDER_PROFILE.farmerB,
+    driver: driver
+      ? toSenderProfile(driver, "Driver")
+      : DEFAULT_SENDER_PROFILE.driver,
+  };
+}
+
+function toSenderProfile(farmer: Farmer, fallbackRole: string): SenderProfile {
+  const role =
+    farmer.role === "Livestock Owner"
+      ? "Livestock owner"
+      : farmer.role === "Landowner"
+        ? "Landowner"
+        : farmer.role === "Transport Provider"
+          ? "Driver"
+          : fallbackRole;
+  return {
+    id: farmer.id,
+    name: farmer.name.split(" ")[0],
+    role,
+    avatarUrl: farmer.avatarUrl,
+  };
+}
 
 export function TransportClient({
   job,
@@ -72,6 +119,13 @@ export function TransportClient({
   const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // Sender identity derived per job so messages and flashes name the real
+  // parties (not the hardcoded Dale / Brett / Wayne trio) when the
+  // transport job involves different farmers.
+  const senderProfile = useMemo(
+    () => buildSenderProfile(jobState),
+    [jobState]
+  );
 
   // Inbox unread tracker - mark the transport room as seen up to the current
   // count whenever it changes while the room is open.
@@ -146,7 +200,19 @@ export function TransportClient({
   function setRole(next: TransportRole) {
     if (next === role) return;
     setRoleState(next);
-    flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+    // Mirror the workspace party switcher: propagating the role to the
+    // global persona cookie keeps the inbox dot, header pill, and other
+    // surfaces in sync if the user navigates out of the room.
+    const profile = senderProfile[next];
+    writePersonaCookie(profile.id);
+    try {
+      window.localStorage.setItem("paddockme.profile.persona", profile.id);
+      window.localStorage.setItem("paddockme.agreements.persona", profile.id);
+      window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
+    } catch {
+      // ignore
+    }
+    flash(`Viewing as ${profile.name} (${profile.role}).`, "info");
   }
 
   const derivedTimeline: TransportTimelineEntry[] = useMemo(() => {
@@ -397,7 +463,7 @@ export function TransportClient({
             </h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-            Prototype
+            Demo
           </span>
         </div>
         <div
@@ -499,4 +565,9 @@ function nowLabel(): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function writePersonaCookie(personaId: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
 }

@@ -246,12 +246,12 @@ export function ProfileClient({ farmers }: { farmers: Farmer[] }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-stone">
-              Prototype tools
+              Demo tools
             </p>
             <p className="mt-1 text-sm text-bark/70">
               Persona, workspace, and transport state are stored in your
-              browser for the duration of the prototype. Wipe them to start
-              clean.
+              browser between visits. Wipe them to walk the demo from a
+              clean slate.
             </p>
           </div>
           <button
@@ -290,6 +290,12 @@ function resetPrototypeState(flash: (message: string, tone?: "info" | "success" 
       if (key && key.startsWith("paddockme.")) toRemove.push(key);
     }
     toRemove.forEach((key) => window.localStorage.removeItem(key));
+    // Also clear the persona cookie. Without this the user's previously
+    // selected persona (e.g. Brett) survives the reset and the demo
+    // doesn't restart from Dale's canonical view.
+    if (typeof document !== "undefined") {
+      document.cookie = "paddockme_persona=; path=/; max-age=0; SameSite=Lax";
+    }
     flash(`Cleared ${toRemove.length} stored value${toRemove.length === 1 ? "" : "s"}. Reloading...`, "info");
     setTimeout(() => {
       window.location.href = "/agreements";

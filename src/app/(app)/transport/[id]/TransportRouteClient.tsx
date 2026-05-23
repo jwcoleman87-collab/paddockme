@@ -21,21 +21,32 @@ export function TransportRouteClient({
   seedJob,
 }: {
   id: string;
-  seedJob: TransportJob;
+  seedJob: TransportJob | undefined;
 }) {
-  const [job, setJob] = useState(seedJob);
+  const [job, setJob] = useState<TransportJob | null>(seedJob ?? null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     void Promise.all([getTransportJobRecord(id), listTransportMessages(id)]).then(
       ([local, nextMessages]) => {
         if (local) setJob(local);
         setMessages(nextMessages);
+        setHydrated(true);
       }
     );
   }, [id]);
 
   if (!job) {
+    if (!hydrated) {
+      return (
+        <Card className="text-center">
+          <p className="text-sm font-medium text-bark/70">
+            Loading transport room...
+          </p>
+        </Card>
+      );
+    }
     return (
       <Card className="text-center">
         <h2 className="text-lg font-bold text-sage-deep">No transport job found.</h2>
