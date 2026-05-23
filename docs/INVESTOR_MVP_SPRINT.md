@@ -40,10 +40,10 @@ Done:
 Helpful command:
 
 ```bash
-npm run demo:smoke
+npm run verify:pitch
 ```
 
-This checks the production demo route spine and prints the manual click checks that still need a browser rehearsal.
+This runs TypeScript, the production build, route smoke checks, and the browser click rehearsal for the canonical pitch path.
 Manual rehearsal notes live in `docs/DEMO_REHEARSAL_LOG.md`.
 
 ## Day 2 - Demo Reliability
@@ -63,6 +63,7 @@ Acceptance criteria:
 - Brett can offer a paddock against an open request.
 - Wayne can show the transport pipeline.
 - Resetting prototype state restores the canonical demo.
+- Automated browser click rehearsal covers the canonical pitch path via `npm run demo:click`.
 
 Nice to have:
 

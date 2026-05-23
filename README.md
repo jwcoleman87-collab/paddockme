@@ -38,9 +38,10 @@ The app boots at `http://localhost:3000`.
 
 ```bash
 npm run dev          # Local development server
-npm run verify:pitch # Typecheck, build, and production demo smoke
+npm run verify:pitch # Typecheck, build, production smoke, and browser click rehearsal
 npm run build        # Production build check
 npm run demo:smoke   # Production demo route/content smoke test
+npm run demo:click   # Production browser click rehearsal for the pitch path
 npm run db:types     # Regenerate Supabase database types
 ```
 
@@ -135,6 +136,7 @@ docs/
   INVESTOR_PITCH_NOTES.md  # Pitch talk track
 scripts/
   demo-smoke.mjs           # Production smoke test for the demo route set
+  demo-click.mjs           # Production browser click rehearsal for the demo path
 ```
 
 ## Deployment

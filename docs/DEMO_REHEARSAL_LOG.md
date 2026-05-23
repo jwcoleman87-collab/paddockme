@@ -59,3 +59,28 @@ Production manual click rehearsal:
 - `/requests` as Brett showed three `Offer a paddock` buttons.
 - Clicking the first `Offer a paddock` opened the live picker labelled `Pick a paddock to offer`.
 - No console errors observed during the manual click rehearsal.
+
+## 2026-05-23
+
+Environment:
+
+- Production route and browser rehearsal: `https://paddockme-oz51.vercel.app`
+
+Commands run:
+
+```bash
+npm run demo:click
+```
+
+Results:
+
+- Landing CTA opened `/agreements`.
+- `Sections to confirm` opened `/workspace/agreement-glenbarra`.
+- Dale agreed the `Rate and terms` section.
+- Brett agreed the same section after switching to `Farmer B (Brett) Landowner`.
+- `Open transport room` opened `/transport/transport-glenbarra`.
+- Driver view showed Wayne and possible backloads.
+- Farmer A opened the `Rate` tab and saw `Rate accepted`.
+- Brett opened the `Pick a paddock to offer` picker from `/requests`.
+- Wayne's `/runs` pipeline was reachable.
+- No console errors observed during the automated browser rehearsal.

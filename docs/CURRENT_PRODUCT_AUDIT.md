@@ -30,6 +30,7 @@ The app is not yet a fully database-native marketplace. Several demo surfaces in
 - Backend/auth: Supabase client/server helpers in `src/lib/supabase`.
 - Deployment: Vercel production deploys from `main`.
 - Smoke verification: `scripts/demo-smoke.mjs`.
+- Browser click rehearsal: `scripts/demo-click.mjs`.
 
 ## Public And Auth Surface
 
@@ -301,6 +302,7 @@ This runs:
 - `npm run typecheck`
 - `npm run build`
 - `npm run demo:smoke`
+- `npm run demo:click`
 
 Smoke script currently checks:
 
@@ -317,9 +319,22 @@ Smoke script currently checks:
 - `/runs`
 - `/profile`
 
+Browser click rehearsal currently checks:
+
+- Landing CTA opens `/agreements`.
+- `Sections to confirm` opens `/workspace/agreement-glenbarra`.
+- Dale can agree the rate section.
+- Brett can agree the same section.
+- `Open transport room` opens `/transport/transport-glenbarra`.
+- Wayne's driver view shows the transport/backload economics.
+- Farmer A can open the rate state and see `Rate accepted`.
+- Brett can open the `Pick a paddock to offer` picker.
+- Wayne's `/runs` pipeline is reachable.
+
 Latest known local status:
 
 - `npm run verify:pitch` passes.
+- `npm run demo:click` passes against production.
 - Live marketing/auth browser sweep passed at 375px, 768px, and 1280px.
 - Latest rehearsal notes are in `docs/DEMO_REHEARSAL_LOG.md`.
 
@@ -376,14 +391,14 @@ Not currently built as production-grade functionality:
 - Admin tooling.
 - A full matching algorithm.
 - Fully database-native state for every prototype interaction.
-- Automated browser click testing for the manual demo interactions.
+- Broader automated browser coverage beyond the canonical pitch path.
 
 ## Highest-Leverage Next Moves
 
 For the three-day investor sprint, the next useful moves are:
 
 - Keep the canonical pitch path stable and avoid broad app changes.
-- Add automated browser interaction coverage for the manual demo clicks.
+- Keep `scripts/demo-click.mjs` aligned with any live label changes.
 - Rehearse production twice with a timer and update `docs/DEMO_REHEARSAL_LOG.md`.
 - Replace demo screenshots only if Claude changes the authenticated app visuals.
 - Decide the Day 2/Day 3 commercial story for payments and settlement without building payment UI yet.
