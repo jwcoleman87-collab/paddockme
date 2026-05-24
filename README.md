@@ -78,6 +78,8 @@ Set these in `.env.local` for local dev, and in the Vercel project settings for 
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project → Settings → API → `anon` public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API → `service_role` key (server-only, never expose) |
 
+Google Maps: set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` from Google Cloud and enable the Maps JavaScript API plus Directions API for road-route overlays. Without this key, PaddockME uses the built-in stable map fallback.
+
 ## Folder structure
 
 ```

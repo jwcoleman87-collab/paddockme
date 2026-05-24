@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap, type MapGeoJSONFeature } from "maplibre-gl";
+import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import {
   CalendarDays,
   Layers3,
@@ -60,6 +60,7 @@ type MapFeatureProperties = {
   count?: number;
   items?: MapFeatureItem[];
   routeState?: "available" | "negotiation" | "accepted" | "capacity";
+  priceLabel?: string;
 };
 
 type Feature = {
@@ -101,9 +102,6 @@ type PaddockMapProps = {
   region?: string;
 };
 
-const pointSourceId = "paddockme-operational-points";
-const routeSourceId = "paddockme-routes";
-const routeEndpointSourceId = "paddockme-route-endpoints";
 const australiaBounds: [[number, number], [number, number]] = [
   [111.5, -44.5],
   [154.5, -10],
@@ -111,6 +109,7 @@ const australiaBounds: [[number, number], [number, number]] = [
 const australiaCentre: [number, number] = [134.5, -25.5];
 const australiaZoom = 3.62;
 const transportRouteZoomThreshold = 6;
+const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]]> = {
   NSW: [
     [140.6, -37.8],
@@ -129,13 +128,11 @@ export function PaddockMap({
   driverId = "driver-1",
   region,
 }: PaddockMapProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const featureLookupRef = useRef<Map<string, MapFeatureProperties>>(new Map());
-  const [ready, setReady] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
   const [selected, setSelected] = useState<MapFeatureProperties | null>(null);
   const [mapZoom, setMapZoom] = useState(mode === "regional" && !region ? australiaZoom : 6.3);
+  const [googleMapReady, setGoogleMapReady] = useState(false);
+  const [googleMapError, setGoogleMapError] = useState<string | null>(null);
+  const googleMapEnabled = !!googleMapsApiKey && !googleMapError;
   const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
     paddocks: true,
     requests: true,
@@ -154,373 +151,6 @@ export function PaddockMap({
   useEffect(() => {
     setState({ ...loadPrototypeState(), transportCapacities });
   }, []);
-
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const supportCheck = (maplibregl as unknown as {
-      supported?: (options?: { failIfMajorPerformanceCaveat?: boolean }) => boolean;
-    }).supported;
-    if (supportCheck && !supportCheck({ failIfMajorPerformanceCaveat: false })) {
-      setMapError("Interactive WebGL map is not available in this browser.");
-      return;
-    }
-    let map: MapLibreMap;
-    try {
-      map = new maplibregl.Map({
-        container: containerRef.current,
-        style: {
-          version: 8,
-          glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: "OpenStreetMap contributors",
-            },
-          },
-          layers: [
-            {
-              id: "map-background",
-              type: "background",
-              paint: { "background-color": "#eef3e8" },
-            },
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
-              paint: { "raster-opacity": 0.9 },
-            },
-          ],
-        },
-        center: mode === "regional" && !region ? australiaCentre : [147.3, -32.7],
-        zoom: mode === "regional" && !region ? australiaZoom : 6.3,
-        minZoom: 3,
-        maxZoom: 13,
-        cooperativeGestures: true,
-      });
-    } catch (error) {
-      setMapError(error instanceof Error ? error.message : "The interactive map failed to start.");
-      return;
-    }
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-    map.on("error", (event) => {
-      const message = event.error?.message ?? "";
-      if (message.toLowerCase().includes("webgl")) {
-        setMapError(message);
-      }
-    });
-    map.on("zoomend", () => setMapZoom(map.getZoom()));
-    map.on("load", () => {
-      setMapZoom(map.getZoom());
-      map.addSource(pointSourceId, {
-        type: "geojson",
-        data: emptyFeatureCollection(),
-      });
-      map.addSource(routeSourceId, {
-        type: "geojson",
-        data: emptyLineCollection(),
-        lineMetrics: true,
-      });
-      map.addSource(routeEndpointSourceId, {
-        type: "geojson",
-        data: emptyFeatureCollection(),
-      });
-      map.addLayer({
-        id: "route-shadow",
-        type: "line",
-        source: routeSourceId,
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
-        paint: {
-          "line-color": [
-            "match",
-            ["get", "routeState"],
-            "available",
-            "#8fcf9a",
-            "negotiation",
-            "#e88f3f",
-            "accepted",
-            "#e88f3f",
-            "capacity",
-            "#d4a853",
-            "#5b8c5a",
-          ],
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            6.5,
-            7,
-            10,
-          ],
-          "line-opacity": 0.2,
-          "line-blur": 1.2,
-        },
-      });
-      map.addLayer({
-        id: "route-vein",
-        type: "line",
-        source: routeSourceId,
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
-        paint: {
-          "line-color": [
-            "match",
-            ["get", "routeState"],
-            "available",
-            "#d7f0d6",
-            "negotiation",
-            "#f7c27d",
-            "accepted",
-            "#f7c27d",
-            "capacity",
-            "#f3ddb0",
-            "#d0e8cf",
-          ],
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            3.2,
-            7,
-            5.2,
-          ],
-          "line-opacity": 0.44,
-          "line-blur": 0.35,
-        },
-      });
-      map.addLayer({
-        id: "route-line",
-        type: "line",
-        source: routeSourceId,
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
-        paint: {
-          "line-color": [
-            "match",
-            ["get", "routeState"],
-            "available",
-            "#4e9f5b",
-            "negotiation",
-            "#d86f24",
-            "accepted",
-            "#d86f24",
-            "capacity",
-            "#a97924",
-            "#2c5030",
-          ],
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            1.55,
-            7,
-            2.75,
-          ],
-          "line-opacity": [
-            "match",
-            ["get", "kind"],
-            "transport",
-            0.96,
-            0.9,
-          ],
-        },
-      });
-      map.addLayer({
-        id: "route-start",
-        type: "circle",
-        source: routeEndpointSourceId,
-        paint: {
-          "circle-color": "#fdfcf9",
-          "circle-radius": 4.5,
-          "circle-stroke-color": "#e88f3f",
-          "circle-stroke-width": 2,
-        },
-      });
-      map.addLayer({
-        id: "signal-field",
-        type: "circle",
-        source: pointSourceId,
-        paint: {
-          "circle-color": [
-            "match",
-            ["get", "kind"],
-            "paddocks",
-            "#5b8c5a",
-            "requests",
-            "#c47b5a",
-            "transport",
-            "#e88f3f",
-            "profiles",
-            "#d4a853",
-            "weather",
-            "#9b7adf",
-            "#6d6257",
-          ],
-          "circle-opacity": [
-            "match",
-            ["get", "kind"],
-            "weather",
-            0.24,
-            "transport",
-            0.22,
-            0.18,
-          ],
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            [
-              "case",
-              ["==", ["get", "display"], "hotspot"],
-              [
-                "interpolate",
-                ["linear"],
-                ["coalesce", ["get", "count"], 1],
-                1,
-                34,
-                5,
-                50,
-              ],
-              ["match", ["get", "kind"], "weather", 42, "transport", 34, 26],
-            ],
-            7,
-            [
-              "case",
-              ["==", ["get", "display"], "hotspot"],
-              [
-                "interpolate",
-                ["linear"],
-                ["coalesce", ["get", "count"], 1],
-                1,
-                46,
-                5,
-                64,
-              ],
-              ["match", ["get", "kind"], "weather", 58, "transport", 46, 34],
-            ],
-          ],
-          "circle-stroke-width": 0,
-        },
-      });
-      map.addLayer({
-        id: "unclustered-point",
-        type: "circle",
-        source: pointSourceId,
-        paint: {
-          "circle-color": [
-            "match",
-            ["get", "kind"],
-            "paddocks",
-            "#5b8c5a",
-            "requests",
-            "#c47b5a",
-            "transport",
-            "#e88f3f",
-            "profiles",
-            "#d4a853",
-            "weather",
-            "#9b7adf",
-            "#6d6257",
-          ],
-          "circle-radius": [
-            "case",
-            ["==", ["get", "display"], "hotspot"],
-            13,
-            6,
-          ],
-          "circle-stroke-color": "#fdfcf9",
-          "circle-stroke-width": 2,
-        },
-      });
-      map.addLayer({
-        id: "transport-hotspot-count",
-        type: "symbol",
-        source: pointSourceId,
-        filter: ["all", ["==", ["get", "kind"], "transport"], ["==", ["get", "display"], "hotspot"]],
-        layout: {
-          "text-field": ["to-string", ["get", "count"]],
-          "text-size": 13,
-          "text-allow-overlap": true,
-        },
-        paint: {
-          "text-color": "#5c3217",
-          "text-halo-color": "#fdfcf9",
-          "text-halo-width": 1.8,
-        },
-      });
-      map.addLayer({
-        id: "point-label",
-        type: "symbol",
-        source: pointSourceId,
-        filter: ["!=", ["get", "display"], "hotspot"],
-        layout: {
-          "text-field": ["get", "title"],
-          "text-size": 11,
-          "text-offset": [0, 1.35],
-          "text-anchor": "top",
-        },
-        paint: {
-          "text-color": "#3f3328",
-          "text-halo-color": "#fdfcf9",
-          "text-halo-width": 1.6,
-        },
-      });
-      map.on("click", "unclustered-point", (event) => {
-        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
-        if (!feature) return;
-        const id = feature.properties?.id;
-        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
-      });
-      map.on("click", "route-line", (event) => {
-        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
-        if (!feature) return;
-        const id = feature.properties?.id;
-        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
-      });
-      map.on("click", "route-start", (event) => {
-        const feature = event.features?.[0] as MapGeoJSONFeature | undefined;
-        if (!feature) return;
-        const id = feature.properties?.id;
-        setSelected((typeof id === "string" && featureLookupRef.current.get(id)) || (feature.properties as MapFeatureProperties));
-      });
-      map.on("mouseenter", "unclustered-point", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseenter", "route-line", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseenter", "route-start", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "unclustered-point", () => {
-        map.getCanvas().style.cursor = "";
-      });
-      map.on("mouseleave", "route-line", () => {
-        map.getCanvas().style.cursor = "";
-      });
-      map.on("mouseleave", "route-start", () => {
-        map.getCanvas().style.cursor = "";
-      });
-      setReady(true);
-    });
-    mapRef.current = map;
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, [mode]);
 
   const context = useMemo(
     () =>
@@ -571,97 +201,34 @@ export function PaddockMap({
     [visibleRoutes]
   );
 
-  useEffect(() => {
-    if (!ready) return;
-    const map = mapRef.current;
-    if (!map) return;
-    featureLookupRef.current = new Map(
-      [
-        ...visiblePointData.features,
-        ...visibleRoutes.features,
-        ...visibleRouteEndpoints.features,
-      ].map((feature) => [feature.properties.id, feature.properties])
-    );
-    (map.getSource(pointSourceId) as maplibregl.GeoJSONSource)?.setData(visiblePointData as never);
-    (map.getSource(routeSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRoutes as never);
-    (map.getSource(routeEndpointSourceId) as maplibregl.GeoJSONSource)?.setData(visibleRouteEndpoints as never);
-  }, [ready, visiblePointData, visibleRouteEndpoints, visibleRoutes]);
-
-  useEffect(() => {
-    if (!ready) return;
-    const map = mapRef.current;
-    if (!map) return;
-    if (mode === "regional" && !region) {
-      map.easeTo({
-        center: australiaCentre,
-        zoom: australiaZoom,
-        duration: 650,
-      });
-      return;
-    }
-    if (context.bounds) {
-      map.fitBounds(context.bounds, {
-        padding: { top: 62, right: 44, bottom: 220, left: 44 },
-        maxZoom: mode === "regional" ? 4.35 : 8.5,
-        duration: 650,
-      });
-    }
-  }, [agreementId, context.bounds, driverId, mode, ready, region, transportId]);
-
   function locateOperationalView() {
-    const map = mapRef.current;
-    if (!map) return;
-    if (mode === "regional" && !region) {
-      map.easeTo({
-        center: australiaCentre,
-        zoom: australiaZoom,
-        duration: 650,
-      });
-      return;
-    }
-    if (!context.bounds) return;
-    map.fitBounds(context.bounds, {
-      padding: { top: 62, right: 44, bottom: 220, left: 44 },
-      maxZoom: mode === "regional" ? 4.35 : 8.5,
-      duration: 650,
-    });
+    setSelected(null);
   }
 
   function focusMapFeature(featureId: string) {
-    const map = mapRef.current;
     const route = context.routes.features.find((feature) => feature.properties.id === featureId);
     if (route) {
       setSelected(route.properties);
-      const bounds = boundsForCoordinates(route.geometry.coordinates);
-      if (bounds && map) {
-        map.fitBounds(bounds, {
-          padding: { top: 86, right: 56, bottom: 170, left: 56 },
-          maxZoom: 8.25,
-          duration: 650,
-        });
-      }
       return;
     }
     const point = context.points.find((feature) => feature.properties.id === featureId);
     if (point) {
       setSelected(point.properties);
-      if (map) {
-        map.easeTo({
-          center: point.geometry.coordinates,
-          zoom: Math.max(map.getZoom(), 7),
-          duration: 650,
-        });
-      }
     }
   }
 
   function focusMapState(bounds: [[number, number], [number, number]]) {
-    const map = mapRef.current;
-    if (!map) return;
-    map.fitBounds(bounds, {
-      padding: { top: 86, right: 56, bottom: 170, left: 56 },
-      maxZoom: 6,
-      duration: 650,
+    const centre: [number, number] = [
+      (bounds[0][0] + bounds[1][0]) / 2,
+      (bounds[0][1] + bounds[1][1]) / 2,
+    ];
+    setSelected({
+      id: `state-${centre.join("-")}`,
+      kind: "transport",
+      title: "State route view",
+      subtitle: "Map centred on the selected driver operating region.",
+      metric: "Choose a route card to inspect a specific job or backload lane.",
+      privacy: "Driver view only: logistics and route economics, not private agistment terms.",
     });
   }
 
@@ -669,18 +236,25 @@ export function PaddockMap({
     <section className="overflow-hidden rounded-[8px] border border-mist bg-cream shadow-sm shadow-bark/5">
       <div className={cn("grid lg:grid-cols-[minmax(0,1fr)_22rem]", mode === "driver" ? "min-h-[82dvh]" : "min-h-[72dvh]")}>
         <div className={cn("relative", mode === "driver" ? "min-h-[78dvh]" : "min-h-[68dvh]")}>
-          <div
-            ref={containerRef}
-            className={cn(
-              "absolute inset-0 z-0 transition-opacity duration-300",
-              ready && !mapError ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
+          <GoogleOperationalMap
+            points={visiblePointData.features}
+            routes={visibleRoutes.features}
+            routeEndpoints={visibleRouteEndpoints.features}
+            bounds={context.bounds}
+            mode={mode}
+            onSelect={setSelected}
+            onZoomChange={setMapZoom}
+            onReady={() => {
+              setGoogleMapReady(true);
+              setGoogleMapError(null);
+            }}
+            onError={setGoogleMapError}
           />
           <OperationalMapLayer
             points={visiblePointData.features}
             routes={visibleRoutes.features}
             routeEndpoints={visibleRouteEndpoints.features}
-            active={!ready || !!mapError}
+            active={!googleMapEnabled}
             onSelect={setSelected}
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
@@ -709,13 +283,13 @@ export function PaddockMap({
               <LocateFixed className="h-4 w-4" aria-hidden />
               Re-centre
             </button>
-            {mapError ? (
+            {googleMapError || !googleMapsApiKey ? (
               <div className="pointer-events-auto rounded-[8px] border border-amber/30 bg-amber-light px-3 py-2 text-sm font-semibold text-amber shadow-lg shadow-bark/10">
-                Stable map active
+                {googleMapsApiKey ? "Stable map active" : "Add Google Maps key"}
               </div>
-            ) : ready ? (
+            ) : googleMapReady ? (
               <div className="pointer-events-auto rounded-[8px] border border-sage/25 bg-sage-mist px-3 py-2 text-sm font-semibold text-sage-deep shadow-lg shadow-bark/10">
-                Live tile layer connected
+                Google Maps connected
               </div>
             ) : null}
           </div>
@@ -996,6 +570,211 @@ function MapSheet({
       ) : null}
     </div>
   );
+}
+
+function GoogleOperationalMap({
+  points,
+  routes,
+  routeEndpoints,
+  bounds,
+  mode,
+  onSelect,
+  onZoomChange,
+  onReady,
+  onError,
+}: {
+  points: Feature[];
+  routes: LineFeature[];
+  routeEndpoints: Feature[];
+  bounds?: [[number, number], [number, number]];
+  mode: PaddockMapMode;
+  onSelect: (properties: MapFeatureProperties) => void;
+  onZoomChange: (zoom: number) => void;
+  onReady: () => void;
+  onError: (message: string | null) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const overlaysRef = useRef<
+    (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
+  >([]);
+
+  useEffect(() => {
+    if (!googleMapsApiKey || !containerRef.current || mapRef.current) return;
+    let cancelled = false;
+    setOptions({
+      key: googleMapsApiKey,
+      v: "weekly",
+    });
+    Promise.all([importLibrary("maps"), importLibrary("routes")])
+      .then(() => {
+        if (cancelled || !containerRef.current) return;
+        const map = new google.maps.Map(containerRef.current, {
+          center: googleLatLng(australiaCentre),
+          zoom: mode === "regional" ? australiaZoom : 6.3,
+          minZoom: 3,
+          maxZoom: 15,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: false,
+          clickableIcons: false,
+          gestureHandling: "cooperative",
+          backgroundColor: "#eef3e8",
+        });
+        map.addListener("zoom_changed", () => onZoomChange(map.getZoom() ?? australiaZoom));
+        mapRef.current = map;
+        onError(null);
+        onReady();
+      })
+      .catch((error: unknown) => {
+        onError(error instanceof Error ? error.message : "Google Maps failed to load.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, onError, onReady, onZoomChange]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    overlaysRef.current.forEach((overlay) => overlay.setMap(null));
+    overlaysRef.current = [];
+
+    const directionsService = new google.maps.DirectionsService();
+    routes.forEach((route) => {
+      const path = route.geometry.coordinates.map(googleLatLng);
+      const [origin] = path;
+      const destination = path[path.length - 1];
+      const waypoints = path.slice(1, -1).slice(0, 23).map((location) => ({
+        location,
+        stopover: false,
+      }));
+      const fallback = drawGooglePolyline(map, route, path, onSelect);
+      overlaysRef.current.push(fallback);
+
+      if (!origin || !destination) return;
+      directionsService.route(
+        {
+          origin,
+          destination,
+          waypoints,
+          travelMode: google.maps.TravelMode.DRIVING,
+          optimizeWaypoints: false,
+        },
+        (result, status) => {
+          if (status !== google.maps.DirectionsStatus.OK || !result) return;
+          fallback.setMap(null);
+          const renderer = new google.maps.DirectionsRenderer({
+            directions: result,
+            map,
+            suppressMarkers: true,
+            preserveViewport: true,
+            polylineOptions: {
+              strokeColor: routeColourForState(route.properties.routeState, "core"),
+              strokeOpacity: 0.96,
+              strokeWeight: mode === "driver" ? 5 : 4,
+              clickable: true,
+            },
+          });
+          renderer.addListener("click", () => onSelect(route.properties));
+          overlaysRef.current.push(renderer);
+        }
+      );
+
+      if (route.properties.priceLabel) {
+        const priceMarker = new google.maps.Marker({
+          position: path[Math.floor(path.length / 2)],
+          map,
+          label: {
+            text: route.properties.priceLabel,
+            color: "#2c5030",
+            fontSize: "12px",
+            fontWeight: "800",
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 16,
+            fillColor: "#fdfcf9",
+            fillOpacity: 0.96,
+            strokeColor: "#2c5030",
+            strokeWeight: 2,
+          },
+          title: route.properties.title,
+        });
+        priceMarker.addListener("click", () => onSelect(route.properties));
+        overlaysRef.current.push(priceMarker);
+      }
+    });
+
+    [...points, ...routeEndpoints].forEach((point) => {
+      const marker = new google.maps.Marker({
+        position: googleLatLng(point.geometry.coordinates),
+        map,
+        title: point.properties.title,
+        label:
+          point.properties.display === "hotspot" && point.properties.count
+            ? {
+                text: String(point.properties.count),
+                color: "#5c3217",
+                fontSize: "12px",
+                fontWeight: "800",
+              }
+            : undefined,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: point.properties.display === "hotspot" ? 13 : 7,
+          fillColor: colourForKind(point.properties.kind),
+          fillOpacity: point.properties.display === "hotspot" ? 0.92 : 0.98,
+          strokeColor: "#fdfcf9",
+          strokeWeight: 2,
+        },
+      });
+      marker.addListener("click", () => onSelect(point.properties));
+      overlaysRef.current.push(marker);
+    });
+
+    const fitBounds = bounds ?? boundsForPointsAndLines(points, { type: "FeatureCollection", features: routes });
+    if (fitBounds) {
+      map.fitBounds(
+        new google.maps.LatLngBounds(
+          googleLatLng(fitBounds[0]),
+          googleLatLng(fitBounds[1])
+        ),
+        72
+      );
+    }
+  }, [bounds, mode, onSelect, points, routeEndpoints, routes]);
+
+  if (!googleMapsApiKey) return null;
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 z-0"
+      aria-label="Google Maps operational layer"
+    />
+  );
+}
+
+function drawGooglePolyline(
+  map: google.maps.Map,
+  route: LineFeature,
+  path: google.maps.LatLngLiteral[],
+  onSelect: (properties: MapFeatureProperties) => void
+) {
+  const polyline = new google.maps.Polyline({
+    map,
+    path,
+    strokeColor: routeColourForState(route.properties.routeState, "core"),
+    strokeOpacity: 0.85,
+    strokeWeight: 4,
+    clickable: true,
+  });
+  polyline.addListener("click", () => onSelect(route.properties));
+  return polyline;
+}
+
+function googleLatLng([longitude, latitude]: [number, number]): google.maps.LatLngLiteral {
+  return { lat: latitude, lng: longitude };
 }
 
 function OperationalMapLayer({
@@ -1424,7 +1203,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...jobs.map((job) => ({
       id: `job-${job.id}`,
       label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} negotiation route`,
-      detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${routeDistanceLabel(driverJobRouteFeature(job))} - ${monthFromText(job.preferredDate)}`,
+      detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${routeDistanceLabel(driverJobRouteFeature(job))} - ${monthFromText(job.preferredDate)} - ${transportPriceLabel(job)}`,
       status: routeStateForTransportJob(job) === "negotiation" ? "negotiation" : job.status.replace("_", " "),
       href: `/transport/${job.id}`,
       featureId: `route-${job.id}`,
@@ -1432,7 +1211,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...availableRequests.map((request) => ({
       id: `request-route-${request.id}`,
       label: `${request.headCount} ${request.stockType.toLowerCase()} available route`,
-      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${routeDistanceLabel(driverRequestRouteFeature(request))} - ${monthFromText("")}`,
+      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${routeDistanceLabel(driverRequestRouteFeature(request))} - ${monthFromText("")} - Quote pending`,
       status: "available",
       href: "/transport/jobs",
       featureId: `driver-request-route-${request.id}`,
@@ -1440,7 +1219,7 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
     ...driverCapacities.map((capacity) => ({
       id: `capacity-${capacity.id}`,
       label: `${capacity.headCapacity} head backload lane`,
-      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${routeDistanceLabel(driverCapacityRouteFeature(capacity))} - ${monthFromText(`${capacity.earliestDate} ${capacity.latestDate}`)}`,
+      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${routeDistanceLabel(driverCapacityRouteFeature(capacity))} - ${monthFromText(`${capacity.earliestDate} ${capacity.latestDate}`)} - ${transportCapacityPriceLabel(capacity)}`,
       status: "capacity",
       href: "/transport/available",
       featureId: `driver-capacity-route-${capacity.id}`,
@@ -1549,7 +1328,13 @@ function transportJobRouteFeature(job: TransportJob): LineFeature | null {
   );
   if (route) {
     route.properties.routeState = routeStateForTransportJob(job);
-    route.properties.metric = routeMetric(job.status.replace("_", " "), job.preferredDate, route);
+    route.properties.priceLabel = transportPriceLabel(job);
+    route.properties.metric = routeMetric(
+      job.status.replace("_", " "),
+      job.preferredDate,
+      route,
+      route.properties.priceLabel
+    );
   }
   return route;
 }
@@ -1567,7 +1352,13 @@ function driverJobRouteFeature(job: TransportJob): LineFeature | null {
   );
   if (route) {
     route.properties.routeState = routeStateForTransportJob(job);
-    route.properties.metric = routeMetric(job.livestockCount, job.preferredDate, route);
+    route.properties.priceLabel = transportPriceLabel(job);
+    route.properties.metric = routeMetric(
+      job.livestockCount,
+      job.preferredDate,
+      route,
+      route.properties.priceLabel
+    );
   }
   return route;
 }
@@ -1594,7 +1385,8 @@ function driverRequestRouteFeature(request: LivestockRequest): LineFeature | nul
   );
   if (route) {
     route.properties.routeState = "available";
-    route.properties.metric = routeMetric(request.duration, "", route);
+    route.properties.priceLabel = "Quote pending";
+    route.properties.metric = routeMetric(request.duration, "", route, route.properties.priceLabel);
     route.properties.privacy = "Available transport lead. Wayne sees pickup, destination region, stock, and timing only.";
   }
   return route;
@@ -1613,7 +1405,13 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
   );
   if (route) {
     route.properties.routeState = "capacity";
-    route.properties.metric = routeMetric(`${capacity.headCapacity} head capacity`, `${capacity.earliestDate} ${capacity.latestDate}`, route);
+    route.properties.priceLabel = transportCapacityPriceLabel(capacity);
+    route.properties.metric = routeMetric(
+      `${capacity.headCapacity} head capacity`,
+      `${capacity.earliestDate} ${capacity.latestDate}`,
+      route,
+      route.properties.priceLabel
+    );
   }
   return route;
 }
@@ -1631,7 +1429,13 @@ function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | 
   );
   if (route) {
     route.properties.routeState = "capacity";
-    route.properties.metric = routeMetric(`${capacity.headCapacity} head backload lane`, `${capacity.earliestDate} ${capacity.latestDate}`, route);
+    route.properties.priceLabel = transportCapacityPriceLabel(capacity);
+    route.properties.metric = routeMetric(
+      `${capacity.headCapacity} head backload lane`,
+      `${capacity.earliestDate} ${capacity.latestDate}`,
+      route,
+      route.properties.priceLabel
+    );
   }
   return route;
 }
@@ -1849,8 +1653,46 @@ function roadPoint(longitude: number, latitude: number, label: string): Coordina
   return { longitude, latitude, label };
 }
 
-function routeMetric(label: string, dateText: string, route: LineFeature) {
-  return `${label} - ${routeDistanceLabel(route)} - ${monthFromText(dateText)}`;
+function routeMetric(label: string, dateText: string, route: LineFeature, priceLabel?: string) {
+  return [label, routeDistanceLabel(route), monthFromText(dateText), priceLabel]
+    .filter(Boolean)
+    .join(" - ");
+}
+
+function transportPriceLabel(job: TransportJob) {
+  const quote =
+    job.quotes.find((item) => item.id === job.acceptedQuoteId) ??
+    job.quotes.find((item) => item.status === "pending") ??
+    job.quotes[0];
+  if (!quote) return "Quote pending";
+  const amount = new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: quote.currency,
+    maximumFractionDigits: quote.amount % 1 === 0 ? 0 : 2,
+  }).format(quote.amount);
+  const basis =
+    quote.basis === "per_head"
+      ? "/head"
+      : quote.basis === "per_km"
+        ? "/km"
+        : " flat";
+  return `${amount}${basis}`;
+}
+
+function transportCapacityPriceLabel(capacity: TransportCapacity) {
+  if (capacity.rateAmount === null || capacity.rateBasis === null) return "Rate on enquiry";
+  const amount = new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: capacity.rateAmount % 1 === 0 ? 0 : 2,
+  }).format(capacity.rateAmount);
+  const basis =
+    capacity.rateBasis === "per_head"
+      ? "/head"
+      : capacity.rateBasis === "per_km"
+        ? "/km"
+        : " flat";
+  return `${amount}${basis}`;
 }
 
 function routeDistanceLabel(route: LineFeature | null) {
