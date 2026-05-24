@@ -5,16 +5,19 @@ const homeActions = [
   {
     href: "/request/new",
     label: "Need agistment",
+    description: "Place livestock",
     icon: ArrowRight,
   },
   {
     href: "/listings/new",
     label: "Have Agistment",
+    description: "List paddocks",
     icon: Sprout,
   },
   {
     href: "/transport/available",
     label: "Need Transport",
+    description: "Find a run",
     icon: Truck,
   },
 ];
@@ -48,15 +51,18 @@ export default function HomePage() {
         className="fixed inset-x-0 bottom-6 z-40 px-3 sm:bottom-8"
       >
         <div className="mx-auto grid max-w-[24rem] grid-cols-3 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:max-w-4xl">
-          {homeActions.map(({ href, label, icon: Icon }) => (
+          {homeActions.map(({ href, label, description, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-18"
+              className="flex min-h-[4.35rem] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-[4.75rem]"
             >
               <Icon className="h-5 w-5" aria-hidden />
               <span className="max-w-[6rem] whitespace-normal text-[0.82rem] font-bold leading-tight sm:max-w-none sm:text-sm">
                 {label}
+              </span>
+              <span className="max-w-[6.5rem] truncate text-[0.68rem] font-semibold leading-none text-stone sm:max-w-none sm:text-xs">
+                {description}
               </span>
             </Link>
           ))}
