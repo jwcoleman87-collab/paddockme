@@ -34,6 +34,10 @@ type ArtefactUploadDialogProps = {
   /** Display label for the uploader (e.g. "Farmer A (Dale)"). */
   uploaderLabel: string;
   sections: SectionRef[];
+  /** Preselect a section when upload is launched from a specific agreement area. */
+  initialSectionId?: string | null;
+  /** Keep uploads attached to the launched section instead of offering "None". */
+  requireSection?: boolean;
   onClose: () => void;
   onSubmit: (draft: ArtefactDraft) => void;
 };
@@ -48,6 +52,8 @@ export function ArtefactUploadDialog({
   open,
   uploaderLabel,
   sections,
+  initialSectionId = null,
+  requireSection = false,
   onClose,
   onSubmit,
 }: ArtefactUploadDialogProps) {
@@ -65,7 +71,7 @@ export function ArtefactUploadDialog({
     setLabel("");
     setDescription("");
     setKind("document");
-    setSectionId(null);
+    setSectionId(initialSectionId);
     // Focus the label input after a tick so the autoFocus doesn't fight
     // with the focus-trap setup below.
     requestAnimationFrame(() => labelInputRef.current?.focus());
@@ -101,7 +107,7 @@ export function ArtefactUploadDialog({
       body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [initialSectionId, open, onClose]);
 
   if (!open) return null;
 
@@ -116,7 +122,7 @@ export function ArtefactUploadDialog({
       label: trimmedLabel,
       description: trimmedDescription,
       kind,
-      sectionId: sectionId ?? undefined,
+      sectionId: (requireSection ? initialSectionId : sectionId) ?? undefined,
     });
   }
 
@@ -244,17 +250,21 @@ export function ArtefactUploadDialog({
                 Discussed in (optional)
               </p>
               <div className="flex flex-wrap gap-2">
-                <SelectablePill
-                  selected={sectionId === null}
-                  onClick={() => setSectionId(null)}
-                >
-                  None
-                </SelectablePill>
+                {!requireSection && (
+                  <SelectablePill
+                    selected={sectionId === null}
+                    onClick={() => setSectionId(null)}
+                  >
+                    None
+                  </SelectablePill>
+                )}
                 {sections.map((section) => (
                   <SelectablePill
                     key={section.id}
                     selected={sectionId === section.id}
-                    onClick={() => setSectionId(section.id)}
+                    onClick={() => {
+                      if (!requireSection) setSectionId(section.id);
+                    }}
                   >
                     {section.label}
                   </SelectablePill>

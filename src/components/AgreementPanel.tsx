@@ -12,6 +12,7 @@ import {
   FileText,
   Image as ImageIcon,
   Map as MapIcon,
+  UploadCloud,
   Truck,
   Users,
   Sprout,
@@ -286,6 +287,12 @@ export function AgreementPanel({
                 onSelect={() => onSelectSection(section.id)}
                 onToggleA={() => onToggleAgreement(section.id, "A")}
                 onToggleB={() => onToggleAgreement(section.id, "B")}
+                artefacts={artefacts.filter(
+                  (artefact) => artefact.sectionId === section.id
+                )}
+                allSections={agreement.sections}
+                onSelectSection={onSelectSection}
+                onAddArtefact={onAddArtefact}
               />
             ))}
           </div>
@@ -1113,6 +1120,10 @@ function SectionCard({
   onSelect,
   onToggleA,
   onToggleB,
+  artefacts,
+  allSections,
+  onSelectSection,
+  onAddArtefact,
 }: {
   section: AgreementSection;
   active: boolean;
@@ -1121,9 +1132,19 @@ function SectionCard({
   onSelect: () => void;
   onToggleA: () => void;
   onToggleB: () => void;
+  artefacts: AgreementArtefact[];
+  allSections: AgreementSection[];
+  onSelectSection: (sectionId: string) => void;
+  onAddArtefact?: (draft: ArtefactDraft) => void;
 }) {
   const Icon = sectionIcons[section.id] ?? Sprout;
   const { agreedByA, agreedByB } = state;
+  const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const activeArtefact =
+    artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
+  const uploaderLabel =
+    viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
 
   const alignment = getSectionAlignment(section, agreedByA, agreedByB);
 
@@ -1171,6 +1192,47 @@ function SectionCard({
           ))}
         </div>
 
+        <div className="rounded-xl border border-sage-deep/10 bg-warm-white px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.13em] text-stone">
+                Section documents
+              </p>
+              <p className="mt-1 text-sm font-semibold text-bark">
+                {artefacts.length > 0
+                  ? `${artefacts.length} attached to ${section.label}`
+                  : `No documents attached to ${section.label} yet`}
+              </p>
+            </div>
+            {onAddArtefact && (
+              <button
+                type="button"
+                onClick={() => setUploadOpen(true)}
+                className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-sage-deep/20 bg-cream px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              >
+                <UploadCloud className="h-3.5 w-3.5" aria-hidden />
+                Upload here
+              </button>
+            )}
+          </div>
+
+          {artefacts.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {artefacts.map((artefact) => (
+                <button
+                  key={artefact.id}
+                  type="button"
+                  onClick={() => setActiveArtefactId(artefact.id)}
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-mist bg-cream px-3 text-xs font-bold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                >
+                  <FileText className="h-3.5 w-3.5 text-sage-deep" aria-hidden />
+                  {artefact.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-2 sm:grid-cols-2">
           <PartyAgreeButton
             party="Farmer A"
@@ -1186,6 +1248,29 @@ function SectionCard({
           />
         </div>
       </div>
+      <ArtefactViewer
+        artefact={activeArtefact ? toViewableArtefact(activeArtefact) : null}
+        sections={allSections.map((item) => ({
+          id: item.id,
+          label: item.label,
+        }))}
+        onClose={() => setActiveArtefactId(null)}
+        onSelectSection={onSelectSection}
+      />
+      {onAddArtefact && (
+        <ArtefactUploadDialog
+          open={uploadOpen}
+          uploaderLabel={uploaderLabel}
+          sections={[{ id: section.id, label: section.label }]}
+          initialSectionId={section.id}
+          requireSection
+          onClose={() => setUploadOpen(false)}
+          onSubmit={(draft) => {
+            onAddArtefact({ ...draft, sectionId: draft.sectionId ?? section.id });
+            setUploadOpen(false);
+          }}
+        />
+      )}
     </article>
   );
 }
