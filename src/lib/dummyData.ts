@@ -447,6 +447,17 @@ export type TransportJob = {
   quotes: TransportQuote[];
   /** Pointer to the accepted quote in the chain, if any. */
   acceptedQuoteId?: string;
+  /** Indicative road distance pickup -> destination, used for per-km pay
+   * estimation. Optional - older seed rows don't carry it. */
+  distanceKm?: number;
+  /** Indicative rate posted with the job. The quote chain is still the
+   * source of truth for the agreed price, but this drives the headline
+   * pay estimation on the map and the available-jobs board. */
+  rateGuide?: {
+    basis: TransportQuoteBasis;
+    amount: number;
+    currency: string;
+  };
 };
 
 export const farmers: Farmer[] = [
@@ -1193,7 +1204,226 @@ export const transportJobs: TransportJob[] = [
     ],
     acceptedQuoteId: undefined,
   },
+  ...openTransportJobsSeed(),
 ];
+
+/**
+ * NSW transport jobs in "available" status - posted by livestock owners
+ * looking for a driver. Drives the operational map overlay (sage routes
+ * vs amber/open) plus the future "available jobs" board for drivers.
+ *
+ * Kept in a helper so the seed reads as the core agreement-glenbarra
+ * record + a generated set of marketplace-style openings.
+ */
+function openTransportJobsSeed(): TransportJob[] {
+  const emptyContext = {
+    duration: "Single move",
+    weeksRemaining: 0,
+    agreementStatus: "Open job",
+  };
+  return [
+    {
+      id: "transport-open-orange-tamworth",
+      agreementId: "open-1",
+      farmerAId: "farmer-a",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Orange, NSW",
+      destination: "Tamworth, NSW",
+      pickupLocation: {
+        latitude: -33.283,
+        longitude: 149.099,
+        label: "Orange",
+        region: "Central West NSW",
+      },
+      destinationLocation: {
+        latitude: -31.083,
+        longitude: 150.929,
+        label: "Tamworth",
+        region: "Northern NSW",
+      },
+      pickupRegion: "Central West NSW",
+      destinationRegion: "Northern NSW",
+      livestockCount: "180 cattle",
+      preferredDate: "Wed 28 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Orange → Tamworth",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 415,
+      rateGuide: { basis: "per_head", amount: 9.5, currency: "AUD" },
+    },
+    {
+      id: "transport-open-wagga-cowra",
+      agreementId: "open-2",
+      farmerAId: "farmer-a",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Wagga Wagga, NSW",
+      destination: "Cowra, NSW",
+      pickupLocation: {
+        latitude: -35.115,
+        longitude: 147.367,
+        label: "Wagga Wagga",
+        region: "Riverina NSW",
+      },
+      destinationLocation: mapCoordinates.cowra,
+      pickupRegion: "Riverina NSW",
+      destinationRegion: "Central West NSW",
+      livestockCount: "320 sheep",
+      preferredDate: "Thu 29 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Wagga → Cowra",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 245,
+      rateGuide: { basis: "per_head", amount: 3.2, currency: "AUD" },
+    },
+    {
+      id: "transport-open-armidale-singleton",
+      agreementId: "open-3",
+      farmerAId: "farmer-tash",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Armidale, NSW",
+      destination: "Singleton, NSW",
+      pickupLocation: mapCoordinates.armidale,
+      destinationLocation: {
+        latitude: -32.567,
+        longitude: 151.171,
+        label: "Singleton",
+        region: "Hunter NSW",
+      },
+      pickupRegion: "Northern Tablelands NSW",
+      destinationRegion: "Hunter NSW",
+      livestockCount: "60 cattle",
+      preferredDate: "Mon 26 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Armidale → Singleton",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 295,
+      rateGuide: { basis: "per_head", amount: 12.0, currency: "AUD" },
+    },
+    {
+      id: "transport-open-dubbo-bathurst",
+      agreementId: "open-4",
+      farmerAId: "farmer-a",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Dubbo, NSW",
+      destination: "Bathurst, NSW",
+      pickupLocation: {
+        latitude: -32.243,
+        longitude: 148.6,
+        label: "Dubbo",
+        region: "Central West NSW",
+      },
+      destinationLocation: {
+        latitude: -33.42,
+        longitude: 149.578,
+        label: "Bathurst",
+        region: "Central West NSW",
+      },
+      pickupRegion: "Central West NSW",
+      destinationRegion: "Central West NSW",
+      livestockCount: "240 sheep",
+      preferredDate: "Fri 30 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Dubbo → Bathurst",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 195,
+      rateGuide: { basis: "per_head", amount: 2.8, currency: "AUD" },
+    },
+    {
+      id: "transport-open-cooma-bega",
+      agreementId: "open-5",
+      farmerAId: "farmer-a",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Cooma, NSW",
+      destination: "Bega, NSW",
+      pickupLocation: {
+        latitude: -36.234,
+        longitude: 149.131,
+        label: "Cooma",
+        region: "Monaro NSW",
+      },
+      destinationLocation: {
+        latitude: -36.671,
+        longitude: 149.842,
+        label: "Bega",
+        region: "South Coast NSW",
+      },
+      pickupRegion: "Monaro NSW",
+      destinationRegion: "South Coast NSW",
+      livestockCount: "120 cattle",
+      preferredDate: "Wed 28 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Cooma → Bega",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 175,
+      rateGuide: { basis: "per_head", amount: 7.5, currency: "AUD" },
+    },
+    {
+      id: "transport-open-grafton-newcastle",
+      agreementId: "open-6",
+      farmerAId: "farmer-a",
+      farmerBId: "farmer-b",
+      driverId: "",
+      pickup: "Grafton, NSW",
+      destination: "Newcastle, NSW",
+      pickupLocation: {
+        latitude: -29.69,
+        longitude: 152.93,
+        label: "Grafton",
+        region: "Northern Rivers NSW",
+      },
+      destinationLocation: {
+        latitude: -32.927,
+        longitude: 151.78,
+        label: "Newcastle",
+        region: "Hunter NSW",
+      },
+      pickupRegion: "Northern Rivers NSW",
+      destinationRegion: "Hunter NSW",
+      livestockCount: "210 cattle",
+      preferredDate: "Sat 31 May",
+      driver: "Open - no driver assigned",
+      status: "available",
+      routeSummary: "Grafton → Newcastle",
+      agreementContext: emptyContext,
+      sections: [],
+      artefacts: [],
+      timeline: [],
+      quotes: [],
+      distanceKm: 425,
+      rateGuide: { basis: "per_head", amount: 11.0, currency: "AUD" },
+    },
+  ];
+}
 
 export const transportMessages: Message[] = [
   {

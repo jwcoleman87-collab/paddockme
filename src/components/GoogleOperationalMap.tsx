@@ -91,6 +91,7 @@ export function GoogleOperationalMap({
   return (
     <div className="relative h-[60vh] min-h-[420px] w-full overflow-hidden rounded-2xl border border-sage-deep/15 bg-sage-mist/30">
       <div ref={containerRef} className="absolute inset-0" />
+      {ready && !error && <MapLegend />}
       {!ready && !error && (
         <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-bark/70">
           Loading Google Maps...
@@ -102,6 +103,34 @@ export function GoogleOperationalMap({
           <p className="max-w-md text-xs text-bark/65">{error}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function MapLegend() {
+  const rows: { color: string; label: string }[] = [
+    { color: SAGE_DEEP, label: "Paddocks listed" },
+    { color: AMBER, label: "Open job - needs a driver" },
+    { color: TERRA, label: "In transit / loading" },
+    { color: SAGE, label: "Accepted run" },
+  ];
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-xl border border-sage-deep/15 bg-warm-white/95 p-3 text-xs shadow-[0_8px_22px_rgba(34,84,52,0.12)] backdrop-blur">
+      <p className="mb-1.5 text-[0.65rem] font-bold uppercase tracking-wide text-bark/65">
+        Map legend
+      </p>
+      <ul className="space-y-1">
+        {rows.map((row) => (
+          <li key={row.label} className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: row.color }}
+            />
+            <span className="font-medium text-bark">{row.label}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -154,33 +183,155 @@ function renderTransportRoutes(
   for (const job of transportJobs) {
     if (!job.pickupLocation || !job.destinationLocation) continue;
     const isHighlight = job.id === highlightTransportId;
+    const color = routeColorFor(job, isHighlight);
+    const path = [
+      {
+        lat: job.pickupLocation.latitude,
+        lng: job.pickupLocation.longitude,
+      },
+      {
+        lat: job.destinationLocation.latitude,
+        lng: job.destinationLocation.longitude,
+      },
+    ];
     new google.maps.Polyline({
-      path: [
-        {
-          lat: job.pickupLocation.latitude,
-          lng: job.pickupLocation.longitude,
-        },
-        {
-          lat: job.destinationLocation.latitude,
-          lng: job.destinationLocation.longitude,
-        },
-      ],
+      path,
       map,
-      strokeColor: isHighlight ? TERRA : SAGE,
-      strokeOpacity: isHighlight ? 0.95 : 0.7,
+      strokeColor: color,
+      strokeOpacity: isHighlight ? 0.95 : 0.75,
       strokeWeight: isHighlight ? 5 : 3,
       icons: [
         {
           icon: {
             path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
             scale: 3,
-            strokeColor: isHighlight ? TERRA : SAGE,
+            strokeColor: color,
           },
           offset: "50%",
         },
       ],
+      // Make the polyline clickable so users can poke routes directly.
+      clickable: true,
     });
+    // Midpoint marker = a clear tap-target with an info window that
+    // surfaces livestock, distance, rate, and estimated total pay.
+    const midpoint = {
+      lat: (path[0].lat + path[1].lat) / 2,
+      lng: (path[0].lng + path[1].lng) / 2,
+    };
+    const marker = new google.maps.Marker({
+      position: midpoint,
+      map,
+      title: job.routeSummary,
+      icon: jobMidpointSymbol(color, isHighlight ? 1.25 : 1),
+      zIndex: isHighlight ? 50 : 10,
+    });
+    const info = new google.maps.InfoWindow({
+      content: transportJobInfoHtml(job),
+      ariaLabel: job.routeSummary,
+    });
+    marker.addListener("click", () => info.open({ map, anchor: marker }));
   }
+}
+
+function routeColorFor(
+  job: (typeof transportJobs)[number],
+  isHighlight: boolean
+): string {
+  if (isHighlight) return TERRA;
+  switch (job.status) {
+    case "available":
+      return AMBER;
+    case "in_transit":
+    case "loading":
+      return TERRA;
+    case "arrived":
+    case "completed":
+      return SAGE_DEEP;
+    case "cancelled":
+      return "#9a948a";
+    default:
+      return SAGE;
+  }
+}
+
+function transportJobInfoHtml(job: (typeof transportJobs)[number]): string {
+  const livestock = escape(job.livestockCount);
+  const route = escape(job.routeSummary);
+  const date = escape(job.preferredDate);
+  const status = escape(job.status.replace(/_/g, " "));
+  const headCount = parseLeadingNumber(job.livestockCount);
+  const payLine = payEstimateLine(job, headCount);
+  const distance = job.distanceKm ? `${job.distanceKm} km · ` : "";
+  const driverLine =
+    job.status === "available"
+      ? '<div style="font-size: 11px; color: #c98a1d; font-weight: 700; margin-top: 4px;">Looking for a driver</div>'
+      : `<div style="font-size: 11px; color: #6b6256; margin-top: 4px;">Driver: ${escape(
+          job.driver
+        )}</div>`;
+  return `
+    <div style="font-family: system-ui, sans-serif; max-width: 240px;">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b6256;">${status}</div>
+      <div style="font-weight: 700; color: #22542b; font-size: 14px; margin-top: 2px;">${route}</div>
+      <div style="font-size: 12px; color: #2c2c2c; margin-top: 4px;">${livestock}</div>
+      <div style="font-size: 11px; color: #6b6256; margin-top: 2px;">${distance}Pickup ${date}</div>
+      ${payLine}
+      ${driverLine}
+    </div>
+  `;
+}
+
+function payEstimateLine(
+  job: (typeof transportJobs)[number],
+  headCount: number | null
+): string {
+  const guide = job.rateGuide;
+  if (!guide) {
+    return '<div style="font-size: 12px; color: #6b6256; margin-top: 6px;">Rate on enquiry.</div>';
+  }
+  const amount = guide.amount;
+  let total: number | null = null;
+  let breakdown = "";
+  if (guide.basis === "per_head" && headCount) {
+    total = amount * headCount;
+    breakdown = `${headCount} head × $${amount.toFixed(2)}/head`;
+  } else if (guide.basis === "per_km" && job.distanceKm) {
+    total = amount * job.distanceKm;
+    breakdown = `${job.distanceKm} km × $${amount.toFixed(2)}/km`;
+  } else if (guide.basis === "flat") {
+    total = amount;
+    breakdown = "Flat rate";
+  }
+  if (total === null) {
+    return `<div style="font-size: 12px; color: #6b6256; margin-top: 6px;">$${amount.toFixed(
+      2
+    )} ${guide.currency} ${escape(guide.basis.replace("_", " "))}</div>`;
+  }
+  const formatted = `$${Math.round(total).toLocaleString()}`;
+  return `
+    <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e7e3d4;">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b6256;">Estimated pay</div>
+      <div style="font-size: 16px; font-weight: 800; color: #22542b;">${formatted} ${guide.currency}</div>
+      <div style="font-size: 11px; color: #6b6256;">${breakdown}</div>
+    </div>
+  `;
+}
+
+function parseLeadingNumber(value: string): number | null {
+  const match = value.match(/^\s*(\d[\d,]*)/);
+  if (!match) return null;
+  return Number.parseInt(match[1].replace(/,/g, ""), 10);
+}
+
+function jobMidpointSymbol(color: string, scale = 1): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: color,
+    fillOpacity: 0.95,
+    strokeColor: CREAM,
+    strokeWeight: 2,
+    scale: 7 * scale,
+  };
 }
 
 function pinSymbol(color: string, scale = 1): google.maps.Symbol {
