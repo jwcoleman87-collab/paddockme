@@ -263,24 +263,7 @@ export function PaddockMap({
             active={!googleMapEnabled}
             onSelect={setSelected}
           />
-          <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start gap-2 sm:inset-x-4 sm:top-4">
-            <div className={cn(
-              "pointer-events-auto rounded-[8px] border border-mist bg-warm-white/95 shadow-lg shadow-bark/10 backdrop-blur",
-              mode === "driver" ? "max-w-[min(24rem,calc(100vw-2rem))] p-2.5" : "max-w-[min(32rem,calc(100vw-2rem))] p-3"
-            )}>
-              <div className="flex items-start gap-2">
-                <ModeIcon mode={mode} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-stone">
-                    {context.eyebrow}
-                  </p>
-                  <h2 className="text-base font-bold text-bark sm:text-lg">
-                    {context.title}
-                  </h2>
-                  <p className={cn("mt-1 text-sm text-stone", mode === "driver" ? "hidden sm:block" : "")}>{context.description}</p>
-                </div>
-              </div>
-            </div>
+          <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex flex-wrap items-start justify-end gap-2 sm:inset-x-4 sm:top-4">
             <button
               type="button"
               onClick={locateOperationalView}
@@ -289,15 +272,11 @@ export function PaddockMap({
               <LocateFixed className="h-4 w-4" aria-hidden />
               Re-centre
             </button>
-            {googleMapError || !googleMapsApiKey ? (
+            {(googleMapError || !googleMapsApiKey) && (
               <div className="pointer-events-auto rounded-[8px] border border-amber/30 bg-amber-light px-3 py-2 text-sm font-semibold text-amber shadow-lg shadow-bark/10">
                 {googleMapsApiKey ? "Stable map active" : "Add Google Maps key"}
               </div>
-            ) : googleMapReady ? (
-              <div className="pointer-events-auto rounded-[8px] border border-sage/25 bg-sage-mist px-3 py-2 text-sm font-semibold text-sage-deep shadow-lg shadow-bark/10">
-                Google Maps connected
-              </div>
-            ) : null}
+            )}
           </div>
 
           {mode === "driver" && !selected ? null : (
