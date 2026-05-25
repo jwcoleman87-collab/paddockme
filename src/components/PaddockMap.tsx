@@ -168,31 +168,13 @@ export function PaddockMap({
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: {
-          version: 8,
-          glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: "OpenStreetMap contributors",
-            },
-          },
-          layers: [
-            {
-              id: "map-background",
-              type: "background",
-              paint: { "background-color": "#eef3e8" },
-            },
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
-              paint: { "raster-opacity": 0.9 },
-            },
-          ],
-        },
+        // Hosted vector style from OpenFreeMap (free, no API key, GDPR-clean
+        // and styled to look like a modern operational basemap). The
+        // custom data layers (routes, pins) are added on the load event
+        // below and render on top of the hosted style's symbol layers.
+        // Falls through to the static SVG fallback if the network or
+        // WebGL fails.
+        style: "https://tiles.openfreemap.org/styles/positron",
         center: mode === "regional" && !region ? australiaCentre : [147.3, -32.7],
         zoom: mode === "regional" && !region ? australiaZoom : 6.3,
         minZoom: 3,
@@ -206,7 +188,13 @@ export function PaddockMap({
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.on("error", (event) => {
       const message = event.error?.message ?? "";
-      if (message.toLowerCase().includes("webgl")) {
+      // WebGL or hosted-style failures surface the static SVG fallback
+      // (see "PaddockME operational map fallback" below) so the demo
+      // never shows a blank basemap.
+      if (
+        message.toLowerCase().includes("webgl") ||
+        /style|sprite|404|503/i.test(message)
+      ) {
         setMapError(message);
       }
     });
