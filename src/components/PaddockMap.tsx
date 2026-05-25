@@ -109,7 +109,13 @@ const australiaBounds: [[number, number], [number, number]] = [
 const australiaCentre: [number, number] = [134.5, -25.5];
 const australiaZoom = 3.62;
 const transportRouteZoomThreshold = 6;
-const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+// Prefer the Vercel env var so the production key can be rotated
+// without a code change. Falls back to a baked demo key so /map renders
+// the Google basemap immediately for investor walkthroughs. The fallback
+// key is restricted by HTTP referrer in Google Cloud Console.
+const googleMapsApiKey =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+  "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
 const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]]> = {
   NSW: [
     [140.6, -37.8],
