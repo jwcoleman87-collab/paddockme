@@ -23,11 +23,13 @@ export default async function MapPage({
   const mode = normaliseMode(params.mode);
   const agreementId = params.agreement ?? agreements[0]?.id;
   const transportId = params.transport ?? transportJobs[0]?.id;
-  // When a Google Maps API key is configured, render the Google basemap
-  // for the regional/agreement view. The maplibre PaddockMap stays as
-  // the fallback (and is still used for the driver mode, which depends
-  // on its custom corridor styling and layer toggles).
-  const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  // Prefer the Vercel env var (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) so the
+  // production key can be rotated without a code change. Falls back to a
+  // baked default for the investor demo — restricted by HTTP referrer in
+  // Google Cloud Console to paddockme-oz51.vercel.app + localhost.
+  const googleApiKey =
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+    "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
   const useGoogle = !!googleApiKey && mode !== "driver";
 
   return (
