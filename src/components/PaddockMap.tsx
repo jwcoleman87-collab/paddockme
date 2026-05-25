@@ -604,6 +604,10 @@ function GoogleOperationalMap({
   const overlaysRef = useRef<
     (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
   >([]);
+  // Tracks the last bounds we auto-fitted to. Used to skip refit on
+  // every overlay re-render so the user can zoom in without snapping
+  // back to the country-wide view.
+  const lastFitBoundsRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!googleMapsApiKey || !containerRef.current || mapRef.current) return;
@@ -741,13 +745,20 @@ function GoogleOperationalMap({
 
     const fitBounds = bounds ?? boundsForPointsAndLines(points, { type: "FeatureCollection", features: routes });
     if (fitBounds) {
-      map.fitBounds(
-        new google.maps.LatLngBounds(
-          googleLatLng(fitBounds[0]),
-          googleLatLng(fitBounds[1])
-        ),
-        72
-      );
+      // Only auto-fit when the bounds prop itself changes meaningfully -
+      // not on every layer toggle / selection / re-render. Otherwise the
+      // map snaps back to country-wide view every time the user zooms in.
+      const serialised = JSON.stringify(fitBounds);
+      if (lastFitBoundsRef.current !== serialised) {
+        lastFitBoundsRef.current = serialised;
+        map.fitBounds(
+          new google.maps.LatLngBounds(
+            googleLatLng(fitBounds[0]),
+            googleLatLng(fitBounds[1])
+          ),
+          72
+        );
+      }
     }
   }, [bounds, mode, onSelect, points, routeEndpoints, routes]);
 
