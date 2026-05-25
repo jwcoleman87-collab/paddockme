@@ -2,7 +2,6 @@ import { Route, Truck } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { PaddockMap, type PaddockMapMode } from "@/components/PaddockMap";
 import { PageHeader } from "@/components/PageHeader";
-import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { agreements, transportJobs } from "@/lib/dummyData";
 
 type SearchParams = {
@@ -44,7 +43,6 @@ export default async function MapPage({
               </div>
             }
           />
-          <PersonaIntroBanner page="map" />
         </>
       )}
       <PaddockMap
