@@ -697,19 +697,23 @@ function GoogleOperationalMap({
           map,
           label: {
             text: route.properties.priceLabel,
-            color: "#2c5030",
+            color: "#22542b",
             fontSize: "12px",
-            fontWeight: "800",
+            fontWeight: "700",
+            className: "paddockme-map-price-pill",
           },
+          // Invisible anchor icon - the .paddockme-map-price-pill label
+          // does all the visual work, floated above the route line. Keeps
+          // the marker centred on the route without the icon competing
+          // with the pill.
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            scale: 16,
-            fillColor: "#fdfcf9",
-            fillOpacity: 0.96,
-            strokeColor: "#2c5030",
-            strokeWeight: 2,
+            scale: 0,
+            fillOpacity: 0,
+            strokeOpacity: 0,
           },
           title: route.properties.title,
+          optimized: false,
         });
         priceMarker.addListener("click", () => onSelect(route.properties));
         overlaysRef.current.push(priceMarker);

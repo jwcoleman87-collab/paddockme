@@ -114,3 +114,32 @@ h3:not(.font-display) {
     box-shadow: none !important;
   }
 }
+
+/*
+ * Booking.com / Wotif-style price pill for Google Maps route labels.
+ * Applied via Marker { label: { className: "paddockme-map-price-pill" } }
+ * with a 0-scale icon so the label is the only visible element.
+ */
+.paddockme-map-price-pill {
+  background: #fdfcf9 !important;
+  color: #22542b !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(34, 84, 52, 0.18) !important;
+  box-shadow: 0 6px 14px rgba(34, 84, 52, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset !important;
+  white-space: nowrap !important;
+  font-family: var(--font-outfit), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif !important;
+  /* Float the pill above the route so it doesn't sit on the polyline. */
+  transform: translate(-50%, -28px) !important;
+  position: absolute !important;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.paddockme-map-price-pill:hover {
+  box-shadow: 0 10px 22px rgba(34, 84, 52, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset !important;
+  transform: translate(-50%, -30px) !important;
+}
