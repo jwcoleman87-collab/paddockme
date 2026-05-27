@@ -607,7 +607,7 @@ function GoogleOperationalMap({
           fullscreenControl: false,
           streetViewControl: false,
           clickableIcons: false,
-          gestureHandling: "cooperative",
+          gestureHandling: "greedy",
           backgroundColor: "#eef3e8",
         });
         map.addListener("zoom_changed", () => onZoomChange(map.getZoom() ?? australiaZoom));
