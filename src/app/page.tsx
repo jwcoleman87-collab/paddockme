@@ -1,26 +1,48 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Sprout, Truck } from "lucide-react";
 
+// Each landing action doubles as a "Start as..." persona picker. Clicking a
+// tile writes the matching persona id to the same localStorage keys the rest
+// of the app reads from, then dispatches the persona-change event so any
+// already-mounted client component (header avatar, intro banner) refreshes
+// without waiting for a remount.
 const homeActions = [
   {
     href: "/request/new",
     label: "Need agistment",
     description: "Place livestock",
     icon: ArrowRight,
+    personaId: "farmer-a", // Dale Morgan - Livestock Owner
   },
   {
     href: "/listings/new",
     label: "Have Agistment",
     description: "List paddocks",
     icon: Sprout,
+    personaId: "farmer-b", // Brett Donnelly - Landowner
   },
   {
     href: "/transport/available",
     label: "Need Transport",
     description: "Find a run",
     icon: Truck,
+    personaId: "driver-1", // Wayne Hayes - Transport Provider
   },
 ];
+
+function selectPersona(personaId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem("paddockme.profile.persona", personaId);
+    window.localStorage.setItem("paddockme.agreements.persona", personaId);
+    window.dispatchEvent(new Event("paddockme:persona-change"));
+  } catch {
+    // private mode / quota exceeded - the destination page will fall back to
+    // route-based persona detection in AppShellHeaderUser.
+  }
+}
 
 export default function HomePage() {
   return (
@@ -51,10 +73,11 @@ export default function HomePage() {
         className="fixed inset-x-0 bottom-6 z-40 px-3 sm:bottom-8"
       >
         <div className="mx-auto grid max-w-[24rem] grid-cols-3 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:max-w-4xl">
-          {homeActions.map(({ href, label, description, icon: Icon }) => (
+          {homeActions.map(({ href, label, description, icon: Icon, personaId }) => (
             <Link
               key={href}
               href={href}
+              onClick={() => selectPersona(personaId)}
               className="flex min-h-[4.35rem] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-[4.75rem]"
             >
               <Icon className="h-5 w-5" aria-hidden />
