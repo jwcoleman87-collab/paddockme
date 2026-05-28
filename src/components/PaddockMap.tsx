@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
+import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import {
   Banknote,
   CalendarDays,
@@ -171,6 +172,8 @@ export function PaddockMap({
   });
   const [hoveredFeatureId, setHoveredFeatureId] = useState<string | null>(null);
   const [focusBounds, setFocusBounds] = useState<[[number, number], [number, number]] | null>(null);
+  // Lifted from DriverRouteBoard so the map layer can hide non-matching polylines.
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [state, setState] = useState(() => ({
     paddockListings,
     livestockRequests,
@@ -221,11 +224,19 @@ export function PaddockMap({
 
   const visibleRoutes = useMemo(() => {
     if (!layers.transport) return emptyLineCollection();
-    if (mode === "regional" && mapZoom < transportRouteZoomThreshold) {
-      return emptyLineCollection();
+    // In driver mode cluster markers handle low-zoom, so hide polylines below z7.
+    const zoomThreshold = mode === "driver" ? 7 : transportRouteZoomThreshold;
+    if (mapZoom < zoomThreshold) return emptyLineCollection();
+    // Status filter hides both sidebar cards AND map polylines in driver mode.
+    if (mode === "driver" && statusFilter) {
+      return routeCollection(
+        context.routes.features.filter(
+          (f) => f.properties.routeState === statusFilter
+        )
+      );
     }
     return context.routes;
-  }, [context.routes, layers.transport, mapZoom, mode]);
+  }, [context.routes, layers.transport, mapZoom, mode, statusFilter]);
 
   const visibleRouteEndpoints = useMemo(
     () => routeEndpointCollection(visibleRoutes.features),
@@ -334,6 +345,8 @@ export function PaddockMap({
                 onFocusState={focusMapState}
                 onHover={setHoveredFeatureId}
                 onUnhover={() => setHoveredFeatureId(null)}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
               />
             ) : null}
             <ContextPanel context={context} />
@@ -452,15 +465,17 @@ function DriverRouteBoard({
   onFocusState,
   onHover,
   onUnhover,
+  statusFilter,
+  onStatusFilterChange,
 }: {
   board: NonNullable<MapContext["driverBoard"]>;
   onFocus: (featureId: string) => void;
   onFocusState: (bounds: [[number, number], [number, number]]) => void;
   onHover: (featureId: string) => void;
   onUnhover: () => void;
+  statusFilter: string | null;
+  onStatusFilterChange: (status: string | null) => void;
 }) {
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-
   const statusCounts = board.items.reduce<Record<string, number>>((acc, item) => {
     acc[item.status] = (acc[item.status] ?? 0) + 1;
     return acc;
@@ -508,7 +523,7 @@ function DriverRouteBoard({
             <button
               key={opt.value ?? "all"}
               type="button"
-              onClick={() => setStatusFilter(opt.value)}
+              onClick={() => onStatusFilterChange(opt.value)}
               className={cn(
                 "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage",
                 statusFilter === opt.value
@@ -827,6 +842,10 @@ function GoogleOperationalMap({
     (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
   >([]);
   const routeOverlaysRef = useRef<RouteOverlayEntry[]>([]);
+  // Cluster markers and their MarkerClusterer instance — managed separately
+  // from overlaysRef because the clusterer controls their map visibility.
+  const clusterMarkersRef = useRef<google.maps.Marker[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
   // Mirrors selectedFeatureId and hoveredFeatureId in refs so async Directions
   // callbacks can read the latest values without being in their closure.
   const selectedFeatureIdRef = useRef<string | null>(selectedFeatureId);
@@ -920,6 +939,14 @@ function GoogleOperationalMap({
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
     routeOverlaysRef.current = [];
+    // Clear cluster markers and the clusterer before re-rendering.
+    clusterMarkersRef.current.forEach((m) => m.setMap(null));
+    clusterMarkersRef.current = [];
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+      clustererRef.current.setMap(null);
+      clustererRef.current = null;
+    }
 
     const directionsService = new google.maps.DirectionsService();
     routes.forEach((route) => {
@@ -1019,10 +1046,21 @@ function GoogleOperationalMap({
       }
     });
 
+    const clusterCandidates: google.maps.Marker[] = [];
+
     [...points, ...routeEndpoints].forEach((point) => {
+      // Transport pickup/endpoint markers in driver mode go into the
+      // clusterer; everything else (profiles, paddocks, weather, hotspots)
+      // is rendered individually so drivers can always see their own pin.
+      const isClusterable =
+        mode === "driver" &&
+        point.properties.kind === "transport" &&
+        point.properties.display !== "hotspot";
+
       const marker = new google.maps.Marker({
         position: googleLatLng(point.geometry.coordinates),
-        map,
+        // Clusterable markers: don't pass map — the clusterer sets it.
+        map: isClusterable ? undefined : map,
         title: point.properties.title,
         label:
           point.properties.display === "hotspot" && point.properties.count
@@ -1043,8 +1081,44 @@ function GoogleOperationalMap({
         },
       });
       marker.addListener("click", () => onSelect(point.properties));
-      overlaysRef.current.push(marker);
+
+      if (isClusterable) {
+        clusterCandidates.push(marker);
+        clusterMarkersRef.current.push(marker);
+      } else {
+        overlaysRef.current.push(marker);
+      }
     });
+
+    if (clusterCandidates.length > 0) {
+      clustererRef.current = new MarkerClusterer({
+        map,
+        markers: clusterCandidates,
+        renderer: {
+          render({ count, position }) {
+            return new google.maps.Marker({
+              position,
+              label: {
+                text: String(count),
+                color: "#faf8f3",
+                fontSize: "13px",
+                fontWeight: "800",
+              },
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 18,
+                fillColor: "#2c5030",
+                fillOpacity: 1,
+                strokeColor: "#e7f0e6",
+                strokeWeight: 1.5,
+              },
+              title: `${count} transport routes in this area`,
+              zIndex: count + 1000,
+            });
+          },
+        },
+      });
+    }
 
     const fitBounds = bounds ?? boundsForPointsAndLines(points, { type: "FeatureCollection", features: routes });
     if (fitBounds) {
