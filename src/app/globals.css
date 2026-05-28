@@ -143,3 +143,28 @@ h3:not(.font-display) {
     0 1px 0 rgba(255, 255, 255, 0.6) inset !important;
   transform: translate(-50%, -30px) !important;
 }
+
+.paddockme-map-price-pill:active {
+  transform: translate(-50%, -27px) scale(0.97) !important;
+  box-shadow: 0 4px 10px rgba(34, 84, 52, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset !important;
+}
+
+/*
+ * Fade + lift-in animation for map popup content when a route is selected.
+ * Applied to the TransportRoutePopup wrapper and the generic MapSheet content.
+ */
+.paddockme-map-popup-enter {
+  animation: paddockmePopupEnter 0.14s ease-out both;
+}
+
+@keyframes paddockmePopupEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

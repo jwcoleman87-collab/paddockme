@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import {
+  Banknote,
   CalendarDays,
   Layers3,
   LocateFixed,
@@ -61,6 +62,11 @@ type MapFeatureProperties = {
   items?: MapFeatureItem[];
   routeState?: "available" | "negotiation" | "accepted" | "capacity";
   priceLabel?: string;
+  // Transport route popup enrichment — populated by the route feature builders.
+  routeHeadline?: string;  // "Darling Downs QLD → Maranoa QLD"
+  stockSummary?: string;   // "120 head, Cattle"
+  dateWindow?: string;     // "Thu 28 May – Sat 30 May"
+  driverName?: string;     // "Sharon Mackie"
 };
 
 type Feature = {
@@ -116,6 +122,11 @@ const transportRouteZoomThreshold = 6;
 const googleMapsApiKey =
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
   "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
+const knownDriverNames: Record<string, string> = {
+  "driver-1": "Wayne Hayes",
+  "driver-2": "Sharon Mackie",
+};
+
 const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]]> = {
   NSW: [
     [140.6, -37.8],
@@ -249,6 +260,8 @@ export function PaddockMap({
             bounds={context.bounds}
             mode={mode}
             onSelect={setSelected}
+            onDeselect={() => setSelected(null)}
+            selectedFeatureId={selected?.id ?? null}
             onZoomChange={setMapZoom}
             onReady={() => {
               setGoogleMapReady(true);
@@ -471,6 +484,134 @@ function DriverRouteBoard({
   );
 }
 
+function TransportRoutePopup({
+  selected,
+  onClose,
+}: {
+  selected: MapFeatureProperties;
+  onClose: () => void;
+}) {
+  const isRequestable =
+    selected.routeState === "available" || selected.routeState === "capacity";
+  const ctaLabel = isRequestable ? "Request this run" : "Open transport room";
+  const ctaHref = isRequestable
+    ? "/transport/available"
+    : (selected.href ?? "/transport/available");
+  const distanceMatch = selected.metric.match(/\d+\s*km/);
+
+  return (
+    <div className="paddockme-map-popup-enter">
+      {/* header */}
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[0.68rem] font-bold uppercase tracking-wide text-stone">
+            Transport route
+          </p>
+          <h3 className="font-display mt-1 text-[1.2rem] leading-tight text-sage-deep">
+            {selected.routeHeadline}
+          </h3>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close route detail"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] text-stone transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+        >
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+
+      {/* info tiles */}
+      <div className="grid grid-cols-2 gap-2">
+        {selected.stockSummary && (
+          <div className="flex items-start gap-2 rounded-[8px] border border-sage-mist bg-sage-mist/50 px-3 py-2.5">
+            <Truck className="mt-px h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.62rem] font-bold uppercase tracking-wide text-stone">Stock</p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug text-bark">
+                {selected.stockSummary}
+              </p>
+            </div>
+          </div>
+        )}
+        {selected.dateWindow && (
+          <div className="flex items-start gap-2 rounded-[8px] border border-sage-mist bg-sage-mist/50 px-3 py-2.5">
+            <CalendarDays className="mt-px h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.62rem] font-bold uppercase tracking-wide text-stone">Date</p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug text-bark">
+                {selected.dateWindow}
+              </p>
+            </div>
+          </div>
+        )}
+        {selected.priceLabel && (
+          <div className="flex items-start gap-2 rounded-[8px] border border-sage-mist bg-sage-mist/50 px-3 py-2.5">
+            <Banknote className="mt-px h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.62rem] font-bold uppercase tracking-wide text-stone">Rate</p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug text-bark">
+                {selected.priceLabel}
+              </p>
+            </div>
+          </div>
+        )}
+        {distanceMatch && (
+          <div className="flex items-start gap-2 rounded-[8px] border border-sage-mist bg-sage-mist/50 px-3 py-2.5">
+            <Route className="mt-px h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.62rem] font-bold uppercase tracking-wide text-stone">
+                Distance
+              </p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug text-bark">
+                {distanceMatch[0]}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* driver / status line */}
+      {selected.driverName && (
+        <p className="mt-3 text-xs text-stone">
+          {selected.driverName}
+          {selected.routeState
+            ? ` · ${selected.routeState.replace(/_/g, " ")}`
+            : ""}
+        </p>
+      )}
+
+      {/* privacy note */}
+      {selected.privacy && (
+        <p className="mt-2 text-xs font-semibold text-sage-deep">{selected.privacy}</p>
+      )}
+
+      {/* primary CTA */}
+      <ButtonLink href={ctaHref} className="mt-4 w-full">
+        {isRequestable ? (
+          <Truck className="h-4 w-4" aria-hidden />
+        ) : (
+          <Navigation className="h-4 w-4" aria-hidden />
+        )}
+        {ctaLabel}
+      </ButtonLink>
+
+      {/* secondary — only when the primary doesn't land on the listings page */}
+      {ctaHref !== "/transport/available" && (
+        <div className="mt-2.5 text-center">
+          <ButtonLink
+            href="/transport/available"
+            variant="ghost"
+            className="text-xs"
+          >
+            View all available runs
+          </ButtonLink>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MapSheet({
   selected,
   onClose,
@@ -495,8 +636,18 @@ function MapSheet({
       </div>
     );
   }
+
+  // Transport route — show the branded popup instead of the generic panel.
+  if (selected.routeHeadline) {
+    return (
+      <div className="rounded-[8px] border border-sage-mist/80 bg-cream p-4 shadow-lg shadow-bark/10">
+        <TransportRoutePopup selected={selected} onClose={onClose} />
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-[8px] border border-mist bg-warm-white/95 p-4 shadow-lg shadow-bark/10 backdrop-blur">
+    <div className="paddockme-map-popup-enter rounded-[8px] border border-mist bg-warm-white/95 p-4 shadow-lg shadow-bark/10 backdrop-blur">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-stone">
@@ -557,6 +708,15 @@ function MapSheet({
   );
 }
 
+type RouteOverlayEntry = {
+  id: string;
+  overlayType: "polyline" | "renderer";
+  overlay: google.maps.Polyline | google.maps.DirectionsRenderer;
+  baseWeight: number;
+  baseOpacity: number;
+  strokeColor: string;
+};
+
 function GoogleOperationalMap({
   points,
   routes,
@@ -564,9 +724,11 @@ function GoogleOperationalMap({
   bounds,
   mode,
   onSelect,
+  onDeselect,
   onZoomChange,
   onReady,
   onError,
+  selectedFeatureId,
 }: {
   points: Feature[];
   routes: LineFeature[];
@@ -574,19 +736,59 @@ function GoogleOperationalMap({
   bounds?: [[number, number], [number, number]];
   mode: PaddockMapMode;
   onSelect: (properties: MapFeatureProperties) => void;
+  onDeselect: () => void;
   onZoomChange: (zoom: number) => void;
   onReady: () => void;
   onError: (message: string | null) => void;
+  selectedFeatureId: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<
     (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
   >([]);
+  const routeOverlaysRef = useRef<RouteOverlayEntry[]>([]);
+  // Mirrors selectedFeatureId in a ref so async Directions callbacks can
+  // read the latest value without being in their closure.
+  const selectedFeatureIdRef = useRef<string | null>(selectedFeatureId);
   // Tracks the last bounds we auto-fitted to. Used to skip refit on
   // every overlay re-render so the user can zoom in without snapping
   // back to the country-wide view.
   const lastFitBoundsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedFeatureIdRef.current = selectedFeatureId;
+  }, [selectedFeatureId]);
+
+  // Dims non-selected routes and intensifies the selected one. Uses refs
+  // only so it is safe to call from async Directions callbacks.
+  const applyDimming = useCallback(() => {
+    const sid = selectedFeatureIdRef.current;
+    for (const entry of routeOverlaysRef.current) {
+      const isFocused = !!sid && entry.id === sid;
+      const opacity = sid ? (isFocused ? entry.baseOpacity : 0.18) : entry.baseOpacity;
+      const weight = isFocused ? entry.baseWeight + 2 : entry.baseWeight;
+      if (entry.overlayType === "polyline") {
+        (entry.overlay as google.maps.Polyline).setOptions({
+          strokeOpacity: opacity,
+          strokeWeight: weight,
+        });
+      } else {
+        (entry.overlay as google.maps.DirectionsRenderer).setOptions({
+          polylineOptions: {
+            strokeColor: entry.strokeColor,
+            strokeOpacity: opacity,
+            strokeWeight: weight,
+            clickable: true,
+          },
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    applyDimming();
+  }, [applyDimming, selectedFeatureId]);
 
   useEffect(() => {
     if (!googleMapsApiKey || !containerRef.current || mapRef.current) return;
@@ -611,6 +813,8 @@ function GoogleOperationalMap({
           backgroundColor: "#eef3e8",
         });
         map.addListener("zoom_changed", () => onZoomChange(map.getZoom() ?? australiaZoom));
+        // Clicking blank map clears selection — marker/polyline clicks don't bubble here.
+        map.addListener("click", onDeselect);
         mapRef.current = map;
         onError(null);
         onReady();
@@ -621,13 +825,14 @@ function GoogleOperationalMap({
     return () => {
       cancelled = true;
     };
-  }, [mode, onError, onReady, onZoomChange]);
+  }, [mode, onDeselect, onError, onReady, onZoomChange]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
+    routeOverlaysRef.current = [];
 
     const directionsService = new google.maps.DirectionsService();
     routes.forEach((route) => {
@@ -638,8 +843,17 @@ function GoogleOperationalMap({
         location,
         stopover: false,
       }));
+      const strokeColor = routeColourForState(route.properties.routeState, "core");
       const fallback = drawGooglePolyline(map, route, path, onSelect);
       overlaysRef.current.push(fallback);
+      routeOverlaysRef.current.push({
+        id: route.properties.id,
+        overlayType: "polyline",
+        overlay: fallback,
+        baseWeight: 4,
+        baseOpacity: 0.85,
+        strokeColor,
+      });
 
       if (!origin || !destination) return;
       directionsService.route(
@@ -653,20 +867,35 @@ function GoogleOperationalMap({
         (result, status) => {
           if (status !== google.maps.DirectionsStatus.OK || !result) return;
           fallback.setMap(null);
+          // Remove the fallback entry from route tracking before adding renderer.
+          routeOverlaysRef.current = routeOverlaysRef.current.filter(
+            (e) => e.overlay !== fallback
+          );
+          const baseWeight = mode === "driver" ? 5 : 4;
           const renderer = new google.maps.DirectionsRenderer({
             directions: result,
             map,
             suppressMarkers: true,
             preserveViewport: true,
             polylineOptions: {
-              strokeColor: routeColourForState(route.properties.routeState, "core"),
+              strokeColor,
               strokeOpacity: 0.96,
-              strokeWeight: mode === "driver" ? 5 : 4,
+              strokeWeight: baseWeight,
               clickable: true,
             },
           });
           renderer.addListener("click", () => onSelect(route.properties));
           overlaysRef.current.push(renderer);
+          routeOverlaysRef.current.push({
+            id: route.properties.id,
+            overlayType: "renderer",
+            overlay: renderer,
+            baseWeight,
+            baseOpacity: 0.96,
+            strokeColor,
+          });
+          // Re-apply dimming now that the renderer is live.
+          applyDimming();
         }
       );
 
@@ -743,7 +972,7 @@ function GoogleOperationalMap({
         );
       }
     }
-  }, [bounds, mode, onSelect, points, routeEndpoints, routes]);
+  }, [applyDimming, bounds, mode, onSelect, points, routeEndpoints, routes]);
 
   if (!googleMapsApiKey) return null;
   return (
@@ -1335,6 +1564,10 @@ function transportJobRouteFeature(job: TransportJob): LineFeature | null {
       route,
       route.properties.priceLabel
     );
+    route.properties.routeHeadline = `${job.pickupRegion ?? job.pickup} → ${job.destinationRegion ?? job.destination}`;
+    route.properties.stockSummary = job.livestockCount;
+    route.properties.dateWindow = job.preferredDate;
+    route.properties.driverName = job.driver;
   }
   return route;
 }
@@ -1359,6 +1592,10 @@ function driverJobRouteFeature(job: TransportJob): LineFeature | null {
       route,
       route.properties.priceLabel
     );
+    route.properties.routeHeadline = `${job.pickupRegion ?? job.pickup} → ${job.destinationRegion ?? job.destination}`;
+    route.properties.stockSummary = job.livestockCount;
+    route.properties.dateWindow = job.preferredDate;
+    route.properties.driverName = job.driver;
   }
   return route;
 }
@@ -1412,6 +1649,13 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
       route,
       route.properties.priceLabel
     );
+    route.properties.routeHeadline = `${capacity.originRegion} → ${capacity.destinationRegion}`;
+    route.properties.stockSummary = `${capacity.headCapacity} head, ${capacity.stockTypes.join("/")}`;
+    route.properties.dateWindow =
+      capacity.earliestDate === capacity.latestDate
+        ? capacity.earliestDate
+        : `${capacity.earliestDate} – ${capacity.latestDate}`;
+    route.properties.driverName = knownDriverNames[capacity.driverId] ?? "Driver";
   }
   return route;
 }
@@ -1436,6 +1680,13 @@ function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | 
       route,
       route.properties.priceLabel
     );
+    route.properties.routeHeadline = `${capacity.originRegion} → ${capacity.destinationRegion}`;
+    route.properties.stockSummary = `${capacity.headCapacity} head backload, ${capacity.stockTypes.join("/")}`;
+    route.properties.dateWindow =
+      capacity.earliestDate === capacity.latestDate
+        ? capacity.earliestDate
+        : `${capacity.earliestDate} – ${capacity.latestDate}`;
+    route.properties.driverName = knownDriverNames[capacity.driverId] ?? "Driver";
   }
   return route;
 }
