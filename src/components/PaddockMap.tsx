@@ -224,8 +224,9 @@ export function PaddockMap({
 
   const visibleRoutes = useMemo(() => {
     if (!layers.transport) return emptyLineCollection();
-    // In driver mode cluster markers handle low-zoom, so hide polylines below z7.
-    const zoomThreshold = mode === "driver" ? 7 : transportRouteZoomThreshold;
+    // In driver mode cluster markers handle country-zoom; hide polylines below z5
+    // so routes appear at state view (~6.3) but not at whole-Australia view (~3.6).
+    const zoomThreshold = mode === "driver" ? 5 : transportRouteZoomThreshold;
     if (mapZoom < zoomThreshold) return emptyLineCollection();
     // Status filter hides both sidebar cards AND map polylines in driver mode.
     if (mode === "driver" && statusFilter) {
@@ -323,7 +324,9 @@ export function PaddockMap({
             </button>
             {(googleMapError || !googleMapsApiKey) && (
               <div className="pointer-events-auto rounded-[8px] border border-amber/30 bg-amber-light px-3 py-2 text-sm font-semibold text-amber shadow-lg shadow-bark/10">
-                {googleMapsApiKey ? "Stable map active" : "Add Google Maps key"}
+                {googleMapsApiKey
+                  ? "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in Vercel — key restricted for this domain"
+                  : "Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to Vercel env vars"}
               </div>
             )}
           </div>
@@ -846,6 +849,10 @@ function GoogleOperationalMap({
   // from overlaysRef because the clusterer controls their map visibility.
   const clusterMarkersRef = useRef<google.maps.Marker[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
+  // Incrementing this triggers the overlay effect to re-run after the Map
+  // object is created asynchronously. mapRef is a ref (not state) so
+  // changing it doesn't automatically signal React that overlays should render.
+  const [mapInitialized, setMapInitialized] = useState(false);
   // Mirrors selectedFeatureId and hoveredFeatureId in refs so async Directions
   // callbacks can read the latest values without being in their closure.
   const selectedFeatureIdRef = useRef<string | null>(selectedFeatureId);
@@ -897,12 +904,20 @@ function GoogleOperationalMap({
   useEffect(() => {
     if (!googleMapsApiKey || !containerRef.current || mapRef.current) return;
     let cancelled = false;
-    setOptions({
-      key: googleMapsApiKey,
-      v: "weekly",
-    });
+    setOptions({ key: googleMapsApiKey, v: "weekly" });
+    // Timeout guard: if importLibrary hangs (e.g. API key restricted for this
+    // domain), fail fast so the SVG fallback becomes visible rather than
+    // leaving a blank cream box indefinitely.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        onError(
+          "Google Maps timed out. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in Vercel env vars with a key that allows this domain."
+        );
+      }
+    }, 8000);
     Promise.all([importLibrary("maps"), importLibrary("routes")])
       .then(() => {
+        clearTimeout(timeoutId);
         if (cancelled || !containerRef.current) return;
         const map = new google.maps.Map(containerRef.current, {
           center: googleLatLng(australiaCentre),
@@ -923,13 +938,18 @@ function GoogleOperationalMap({
         map.addListener("click", () => onDeselectRef.current());
         mapRef.current = map;
         onError(null);
+        // Signal React that the Map object exists so the overlay effect
+        // re-runs and renders markers / routes / the clusterer.
+        setMapInitialized(true);
         onReady();
       })
       .catch((error: unknown) => {
+        clearTimeout(timeoutId);
         onError(error instanceof Error ? error.message : "Google Maps failed to load.");
       });
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [mode, onError, onReady, onZoomChange]);
 
@@ -1137,7 +1157,7 @@ function GoogleOperationalMap({
         );
       }
     }
-  }, [applyDimming, bounds, mode, onSelect, points, routeEndpoints, routes]);
+  }, [applyDimming, bounds, mapInitialized, mode, onSelect, points, routeEndpoints, routes]);
 
   if (!googleMapsApiKey) return null;
   return (
