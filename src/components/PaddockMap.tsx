@@ -138,6 +138,18 @@ const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]
   ],
 };
 
+// Sage-branded basemap style applied to all Google Maps instances so tiles
+// match the PaddockME palette instead of the default grey/blue.
+const PADDOCKME_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f0ede7" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#e5dfd4" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6d6257" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9dce3" }] },
+  { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#3f3328" }] },
+];
+
 export function PaddockMap({
   mode = "regional",
   agreementId,
@@ -157,6 +169,8 @@ export function PaddockMap({
     profiles: mode !== "regional",
     weather: true,
   });
+  const [hoveredFeatureId, setHoveredFeatureId] = useState<string | null>(null);
+  const [focusBounds, setFocusBounds] = useState<[[number, number], [number, number]] | null>(null);
   const [state, setState] = useState(() => ({
     paddockListings,
     livestockRequests,
@@ -226,6 +240,16 @@ export function PaddockMap({
     const route = context.routes.features.find((feature) => feature.properties.id === featureId);
     if (route) {
       setSelected(route.properties);
+      const coords = route.geometry.coordinates;
+      if (coords.length >= 2) {
+        const lons = coords.map(([lng]) => lng);
+        const lats = coords.map(([, lat]) => lat);
+        const pad = 0.5;
+        setFocusBounds([
+          [Math.min(...lons) - pad, Math.min(...lats) - pad],
+          [Math.max(...lons) + pad, Math.max(...lats) + pad],
+        ]);
+      }
       return;
     }
     const point = context.points.find((feature) => feature.properties.id === featureId);
@@ -257,11 +281,12 @@ export function PaddockMap({
             points={visiblePointData.features}
             routes={visibleRoutes.features}
             routeEndpoints={visibleRouteEndpoints.features}
-            bounds={context.bounds}
+            bounds={focusBounds ?? context.bounds}
             mode={mode}
             onSelect={setSelected}
             onDeselect={() => setSelected(null)}
             selectedFeatureId={selected?.id ?? null}
+            hoveredFeatureId={hoveredFeatureId}
             onZoomChange={setMapZoom}
             onReady={() => {
               setGoogleMapReady(true);
@@ -307,6 +332,8 @@ export function PaddockMap({
                 board={context.driverBoard}
                 onFocus={focusMapFeature}
                 onFocusState={focusMapState}
+                onHover={setHoveredFeatureId}
+                onUnhover={() => setHoveredFeatureId(null)}
               />
             ) : null}
             <ContextPanel context={context} />
@@ -423,11 +450,35 @@ function DriverRouteBoard({
   board,
   onFocus,
   onFocusState,
+  onHover,
+  onUnhover,
 }: {
   board: NonNullable<MapContext["driverBoard"]>;
   onFocus: (featureId: string) => void;
   onFocusState: (bounds: [[number, number], [number, number]]) => void;
+  onHover: (featureId: string) => void;
+  onUnhover: () => void;
 }) {
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const statusCounts = board.items.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = (acc[item.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const filterOptions: { label: string; value: string | null; count: number }[] = [
+    { label: "All", value: null, count: board.items.length },
+    ...Object.entries(statusCounts).map(([status, count]) => ({
+      label: status.charAt(0).toUpperCase() + status.slice(1),
+      value: status,
+      count,
+    })),
+  ];
+
+  const visibleItems = statusFilter
+    ? board.items.filter((item) => item.status === statusFilter)
+    : board.items;
+
   return (
     <div className="rounded-[8px] border border-mist bg-cream p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -451,9 +502,34 @@ function DriverRouteBoard({
           </button>
         ))}
       </div>
+      {filterOptions.length > 2 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {filterOptions.map((opt) => (
+            <button
+              key={opt.value ?? "all"}
+              type="button"
+              onClick={() => setStatusFilter(opt.value)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage",
+                statusFilter === opt.value
+                  ? "border-sage-deep bg-sage-mist text-sage-deep"
+                  : "border-mist bg-warm-white text-stone hover:border-sage hover:bg-sage-mist"
+              )}
+            >
+              {opt.label}
+              <span className="rounded-full bg-current/10 px-1 tabular-nums">{opt.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="space-y-2">
-        {board.items.map((item) => (
-          <div key={item.id} className="rounded-[8px] border border-mist bg-warm-white p-3">
+        {visibleItems.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-[8px] border border-mist bg-warm-white p-3 transition hover:border-sage/40 hover:shadow-sm"
+            onMouseEnter={() => onHover(item.featureId)}
+            onMouseLeave={onUnhover}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-bark">{item.label}</p>
@@ -715,6 +791,7 @@ type RouteOverlayEntry = {
   baseWeight: number;
   baseOpacity: number;
   strokeColor: string;
+  routeState?: MapFeatureProperties["routeState"];
 };
 
 function GoogleOperationalMap({
@@ -729,6 +806,7 @@ function GoogleOperationalMap({
   onReady,
   onError,
   selectedFeatureId,
+  hoveredFeatureId,
 }: {
   points: Feature[];
   routes: LineFeature[];
@@ -741,6 +819,7 @@ function GoogleOperationalMap({
   onReady: () => void;
   onError: (message: string | null) => void;
   selectedFeatureId: string | null;
+  hoveredFeatureId: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -748,26 +827,33 @@ function GoogleOperationalMap({
     (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
   >([]);
   const routeOverlaysRef = useRef<RouteOverlayEntry[]>([]);
-  // Mirrors selectedFeatureId in a ref so async Directions callbacks can
-  // read the latest value without being in their closure.
+  // Mirrors selectedFeatureId and hoveredFeatureId in refs so async Directions
+  // callbacks can read the latest values without being in their closure.
   const selectedFeatureIdRef = useRef<string | null>(selectedFeatureId);
+  const hoveredFeatureIdRef = useRef<string | null>(hoveredFeatureId);
+  // Stable ref for the deselect callback so the init effect doesn't re-run
+  // on every render (onDeselect is a new arrow function each render).
+  const onDeselectRef = useRef(onDeselect);
   // Tracks the last bounds we auto-fitted to. Used to skip refit on
   // every overlay re-render so the user can zoom in without snapping
   // back to the country-wide view.
   const lastFitBoundsRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    selectedFeatureIdRef.current = selectedFeatureId;
-  }, [selectedFeatureId]);
+  useEffect(() => { selectedFeatureIdRef.current = selectedFeatureId; }, [selectedFeatureId]);
+  useEffect(() => { hoveredFeatureIdRef.current = hoveredFeatureId; }, [hoveredFeatureId]);
+  useEffect(() => { onDeselectRef.current = onDeselect; }, [onDeselect]);
 
-  // Dims non-selected routes and intensifies the selected one. Uses refs
+  // Dims non-selected routes and intensifies the selected/hovered one. Uses refs
   // only so it is safe to call from async Directions callbacks.
   const applyDimming = useCallback(() => {
     const sid = selectedFeatureIdRef.current;
+    const hid = hoveredFeatureIdRef.current;
+    const focusId = sid ?? hid;
     for (const entry of routeOverlaysRef.current) {
-      const isFocused = !!sid && entry.id === sid;
-      const opacity = sid ? (isFocused ? entry.baseOpacity : 0.18) : entry.baseOpacity;
-      const weight = isFocused ? entry.baseWeight + 2 : entry.baseWeight;
+      const isFocused = !!focusId && entry.id === focusId;
+      const opacity = focusId ? (isFocused ? entry.baseOpacity : 0.18) : entry.baseOpacity;
+      // Weight boost only when explicitly selected, not just hovered.
+      const weight = (isFocused && !!sid) ? entry.baseWeight + 2 : entry.baseWeight;
       if (entry.overlayType === "polyline") {
         (entry.overlay as google.maps.Polyline).setOptions({
           strokeOpacity: opacity,
@@ -786,9 +872,8 @@ function GoogleOperationalMap({
     }
   }, []);
 
-  useEffect(() => {
-    applyDimming();
-  }, [applyDimming, selectedFeatureId]);
+  useEffect(() => { applyDimming(); }, [applyDimming, selectedFeatureId]);
+  useEffect(() => { applyDimming(); }, [applyDimming, hoveredFeatureId]);
 
   useEffect(() => {
     if (!googleMapsApiKey || !containerRef.current || mapRef.current) return;
@@ -811,10 +896,12 @@ function GoogleOperationalMap({
           clickableIcons: false,
           gestureHandling: "greedy",
           backgroundColor: "#eef3e8",
+          styles: PADDOCKME_MAP_STYLE,
         });
         map.addListener("zoom_changed", () => onZoomChange(map.getZoom() ?? australiaZoom));
-        // Clicking blank map clears selection — marker/polyline clicks don't bubble here.
-        map.addListener("click", onDeselect);
+        // Clicking blank map clears selection — use ref so this listener
+        // doesn't cause the init effect to re-run on every render.
+        map.addListener("click", () => onDeselectRef.current());
         mapRef.current = map;
         onError(null);
         onReady();
@@ -825,7 +912,7 @@ function GoogleOperationalMap({
     return () => {
       cancelled = true;
     };
-  }, [mode, onDeselect, onError, onReady, onZoomChange]);
+  }, [mode, onError, onReady, onZoomChange]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -844,6 +931,7 @@ function GoogleOperationalMap({
         stopover: false,
       }));
       const strokeColor = routeColourForState(route.properties.routeState, "core");
+      const baseOpacity = baseOpacityForRouteState(route.properties.routeState);
       const fallback = drawGooglePolyline(map, route, path, onSelect);
       overlaysRef.current.push(fallback);
       routeOverlaysRef.current.push({
@@ -851,8 +939,9 @@ function GoogleOperationalMap({
         overlayType: "polyline",
         overlay: fallback,
         baseWeight: 4,
-        baseOpacity: 0.85,
+        baseOpacity,
         strokeColor,
+        routeState: route.properties.routeState,
       });
 
       if (!origin || !destination) return;
@@ -872,6 +961,7 @@ function GoogleOperationalMap({
             (e) => e.overlay !== fallback
           );
           const baseWeight = mode === "driver" ? 5 : 4;
+          const rendererOpacity = baseOpacityForRouteState(route.properties.routeState);
           const renderer = new google.maps.DirectionsRenderer({
             directions: result,
             map,
@@ -879,7 +969,7 @@ function GoogleOperationalMap({
             preserveViewport: true,
             polylineOptions: {
               strokeColor,
-              strokeOpacity: 0.96,
+              strokeOpacity: rendererOpacity,
               strokeWeight: baseWeight,
               clickable: true,
             },
@@ -891,8 +981,9 @@ function GoogleOperationalMap({
             overlayType: "renderer",
             overlay: renderer,
             baseWeight,
-            baseOpacity: 0.96,
+            baseOpacity: rendererOpacity,
             strokeColor,
+            routeState: route.properties.routeState,
           });
           // Re-apply dimming now that the renderer is live.
           applyDimming();
@@ -1231,6 +1322,13 @@ function colourForKind(kind: LayerKey) {
     weather: "#9b7adf",
   };
   return colours[kind];
+}
+
+function baseOpacityForRouteState(state: MapFeatureProperties["routeState"]): number {
+  if (state === "available") return 0.92;
+  if (state === "capacity") return 0.88;
+  if (state === "negotiation" || state === "accepted") return 0.75;
+  return 0.85;
 }
 
 function routeColourForState(
