@@ -28,6 +28,129 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Farmer, TransportCapacity } from "@/lib/dummyData";
 
+const MAPS_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+  "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
+
+function buildRouteMapUrl(origin: string, destination: string): string {
+  const enc = encodeURIComponent;
+  const parts = [
+    "size=600x300",
+    "scale=2",
+    "maptype=roadmap",
+    `markers=color:0x4a7c5e|label:A|${enc(origin + ", Australia")}`,
+    `markers=color:0x2d5a3d|label:B|${enc(destination + ", Australia")}`,
+    "style=feature:poi|visibility:off",
+    "style=feature:transit|visibility:off",
+    "style=feature:landscape|element:geometry|color:0xf5f0e8",
+    "style=feature:road|element:geometry|color:0xddd8cc",
+    "style=feature:water|element:geometry|color:0xc9dce3",
+    `key=${enc(MAPS_KEY)}`,
+  ];
+  return `https://maps.googleapis.com/maps/api/staticmap?${parts.join("&")}`;
+}
+
+function RouteFallbackSvg({
+  origin,
+  destination,
+}: {
+  origin: string;
+  destination: string;
+}) {
+  const clip = (s: string) => (s.length > 20 ? s.slice(0, 18) + "…" : s);
+  return (
+    <svg
+      viewBox="0 0 400 180"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label={`Route: ${origin} to ${destination}`}
+      className="w-full rounded-[6px] border border-sage-mist/60"
+    >
+      <rect width="400" height="180" fill="#e8f0eb" />
+      <line
+        x1="95"
+        y1="86"
+        x2="305"
+        y2="86"
+        stroke="#4a7c5e"
+        strokeWidth="2"
+        strokeDasharray="8 5"
+      />
+      <circle cx="74" cy="86" r="20" fill="#4a7c5e" />
+      <text
+        x="74"
+        y="91"
+        textAnchor="middle"
+        fill="white"
+        fontFamily="sans-serif"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        A
+      </text>
+      <circle cx="326" cy="86" r="20" fill="#2d5a3d" />
+      <text
+        x="326"
+        y="91"
+        textAnchor="middle"
+        fill="white"
+        fontFamily="sans-serif"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        B
+      </text>
+      <text
+        x="74"
+        y="122"
+        textAnchor="middle"
+        fill="#4a7c5e"
+        fontFamily="sans-serif"
+        fontSize="9"
+        fontWeight="600"
+      >
+        {clip(origin)}
+      </text>
+      <text
+        x="326"
+        y="122"
+        textAnchor="middle"
+        fill="#2d5a3d"
+        fontFamily="sans-serif"
+        fontSize="9"
+        fontWeight="600"
+      >
+        {clip(destination)}
+      </text>
+    </svg>
+  );
+}
+
+function RouteMapPreview({
+  origin,
+  destination,
+}: {
+  origin: string;
+  destination: string;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (imgFailed) {
+    return <RouteFallbackSvg origin={origin} destination={destination} />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={buildRouteMapUrl(origin, destination)}
+      alt={`Route map: ${origin} to ${destination}`}
+      className="w-full rounded-[6px] border border-sage-mist/60 object-cover"
+      style={{ aspectRatio: "2/1", pointerEvents: "none" }}
+      loading="lazy"
+      draggable={false}
+      onError={() => setImgFailed(true)}
+    />
+  );
+}
+
 type FilterGroupKey = "origins" | "destinations" | "stockTypes";
 
 type FilterState = {
@@ -388,6 +511,10 @@ function CapacityCard({
 
   return (
     <Card className="flex h-full flex-col gap-5">
+      <RouteMapPreview
+        origin={capacity.originRegion}
+        destination={capacity.destinationRegion}
+      />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
