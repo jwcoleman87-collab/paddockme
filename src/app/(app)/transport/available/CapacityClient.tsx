@@ -25,6 +25,7 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { TablesInsert } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 import type { Farmer, TransportCapacity } from "@/lib/dummyData";
 
@@ -321,16 +322,17 @@ export function CapacityClient({
       await supabase
         .from("profiles")
         .upsert({ id: user.id, full_name: metaName }, { onConflict: "id" });
-      // The DB stores ISO dates; our draft carries display strings already.
-      // For now we send what we have - a follow-up wires the dialog to emit
-      // ISO directly so the column type matches.
-      const insertPayload: Record<string, unknown> = {
+      // Date columns are Postgres `date`, so send the ISO YYYY-MM-DD values
+      // from the date picker. The draft also carries human display strings
+      // (earliestDate/latestDate) but those are UI-only and Postgres rejects
+      // them.
+      const insertPayload: TablesInsert<"transport_capacity"> = {
         driver_id: user.id,
         truck_label: draft.truckLabel,
         origin_region: draft.originRegion,
         destination_region: draft.destinationRegion,
-        earliest_date: draft.earliestDate,
-        latest_date: draft.latestDate,
+        earliest_date: draft.earliestDateIso,
+        latest_date: draft.latestDateIso,
         head_capacity: draft.headCapacity,
         stock_types: draft.stockTypes,
         rate_basis: draft.rateBasis,
@@ -338,8 +340,7 @@ export function CapacityClient({
         notes: draft.notes,
         status: "published",
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("transport_capacity")
         .insert(insertPayload);
       if (error) {
