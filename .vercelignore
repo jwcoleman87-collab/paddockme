@@ -1,0 +1,9 @@
+.agents
+.claude
+.git
+.next
+.vercel
+node_modules
+*.log
+*.tsbuildinfo
+

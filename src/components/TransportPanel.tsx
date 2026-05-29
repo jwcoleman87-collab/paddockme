@@ -31,6 +31,11 @@ import { InfoTile } from "@/components/InfoTile";
 import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
+import {
+  estimateTransportTotal,
+  formatCurrency,
+  quoteBasisLabel,
+} from "@/lib/payments/transportPayables";
 import { cn } from "@/lib/utils";
 import type {
   TransportArtefact,
@@ -212,6 +217,7 @@ export function TransportPanel({
 
         {activeTab === "rate" && showRateTab && (
           <RateNegotiation
+            job={job}
             quotes={quotes}
             acceptedQuoteId={acceptedQuoteId}
             role={role}
@@ -258,6 +264,70 @@ export function TransportPanel({
           </div>
         </div>
       )}
+    </section>
+  );
+}
+
+export function TransportPaymentCallout({
+  job,
+  quote,
+  onViewRecord,
+  className,
+}: {
+  job: TransportJob;
+  quote: TransportQuote;
+  onViewRecord?: () => void;
+  className?: string;
+}) {
+  const total = estimateTransportTotal(job, quote);
+  const basisLabel = quoteBasisLabel(quote.basis);
+
+  return (
+    <section
+      aria-label="Transport payment"
+      className={cn(
+        "rounded-xl border border-amber/30 bg-warm-white px-4 py-4 shadow-sm",
+        className
+      )}
+    >
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2 text-sage-deep">
+            <Banknote className="h-5 w-5" aria-hidden />
+            <h3 className="text-sm font-bold uppercase tracking-wide">
+              Transport payment ready
+            </h3>
+            <StatusBadge tone="warning">Awaiting payment</StatusBadge>
+          </div>
+          <p className="text-lg font-bold text-bark sm:text-xl">
+            {total
+              ? `${formatCurrency(total, quote.currency)} ${quote.currency} payable to ${job.driver}`
+              : `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel} accepted`}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-bark/65">
+            Hosted by Stripe in test mode. Card details never touch PaddockME.
+          </p>
+        </div>
+
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto lg:items-start">
+          <TransportCheckoutAction
+            job={job}
+            quote={quote}
+            className="sm:order-1"
+            buttonClassName="w-full sm:w-auto"
+          />
+          {onViewRecord && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onViewRecord}
+              className="w-full sm:w-auto"
+            >
+              View record
+            </Button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
@@ -818,6 +888,7 @@ function TransportArtefactCard({
 }
 
 function RateNegotiation({
+  job,
   quotes,
   acceptedQuoteId,
   role,
@@ -825,6 +896,7 @@ function RateNegotiation({
   onAccept,
   onReject,
 }: {
+  job: TransportJob;
   quotes: TransportQuote[];
   acceptedQuoteId?: string;
   role: TransportRole;
@@ -861,7 +933,10 @@ function RateNegotiation({
       </div>
 
       {acceptedQuote && (
-        <AcceptedQuoteCard quote={acceptedQuote} />
+        <>
+          <AcceptedQuoteCard quote={acceptedQuote} />
+          <TransportPayableCard job={job} quote={acceptedQuote} role={role} />
+        </>
       )}
 
       {!acceptedQuote && pendingQuote && (
@@ -900,6 +975,188 @@ function RateNegotiation({
         <QuoteHistorySection quotes={quotes} />
       )}
     </div>
+  );
+}
+
+function TransportPayableCard({
+  job,
+  quote,
+  role,
+}: {
+  job: TransportJob;
+  quote: TransportQuote;
+  role: TransportRole;
+}) {
+  const total = estimateTransportTotal(job, quote);
+  const basisLabel = quoteBasisLabel(quote.basis);
+  const payerLabel = role === "driver" ? "Livestock owner" : "You";
+  const payeeLabel = role === "driver" ? "You" : job.driver;
+
+  return (
+    <section className="rounded-xl border border-sage-deep/15 bg-warm-white p-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-2 text-sage-deep">
+          <Banknote className="h-5 w-5" aria-hidden />
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            Settlement record
+          </h3>
+        </div>
+        <StatusBadge tone="warning">Awaiting payment</StatusBadge>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <InfoTile
+          tone="subtle"
+          size="sm"
+          label="Payer"
+          value={payerLabel}
+        />
+        <InfoTile
+          tone="subtle"
+          size="sm"
+          label="Payee"
+          value={payeeLabel}
+        />
+        <InfoTile
+          tone="subtle"
+          size="sm"
+          label="Status"
+          value="Awaiting payment"
+        />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-mist bg-cream/60 px-4 py-3">
+        <p className="text-sm font-semibold text-bark">
+          {total
+            ? `${formatCurrency(total, quote.currency)} ${quote.currency} estimated total`
+            : `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel}`}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-bark/65">
+          {total
+            ? `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel} from the accepted quote.`
+            : "Total will be confirmed before live payment capture."}
+        </p>
+      </div>
+
+      <ol className="mt-4 space-y-2 text-sm">
+        <PaymentEventRow label="Quote accepted" tone="success" />
+        <PaymentEventRow label="Payable opened" tone="warning" />
+        <PaymentEventRow label="Stripe test checkout ready" tone="neutral" />
+      </ol>
+
+      <div className="mt-4 border-t border-mist pt-4">
+        {role === "farmerA" ? (
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs leading-relaxed text-bark/65">
+              Hosted by Stripe in test mode. Card details never touch PaddockME.
+            </p>
+            <TransportCheckoutAction job={job} quote={quote} />
+          </div>
+        ) : (
+          <p className="text-xs leading-relaxed text-bark/65">
+            Payment action sits with the livestock owner. Driver payout
+            onboarding comes in the next milestone.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function TransportCheckoutAction({
+  job,
+  quote,
+  className,
+  buttonClassName,
+}: {
+  job: TransportJob;
+  quote: TransportQuote;
+  className?: string;
+  buttonClassName?: string;
+}) {
+  const total = estimateTransportTotal(job, quote);
+  const canStartCheckout = !!total;
+  const [checkoutState, setCheckoutState] = useState<
+    "idle" | "loading" | "error"
+  >("idle");
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+
+  async function startStripeCheckout() {
+    if (!canStartCheckout) return;
+    setCheckoutState("loading");
+    setCheckoutMessage(null);
+
+    try {
+      const response = await fetch("/api/payments/transport/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transportJobId: job.id,
+          quoteId: quote.id,
+        }),
+      });
+      const payload = (await response.json()) as {
+        url?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error ?? "Stripe checkout could not be started");
+      }
+
+      window.location.assign(payload.url);
+    } catch (error) {
+      setCheckoutState("error");
+      setCheckoutMessage(
+        error instanceof Error
+          ? error.message
+          : "Stripe checkout could not be started"
+      );
+    }
+  }
+
+  return (
+    <div className={cn("flex flex-col items-stretch gap-2", className)}>
+      <Button
+        type="button"
+        onClick={startStripeCheckout}
+        disabled={!canStartCheckout || checkoutState === "loading"}
+        aria-busy={checkoutState === "loading"}
+        className={buttonClassName}
+      >
+        {checkoutState === "loading" ? "Starting checkout" : "Pay transport"}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Button>
+      {checkoutState === "error" && checkoutMessage && (
+        <p
+          role="alert"
+          className="rounded-lg border border-terra/30 bg-terra-light/55 px-3 py-2 text-xs font-semibold text-terra"
+        >
+          {checkoutMessage}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PaymentEventRow({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "success" | "warning" | "neutral";
+}) {
+  const dotClass =
+    tone === "success"
+      ? "bg-match"
+      : tone === "warning"
+        ? "bg-amber"
+        : "bg-stone/45";
+  return (
+    <li className="flex items-center gap-2 text-bark/75">
+      <span className={cn("h-2 w-2 rounded-full", dotClass)} aria-hidden />
+      <span>{label}</span>
+    </li>
   );
 }
 

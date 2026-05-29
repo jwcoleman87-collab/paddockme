@@ -42,6 +42,7 @@ npm run verify:pitch # Typecheck, docs, build, production smoke, and browser cli
 npm run build        # Production build check
 npm run demo:smoke   # Production demo route/content smoke test
 npm run demo:click   # Production browser click rehearsal for the pitch path
+npm run payments:smoke # Payment route/API/UI smoke test
 npm run docs:check   # Markdown link check for repo docs
 npm run db:types     # Regenerate Supabase database types
 ```
@@ -60,6 +61,7 @@ Use these docs as the single source of truth for the current pitch path:
 - [`docs/INVESTOR_DILIGENCE_QA.md`](docs/INVESTOR_DILIGENCE_QA.md) - honest Q&A for investor follow-up
 - [`docs/CUSTOMER_VALIDATION_GUIDE.md`](docs/CUSTOMER_VALIDATION_GUIDE.md) - interview guide for Dale/Brett/Wayne validation
 - [`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md) - next commercial unlock without claiming it is built
+- [`docs/PAYMENTS_MILESTONE_PLAN.md`](docs/PAYMENTS_MILESTONE_PLAN.md) - learn/build/test/deploy checklist for payment implementation
 - [`docs/INVESTOR_FREEZE_CHECKLIST.md`](docs/INVESTOR_FREEZE_CHECKLIST.md) - final pre-call freeze checklist
 
 Before pushing pitch-facing changes:
@@ -77,6 +79,8 @@ Set these in `.env.local` for local dev, and in the Vercel project settings for 
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project → Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project → Settings → API → `anon` public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API → `service_role` key (server-only, never expose) |
+| `STRIPE_SECRET_KEY` | Stripe test-mode secret key, or Vercel Marketplace Stripe integration |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook endpoint signing secret for `/api/webhooks/stripe` |
 
 Google Maps: set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` from Google Cloud and enable the Maps JavaScript API plus Directions API for road-route overlays. Without this key, PaddockME uses the built-in stable map fallback.
 

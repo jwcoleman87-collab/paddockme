@@ -9,6 +9,7 @@ import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import {
   TransportPanel,
+  TransportPaymentCallout,
   type TransportQuoteDraft,
 } from "@/components/TransportPanel";
 import { markThreadSeen } from "@/lib/inbox";
@@ -286,6 +287,9 @@ export function TransportClient({
     appendSystemMessage(
       `${senderProfile[role].name} accepted the transport rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
     );
+    appendSystemMessage(
+      "Transport payable opened. Payment rails are not connected yet."
+    );
   }
 
   function rejectQuote(quoteId: string) {
@@ -357,6 +361,10 @@ export function TransportClient({
     appendSystemMessage(`${senderProfile[role].name} updated transport status to ${formatTransportStatus(status)}.`);
   }
 
+  const acceptedQuote = acceptedQuoteId
+    ? quotes.find((quote) => quote.id === acceptedQuoteId)
+    : undefined;
+
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4">
@@ -384,6 +392,10 @@ export function TransportClient({
           </div>
         </div>
       </section>
+
+      {role === "farmerA" && acceptedQuote && (
+        <TransportPaymentCallout job={jobState} quote={acceptedQuote} />
+      )}
 
       <section
         aria-label="Transport role switcher"

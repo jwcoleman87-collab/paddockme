@@ -2,6 +2,8 @@
 
 This is a product blueprint, not an implementation claim. Payments, escrow, settlement, dispute handling, and automated invoicing are not built yet. The purpose of this document is to make the next commercial unlock concrete enough to discuss without overpromising.
 
+Implementation checklist: see [Payments Milestone Plan](./PAYMENTS_MILESTONE_PLAN.md).
+
 ## Why Payments Are Next
 
 The current MVP proves the coordination loop:
@@ -233,7 +235,7 @@ Ask transport operators:
 
 ## Build Gate
 
-Do not start payments UI until:
+Do not start real-money payments UI until:
 
 - `npm run verify:pitch` is green.
 - At least five customer interviews mention payment timing or settlement risk unprompted.
@@ -241,3 +243,4 @@ Do not start payments UI until:
 - Legal/compliance assumptions are written down.
 - RLS visibility rules are designed before UI.
 
+Founder override for the current build: it is acceptable to start the provider-independent payment foundation now if it stays ledger-first, test-mode/provider-hosted, and clearly labelled as not live money movement. The first payable remains transport quote settlement unless customer discovery forces a sharper priority.
