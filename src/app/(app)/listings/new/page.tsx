@@ -1,40 +1,101 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, CheckCircle } from "lucide-react";
+import { Camera, CheckCircle, Circle } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { SelectablePill } from "@/components/SelectablePill";
-import { stockTypes } from "@/lib/dummyData";
+import { stockTypes, type PaddockListing } from "@/lib/dummyData";
 import { createPaddockListingRecord } from "@/lib/data/repositories";
 
-const feed = ["Excellent", "Good", "Tight", "Needs rain"];
-const water = ["Permanent", "Seasonal", "Tank", "Creek access"];
-const fencing = ["Secure", "Good", "Needs inspection"];
+const regions = [
+  "Southern NSW",
+  "Central West",
+  "Northern NSW",
+  "Gippsland",
+  "Western VIC",
+  "SE QLD",
+];
+const feedOptions: PaddockListing["feedStatus"][] = ["Excellent", "Good", "Tight"];
+const waterOptions: PaddockListing["waterStatus"][] = ["Permanent", "Seasonal", "Tank"];
+const fencingOptions: PaddockListing["fencingStatus"][] = [
+  "Secure",
+  "Good",
+  "Needs inspection",
+];
 
 export default function NewListingPage() {
   const router = useRouter();
   const flash = useFlash();
 
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [region, setRegion] = useState(regions[0]);
+  const [acres, setAcres] = useState(200);
+  const [suitableLivestock, setSuitableLivestock] = useState<string[]>(["Cattle"]);
+  const [feedStatus, setFeedStatus] = useState<PaddockListing["feedStatus"]>("Excellent");
+  const [waterStatus, setWaterStatus] = useState<PaddockListing["waterStatus"]>("Permanent");
+  const [fencingStatus, setFencingStatus] =
+    useState<PaddockListing["fencingStatus"]>("Secure");
+  const [availabilityWindow, setAvailabilityWindow] = useState("");
+  const [summary, setSummary] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function toggleLivestock(value: string) {
+    setSuitableLivestock((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value]
+    );
+  }
+
   async function publishListing() {
-    const { listing } = await createPaddockListingRecord({
-      title: "Glenbarra River Paddocks",
-      location: "Near Gundagai, NSW",
-      region: "Southern NSW",
-      acres: 280,
-      suitableLivestock: ["Cattle", "Sheep"],
-      feedStatus: "Excellent",
-      waterStatus: "Permanent",
-      fencingStatus: "Secure",
-      availabilityWindow: "18 May to 30 September",
-      guideTerms: "Discuss terms",
-      summary:
-        "River flats with strong autumn feed, permanent troughs, and north-gate truck access.",
-    });
-    flash("Listing published.", "success");
-    router.push(`/listings/${listing.id}?published=1`);
+    if (submitting) return;
+    if (!title.trim()) {
+      flash("Add a name for your listing.", "warning");
+      return;
+    }
+    if (!location.trim()) {
+      flash("Add the property location.", "warning");
+      return;
+    }
+    if (acres <= 0) {
+      flash("Set the available acres.", "warning");
+      return;
+    }
+    if (suitableLivestock.length === 0) {
+      flash("Pick at least one suitable livestock type.", "warning");
+      return;
+    }
+    if (!summary.trim()) {
+      flash("Add a short summary so farmers know what they're enquiring about.", "warning");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { listing } = await createPaddockListingRecord({
+        title: title.trim(),
+        location: location.trim(),
+        region,
+        acres,
+        suitableLivestock,
+        feedStatus,
+        waterStatus,
+        fencingStatus,
+        availabilityWindow: availabilityWindow.trim() || "Discuss availability",
+        guideTerms: "Discuss terms",
+        summary: summary.trim(),
+      });
+      flash("Listing published.", "success");
+      router.push(`/listings/${listing.id}?published=1`);
+    } catch {
+      flash("Could not publish the listing. Please try again.", "warning");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -50,17 +111,110 @@ export default function NewListingPage() {
           <Card>
             <SectionTitle eyebrow="Step 1" title="Property basics" />
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Location" value="Near Gundagai, NSW" />
-              <Field label="Available acres" value="280" />
-              <Field label="Availability window" value="18 May to 30 September" />
-              <Field label="Access note" value="North gate for wet weather" />
+              <div className="sm:col-span-2">
+                <TextField
+                  label="Listing name"
+                  value={title}
+                  onChange={setTitle}
+                  placeholder="e.g. Glenbarra River Paddocks"
+                />
+              </div>
+              <TextField
+                label="Location"
+                value={location}
+                onChange={setLocation}
+                placeholder="e.g. Near Gundagai, NSW"
+              />
+              <NumberField label="Available acres" value={acres} onChange={setAcres} />
+              <div className="sm:col-span-2">
+                <TextField
+                  label="Availability window"
+                  value={availabilityWindow}
+                  onChange={setAvailabilityWindow}
+                  placeholder="e.g. 18 May to 30 September"
+                />
+              </div>
+            </div>
+            <div className="mt-5">
+              <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
+                Region
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {regions.map((value) => (
+                  <SelectablePill
+                    key={value}
+                    selected={region === value}
+                    onClick={() => setRegion(value)}
+                  >
+                    {value}
+                  </SelectablePill>
+                ))}
+              </div>
             </div>
           </Card>
 
-          <ChoiceSection title="Suitable livestock" options={stockTypes} selected={["Cattle", "Sheep"]} />
-          <ChoiceSection title="Feed quality" options={feed} selected={["Excellent"]} />
-          <ChoiceSection title="Water availability" options={water} selected={["Permanent"]} />
-          <ChoiceSection title="Fencing condition" options={fencing} selected={["Secure"]} />
+          <ChoiceSection title="Suitable livestock">
+            {stockTypes.map((value) => (
+              <SelectablePill
+                key={value}
+                selected={suitableLivestock.includes(value)}
+                onClick={() => toggleLivestock(value)}
+              >
+                {value}
+              </SelectablePill>
+            ))}
+          </ChoiceSection>
+
+          <ChoiceSection title="Feed quality">
+            {feedOptions.map((value) => (
+              <SelectablePill
+                key={value}
+                selected={feedStatus === value}
+                onClick={() => setFeedStatus(value)}
+              >
+                {value}
+              </SelectablePill>
+            ))}
+          </ChoiceSection>
+
+          <ChoiceSection title="Water availability">
+            {waterOptions.map((value) => (
+              <SelectablePill
+                key={value}
+                selected={waterStatus === value}
+                onClick={() => setWaterStatus(value)}
+              >
+                {value}
+              </SelectablePill>
+            ))}
+          </ChoiceSection>
+
+          <ChoiceSection title="Fencing condition">
+            {fencingOptions.map((value) => (
+              <SelectablePill
+                key={value}
+                selected={fencingStatus === value}
+                onClick={() => setFencingStatus(value)}
+              >
+                {value}
+              </SelectablePill>
+            ))}
+          </ChoiceSection>
+
+          <Card>
+            <SectionTitle eyebrow="Step 2" title="Summary" />
+            <p className="mt-2 text-sm font-medium text-bark/70">
+              A short description farmers see first — mention feed, water, access and
+              whether there are yards or a loading ramp.
+            </p>
+            <textarea
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              rows={4}
+              placeholder="River flats with strong autumn feed, permanent troughs, yards and north-gate truck access."
+              className="mt-4 w-full rounded-[8px] border border-stone/35 bg-white px-4 py-3 text-base font-medium text-bark shadow-[inset_0_1px_2px_rgba(63,51,40,0.08)] outline-none transition focus:border-sage focus:ring-2 focus:ring-sage/25 placeholder:text-stone/45"
+            />
+          </Card>
         </div>
 
         <aside className="space-y-5">
@@ -77,15 +231,26 @@ export default function NewListingPage() {
           <Card className="sticky top-24">
             <SectionTitle eyebrow="Checklist" title="Publish readiness" />
             <div className="mt-4 space-y-3">
-              {["Location set", "Livestock suitability selected", "Water and fencing declared"].map((item) => (
-                <div key={item} className="flex items-center gap-2 text-sm font-semibold text-bark">
-                  <CheckCircle className="h-5 w-5 text-match" aria-hidden />
-                  {item}
-                </div>
-              ))}
+              <ChecklistRow
+                done={title.trim().length > 0 && location.trim().length > 0}
+                label="Name and location set"
+              />
+              <ChecklistRow
+                done={suitableLivestock.length > 0}
+                label="Livestock suitability selected"
+              />
+              <ChecklistRow
+                done={acres > 0 && summary.trim().length > 0}
+                label="Acres and summary added"
+              />
             </div>
-            <Button type="button" onClick={publishListing} className="mt-5 w-full">
-              Publish listing
+            <Button
+              type="button"
+              onClick={publishListing}
+              disabled={submitting}
+              className="mt-5 w-full"
+            >
+              {submitting ? "Publishing…" : "Publish listing"}
             </Button>
           </Card>
         </aside>
@@ -107,13 +272,51 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="block">
-      <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">{label}</span>
+      <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
+        {label}
+      </span>
       <input
-        readOnly
         value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-2 min-h-14 w-full rounded-[8px] border border-stone/35 bg-white px-4 text-lg font-extrabold text-bark shadow-[inset_0_1px_2px_rgba(63,51,40,0.08)] outline-none ring-0 transition focus:border-sage focus:ring-2 focus:ring-sage/25 placeholder:font-semibold placeholder:text-stone/45"
+      />
+    </label>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
+        {label}
+      </span>
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(event) => onChange(Math.max(0, Number(event.target.value) || 0))}
         className="mt-2 min-h-14 w-full rounded-[8px] border border-stone/35 bg-white px-4 text-lg font-extrabold text-bark shadow-[inset_0_1px_2px_rgba(63,51,40,0.08)] outline-none ring-0 transition focus:border-sage focus:ring-2 focus:ring-sage/25"
       />
     </label>
@@ -122,23 +325,28 @@ function Field({ label, value }: { label: string; value: string }) {
 
 function ChoiceSection({
   title,
-  options,
-  selected,
+  children,
 }: {
   title: string;
-  options: string[];
-  selected: string[];
+  children: React.ReactNode;
 }) {
   return (
     <Card>
       <SectionTitle eyebrow="Select" title={title} />
-      <div className="mt-5 flex flex-wrap gap-2">
-        {options.map((option) => (
-          <SelectablePill key={option} selected={selected.includes(option)}>
-            {option}
-          </SelectablePill>
-        ))}
-      </div>
+      <div className="mt-5 flex flex-wrap gap-2">{children}</div>
     </Card>
+  );
+}
+
+function ChecklistRow({ done, label }: { done: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm font-semibold text-bark">
+      {done ? (
+        <CheckCircle className="h-5 w-5 text-match" aria-hidden />
+      ) : (
+        <Circle className="h-5 w-5 text-stone/40" aria-hidden />
+      )}
+      {label}
+    </div>
   );
 }
