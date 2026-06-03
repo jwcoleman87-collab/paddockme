@@ -7,18 +7,16 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  SearchablePicker,
+  pickerGroupsFromRegions,
+} from "@/components/SearchablePicker";
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes, type PaddockListing } from "@/lib/dummyData";
 import { createPaddockListingRecord } from "@/lib/data/repositories";
+import { findRegion, regionsGroupedByState } from "@/lib/regions";
 
-const regions = [
-  "Southern NSW",
-  "Central West",
-  "Northern NSW",
-  "Gippsland",
-  "Western VIC",
-  "SE QLD",
-];
+const regionPickerGroups = pickerGroupsFromRegions(regionsGroupedByState());
 const feedOptions: PaddockListing["feedStatus"][] = ["Excellent", "Good", "Tight"];
 const waterOptions: PaddockListing["waterStatus"][] = ["Permanent", "Seasonal", "Tank"];
 const fencingOptions: PaddockListing["fencingStatus"][] = [
@@ -33,7 +31,10 @@ export default function NewListingPage() {
 
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
-  const [region, setRegion] = useState(regions[0]);
+  // Region stored as canonical id; resolved to its human label when we
+  // persist the listing so seed-shaped filters keep working.
+  const [regionId, setRegionId] = useState<string | undefined>("southern-nsw");
+  const region = findRegion(regionId)?.label ?? "";
   const [acres, setAcres] = useState(200);
   const [suitableLivestock, setSuitableLivestock] = useState<string[]>(["Cattle"]);
   const [feedStatus, setFeedStatus] = useState<PaddockListing["feedStatus"]>("Excellent");
@@ -60,6 +61,10 @@ export default function NewListingPage() {
     }
     if (!location.trim()) {
       flash("Add the property location.", "warning");
+      return;
+    }
+    if (!region) {
+      flash("Pick the region closest to your paddock.", "warning");
       return;
     }
     if (acres <= 0) {
@@ -136,20 +141,14 @@ export default function NewListingPage() {
               </div>
             </div>
             <div className="mt-5">
-              <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
-                Region
-              </span>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {regions.map((value) => (
-                  <SelectablePill
-                    key={value}
-                    selected={region === value}
-                    onClick={() => setRegion(value)}
-                  >
-                    {value}
-                  </SelectablePill>
-                ))}
-              </div>
+              <SearchablePicker
+                label="Region"
+                placeholder="Choose the closest region…"
+                searchPlaceholder="Search regions"
+                value={regionId}
+                onChange={setRegionId}
+                groups={regionPickerGroups}
+              />
             </div>
           </Card>
 

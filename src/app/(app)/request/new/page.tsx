@@ -8,20 +8,39 @@ import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  SearchablePicker,
+  pickerGroupsFromRegions,
+} from "@/components/SearchablePicker";
 import { SelectablePill } from "@/components/SelectablePill";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
 import { createLivestockRequestRecord } from "@/lib/data/repositories";
+import {
+  findRegion,
+  regionsByLabel,
+  regionsGroupedByState,
+} from "@/lib/regions";
 
 const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
-const regions = [
-  "Southern NSW",
-  "Central West",
-  "Northern NSW",
-  "Gippsland",
-  "Western VIC",
-  "SE QLD",
-];
 const transport = ["Yes", "No", "Unsure"];
+
+// Region picker groups are built from the canonical Australian region
+// list grouped by state. Stored selection is by region id; we convert
+// to/from human labels at the request/URL boundary so existing seed and
+// /matches filters keep working unchanged.
+const regionPickerGroups = pickerGroupsFromRegions(regionsGroupedByState());
+
+function regionIdsFromLabels(labels: string[]): string[] {
+  return labels
+    .map((label) => regionsByLabel[label]?.id)
+    .filter((id): id is string => !!id);
+}
+
+function regionLabelsFromIds(ids: string[]): string[] {
+  return ids
+    .map((id) => findRegion(id)?.label)
+    .filter((label): label is string => !!label);
+}
 
 export default function NewRequestPage() {
   const router = useRouter();
@@ -29,7 +48,13 @@ export default function NewRequestPage() {
   const [stockType, setStockType] = useState<StockType>("Cattle");
   const [breed, setBreed] = useState("Angus");
   const [duration, setDuration] = useState("3-6 months");
-  const [selectedRegions, setSelectedRegions] = useState(["Southern NSW"]);
+  // Stored as region ids. selectedRegionLabels is derived only when we
+  // need to pass labels to URL params / persistence (keeps existing
+  // downstream filters and seed names working).
+  const [selectedRegionIds, setSelectedRegionIds] = useState<string[]>([
+    "southern-nsw",
+  ]);
+  const selectedRegions = regionLabelsFromIds(selectedRegionIds);
   const [transportRequired, setTransportRequired] = useState("Yes");
   const [headCount, setHeadCount] = useState(100);
 
@@ -55,9 +80,9 @@ export default function NewRequestPage() {
         applied = true;
       }
       if (parsed.region) {
-        const mapped = mapOnboardingRegion(parsed.region);
-        if (mapped) {
-          setSelectedRegions([mapped]);
+        const mappedId = mapOnboardingRegion(parsed.region);
+        if (mappedId) {
+          setSelectedRegionIds([mappedId]);
           applied = true;
         }
       }
@@ -79,13 +104,6 @@ export default function NewRequestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function toggleRegion(region: string) {
-    setSelectedRegions((current) =>
-      current.includes(region)
-        ? current.filter((item) => item !== region)
-        : [...current, region]
-    );
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -190,17 +208,20 @@ export default function NewRequestPage() {
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Preferred regions">
-            {regions.map((value) => (
-              <SelectablePill
-                key={value}
-                selected={selectedRegions.includes(value)}
-                onClick={() => toggleRegion(value)}
-              >
-                {value}
-              </SelectablePill>
-            ))}
-          </ChoiceSection>
+          <Card>
+            <h2 className="mb-4 text-xl font-bold text-sage-deep">
+              Preferred regions
+            </h2>
+            <SearchablePicker
+              label="Choose one or more regions"
+              placeholder="Choose a region…"
+              searchPlaceholder="Search regions"
+              multi
+              value={selectedRegionIds}
+              onChange={setSelectedRegionIds}
+              groups={regionPickerGroups}
+            />
+          </Card>
         </div>
 
         <aside className="space-y-5">
@@ -250,11 +271,21 @@ function ChoiceSection({
   );
 }
 
+// Onboarding stores the legacy region label; resolve to a canonical
+// region id when one matches. Returns null when the saved label no
+// longer corresponds to a known region.
 function mapOnboardingRegion(onboardingRegion: string): string | null {
-  if (regions.includes(onboardingRegion)) return onboardingRegion;
-  if (onboardingRegion === "Central West NSW") return "Central West";
-  if (onboardingRegion === "Gippsland VIC") return "Gippsland";
-  return null;
+  const direct = findRegion(onboardingRegion);
+  if (direct) return direct.id;
+  // Friendly aliases for older onboarding answers that pre-date the
+  // canonical list.
+  const alias: Record<string, string | undefined> = {
+    "Central West": "central-west-nsw",
+    "Gippsland VIC": "gippsland",
+    "Western VIC": "western-districts-vic",
+  };
+  const aliased = alias[onboardingRegion];
+  return aliased ?? null;
 }
 
 function headCountFromBracket(bracket: string): number | null {
