@@ -3,8 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Banknote, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/Button";
+import {
+  SearchablePicker,
+  pickerGroupsFromRegions,
+} from "@/components/SearchablePicker";
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes as stockTypeOptions, type TransportQuoteBasis } from "@/lib/dummyData";
+import { findRegion, regionsGroupedByState } from "@/lib/regions";
+
+const regionPickerGroups = pickerGroupsFromRegions(regionsGroupedByState());
 
 const focusableSelector =
   'button:not([disabled]), input, select, textarea, [href], [tabindex]:not([tabindex="-1"])';
@@ -29,8 +36,6 @@ export type CapacityDraft = {
 type CapacityPostDialogProps = {
   open: boolean;
   driverLabel: string;
-  /** Region options - derived from existing capacity rows in the parent. */
-  regionOptions: string[];
   onClose: () => void;
   onSubmit: (draft: CapacityDraft) => void;
 };
@@ -44,17 +49,20 @@ const rateBasisOptions: { id: TransportQuoteBasis; label: string }[] = [
 export function CapacityPostDialog({
   open,
   driverLabel,
-  regionOptions,
   onClose,
   onSubmit,
 }: CapacityPostDialogProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
 
-  const [originRegion, setOriginRegion] = useState<string | null>(null);
-  const [destinationRegion, setDestinationRegion] = useState<string | null>(
-    null
-  );
+  // Region picker stores ids; we resolve them to canonical labels when
+  // we hand the draft back to the parent for storage / display.
+  const [originRegionId, setOriginRegionId] = useState<string | undefined>();
+  const [destinationRegionId, setDestinationRegionId] = useState<
+    string | undefined
+  >();
+  const originRegion = findRegion(originRegionId)?.label ?? null;
+  const destinationRegion = findRegion(destinationRegionId)?.label ?? null;
   const [earliestDate, setEarliestDate] = useState("");
   const [latestDate, setLatestDate] = useState("");
   const [headCapacity, setHeadCapacity] = useState<string>("");
@@ -70,8 +78,8 @@ export function CapacityPostDialog({
     if (!open) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     // Reset on every open.
-    setOriginRegion(null);
-    setDestinationRegion(null);
+    setOriginRegionId(undefined);
+    setDestinationRegionId(undefined);
     setEarliestDate("");
     setLatestDate("");
     setHeadCapacity("");
@@ -204,43 +212,31 @@ export function CapacityPostDialog({
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
-              Origin region
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {regionOptions.map((region) => (
-                <SelectablePill
-                  key={region}
-                  selected={originRegion === region}
-                  onClick={() => setOriginRegion(region)}
-                >
-                  {region}
-                </SelectablePill>
-              ))}
-            </div>
-          </div>
+          <SearchablePicker
+            label="Origin region"
+            placeholder="Where the stock is coming from…"
+            searchPlaceholder="Search regions"
+            value={originRegionId}
+            onChange={(next) => {
+              setOriginRegionId(next);
+              if (next && next === destinationRegionId) {
+                setDestinationRegionId(undefined);
+              }
+            }}
+            groups={regionPickerGroups}
+          />
 
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone">
-              Destination region
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {regionOptions.map((region) => {
-                const disabled = region === originRegion;
-                return (
-                  <SelectablePill
-                    key={region}
-                    selected={destinationRegion === region}
-                    disabled={disabled}
-                    onClick={() => setDestinationRegion(region)}
-                  >
-                    {region}
-                  </SelectablePill>
-                );
-              })}
-            </div>
-          </div>
+          <SearchablePicker
+            label="Destination region"
+            placeholder="Where the stock is going…"
+            searchPlaceholder="Search regions"
+            value={destinationRegionId}
+            onChange={(next) => {
+              if (next && next === originRegionId) return;
+              setDestinationRegionId(next);
+            }}
+            groups={regionPickerGroups}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">

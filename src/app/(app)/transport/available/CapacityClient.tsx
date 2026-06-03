@@ -249,30 +249,6 @@ export function CapacityClient({
     [capacities, filters]
   );
 
-  const regionOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const capacity of capacities) {
-      set.add(capacity.originRegion);
-      set.add(capacity.destinationRegion);
-    }
-    // Pad with a few common regions when the seed list is sparse so the
-    // dialog still has useful chip options out of the box.
-    for (const region of [
-      "Central West NSW",
-      "Southern NSW",
-      "Northern NSW",
-      "Hunter NSW",
-      "Northern Tablelands NSW",
-      "Riverina NSW",
-      "Gippsland VIC",
-      "Darling Downs QLD",
-      "Maranoa QLD",
-    ]) {
-      set.add(region);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [capacities]);
-
   function postCapacity(draft: CapacityDraft) {
     const newCapacity: TransportCapacity = {
       id: `local-cap-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -481,7 +457,6 @@ export function CapacityClient({
       <CapacityPostDialog
         open={postOpen}
         driverLabel="Driver"
-        regionOptions={regionOptions}
         onClose={() => setPostOpen(false)}
         onSubmit={postCapacity}
       />
