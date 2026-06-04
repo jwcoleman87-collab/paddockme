@@ -80,6 +80,13 @@ export function SearchablePicker(props: SearchablePickerProps) {
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // Smart-flip state: when there's more room above the trigger than
+  // below (e.g. on iPad with the bottom nav covering 5-7vh of the
+  // viewport) we render the popover upwards instead of letting it
+  // disappear behind the nav. listMaxPx is the cap for the inner
+  // scroll area so the user can always reach the Done button.
+  const [flipUp, setFlipUp] = useState(false);
+  const [listMaxPx, setListMaxPx] = useState<number>(320);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -131,8 +138,34 @@ export function SearchablePicker(props: SearchablePickerProps) {
     triggerRef.current?.focus();
   }, []);
 
-  // Close on Escape, click-outside, and scroll input into view when
-  // the popover opens.
+  // Measure the available space above and below the trigger so the
+  // popover never runs off the visible viewport (BottomNav covers the
+  // bottom ~5-7vh on iPad). Flip upwards when there's more room above.
+  const updatePopoverPlacement = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    // Use the visualViewport when available so the on-screen keyboard
+    // and browser chrome are taken into account.
+    const vh = (typeof window !== "undefined" && window.visualViewport?.height) || window.innerHeight;
+    // Account for the AppShell bottom nav + safe-area inset on mobile.
+    const bottomInset = 128;
+    const topInset = 16;
+    const margin = 12;
+    const below = vh - rect.bottom - bottomInset - margin;
+    const above = rect.top - topInset - margin;
+    const shouldFlip = above > below && above > 200;
+    setFlipUp(shouldFlip);
+    // Reserve room for the popover header (search) and the optional
+    // multi-select footer (~52px each). Cap the inner scroll area so
+    // the user can always reach the Done button.
+    const headerFooter = (multi ? 56 : 0) + 48 + 16;
+    const usable = Math.max(180, (shouldFlip ? above : below) - headerFooter);
+    setListMaxPx(Math.min(usable, 460));
+  }, [multi]);
+
+  // Close on Escape, click-outside; focus search; recompute placement
+  // on open and on viewport changes.
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
@@ -148,13 +181,22 @@ export function SearchablePicker(props: SearchablePickerProps) {
       if (triggerRef.current?.contains(target)) return;
       close();
     }
+    updatePopoverPlacement();
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onPointer);
-    // Focus the search input once mounted.
+    window.addEventListener("resize", updatePopoverPlacement);
+    window.visualViewport?.addEventListener("resize", updatePopoverPlacement);
+    window.addEventListener("scroll", updatePopoverPlacement, true);
     queueMicrotask(() => searchRef.current?.focus());
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("resize", updatePopoverPlacement);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updatePopoverPlacement
+      );
+      window.removeEventListener("scroll", updatePopoverPlacement, true);
     };
   }, [open, close]);
 
@@ -239,7 +281,10 @@ export function SearchablePicker(props: SearchablePickerProps) {
           id={popoverId}
           role="dialog"
           aria-label={label}
-          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-[60vh] overflow-hidden rounded-[10px] border border-sage-deep/15 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.18)]"
+          className={cn(
+            "absolute left-0 right-0 z-30 overflow-hidden rounded-[10px] border border-sage-deep/15 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.18)]",
+            flipUp ? "bottom-full mb-2" : "top-full mt-2"
+          )}
         >
           <div className="flex items-center gap-2 border-b border-mist bg-cream/55 px-3 py-2.5">
             <Search className="h-4 w-4 shrink-0 text-stone" aria-hidden />
@@ -263,7 +308,10 @@ export function SearchablePicker(props: SearchablePickerProps) {
             )}
           </div>
 
-          <div className="max-h-[44vh] overflow-y-auto">
+          <div
+            className="overflow-y-auto overscroll-contain"
+            style={{ maxHeight: `${listMaxPx}px` }}
+          >
             {filteredGroups.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm font-medium text-bark/70">
                 No matches for &quot;{query}&quot;.
