@@ -161,17 +161,32 @@ export default function NewRequestPage() {
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title={stockType === "Bees" ? "Bee or hive type" : "Breed or class"}>
-            {breedOptions.map((value) => (
-              <SelectablePill
-                key={value}
-                selected={breed === value}
-                onClick={() => setBreed(value)}
-              >
-                {value}
-              </SelectablePill>
-            ))}
-          </ChoiceSection>
+          <Card>
+            <h2 className="mb-4 text-xl font-bold text-sage-deep">
+              {stockType === "Bees" ? "Bee or hive type" : "Breed or class"}
+            </h2>
+            <SearchablePicker
+              label={
+                stockType === "Bees"
+                  ? "Choose the bee or hive type"
+                  : `Choose the ${stockType.toLowerCase()} breed or class`
+              }
+              placeholder="Choose a breed…"
+              searchPlaceholder="Search breeds"
+              value={breed}
+              onChange={(next) => next && setBreed(next)}
+              groups={[
+                {
+                  id: stockType,
+                  label: stockType,
+                  options: breedOptions.map((option) => ({
+                    id: option,
+                    label: option,
+                  })),
+                },
+              ]}
+            />
+          </Card>
 
           <Card>
             <div className="mb-4 flex items-baseline justify-between">
