@@ -267,6 +267,14 @@ function SignalTile({
   value: string;
   strength: 1 | 2 | 3;
 }) {
+  const filled =
+    strength === 3
+      ? "bg-match"
+      : strength === 2
+        ? "bg-amber"
+        : "bg-terra";
+  const strengthLabel =
+    strength === 3 ? "high" : strength === 2 ? "moderate" : "low";
   return (
     <div className="flex min-h-[5.35rem] flex-col justify-between rounded-md border border-mist bg-warm-white p-3">
       <div className="flex items-center justify-between gap-2">
@@ -279,13 +287,16 @@ function SignalTile({
       </div>
       <div>
         <p className="truncate text-sm font-extrabold text-bark">{value}</p>
-        <span className="mt-2 flex gap-1" aria-label={`${label} strength ${strength} of 3`}>
+        <span
+          className="mt-2 flex gap-1"
+          aria-label={`${label} ${strengthLabel} (${strength} of 3)`}
+        >
           {[1, 2, 3].map((level) => (
             <span
               key={level}
               className={
                 level <= strength
-                  ? "h-1.5 flex-1 rounded-sm bg-sage-deep"
+                  ? `h-1.5 flex-1 rounded-sm ${filled}`
                   : "h-1.5 flex-1 rounded-sm bg-mist"
               }
             />
