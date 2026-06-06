@@ -2,20 +2,31 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
+  ArrowUpRight,
+  Banknote,
+  CalendarClock,
   CheckCircle,
   CircleDot,
+  ClipboardList,
   Clock,
   Database,
   Eye,
+  Gauge,
+  LayoutDashboard,
   Mail,
   MapPin,
   MessageSquare,
+  Plus,
+  Radio,
   RotateCcw,
+  Settings2,
   ShieldCheck,
   Sprout,
   Tractor,
   Truck,
   UserRound,
+  Wrench,
   XCircle,
 } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
@@ -130,6 +141,8 @@ export function ProfileClient({
 
   const RoleIcon = roleIcon[farmer.role];
   const showPublicView = isTransportProvider && transportViewMode === "public";
+  const showDriverDashboard =
+    isTransportProvider && transportViewMode === "owner";
 
   return (
     <>
@@ -204,6 +217,10 @@ export function ProfileClient({
         />
       )}
 
+      {showDriverDashboard ? (
+        <DriverOwnerDashboard farmer={farmer} flash={flash} />
+      ) : (
+      <>
       <Card className="mb-5">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-start gap-4">
@@ -327,7 +344,413 @@ export function ProfileClient({
           </div>
         </section>
       )}
+      </>
+      )}
     </>
+  );
+}
+
+function DriverOwnerDashboard({
+  farmer,
+  flash,
+}: {
+  farmer: Farmer;
+  flash: (
+    message: string,
+    tone?: "info" | "success" | "warning"
+  ) => void;
+}) {
+  const verifiedCount = farmer.verifications.filter(
+    (check) => check.status === "Verified"
+  ).length;
+  const totalChecks = farmer.verifications.length;
+  const readinessDone = farmer.readiness.filter((item) => item.complete).length;
+  const profileCompletion = Math.round(
+    ((verifiedCount + readinessDone) /
+      Math.max(1, totalChecks + farmer.readiness.length)) *
+      100
+  );
+  const pendingVerifications = farmer.verifications.filter(
+    (check) => check.status !== "Verified"
+  );
+  const openSetupTasks = farmer.readiness.filter((item) => !item.complete);
+  const fleetSize = farmer.transport?.fleetSize ?? 0;
+  const driverCount = farmer.transport?.driverCount ?? 0;
+
+  const dashboardActions: {
+    label: string;
+    helper: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+  }[] = [
+    {
+      label: "Post a run",
+      helper: "Publish available capacity",
+      icon: Plus,
+      onClick: () => flash("Opening run capacity post...", "info"),
+    },
+    {
+      label: "Share backloads",
+      helper: "Empty legs farmers can grab",
+      icon: Radio,
+      onClick: () => flash("Backload availability draft started.", "info"),
+    },
+    {
+      label: "Calendar",
+      helper: "Update truck availability",
+      icon: CalendarClock,
+      onClick: () => flash("Calendar view coming soon.", "info"),
+    },
+    {
+      label: "Manage fleet",
+      helper: "Vehicles, drivers, configs",
+      icon: Wrench,
+      onClick: () => flash("Fleet management opens here.", "info"),
+    },
+  ];
+
+  return (
+    <>
+      <section
+        aria-label="Driver dashboard header"
+        className="mb-5 overflow-hidden rounded-2xl border border-sage-deep/15 bg-gradient-to-br from-sage-deep to-sage-dark text-cream shadow-sm"
+      >
+        <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+          <div className="flex min-w-0 items-start gap-4">
+            <Avatar
+              name={farmer.name}
+              src={farmer.avatarUrl}
+              size="xl"
+              className="shrink-0 ring-2 ring-cream/40"
+            />
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3 py-1 text-xs font-bold uppercase tracking-wide">
+                  <LayoutDashboard className="h-3.5 w-3.5" aria-hidden />
+                  Driver workspace
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3 py-1 text-xs font-bold">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden />
+                  {farmer.region}
+                </span>
+              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-sage-glow">
+                Welcome back
+              </p>
+              <h2 className="mt-1 text-2xl font-extrabold leading-tight">
+                {farmer.name}
+              </h2>
+              <p className="mt-1 text-sm font-semibold text-cream/85">
+                {farmer.tagline}
+              </p>
+            </div>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-3 md:w-auto md:min-w-[18rem]">
+            <DashboardMetric
+              label="Profile complete"
+              value={`${profileCompletion}%`}
+              helper={`${verifiedCount + readinessDone} of ${totalChecks + farmer.readiness.length} done`}
+              icon={Gauge}
+            />
+            <DashboardMetric
+              label="Verified IDs"
+              value={`${verifiedCount}/${totalChecks}`}
+              helper={
+                pendingVerifications.length === 0
+                  ? "All current"
+                  : `${pendingVerifications.length} pending`
+              }
+              icon={ShieldCheck}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Quick actions" className="mb-5">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-stone">
+          Quick actions
+        </h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {dashboardActions.map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <button
+                key={action.label}
+                type="button"
+                onClick={action.onClick}
+                className="group flex items-start gap-3 rounded-xl border border-sage-deep/15 bg-warm-white p-4 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:bg-sage-mist/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+              >
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sage-mist text-sage-deep">
+                  <ActionIcon className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center justify-between gap-1 text-sm font-bold text-sage-deep">
+                    {action.label}
+                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-stone transition group-hover:text-sage-deep" aria-hidden />
+                  </p>
+                  <p className="mt-0.5 text-xs text-bark/70">{action.helper}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <Card>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sage-deep">
+                <ClipboardList className="h-5 w-5" aria-hidden />
+                <h2 className="text-xl font-bold">Set up your profile</h2>
+              </div>
+              <span className="rounded-full bg-sage-mist px-2.5 py-0.5 text-xs font-bold text-sage-deep">
+                {readinessDone}/{farmer.readiness.length} done
+              </span>
+            </div>
+            <p className="text-sm text-bark/70">
+              Each task lifts your profile completeness and how trustworthy you
+              look to farmers browsing for a transporter.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {farmer.readiness.map((item) => {
+                const Icon = item.complete ? CheckCircle : CircleDot;
+                return (
+                  <li
+                    key={item.label}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border px-4 py-3",
+                      item.complete
+                        ? "border-match/25 bg-sage-mist/35"
+                        : "border-mist bg-warm-white"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "mt-0.5 h-5 w-5 shrink-0",
+                        item.complete ? "text-match" : "text-stone"
+                      )}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-bark">{item.label}</p>
+                      {item.helper && (
+                        <p className="mt-0.5 text-xs text-bark/65">
+                          {item.helper}
+                        </p>
+                      )}
+                    </div>
+                    {!item.complete && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          flash(`Opening "${item.label}"...`, "info")
+                        }
+                        className="inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-sage-deep/20 bg-warm-white px-3 py-1 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                      >
+                        Action
+                        <ArrowUpRight className="h-3 w-3" aria-hidden />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+              {openSetupTasks.length === 0 && (
+                <li className="rounded-xl border border-match/25 bg-sage-mist/35 px-4 py-3 text-sm font-semibold text-sage-deep">
+                  Profile setup complete. Keep an eye on credential renewals
+                  below.
+                </li>
+              )}
+            </ul>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sage-deep">
+                <ShieldCheck className="h-5 w-5" aria-hidden />
+                <h2 className="text-xl font-bold">Compliance and renewals</h2>
+              </div>
+              {pendingVerifications.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-light px-2.5 py-0.5 text-xs font-bold text-amber">
+                  <AlertTriangle className="h-3 w-3" aria-hidden />
+                  {pendingVerifications.length} need attention
+                </span>
+              )}
+            </div>
+            <ul className="space-y-2">
+              {farmer.verifications.map((check) => {
+                const Icon = verificationIcon[check.status];
+                const tone = verificationTone[check.status];
+                return (
+                  <li
+                    key={check.label}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-mist bg-warm-white px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-bark">{check.label}</p>
+                      {check.detail && (
+                        <p className="mt-0.5 text-xs text-bark/65">
+                          {check.detail}
+                        </p>
+                      )}
+                    </div>
+                    <StatusBadge tone={tone}>
+                      <Icon className="h-3.5 w-3.5" aria-hidden />
+                      {check.status}
+                    </StatusBadge>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+
+          {farmer.transport && (
+            <TransportCard transport={farmer.transport} publicView={false} />
+          )}
+        </div>
+
+        <aside className="space-y-5">
+          <Card>
+            <div className="mb-4 flex items-center gap-2 text-sage-deep">
+              <Gauge className="h-5 w-5" aria-hidden />
+              <h2 className="text-xl font-bold">Operations at a glance</h2>
+            </div>
+            <dl className="space-y-2">
+              <SidebarStat
+                label="Runs this week"
+                value="3"
+                helper="2 booked, 1 enquiring"
+                icon={Truck}
+              />
+              <SidebarStat
+                label="Backloads pending"
+                value="2"
+                helper="Riverina to Newcastle, Wagga to Dubbo"
+                icon={Radio}
+              />
+              <SidebarStat
+                label="Fleet"
+                value={`${fleetSize} truck${fleetSize === 1 ? "" : "s"}`}
+                helper={`${driverCount} driver${driverCount === 1 ? "" : "s"} on the books`}
+                icon={Wrench}
+              />
+              <SidebarStat
+                label="Indicative monthly"
+                value="$18.4k"
+                helper="Placeholder, swap with real ledger"
+                icon={Banknote}
+              />
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="mb-3 flex items-center gap-2 text-sage-deep">
+              <Clock className="h-5 w-5" aria-hidden />
+              <h2 className="text-lg font-bold">Recent activity</h2>
+            </div>
+            <ul className="space-y-3 text-sm">
+              <ActivityItem
+                title="Mobile verified"
+                detail="Earlier this morning"
+              />
+              <ActivityItem
+                title="NHVAS module application lodged"
+                detail="Yesterday"
+              />
+              <ActivityItem
+                title="B-double run posted: Riverina to Wagga"
+                detail="2 days ago"
+              />
+            </ul>
+          </Card>
+
+          <section
+            aria-label="Workspace tools"
+            className="rounded-xl border border-dashed border-mist bg-cream/45 px-4 py-3"
+          >
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              Workspace tools
+            </p>
+            <p className="mt-1 text-sm text-bark/70">
+              Reset the prototype state if you want to walk through onboarding
+              again from a clean slate.
+            </p>
+            <button
+              type="button"
+              onClick={() => resetPrototypeState(flash)}
+              className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-mist bg-warm-white px-4 py-2 text-sm font-semibold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+              Reset workspace state
+            </button>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function DashboardMetric({
+  label,
+  value,
+  helper,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="rounded-xl border border-cream/20 bg-cream/10 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-2 text-cream/80">
+        <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em]">
+          {label}
+        </span>
+        <Icon className="h-3.5 w-3.5" aria-hidden />
+      </div>
+      <p className="mt-1 text-2xl font-extrabold text-cream">{value}</p>
+      <p className="mt-0.5 text-xs text-cream/70">{helper}</p>
+    </div>
+  );
+}
+
+function SidebarStat({
+  label,
+  value,
+  helper,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-mist bg-warm-white px-4 py-3">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sage-mist text-sage-deep">
+        <Icon className="h-4 w-4" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-stone">
+          {label}
+        </p>
+        <p className="mt-0.5 text-lg font-extrabold text-bark">{value}</p>
+        <p className="mt-0.5 text-xs text-bark/65">{helper}</p>
+      </div>
+    </div>
+  );
+}
+
+function ActivityItem({ title, detail }: { title: string; detail: string }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="mt-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-sage" aria-hidden />
+      <div className="min-w-0">
+        <p className="font-semibold text-bark">{title}</p>
+        <p className="text-xs text-bark/60">{detail}</p>
+      </div>
+    </li>
   );
 }
 
