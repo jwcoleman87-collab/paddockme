@@ -269,10 +269,10 @@ function SignalTile({
 }) {
   const filled =
     strength === 3
-      ? "bg-match"
+      ? "bg-rating-high"
       : strength === 2
-        ? "bg-amber"
-        : "bg-terra";
+        ? "bg-rating-mid"
+        : "bg-rating-low";
   const strengthLabel =
     strength === 3 ? "high" : strength === 2 ? "moderate" : "low";
   return (
