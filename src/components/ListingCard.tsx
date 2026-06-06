@@ -1,8 +1,20 @@
-import { Droplets, Fence, LandPlot, MapPin, Sprout } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import {
+  CalendarRange,
+  ChevronDown,
+  Droplets,
+  Fence,
+  LandPlot,
+  MapPin,
+  Sprout,
+} from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { StateMiniMap } from "@/components/StateMiniMap";
 import { StatusBadge } from "@/components/StatusBadge";
+import { cn } from "@/lib/utils";
 import type { PaddockListing } from "@/lib/dummyData";
 
 export function ListingCard({
@@ -16,6 +28,8 @@ export function ListingCard({
   matchReasons?: string[];
   mapImageSrc?: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <Card className="flex h-full flex-col gap-3 p-4">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.25rem] sm:items-start">
@@ -78,10 +92,70 @@ export function ListingCard({
 
       <PaddockSignalStrip listing={listing} />
 
-      <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`} className="mt-auto">
-        View details
-      </ButtonLink>
+      {expanded && <ExpandedDetails listing={listing} />}
+
+      <div className="mt-auto flex flex-col gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => setExpanded((open) => !open)}
+          aria-expanded={expanded}
+          className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 py-1.5 text-sm font-bold text-sage-deep transition hover:border-sage/60 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+        >
+          {expanded ? "Show less" : "Quick look"}
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              "h-4 w-4 shrink-0 transition",
+              expanded && "rotate-180"
+            )}
+          />
+        </button>
+        <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`}>
+          View details
+        </ButtonLink>
+      </div>
     </Card>
+  );
+}
+
+function ExpandedDetails({ listing }: { listing: PaddockListing }) {
+  return (
+    <section
+      aria-label="Listing quick look"
+      className="space-y-3 rounded-md border border-sage-deep/10 bg-cream/55 p-3"
+    >
+      <div className="flex items-start gap-2">
+        <CalendarRange
+          className="mt-0.5 h-4 w-4 shrink-0 text-sage-deep"
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-stone">
+            Available
+          </p>
+          <p className="text-sm font-semibold text-bark">
+            {listing.availabilityWindow}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+        <InlineDetail label="Region" value={listing.regionLabel} />
+        <InlineDetail label="State" value={listing.state} />
+        <InlineDetail label="Guide rate" value={listing.guideTerms} />
+        <InlineDetail label="Area" value={`${listing.acres} acres`} />
+      </div>
+    </section>
+  );
+}
+
+function InlineDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-mist bg-warm-white px-3 py-2">
+      <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-stone">
+        {label}
+      </p>
+      <p className="mt-0.5 truncate text-sm font-bold text-bark">{value}</p>
+    </div>
   );
 }
 
