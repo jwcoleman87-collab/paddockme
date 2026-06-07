@@ -1,8 +1,9 @@
 import { Route, Truck } from "lucide-react";
+import { cookies } from "next/headers";
 import { ButtonLink } from "@/components/Button";
 import { PaddockMap, type PaddockMapMode } from "@/components/PaddockMap";
 import { PageHeader } from "@/components/PageHeader";
-import { agreements, transportJobs } from "@/lib/dummyData";
+import { agreements, farmers, transportJobs } from "@/lib/dummyData";
 
 type SearchParams = {
   mode?: string;
@@ -22,6 +23,17 @@ export default async function MapPage({
   const agreementId = params.agreement ?? agreements[0]?.id;
   const transportId = params.transport ?? transportJobs[0]?.id;
 
+  // The Driver map view is only useful to a transporter persona - it shows
+  // the driver-perspective job radar. Livestock owners and landowners have
+  // no reason to see it, so we hide the toggle for them. They can still
+  // visit /map?mode=driver via URL if needed (e.g. the investor demo), but
+  // it won't clutter the action bar.
+  const personaCookie = (await cookies()).get("paddockme_persona")?.value;
+  const activePersona = personaCookie
+    ? farmers.find((farmer) => farmer.id === personaCookie)
+    : undefined;
+  const showDriverToggle = activePersona?.role === "Transport Provider";
+
   return (
     <>
       {mode === "driver" ? null : (
@@ -36,10 +48,12 @@ export default async function MapPage({
                   <Route className="h-4 w-4" aria-hidden />
                   Agreement
                 </ButtonLink>
-                <ButtonLink href={`/map?mode=driver&transport=${transportId}&driver=driver-1`} variant="secondary">
-                  <Truck className="h-4 w-4" aria-hidden />
-                  Driver
-                </ButtonLink>
+                {showDriverToggle && (
+                  <ButtonLink href={`/map?mode=driver&transport=${transportId}&driver=driver-1`} variant="secondary">
+                    <Truck className="h-4 w-4" aria-hidden />
+                    Driver
+                  </ButtonLink>
+                )}
               </div>
             }
           />
