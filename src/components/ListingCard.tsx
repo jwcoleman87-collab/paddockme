@@ -9,13 +9,20 @@ import {
   LandPlot,
   MapPin,
   Sprout,
+  X,
 } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { StateMiniMap } from "@/components/StateMiniMap";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
+import {
+  getPaddockTileDetails,
+  type PaddockTileDetail,
+} from "@/lib/paddockTileDetails";
 import type { PaddockListing } from "@/lib/dummyData";
+
+type SignalKey = "feed" | "water" | "fencing" | "area";
 
 export function ListingCard({
   listing,
@@ -29,6 +36,15 @@ export function ListingCard({
   mapImageSrc?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [openTile, setOpenTile] = useState<SignalKey | null>(null);
+  const tileDetails = getPaddockTileDetails(listing);
+
+  const tileLabels: Record<SignalKey, string> = {
+    feed: "Feed",
+    water: "Water",
+    fencing: "Fence",
+    area: "Area",
+  };
 
   return (
     <Card className="flex h-full flex-col gap-3 p-4">
@@ -90,7 +106,7 @@ export function ListingCard({
         ))}
       </div>
 
-      <PaddockSignalStrip listing={listing} />
+      <PaddockSignalStrip listing={listing} onOpenTile={setOpenTile} />
 
       {expanded && <ExpandedDetails listing={listing} />}
 
@@ -114,6 +130,14 @@ export function ListingCard({
           View details
         </ButtonLink>
       </div>
+
+      {openTile && (
+        <TileDetailDialog
+          title={`${listing.title} - ${tileLabels[openTile]}`}
+          detail={tileDetails[openTile]}
+          onClose={() => setOpenTile(null)}
+        />
+      )}
     </Card>
   );
 }
@@ -155,6 +179,68 @@ function InlineDetail({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p className="mt-0.5 truncate text-sm font-bold text-bark">{value}</p>
+    </div>
+  );
+}
+
+function TileDetailDialog({
+  title,
+  detail,
+  onClose,
+}: {
+  title: string;
+  detail: PaddockTileDetail;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-sage-deep/35 px-3 py-6 backdrop-blur-sm sm:items-center sm:px-6"
+    >
+      <div className="relative flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_24px_60px_rgba(34,84,52,0.25)]">
+        <div className="flex items-start justify-between gap-3 border-b border-sage-deep/10 bg-cream/55 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              Paddock detail
+            </p>
+            <h2 className="mt-1 text-lg font-bold text-sage-deep">
+              {detail.headline}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close detail"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-mist bg-warm-white text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        <ul className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
+          {detail.bullets.map((bullet) => (
+            <li
+              key={bullet}
+              className="flex items-start gap-2.5 text-sm text-bark"
+            >
+              <span
+                className="mt-1.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-sage-deep"
+                aria-hidden
+              />
+              <span className="font-medium leading-snug">{bullet}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="border-t border-sage-deep/10 bg-cream/40 px-5 py-3">
+          <p className="text-xs text-bark/65">
+            Prototype detail - real listings let the landowner write this section.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -213,10 +299,17 @@ function LocationMapImage({
   );
 }
 
-function PaddockSignalStrip({ listing }: { listing: PaddockListing }) {
+function PaddockSignalStrip({
+  listing,
+  onOpenTile,
+}: {
+  listing: PaddockListing;
+  onOpenTile: (key: SignalKey) => void;
+}) {
   return (
     <div className="grid grid-cols-2 gap-2">
       <SignalTile
+        signalKey="feed"
         icon={<Sprout className="h-4 w-4" />}
         label="Feed"
         value={listing.feedStatus}
@@ -225,8 +318,10 @@ function PaddockSignalStrip({ listing }: { listing: PaddockListing }) {
           Good: 2,
           Tight: 1,
         })}
+        onClick={onOpenTile}
       />
       <SignalTile
+        signalKey="water"
         icon={<Droplets className="h-4 w-4" />}
         label="Water"
         value={listing.waterStatus}
@@ -235,8 +330,10 @@ function PaddockSignalStrip({ listing }: { listing: PaddockListing }) {
           Tank: 2,
           Seasonal: 1,
         })}
+        onClick={onOpenTile}
       />
       <SignalTile
+        signalKey="fencing"
         icon={<Fence className="h-4 w-4" />}
         label="Fence"
         value={listing.fencingStatus}
@@ -245,30 +342,50 @@ function PaddockSignalStrip({ listing }: { listing: PaddockListing }) {
           Good: 2,
           "Needs inspection": 1,
         })}
+        onClick={onOpenTile}
       />
       <SignalTile
+        signalKey="area"
         icon={<LandPlot className="h-4 w-4" />}
         label="Area"
         value={`${listing.acres} ac`}
         strength={listing.acres >= 280 ? 3 : listing.acres >= 160 ? 2 : 1}
+        onClick={onOpenTile}
       />
     </div>
   );
 }
 
 function SignalTile({
+  signalKey,
   icon,
   label,
   value,
   strength,
+  onClick,
 }: {
+  signalKey: SignalKey;
   icon: React.ReactNode;
   label: string;
   value: string;
   strength: 1 | 2 | 3;
+  onClick: (key: SignalKey) => void;
 }) {
+  const filled =
+    strength === 3
+      ? "bg-rating-high"
+      : strength === 2
+        ? "bg-rating-mid"
+        : "bg-rating-low";
+  const strengthLabel =
+    strength === 3 ? "high" : strength === 2 ? "moderate" : "low";
   return (
-    <div className="flex min-h-[5.35rem] flex-col justify-between rounded-md border border-mist bg-warm-white p-3">
+    <button
+      type="button"
+      onClick={() => onClick(signalKey)}
+      aria-label={`${label}: ${value}, ${strengthLabel}. Tap for detail.`}
+      className="group flex min-h-[5.35rem] flex-col justify-between rounded-md border border-mist bg-warm-white p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:bg-sage-mist/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream cursor-pointer"
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wide text-bark/75">
           {label}
@@ -279,20 +396,20 @@ function SignalTile({
       </div>
       <div>
         <p className="truncate text-sm font-extrabold text-bark">{value}</p>
-        <span className="mt-2 flex gap-1" aria-label={`${label} strength ${strength} of 3`}>
+        <span className="mt-2 flex gap-1" aria-hidden>
           {[1, 2, 3].map((level) => (
             <span
               key={level}
               className={
                 level <= strength
-                  ? "h-1.5 flex-1 rounded-sm bg-sage-deep"
+                  ? `h-1.5 flex-1 rounded-sm ${filled}`
                   : "h-1.5 flex-1 rounded-sm bg-mist"
               }
             />
           ))}
         </span>
       </div>
-    </div>
+    </button>
   );
 }
 
