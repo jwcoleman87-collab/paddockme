@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -100,6 +100,10 @@ type AttentionGuidance = {
   explanation: string;
   tip: string;
   sectionId?: string;
+  /** Specific detail row label to scroll to + highlight when the user
+   * taps "Open section". When omitted, the section is opened without
+   * focusing any particular row. */
+  fieldLabel?: string;
 };
 
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
@@ -196,6 +200,16 @@ export function AgreementPanel({
 }: AgreementPanelProps) {
   const [activeTab, setActiveTab] = useState<AgreementTab>("overview");
   const [pendingCancel, setPendingCancel] = useState(false);
+  // Set when "Open section" is tapped from an attention dialog with a
+  // fieldLabel. SectionCard scrolls to the matching detail tile and
+  // highlights it, then clears this value so subsequent taps re-trigger.
+  const [focusFieldLabel, setFocusFieldLabel] = useState<string | null>(null);
+
+  function handleOpenFlaggedField(sectionId: string, fieldLabel?: string) {
+    onSelectSection(sectionId);
+    setActiveTab("terms");
+    setFocusFieldLabel(fieldLabel ?? null);
+  }
 
   const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
     const state = sectionState[section.id] ?? section;
@@ -260,6 +274,7 @@ export function AgreementPanel({
             mutuallyAgreedCount={mutuallyAgreedCount}
             artefacts={artefacts}
             onSelectSection={onSelectSection}
+            onOpenFlaggedField={handleOpenFlaggedField}
           />
         )}
 
@@ -293,6 +308,10 @@ export function AgreementPanel({
                 allSections={agreement.sections}
                 onSelectSection={onSelectSection}
                 onAddArtefact={onAddArtefact}
+                focusFieldLabel={
+                  activeSectionId === section.id ? focusFieldLabel : null
+                }
+                onFocusFieldHandled={() => setFocusFieldLabel(null)}
               />
             ))}
           </div>
@@ -784,12 +803,14 @@ function AgreementOverview({
   mutuallyAgreedCount,
   artefacts,
   onSelectSection,
+  onOpenFlaggedField,
 }: {
   agreement: Agreement;
   sectionState: Record<string, SectionAgreementState>;
   mutuallyAgreedCount: number;
   artefacts: AgreementArtefact[];
   onSelectSection: (sectionId: string) => void;
+  onOpenFlaggedField: (sectionId: string, fieldLabel?: string) => void;
 }) {
   const [guidance, setGuidance] = useState<AttentionGuidance | null>(null);
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
@@ -850,6 +871,7 @@ function AgreementOverview({
                 "The feed, water, and fencing row turns green once the paddock section is agreed by both parties.",
               tip: "Review the paddock photos and details, then confirm the Paddock section if both sides accept them.",
               sectionId: "paddock",
+              fieldLabel: "Feed",
             }}
             onOpenGuidance={setGuidance}
           />
@@ -866,6 +888,7 @@ function AgreementOverview({
                 "The commercial terms have not been accepted by both parties yet, so the agreement cannot be finalised.",
               tip: "Settle the weekly rate, feed top-up, water, and fencing responsibilities, then mark the Rate and terms section agreed.",
               sectionId: "terms",
+              fieldLabel: "Rate",
             }}
             onOpenGuidance={setGuidance}
           />
@@ -883,6 +906,7 @@ function AgreementOverview({
                   "The transport section still has at least one party waiting to confirm pickup, delivery, or operator details.",
                 tip: "Open the transport room or the Transport section, confirm the pickup window and driver, then have the remaining party agree.",
                 sectionId: "transport",
+                fieldLabel: "Preferred date",
               }}
               onOpenGuidance={setGuidance}
             />
@@ -899,8 +923,8 @@ function AgreementOverview({
       <AttentionDialog
         guidance={guidance}
         onClose={() => setGuidance(null)}
-        onOpenSection={(sectionId) => {
-          onSelectSection(sectionId);
+        onOpenSection={(sectionId, fieldLabel) => {
+          onOpenFlaggedField(sectionId, fieldLabel);
           setGuidance(null);
         }}
       />
@@ -1050,7 +1074,7 @@ function AttentionDialog({
 }: {
   guidance: AttentionGuidance | null;
   onClose: () => void;
-  onOpenSection: (sectionId: string) => void;
+  onOpenSection: (sectionId: string, fieldLabel?: string) => void;
 }) {
   if (!guidance) return null;
 
@@ -1099,10 +1123,12 @@ function AttentionDialog({
           {guidance.sectionId && (
             <button
               type="button"
-              onClick={() => onOpenSection(guidance.sectionId!)}
+              onClick={() =>
+                onOpenSection(guidance.sectionId!, guidance.fieldLabel)
+              }
               className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-sage-deep px-4 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
             >
-              Open section
+              {guidance.fieldLabel ? "Take me there" : "Open section"}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </button>
           )}
@@ -1124,6 +1150,8 @@ function SectionCard({
   allSections,
   onSelectSection,
   onAddArtefact,
+  focusFieldLabel,
+  onFocusFieldHandled,
 }: {
   section: AgreementSection;
   active: boolean;
@@ -1136,6 +1164,12 @@ function SectionCard({
   allSections: AgreementSection[];
   onSelectSection: (sectionId: string) => void;
   onAddArtefact?: (draft: ArtefactDraft) => void;
+  /** When set, scroll to and highlight the detail row whose label matches.
+   * Only honoured when active is true. */
+  focusFieldLabel?: string | null;
+  /** Called once the focus highlight is done (or no matching row was found)
+   * so the parent can clear focusFieldLabel and let it re-trigger. */
+  onFocusFieldHandled?: () => void;
 }) {
   const Icon = sectionIcons[section.id] ?? Sprout;
   const { agreedByA, agreedByB } = state;
@@ -1147,6 +1181,28 @@ function SectionCard({
     viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
 
   const alignment = getSectionAlignment(section, agreedByA, agreedByB);
+
+  const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [highlightedFieldLabel, setHighlightedFieldLabel] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!active || !focusFieldLabel) return;
+    const target = fieldRefs.current[focusFieldLabel];
+    if (!target) {
+      // Nothing to highlight; let the parent reset so the next tap works.
+      onFocusFieldHandled?.();
+      return;
+    }
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedFieldLabel(focusFieldLabel);
+    const clearTimer = window.setTimeout(() => {
+      setHighlightedFieldLabel(null);
+      onFocusFieldHandled?.();
+    }, 2400);
+    return () => window.clearTimeout(clearTimer);
+  }, [active, focusFieldLabel, onFocusFieldHandled]);
 
   return (
     <article
@@ -1181,15 +1237,29 @@ function SectionCard({
 
       <div className="space-y-4 border-t border-mist bg-cream px-5 py-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          {section.detail.map((item) => (
-            <InfoTile
-              key={item.label}
-              tone="subtle"
-              size="sm"
-              label={item.label}
-              value={item.value}
-            />
-          ))}
+          {section.detail.map((item) => {
+            const isHighlighted = highlightedFieldLabel === item.label;
+            return (
+              <div
+                key={item.label}
+                ref={(el) => {
+                  fieldRefs.current[item.label] = el;
+                }}
+                className={cn(
+                  "rounded-xl transition",
+                  isHighlighted &&
+                    "ring-2 ring-amber bg-amber-light/60 shadow-[0_0_0_4px_rgba(247,234,208,0.55)]"
+                )}
+              >
+                <InfoTile
+                  tone="subtle"
+                  size="sm"
+                  label={item.label}
+                  value={item.value}
+                />
+              </div>
+            );
+          })}
         </div>
 
         <div className="rounded-xl border border-sage-deep/10 bg-warm-white px-4 py-3">
