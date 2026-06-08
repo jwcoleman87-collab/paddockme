@@ -1,7 +1,18 @@
 import type { TransportPayableSnapshot } from "@/lib/payments/transportPayables";
 
+/**
+ * Sandbox checkout is opt-in in production. If Stripe is misconfigured on a
+ * production deploy we hard-fail (503) rather than silently letting users
+ * land on the "demo payment recorded" page without actually paying. Set
+ * PAYMENTS_SANDBOX_CHECKOUT=true explicitly when you want sandbox on prod
+ * (e.g. internal demos). Outside production it stays on by default so local
+ * dev and preview deploys keep working without Stripe keys.
+ */
 export function isSandboxCheckoutEnabled() {
-  return process.env.PAYMENTS_SANDBOX_CHECKOUT !== "false";
+  const explicit = process.env.PAYMENTS_SANDBOX_CHECKOUT;
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+  return process.env.NODE_ENV !== "production";
 }
 
 export function createSandboxCheckoutUrl(

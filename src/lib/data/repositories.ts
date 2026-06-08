@@ -156,6 +156,24 @@ export async function listPaddockListings(): Promise<PaddockListing[]> {
   return mergeListings(mapped, loadPrototypeState().paddockListings);
 }
 
+/**
+ * Strictly Supabase-backed paddock listings, no prototype fallback. Used by
+ * surfaces gated behind a real signed-in account (e.g. `/listings`) where we
+ * never want to leak the Dale/Brett seed paddocks to a live customer.
+ */
+export async function listSupabasePaddockListings(): Promise<PaddockListing[]> {
+  const supabase = await getAuthedClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("paddocks")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data.map(mapPaddockRow);
+}
+
 export async function createPaddockListingRecord(input: {
   title: string;
   location: string;
