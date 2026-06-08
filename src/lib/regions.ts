@@ -61,6 +61,7 @@ export const regions: Region[] = [
   { id: "illawarra", label: "Illawarra NSW", state: "NSW" },
   { id: "south-coast-nsw", label: "South Coast NSW", state: "NSW" },
   { id: "snowy-monaro", label: "Snowy Monaro", state: "NSW" },
+  { id: "southern-tablelands", label: "Southern Tablelands NSW", state: "NSW" },
   { id: "southern-highlands", label: "Southern Highlands NSW", state: "NSW" },
 
   // VIC ----------------------------------------------------------------

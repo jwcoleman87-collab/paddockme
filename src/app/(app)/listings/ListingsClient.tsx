@@ -333,7 +333,7 @@ export function ListingsClient({
               listing={listing}
               matchScore={match?.score}
               matchReasons={match?.reasons}
-              mapImageSrc={getListingMapImageSrc(listing.id)}
+              mapImageSrc={listing.photos?.[0] ?? getListingMapImageSrc(listing.id)}
             />
           ))}
         </div>
