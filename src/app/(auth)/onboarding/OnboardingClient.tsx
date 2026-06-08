@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,6 +14,7 @@ import {
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes as stockTypeOptions } from "@/lib/dummyData";
 import { createClient } from "@/lib/supabase/client";
+import { getSafeRedirectPath } from "@/lib/redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +90,8 @@ const fleetSizeOptions = ["1 truck", "2-5 trucks", "6-15 trucks", "16+ trucks"];
 
 export function OnboardingClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = getSafeRedirectPath(searchParams.get("next"), "/agreements");
   const [step, setStep] = useState(0);
   const [state, setState] = useState<State>(initialState);
 
@@ -121,7 +124,8 @@ export function OnboardingClient() {
     await persistProfileToSupabase(state);
     const params = new URLSearchParams({ onboarded: "true" });
     if (state.role) params.set("role", state.role);
-    router.push(`/agreements?${params.toString()}`);
+    const separator = nextPath.includes("?") ? "&" : "?";
+    router.push(`${nextPath}${separator}${params.toString()}`);
   }
 
   return (
@@ -659,4 +663,3 @@ function stepIsComplete(step: number, state: State): boolean {
   }
   return true;
 }
-

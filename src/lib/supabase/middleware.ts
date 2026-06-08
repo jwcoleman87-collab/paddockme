@@ -7,11 +7,37 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 /**
  * Refreshes the Supabase session on every request.
  *
- * Foundation Build 01 uses dummy data so the personas can click through the product
- * skeleton without needing a real account. Auth route redirects stay in place,
- * but app routes are intentionally browseable until real data gates return.
+ * Refreshes auth cookies and applies the production account gates:
+ * - signed-out users are sent to /sign-in before entering the app shell
+ * - signed-in users finish onboarding before entering the marketplace
  */
 const POST_AUTH_LANDING = "/agreements";
+const ONBOARDING_PATH = "/onboarding";
+
+const PUBLIC_PREFIXES = [
+  "/auth/callback",
+  "/payments/transport",
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/update-password",
+];
+
+const APP_PREFIXES = [
+  "/agreements",
+  "/home",
+  "/landowner",
+  "/listings",
+  "/map",
+  "/matches",
+  "/messages",
+  "/profile",
+  "/request",
+  "/requests",
+  "/runs",
+  "/transport",
+  "/workspace",
+];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -44,12 +70,49 @@ export async function updateSession(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
   const isAuthRoute =
-    path.startsWith("/sign-in") || path.startsWith("/sign-up");
+    path.startsWith("/sign-in") ||
+    path.startsWith("/sign-up") ||
+    path.startsWith("/forgot-password");
+  const isOnboardingRoute = path.startsWith(ONBOARDING_PATH);
+  const isPublicRoute =
+    path === "/" ||
+    isOnboardingRoute ||
+    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
+  const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
+
+  if (!user && isAppRoute) {
+    url.pathname = "/sign-in";
+    url.search = "";
+    url.searchParams.set("next", `${path}${request.nextUrl.search}`);
+    return NextResponse.redirect(url);
+  }
 
   if (user && isAuthRoute) {
     url.pathname = POST_AUTH_LANDING;
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  if (user && isPublicRoute && !isOnboardingRoute) {
+    return supabaseResponse;
+  }
+
+  if (user && isAppRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("account_types")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const hasCompletedOnboarding =
+      (profile?.account_types?.length ?? 0) > 0;
+
+    if (!hasCompletedOnboarding) {
+      url.pathname = ONBOARDING_PATH;
+      url.search = "";
+      url.searchParams.set("next", `${path}${request.nextUrl.search}`);
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

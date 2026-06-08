@@ -4,6 +4,7 @@ import { AppShellHeaderUser } from "@/components/AppShellHeaderUser";
 import { BottomNav } from "@/components/BottomNav";
 import { FlashProvider } from "@/components/FlashProvider";
 import { HeaderInboxLink } from "@/components/HeaderInboxLink";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <div className="flex items-center gap-2">
               <HeaderInboxLink />
+              <SignOutButton />
               <Link
                 href="/profile"
                 aria-label="Open profile"

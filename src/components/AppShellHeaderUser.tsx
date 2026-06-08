@@ -5,18 +5,69 @@ import { User } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { featuredFarmers } from "@/lib/dummyData";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Tiny client-only component for the AppShell header.
  *
- * Renders the avatar + name for whichever main persona the prototype is
- * currently showing.
- * Falls back to the generic User icon when no persona is selected yet.
+ * Prefers the signed-in Supabase user. The prototype persona remains as a
+ * fallback so the demo routes still make sense when no account is active.
  */
+type SignedInUser = {
+  name: string;
+  email: string | null;
+};
+
 export function AppShellHeaderUser() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  const [signedInUser, setSignedInUser] = useState<SignedInUser | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const supabase = createClient();
+
+    async function loadSignedInUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!mounted) return;
+
+      if (!user) {
+        setSignedInUser(null);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      const metaName =
+        (user.user_metadata as { full_name?: string } | null)?.full_name ??
+        null;
+      const name = profile?.full_name ?? metaName ?? user.email ?? "Account";
+      setSignedInUser({ name, email: user.email ?? null });
+    }
+
+    void loadSignedInUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadSignedInUser();
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     function read(): string | null {
@@ -56,6 +107,24 @@ export function AppShellHeaderUser() {
     };
   }, [pathname, searchParams]);
 
+  if (signedInUser) {
+    const firstName = signedInUser.name.trim().split(/\s+/)[0] ?? "Account";
+    const initials = initialsForName(signedInUser.name);
+    return (
+      <>
+        <span
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ochre/40 bg-ochre-light text-xs font-bold text-sage-deep"
+          aria-hidden
+        >
+          {initials}
+        </span>
+        <span className="hidden max-w-[8rem] truncate text-xs font-semibold sm:inline">
+          {firstName}
+        </span>
+      </>
+    );
+  }
+
   const persona = activePersonaId
     ? featuredFarmers.find((f) => f.id === activePersonaId)
     : undefined;
@@ -81,6 +150,14 @@ export function AppShellHeaderUser() {
       <User className="h-5 w-5" aria-hidden />
     </>
   );
+}
+
+function initialsForName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "PM";
+  const first = parts[0]?.[0] ?? "P";
+  const second = parts.length > 1 ? parts[1]?.[0] : parts[0]?.[1];
+  return `${first}${second ?? ""}`.toUpperCase();
 }
 
 function readPersonaCookie(): string | null {

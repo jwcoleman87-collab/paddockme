@@ -11,12 +11,20 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("The passwords do not match.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const supabase = createClient();
@@ -44,6 +52,28 @@ export default function SignUpPage() {
     setEmailSent(true);
   }
 
+  async function handleResendConfirmation() {
+    setResending(true);
+    setError(null);
+    setResendMessage(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+      },
+    });
+    setResending(false);
+
+    if (error) {
+      setError("We could not resend the confirmation email right now.");
+      return;
+    }
+
+    setResendMessage("Confirmation email resent. Check your inbox and spam folder.");
+  }
+
   return (
     <div className="flex min-h-dvh items-center justify-center bg-cream px-5 py-8 sm:px-6 sm:py-12">
       <div className="w-full max-w-md">
@@ -66,10 +96,29 @@ export default function SignUpPage() {
               <Mail className="h-5 w-5" />
               Confirm your email
             </div>
-            <p className="text-bark/80 text-sm">
+            <p className="text-bark/80 text-sm leading-relaxed">
               We sent a confirmation link to {email}. Click it and you&rsquo;ll
               land back on the app.
             </p>
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resending}
+              className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-sage-deep/30 px-5 py-2.5 text-sm font-semibold text-sage-deep transition hover:bg-warm-white disabled:opacity-60"
+            >
+              {resending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Resend confirmation email
+            </button>
+            {resendMessage && (
+              <p className="mt-3 text-sm text-sage-deep" role="status">
+                {resendMessage}
+              </p>
+            )}
+            {error && (
+              <p className="mt-3 text-sm text-terra" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-4">
@@ -117,6 +166,22 @@ export default function SignUpPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="At least 8 characters"
+              />
+            </div>
+            <div>
+              <label htmlFor="sign-up-confirm-password" className="mb-1 block text-sm font-medium text-bark">
+                Re-enter password
+              </label>
+              <input
+                id="sign-up-confirm-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                placeholder="Type it again"
               />
             </div>
 
