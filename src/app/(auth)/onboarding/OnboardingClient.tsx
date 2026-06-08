@@ -82,6 +82,7 @@ const regions = [
   "Darling Downs QLD",
   "SE QLD",
   "Wheatbelt WA",
+  "Other",
 ];
 
 const headCountBrackets = ["1-20", "20-100", "100-500", "500+"];
