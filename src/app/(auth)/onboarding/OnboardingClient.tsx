@@ -328,24 +328,45 @@ function RegionStep({
   selected: string | null;
   onSelect: (region: string) => void;
 }) {
+  const isKnownRegion = selected ? regions.includes(selected) : true;
+  const otherSelected = selected === "Other" || !isKnownRegion;
+
   return (
     <section>
       <StepHeader
         eyebrow="Step 2 of 4"
         title="Where are you?"
-        helper="Pick the region closest to your operation. We use it to surface relevant paddocks, requests, and transport runs."
+        helper="Pick the region closest to your operation, or enter your town/locality if it is not listed."
       />
       <div className="flex flex-wrap gap-2">
         {regions.map((region) => (
           <SelectablePill
             key={region}
-            selected={selected === region}
+            selected={region === "Other" ? otherSelected : selected === region}
             onClick={() => onSelect(region)}
           >
             {region}
           </SelectablePill>
         ))}
       </div>
+      {otherSelected && (
+        <div className="mt-5">
+          <label
+            htmlFor="other-region"
+            className="mb-1 block text-sm font-medium text-bark"
+          >
+            Town or locality
+          </label>
+          <input
+            id="other-region"
+            type="text"
+            value={selected === "Other" ? "" : selected ?? ""}
+            onChange={(event) => onSelect(event.target.value)}
+            className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+            placeholder="Braidwood, NSW"
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -649,7 +670,7 @@ async function persistProfileToSupabase(state: State): Promise<void> {
 
 function stepIsComplete(step: number, state: State): boolean {
   if (step === 0) return state.role !== null;
-  if (step === 1) return state.region !== null;
+  if (step === 1) return state.region !== null && state.region !== "Other";
   if (step === 2) {
     if (state.role === "livestock") {
       return state.stockTypes.length > 0 && state.headCountBracket !== null;
