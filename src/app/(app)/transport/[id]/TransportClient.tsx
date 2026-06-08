@@ -15,10 +15,8 @@ import {
 import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import {
-  getDriverBackloads,
   type Message,
   type TransportArtefact,
-  type TransportCapacity,
   type TransportJob,
   type TransportQuote,
   type TransportRole,
@@ -70,6 +68,9 @@ export function TransportClient({
 }) {
   const flash = useFlash();
   const [jobState, setJobState] = useState(job);
+  const [allTransportJobs, setAllTransportJobs] = useState<TransportJob[]>([
+    job,
+  ]);
   const [role, setRoleState] = useState<TransportRole>("farmerA");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -90,17 +91,20 @@ export function TransportClient({
   const [acceptedQuoteId, setAcceptedQuoteId] = useState<string | undefined>(
     job.acceptedQuoteId
   );
-  // Possible backloads = this driver's other published capacity rows that
-  // could chain off the current job's destination. getDriverBackloads
-  // filters by geographic adjacency when destinationRegion is set, falling
-  // back to "all this driver's runs" when it isn't.
-  const backloads: TransportCapacity[] = useMemo(
-    () => getDriverBackloads(jobState.driverId, jobState.destinationRegion),
-    [jobState.driverId, jobState.destinationRegion]
+  const openRfts = useMemo(
+    () =>
+      allTransportJobs.filter(
+        (item) => item.id !== jobState.id && item.status === "available"
+      ),
+    [allTransportJobs, jobState.id]
   );
 
   const hydratedRef = useRef(false);
   const storageKey = `paddockme.transport.${job.id}`;
+
+  useEffect(() => {
+    void listTransportJobs().then((jobs) => setAllTransportJobs(jobs));
+  }, [job.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -109,6 +113,7 @@ export function TransportClient({
       if (stored) {
         const parsed = JSON.parse(stored);
         void listTransportJobs().then((jobs) => {
+          setAllTransportJobs(jobs);
           const localJob = jobs.find((item) => item.id === job.id);
           if (localJob) setJobState(localJob);
         });
@@ -476,7 +481,7 @@ export function TransportClient({
             onProposeQuote={proposeQuote}
             onAcceptQuote={acceptQuote}
             onRejectQuote={rejectQuote}
-            backloads={backloads}
+            openRfts={openRfts}
           />
         }
         right={
