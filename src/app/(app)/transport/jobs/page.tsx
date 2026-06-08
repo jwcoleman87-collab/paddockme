@@ -1,6 +1,4 @@
 import { PageHeader } from "@/components/PageHeader";
-import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
-import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { TransportJobsClient } from "../TransportJobsClient";
 
 type SearchParams = {
@@ -12,27 +10,6 @@ export default async function TransportJobsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const currentUserProfile = await getCurrentUserProfile();
-  if (currentUserProfile) {
-    return (
-      <>
-        <PageHeader
-          eyebrow="Transport jobs"
-          title="Open transport work."
-          description="Real transport requests will appear here once customers raise them."
-        />
-        <RealAccountEmptyState
-          title="No open transport jobs yet."
-          body="Post your availability or check back as customers start raising transport requests."
-          primaryHref="/transport/available"
-          primaryLabel="Post availability"
-          secondaryHref="/agreements"
-          secondaryLabel="Back to my work"
-        />
-      </>
-    );
-  }
-
   const params = await searchParams;
   const initialWorkFilter =
     params.work === "feed"

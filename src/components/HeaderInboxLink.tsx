@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Inbox } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import {
   agreements,
   getMessages,
@@ -22,11 +23,23 @@ import { INBOX_UPDATE_EVENT, getSeenCounts } from "@/lib/inbox";
  */
 export function HeaderInboxLink() {
   const [hasUnread, setHasUnread] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    let mounted = true;
+    const supabase = createClient();
 
-    function compute() {
+    async function compute() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!mounted) return;
+      setIsSignedIn(!!user);
+      if (!user) {
+        setHasUnread(false);
+        return;
+      }
       const seen = getSeenCounts();
       const counts = currentCounts();
       const unread = Object.entries(counts).some(
@@ -35,20 +48,29 @@ export function HeaderInboxLink() {
       setHasUnread(unread);
     }
 
-    compute();
+    void compute();
     function onInbox() {
-      compute();
+      void compute();
     }
     function onStorage(event: StorageEvent) {
-      if (event.key && event.key.startsWith("paddockme.")) compute();
+      if (event.key && event.key.startsWith("paddockme.")) void compute();
     }
     window.addEventListener(INBOX_UPDATE_EVENT, onInbox);
     window.addEventListener("storage", onStorage);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void compute();
+    });
     return () => {
+      mounted = false;
+      subscription.unsubscribe();
       window.removeEventListener(INBOX_UPDATE_EVENT, onInbox);
       window.removeEventListener("storage", onStorage);
     };
   }, []);
+
+  if (!isSignedIn) return null;
 
   return (
     <Link

@@ -35,11 +35,11 @@ export default function TransportAvailablePage() {
   return (
     <>
       <PageHeader
-        eyebrow="Transport marketplace"
+        eyebrow="Transport capacity"
         title="Trucks with capacity."
-        description="Browse runs drivers have posted, filter by route and stock fit, then send a quote request from the run that suits."
+        description="Browse available carrier runs by route, timing, and stock fit. Carriers can publish capacity; farmers can keep an eye on options before they need to move stock."
         action={
-          <ButtonLink href="/transport" variant="secondary">
+          <ButtonLink href="/transport/jobs" variant="secondary">
             Live transport jobs
           </ButtonLink>
         }

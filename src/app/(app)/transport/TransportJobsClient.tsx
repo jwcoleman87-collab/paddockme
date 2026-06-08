@@ -32,6 +32,8 @@ import {
 import { farmers, type Farmer, type TransportJob, type TransportJobStatus } from "@/lib/dummyData";
 import { feedRuns, type FeedRun } from "@/lib/feedRuns";
 import { coordinateForRegion, mapCoordinates, type Coordinate } from "@/lib/mapCoordinates";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 type Mode = "portal" | "jobs" | "calendar";
 type JobsView = "map" | "list" | "calendar";
@@ -152,6 +154,16 @@ export function TransportJobsClient({
   );
 
   async function acceptJob(job: TransportJob) {
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push(`/sign-in?next=${encodeURIComponent("/transport/jobs")}`);
+        return;
+      }
+    }
     selectPersona("driver-1");
     const { state } = await updateTransportJobStatus(job.id, "accepted");
     setJobs(state.transportJobs);

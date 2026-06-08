@@ -24,6 +24,18 @@ const PUBLIC_PREFIXES = [
   "/preview",
 ];
 
+function isPublicBrowseRoute(path: string): boolean {
+  return (
+    path === "/listings" ||
+    (path.startsWith("/listings/") && !path.startsWith("/listings/new")) ||
+    path === "/requests" ||
+    path === "/transport" ||
+    path === "/transport/jobs" ||
+    path === "/transport/available" ||
+    path === "/map"
+  );
+}
+
 const APP_PREFIXES = [
   "/agreements",
   "/home",
@@ -78,10 +90,11 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     path === "/" ||
     isOnboardingRoute ||
-    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
+    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
+    isPublicBrowseRoute(path);
   const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
 
-  if (!user && isAppRoute) {
+  if (!user && isAppRoute && !isPublicRoute) {
     url.pathname = "/sign-in";
     url.search = "";
     url.searchParams.set("next", `${path}${request.nextUrl.search}`);
@@ -98,7 +111,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  if (user && isAppRoute) {
+  if (user && isAppRoute && !isPublicBrowseRoute(path)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("account_types")

@@ -11,6 +11,8 @@ import { InfoTile } from "@/components/InfoTile";
 import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { offerPaddockForRequest } from "@/lib/data/repositories";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type {
   Farmer,
@@ -37,7 +39,7 @@ type Props = {
 /**
  * Landowner-side marketplace: browse open livestock requests.
  *
- * Mirror surface to /transport/available (drivers' capacity board) and
+ * Mirror surface to /transport/jobs (drivers' RFT board) and
  * /listings (livestock owners browsing paddocks). Closes the third leg of
  * the marketplace symmetry so landowners can proactively offer paddocks
  * against open requests rather than waiting to be found.
@@ -135,6 +137,16 @@ export function RequestsClient({
   }
 
   async function offerPaddock(request: LivestockRequest, listingId: string) {
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push(`/sign-in?next=${encodeURIComponent("/requests")}`);
+        return;
+      }
+    }
     const { agreement } = await offerPaddockForRequest(request.id, listingId);
     const requester = requestersById[request.requesterId];
     flash(
@@ -335,7 +347,7 @@ function RequestCard({
       {request.transportRequired === "Yes" && (
         <p className="flex items-start gap-1.5 text-xs font-semibold text-stone">
           <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
-          Driver will need to be sourced - capacity board at /transport/available.
+          Driver will need to be sourced - raise an RFT from the agreement workspace.
         </p>
       )}
 

@@ -15,6 +15,8 @@ import {
   listPaddockListings,
   openAgreementWorkspace,
 } from "@/lib/data/repositories";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { PaddockListing } from "@/lib/dummyData";
 import { ListingPublishedFlash } from "./ListingPublishedFlash";
 
@@ -66,6 +68,18 @@ export function ListingDetailClient({
   async function openWorkspace() {
     setOpening(true);
     try {
+      if (isSupabaseConfigured()) {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          router.push(
+            `/sign-in?next=${encodeURIComponent(`/listings/${listing.id}`)}`
+          );
+          return;
+        }
+      }
       const { agreement } = await openAgreementWorkspace(listing.id);
       flash("Agreement opened.", "success");
       router.push(`/workspace/${agreement.id}`);
