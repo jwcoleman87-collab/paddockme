@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import { ButtonLink } from "@/components/Button";
 import { PaddockMap, type PaddockMapMode } from "@/components/PaddockMap";
 import { PageHeader } from "@/components/PageHeader";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { agreements, farmers, transportJobs } from "@/lib/dummyData";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 
 type SearchParams = {
   mode?: string;
@@ -19,6 +21,27 @@ export default async function MapPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const currentUserProfile = await getCurrentUserProfile();
+  if (currentUserProfile) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Operational map"
+          title="Map."
+          description="Live map layers will appear once you create requests, listings, agreements, or transport jobs."
+        />
+        <RealAccountEmptyState
+          title="No live map records yet."
+          body="Start with a request or paddock listing and PaddockME will build the map around real customer activity."
+          primaryHref="/request/new"
+          primaryLabel="Create request"
+          secondaryHref="/listings/new"
+          secondaryLabel="List a paddock"
+        />
+      </>
+    );
+  }
+
   const mode = normaliseMode(params.mode);
   const agreementId = params.agreement ?? agreements[0]?.id;
   const transportId = params.transport ?? transportJobs[0]?.id;

@@ -9,7 +9,7 @@ export const mapCoordinates = {
   dale: {
     latitude: -33.835,
     longitude: 148.697,
-    label: "Dale Morgan property",
+    label: "Central West property",
     region: "Central West NSW",
   },
   brett: {
@@ -33,13 +33,13 @@ export const mapCoordinates = {
   wayne: {
     latitude: -35.115,
     longitude: 147.367,
-    label: "Wayne Hayes base",
+    label: "Carrier base",
     region: "Riverina NSW",
   },
   sharon: {
     latitude: -28.546,
     longitude: 150.306,
-    label: "Sharon Mackie depot",
+    label: "Fleet carrier depot",
     region: "Goondiwindi QLD",
   },
   cowra: {

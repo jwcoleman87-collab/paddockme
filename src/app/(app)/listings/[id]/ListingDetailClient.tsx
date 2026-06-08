@@ -130,7 +130,7 @@ export function ListingDetailClient({
             </p>
           ) : (
             <p className="rounded-xl border border-sage-deep/15 bg-cream/55 px-4 py-3 text-sm text-bark/75">
-              Select this paddock to open the shared Dale and Brett agreement workspace.
+              Select this paddock to open a shared agreement workspace.
             </p>
           )}
           <Button

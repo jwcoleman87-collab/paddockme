@@ -7,7 +7,6 @@ import {
   CalendarClock,
   CircleDot,
   PackageCheck,
-  Plus,
   Truck,
 } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
@@ -15,17 +14,13 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
-import { cn } from "@/lib/utils";
-import type {
-  Farmer,
-  TransportCapacity,
-  TransportJob,
-} from "@/lib/dummyData";
+import type { Farmer, TransportJob } from "@/lib/dummyData";
+import type { FeedRun } from "@/lib/feedRuns";
 
 type Props = {
   drivers: Farmer[];
   transportJobs: TransportJob[];
-  transportCapacities: TransportCapacity[];
+  feedRuns: FeedRun[];
   farmersById: Record<string, Farmer>;
 };
 
@@ -39,16 +34,10 @@ type Bucket = {
 };
 
 /**
- * Driver-home pipeline. Defaults to Wayne (the prototype's single-truck
- * persona) and switches automatically if the active persona is a different
- * driver. When a non-driver persona is active, prompts the user to switch.
+ * Driver-home pipeline. Farmers/agisters create transport RFTs from agreement
+ * workspaces; drivers browse those routes, then accepted work lands here.
  */
-export function RunsClient({
-  drivers,
-  transportJobs,
-  transportCapacities,
-  farmersById,
-}: Props) {
+export function RunsClient({ drivers, transportJobs, feedRuns, farmersById }: Props) {
   const [activePersonaId, setActivePersonaId] = useState<string | undefined>();
 
   useEffect(() => {
@@ -74,7 +63,7 @@ export function RunsClient({
   }, []);
 
   const activeDriver =
-    drivers.find((d) => d.id === activePersonaId) ?? drivers[0];
+    drivers.find((driver) => driver.id === activePersonaId) ?? drivers[0];
 
   const myJobs = useMemo(
     () =>
@@ -84,16 +73,9 @@ export function RunsClient({
     [transportJobs, activeDriver]
   );
 
-  const myCapacities = useMemo(
-    () =>
-      activeDriver
-        ? transportCapacities.filter(
-            (capacity) =>
-              capacity.driverId === activeDriver.id &&
-              capacity.status === "published"
-          )
-        : [],
-    [transportCapacities, activeDriver]
+  const openRfts = useMemo(
+    () => transportJobs.filter((job) => job.status === "available"),
+    [transportJobs]
   );
 
   const buckets: Bucket[] = useMemo(() => {
@@ -115,8 +97,8 @@ export function RunsClient({
       },
       {
         key: "available",
-        label: "Open offers",
-        helper: "Jobs you've put your hand up for.",
+        label: "Open RFTs",
+        helper: "Farmer routes waiting for a carrier.",
         tone: "warning",
         icon: CircleDot,
         jobs: available,
@@ -153,7 +135,7 @@ export function RunsClient({
     <>
       <div className="grid gap-5 lg:grid-cols-[0.85fr_1fr]">
         <NextRunCard job={firstActive} farmersById={farmersById} />
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {buckets.map((bucket) => (
             <Card key={bucket.key} className="flex flex-col gap-3">
               <StatusBadge tone={bucket.tone}>
@@ -168,8 +150,87 @@ export function RunsClient({
               </p>
             </Card>
           ))}
+          <Card className="flex flex-col gap-3 border-amber/25 bg-amber-light/60">
+            <StatusBadge tone="warning">
+              <PackageCheck className="h-3.5 w-3.5" aria-hidden />
+              Feed runs
+            </StatusBadge>
+            <p className="text-4xl font-extrabold text-sage-deep">
+              {feedRuns.length}
+            </p>
+            <p className="text-sm font-medium leading-relaxed text-bark/85">
+              Hay, silage and feed freight for agistment support.
+            </p>
+          </Card>
         </div>
       </div>
+
+      <section className="mt-7" aria-label="Driver RFT intake">
+        <Card className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-sage-deep">
+                Farmer RFT map
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-bark/75">
+                Livestock owner and Landowner raise transport requests from the
+                agreement once the pickup, delivery, stock, and timing are
+                known. Drivers quote those routes here.
+              </p>
+            </div>
+            <StatusBadge tone="warning">
+              {openRfts.length} open RFT{openRfts.length === 1 ? "" : "s"}
+            </StatusBadge>
+          </div>
+          <ButtonLink href="/transport/jobs" className="w-fit">
+            Open RFT map
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </ButtonLink>
+        </Card>
+      </section>
+
+      <section className="mt-7" aria-label="Feed freight">
+        <Card className="flex flex-col gap-4 border-amber/25 bg-amber-light/50">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-sage-deep">
+                Feed freight
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-bark/75">
+                Add-on cartage for hay and silage gives carriers more work
+                around agistment movements and helps farmers keep stock fed
+                when pasture gets tight.
+              </p>
+            </div>
+            <StatusBadge tone="warning">
+              {feedRuns.length} feed run{feedRuns.length === 1 ? "" : "s"}
+            </StatusBadge>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {feedRuns.slice(0, 3).map((run) => (
+              <div
+                key={run.id}
+                className="rounded-[8px] border border-amber/20 bg-warm-white px-3 py-3"
+              >
+                <p className="text-xs font-bold uppercase tracking-wide text-amber">
+                  {run.commodity}
+                </p>
+                <h3 className="mt-1 font-bold text-bark">
+                  {run.pickupTown} to {run.destinationTown}
+                </h3>
+                <p className="mt-1 text-sm text-bark/70">{run.load}</p>
+                <p className="mt-2 text-xs font-semibold text-stone">
+                  {run.distanceKm} km, {run.driveTime}, ${run.fee}
+                </p>
+              </div>
+            ))}
+          </div>
+          <ButtonLink href="/transport/jobs?work=feed" className="w-fit">
+            Open feed runs
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </ButtonLink>
+        </Card>
+      </section>
 
       <section className="mt-7" aria-label="Job list">
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-stone">
@@ -185,11 +246,11 @@ export function RunsClient({
               No transport jobs yet.
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/75">
-              Post capacity below so farmers can quote you, or browse open
-              transport jobs.
+              Open the RFT map to see routes farmers have raised from their
+              agistment agreements.
             </p>
-            <ButtonLink href="/transport/available" className="mt-4 inline-flex">
-              Browse capacity board
+            <ButtonLink href="/transport/jobs" className="mt-4 inline-flex">
+              Browse open RFTs
               <ArrowRight className="h-4 w-4" aria-hidden />
             </ButtonLink>
           </Card>
@@ -202,29 +263,6 @@ export function RunsClient({
                 farmerA={farmersById[job.farmerAId]}
                 farmerB={farmersById[job.farmerBId]}
               />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="mt-7" aria-label="Posted capacity">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-stone">
-            Your posted capacity
-          </h2>
-          <ButtonLink href="/transport/available" variant="secondary">
-            <Plus className="h-4 w-4" aria-hidden />
-            Post a run
-          </ButtonLink>
-        </div>
-        {myCapacities.length === 0 ? (
-          <Card className="text-center text-sm font-medium text-bark/75">
-            Nothing posted yet. Use “Post a run” to advertise an empty leg.
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {myCapacities.map((capacity) => (
-              <CapacityCard key={capacity.id} capacity={capacity} />
             ))}
           </div>
         )}
@@ -246,11 +284,11 @@ function NextRunCard({
         <Truck className="mb-4 h-8 w-8 text-sage-glow" aria-hidden />
         <h2 className="text-2xl font-bold">No active run.</h2>
         <p className="mt-2 leading-relaxed text-sage-glow">
-          When a farmer accepts a quote, the run opens here with a tap-target
-          straight into the room.
+          When a farmer RFT becomes your accepted run, it opens here with a
+          tap-target straight into the room.
         </p>
-        <ButtonLink href="/transport/available" variant="secondary" className="mt-5">
-          Post capacity
+        <ButtonLink href="/transport/jobs" variant="secondary" className="mt-5">
+          Open RFT map
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
       </Card>
@@ -269,7 +307,7 @@ function NextRunCard({
       </p>
       <div className="mt-4 flex -space-x-2">
         {[farmerA, farmerB]
-          .filter((f): f is Farmer => !!f)
+          .filter((farmer): farmer is Farmer => !!farmer)
           .map((farmer) => (
             <Avatar
               key={farmer.id}
@@ -336,7 +374,7 @@ function JobCard({
         </div>
         <div className="flex -space-x-2">
           {[farmerA, farmerB]
-            .filter((f): f is Farmer => !!f)
+            .filter((farmer): farmer is Farmer => !!farmer)
             .map((farmer) => (
               <Avatar
                 key={farmer.id}
@@ -348,7 +386,7 @@ function JobCard({
             ))}
         </div>
         <p className="text-sm font-medium text-bark/75">
-          {job.pickup} → {job.destination}
+          {job.pickup} -&gt; {job.destination}
         </p>
         <p className="text-xs font-semibold text-stone">
           Pickup: {job.preferredDate}
@@ -359,57 +397,6 @@ function JobCard({
         </div>
       </Card>
     </Link>
-  );
-}
-
-function CapacityCard({ capacity }: { capacity: TransportCapacity }) {
-  return (
-    <Card className="flex h-full flex-col gap-2.5">
-      <p className="text-xs font-bold uppercase tracking-wide text-bark/65">
-        Posted {capacity.postedAt}
-      </p>
-      <h3 className="text-lg font-bold text-sage-deep">
-        {capacity.originRegion} → {capacity.destinationRegion}
-      </h3>
-      <div className="grid grid-cols-2 gap-3">
-        <InfoTile
-          tone="subtle"
-          size="sm"
-          label="Window"
-          value={`${capacity.earliestDate} - ${capacity.latestDate}`}
-        />
-        <InfoTile
-          tone="subtle"
-          size="sm"
-          label="Capacity"
-          value={`${capacity.headCapacity} head`}
-        />
-      </div>
-      {capacity.stockTypes.length > 0 && (
-        <p className="text-sm font-medium text-bark/75">
-          For: {capacity.stockTypes.join(", ")}
-        </p>
-      )}
-      {capacity.rateAmount && (
-        <p className="text-sm font-semibold text-sage-deep">
-          ${capacity.rateAmount.toFixed(2)}{" "}
-          {capacity.rateBasis === "per_head"
-            ? "per head"
-            : capacity.rateBasis === "per_km"
-              ? "per km"
-              : "flat"}
-        </p>
-      )}
-      {capacity.notes && (
-        <p
-          className={cn(
-            "rounded-xl border border-mist bg-warm-white px-3 py-2 text-sm text-bark/75"
-          )}
-        >
-          {capacity.notes}
-        </p>
-      )}
-    </Card>
   );
 }
 
@@ -432,8 +419,8 @@ function formatStatus(status: TransportJob["status"]) {
     case "in_transit":
       return "In transit";
     case "available":
-      return "Open offer";
+      return "Open RFT";
     default:
-      return status.replace(/^./, (c) => c.toUpperCase());
+      return status.replace(/^./, (char) => char.toUpperCase());
   }
 }

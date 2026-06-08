@@ -178,7 +178,7 @@ function buildTiles({
     const inMotion = myJobs.filter((job) =>
       ["accepted", "loading", "in_transit"].includes(job.status)
     ).length;
-    const openOffers = myJobs.filter((job) => job.status === "available")
+    const openRfts = myJobs.filter((job) => job.status === "available")
       .length;
     return [
       unreadTile,
@@ -195,14 +195,14 @@ function buildTiles({
       },
       {
         icon: DollarSign,
-        label: "Open offers",
-        count: openOffers,
+        label: "Open RFTs",
+        count: openRfts,
         detail:
-          openOffers > 0
-            ? "Jobs you've quoted on, waiting for the farmer's call."
-            : "No outstanding offers from farmers.",
-        href: "/runs",
-        emphasize: openOffers > 0,
+          openRfts > 0
+            ? "Farmer routes waiting for you to quote or accept."
+            : "No farmer RFTs assigned to you yet.",
+        href: "/transport/jobs",
+        emphasize: openRfts > 0,
       },
     ];
   }
@@ -254,14 +254,14 @@ function buildTiles({
           quotesAwaitingMe > 0
             ? transportRoomForLivestockOwner(transportJobs, personaId) ??
               "/agreements"
-            : "/transport/available",
+            : "/transport/jobs",
         emphasize: quotesAwaitingMe > 0,
       },
     ];
   }
 
   // Landowner: surface open requests from livestock owners alongside the
-  // sections-to-confirm tile so Brett has a proactive offer surface.
+  // sections-to-confirm tile so landowners have a proactive offer surface.
   const openRequestCount = countOpenRequestsForLandowner();
   return [
     unreadTile,

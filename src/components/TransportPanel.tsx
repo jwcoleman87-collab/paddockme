@@ -66,7 +66,7 @@ type TransportPanelProps = {
   quotes: TransportQuote[];
   /** Pointer to the accepted quote, if any. */
   acceptedQuoteId?: string;
-  /** Driver or Farmer A proposes a new quote. Not callable as Farmer B (the tab is hidden). */
+  /** Driver or Livestock owner proposes a new quote. Not callable as Landowner (the tab is hidden). */
   onProposeQuote?: (draft: TransportQuoteDraft) => void;
   /** Recipient of a pending quote accepts it. */
   onAcceptQuote?: (quoteId: string) => void;
@@ -120,8 +120,8 @@ const sectionStatusTone: Record<
 };
 
 const roleLabel: Record<TransportRole, string> = {
-  farmerA: "Farmer A",
-  farmerB: "Farmer B",
+  farmerA: "Livestock owner",
+  farmerB: "Landowner",
   driver: "Driver",
 };
 
@@ -148,8 +148,8 @@ export function TransportPanel({
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
   const isDriver = role === "driver";
-  // The landowner-visibility wall: Farmer B never sees the Rate tab. The
-  // pricing chain stays between Farmer A and the driver.
+  // The landowner-visibility wall: Landowner never sees the Rate tab. The
+  // pricing chain stays between Livestock owner and the driver.
   const showRateTab = role !== "farmerB";
   const visibleTabs = showRateTab
     ? transportTabs
@@ -173,7 +173,7 @@ export function TransportPanel({
           Stock movement room
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          Farmer A, Farmer B and the driver coordinate the move here. Agreement
+          Livestock owner, Landowner and the driver coordinate the move here. Agreement
           pricing and contract terms stay out of this room by design.
         </p>
 
@@ -257,7 +257,7 @@ export function TransportPanel({
             </p>
             <p className="mt-1 text-sm leading-relaxed text-bark/70">
               Commercial detail (agistment duration, rate, contract terms)
-              stays in the agreement workspace between Farmer A and Farmer B.
+              stays in the agreement workspace between Livestock owner and Landowner.
               You see the logistics you need to move the stock.
             </p>
           </div>
@@ -479,7 +479,7 @@ function OpenRftsPanel({
       ) : (
         <p className="rounded-lg border border-dashed border-sage-deep/15 bg-warm-white px-4 py-3 text-sm text-bark/65">
           No other farmer RFTs are waiting near this route yet. New transport
-          requests appear here after Farmer A and Farmer B raise them from an
+          requests appear here after Livestock owner and Landowner raise them from an
           agreement workspace.
         </p>
       )}
@@ -721,7 +721,7 @@ function ConfirmationsRow({
 
 function uploaderLabelFor(role: TransportRole, driverName: string): string {
   if (role === "driver") return `Driver (${driverName})`;
-  return role === "farmerA" ? "Farmer A" : "Farmer B";
+  return role === "farmerA" ? "Livestock owner" : "Landowner";
 }
 
 function TransportArtefactStrip({
@@ -922,7 +922,7 @@ function RateNegotiation({
           </h3>
         </div>
         <p className="text-sm leading-relaxed text-bark/70">
-          Negotiate the haulage rate here. Visible to Farmer A and the driver
+          Negotiate the haulage rate here. Visible to Livestock owner and the driver
           only - the landowner never sees these numbers.
         </p>
       </div>
@@ -1212,7 +1212,7 @@ function PendingQuoteCard({
     <section className="rounded-xl border border-sage-deep/15 bg-warm-white p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-bold uppercase tracking-wide text-stone">
-          {quote.proposedBy === "driver" ? "Driver proposed" : "Farmer A proposed"}{" "}
+          {quote.proposedBy === "driver" ? "Driver proposed" : "Livestock owner proposed"}{" "}
           &middot; {quote.at}
         </p>
         <StatusBadge tone="info">
@@ -1316,7 +1316,7 @@ function QuoteHistoryRow({ quote }: { quote: TransportQuote }) {
           ${quote.amount.toFixed(2)} {quote.currency} {basisLabel}
         </p>
         <p className="text-xs text-bark/65">
-          {quote.proposedBy === "driver" ? "Driver" : "Farmer A"} &middot;{" "}
+          {quote.proposedBy === "driver" ? "Driver" : "Livestock owner"} &middot;{" "}
           {quote.at}
         </p>
       </div>

@@ -31,7 +31,7 @@ type SectionRef = {
 
 type ArtefactUploadDialogProps = {
   open: boolean;
-  /** Display label for the uploader (e.g. "Farmer A (Dale)"). */
+  /** Display label for the uploader. */
   uploaderLabel: string;
   sections: SectionRef[];
   /** Preselect a section when upload is launched from a specific agreement area. */

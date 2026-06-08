@@ -723,8 +723,8 @@ function mapAgreementSectionRow(row: Tables<"agreement_sections">): AgreementSec
     label: row.label,
     summary: farmerAValue === farmerBValue ? farmerAValue : `${farmerAValue} / ${farmerBValue}`,
     detail: [
-      { label: "Farmer A value", value: farmerAValue },
-      { label: "Farmer B value", value: farmerBValue },
+      { label: "Livestock owner value", value: farmerAValue },
+      { label: "Landowner value", value: farmerBValue },
     ],
     agreedByA: row.agreed_by_a,
     agreedByB: row.agreed_by_b,

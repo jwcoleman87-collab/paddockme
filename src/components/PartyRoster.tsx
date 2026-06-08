@@ -30,14 +30,14 @@ export function PartyRoster({
       <div className="grid gap-3 p-5 sm:grid-cols-3">
         <PartyCard
           farmer={farmerA}
-          label="Farmer A"
+          label="Livestock owner"
           note="Agreement party"
           tone="agreement"
           icon={<Sprout className="h-4 w-4" aria-hidden />}
         />
         <PartyCard
           farmer={farmerB}
-          label="Farmer B"
+          label="Landowner"
           note="Agreement party"
           tone="agreement"
           icon={<Sprout className="h-4 w-4" aria-hidden />}

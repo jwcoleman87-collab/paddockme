@@ -38,15 +38,15 @@ const STORE_KEY = "paddockme.prototype.state.v1";
 const PERSONA_KEY = "paddockme.profile.persona";
 
 export const personaNames: Record<PersonaId, string> = {
-  "farmer-a": "Dale",
-  "farmer-b": "Brett",
-  "driver-1": "Wayne",
-  "driver-2": "Sharon",
+  "farmer-a": "Livestock owner",
+  "farmer-b": "Landowner",
+  "driver-1": "Carrier",
+  "driver-2": "Fleet carrier",
 };
 
 export const personaRoles: Record<PersonaId, string> = {
-  "farmer-a": "Farmer A / livestock owner",
-  "farmer-b": "Farmer B / landowner",
+  "farmer-a": "Livestock owner / livestock owner",
+  "farmer-b": "Landowner / landowner",
   "driver-1": "Transport driver",
   "driver-2": "Fleet operator",
 };
@@ -63,7 +63,7 @@ export function createInitialPrototypeState(): PrototypeState {
         id: "seed-timeline-request",
         at: nowLabel(),
         title: "Agreement workflow ready",
-        detail: "Dale, Brett and Wayne records are loaded.",
+        detail: "Sample role records are loaded.",
         href: "/agreements",
       },
     ],
@@ -231,7 +231,7 @@ export function openAgreementForListing(listingId: string): {
   state = addTimeline(
     state,
     "Agreement workspace opened",
-    `Dale and Brett opened a workspace for ${listing.title}.`,
+    `A livestock owner and landowner opened a workspace for ${listing.title}.`,
     `/workspace/${agreement.id}`
   );
   savePrototypeState(state);
@@ -239,7 +239,7 @@ export function openAgreementForListing(listingId: string): {
 }
 
 /**
- * Landowner-initiated agreement: Brett picks one of his paddocks to offer
+ * Landowner-initiated agreement: the landowner picks one of their paddocks to offer
  * against a livestock owner's open request. Mirrors openAgreementForListing
  * but starts from the request side.
  */
@@ -294,7 +294,7 @@ export function requestTransportForAgreement(agreementId: string): {
   state = addTimeline(
     state,
     "Transport requested",
-    `Wayne can now accept ${job.livestockCount} from ${job.pickupRegion ?? job.pickup}.`,
+    `A carrier can now accept ${job.livestockCount} from ${job.pickupRegion ?? job.pickup}.`,
     "/transport/jobs"
   );
   savePrototypeState(state);
@@ -369,7 +369,7 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
       { label: "Transport ready", complete: false },
     ],
     sections: [
-      section("parties", "Parties", "Dale Morgan and Brett Donnelly", "Dale Morgan", "Brett Donnelly"),
+      section("parties", "Parties", "Livestock owner and landowner", "Livestock owner", "Landowner"),
       section("stock", "Stock", `${request.headCount} ${request.breed} ${request.stockType}`, `${request.headCount} ${request.breed}`, `${request.headCount} ${request.stockType}`),
       section("paddock", "Paddock", `${listing.title}, ${listing.acres} acres`, listing.title, listing.title),
       section("dates", "Dates", request.duration, request.duration, request.duration),
@@ -393,8 +393,8 @@ function section(
     label,
     summary,
     detail: [
-      { label: "Farmer A value", value: farmerAValue },
-      { label: "Farmer B value", value: farmerBValue },
+      { label: "Livestock owner value", value: farmerAValue },
+      { label: "Landowner value", value: farmerBValue },
     ],
     agreedByA: farmerAValue === farmerBValue,
     agreedByB: farmerAValue === farmerBValue,
@@ -409,7 +409,7 @@ function createTransportJob(agreement: Agreement, listing: PaddockListing): Tran
     farmerAId: agreement.farmerAId,
     farmerBId: agreement.farmerBId,
     driverId: "driver-1",
-    pickup: "Dale Morgan property, Central West NSW",
+    pickup: "Central West property",
     destination: `${listing.title}, ${listing.regionLabel}`,
     pickupLocation: agreement.pickupLocation ?? mapCoordinates.dale,
     destinationLocation: agreement.destinationLocation ?? listing.coordinates,
@@ -418,7 +418,7 @@ function createTransportJob(agreement: Agreement, listing: PaddockListing): Tran
     destinationRegion: listing.regionLabel,
     livestockCount: agreement.livestock,
     preferredDate: "Next available Friday",
-    driver: "Wayne Hayes",
+    driver: "Carrier",
     status: "available",
     routeSummary: `Central West NSW to ${listing.regionLabel}`,
     agreementContext: {

@@ -8,7 +8,6 @@ import {
   Calendar,
   Filter,
   MapPin,
-  Plus,
   Truck,
   X,
 } from "lucide-react";
@@ -252,7 +251,7 @@ export function CapacityClient({
   function postCapacity(draft: CapacityDraft) {
     const newCapacity: TransportCapacity = {
       id: `local-cap-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      // Default to Wayne for the unauthed prototype path. Replaced with the
+      // Default to the seeded transport provider for the unauthed prototype path. Replaced with the
       // real auth.uid() in persistCapacityToSupabase when a session exists.
       driverId: "driver-1",
       truckLabel: draft.truckLabel,
@@ -373,17 +372,13 @@ export function CapacityClient({
         <div className="flex items-center gap-2 text-sage-deep">
           <Truck className="h-5 w-5" aria-hidden />
           <p className="text-sm font-semibold">
-            Driver? Post a run so farmers can find you.
+            Driver? Open the RFT map to see routes farmers are waiting on.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setPostOpen(true)}
-          className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full bg-sage-deep px-4 text-sm font-bold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          Post a run
-        </button>
+        <ButtonLink href="/transport/jobs" className="min-h-10">
+          Open RFT map
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </ButtonLink>
       </section>
 
       <section
@@ -560,7 +555,7 @@ function CapacityCard({
         onClick={onRequest}
         className="mt-auto inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
       >
-        Request this run
+        Request this capacity
         <ArrowRight className="h-4 w-4" aria-hidden />
       </button>
     </Card>
@@ -584,8 +579,8 @@ function EmptyState({
         No runs match these filters.
       </h2>
       <p className="mt-2 text-sm text-bark/70">
-        Drivers post available capacity here. Loosen a chip or two and try
-        again - filters AND across groups, same as paddock browse.
+        Carrier capacity is a secondary reference. The main transport flow now
+        starts on the farmer-created RFT map.
       </p>
       {hasFilters && (
         <button

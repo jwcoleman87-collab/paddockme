@@ -38,7 +38,7 @@ export type ViewableArtefact = {
   label: string;
   kind: ViewableArtefactKind;
   description: string;
-  /** Display name for whoever uploaded it (e.g., "Farmer A", "Driver"). */
+  /** Display name for whoever uploaded it (e.g., "Livestock owner", "Driver"). */
   uploaderLabel: string;
   /** Optional section this artefact is discussed in (id matches an anchorable section). */
   sectionId?: string;

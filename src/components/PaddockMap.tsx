@@ -67,7 +67,7 @@ type MapFeatureProperties = {
   routeHeadline?: string;  // "Darling Downs QLD → Maranoa QLD"
   stockSummary?: string;   // "120 head, Cattle"
   dateWindow?: string;     // "Thu 28 May – Sat 30 May"
-  driverName?: string;     // "Sharon Mackie"
+  driverName?: string;     // "Fleet carrier"
 };
 
 type Feature = {
@@ -124,8 +124,8 @@ const googleMapsApiKey =
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
   "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
 const knownDriverNames: Record<string, string> = {
-  "driver-1": "Wayne Hayes",
-  "driver-2": "Sharon Mackie",
+  "driver-1": "Transport provider",
+  "driver-2": "Fleet carrier",
 };
 
 const stateViewBounds: Record<"NSW" | "QLD", [[number, number], [number, number]]> = {
@@ -280,7 +280,7 @@ export function PaddockMap({
       kind: "transport",
       title: "State route view",
       subtitle: "Map centred on the selected driver operating region.",
-      metric: "Choose a route card to inspect a specific job or backload lane.",
+      metric: "Choose a route card to inspect a farmer-created RFT or accepted run.",
       privacy: "Driver view only: logistics and route economics, not private agistment terms.",
     });
   }
@@ -431,6 +431,17 @@ function LayerSwatch({ kind, active }: { kind: LayerKey; active: boolean }) {
 function ContextPanel({ context }: { context: MapContext }) {
   return (
     <div className="rounded-[8px] border border-mist bg-cream p-4">
+      <div className="mb-4 space-y-1">
+        <p className="text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+          {context.eyebrow}
+        </p>
+        <h2 className="font-display text-xl leading-tight text-sage-deep">
+          {context.title}
+        </h2>
+        <p className="text-sm leading-relaxed text-bark/75">
+          {context.description}
+        </p>
+      </div>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
           Operating picture
@@ -585,12 +596,18 @@ function TransportRoutePopup({
   selected: MapFeatureProperties;
   onClose: () => void;
 }) {
-  const isRequestable =
-    selected.routeState === "available" || selected.routeState === "capacity";
-  const ctaLabel = isRequestable ? "Request this run" : "Open transport room";
-  const ctaHref = isRequestable
-    ? "/transport/available"
-    : (selected.href ?? "/transport/available");
+  const isOpenRft = selected.routeState === "available";
+  const isCapacity = selected.routeState === "capacity";
+  const ctaLabel = isOpenRft
+    ? "Open RFT"
+    : isCapacity
+      ? "View carrier capacity"
+      : "Open transport room";
+  const ctaHref = isOpenRft
+    ? selected.href ?? "/transport/jobs"
+    : isCapacity
+      ? "/transport/available"
+      : selected.href ?? "/transport/jobs";
   const distanceMatch = selected.metric.match(/\d+\s*km/);
 
   return (
@@ -682,7 +699,7 @@ function TransportRoutePopup({
 
       {/* primary CTA */}
       <ButtonLink href={ctaHref} className="mt-4 w-full">
-        {isRequestable ? (
+        {isOpenRft || isCapacity ? (
           <Truck className="h-4 w-4" aria-hidden />
         ) : (
           <Navigation className="h-4 w-4" aria-hidden />
@@ -691,14 +708,14 @@ function TransportRoutePopup({
       </ButtonLink>
 
       {/* secondary — only when the primary doesn't land on the listings page */}
-      {ctaHref !== "/transport/available" && (
+      {ctaHref !== "/transport/jobs" && (
         <div className="mt-2.5 text-center">
           <ButtonLink
-            href="/transport/available"
+            href="/transport/jobs"
             variant="ghost"
             className="text-xs"
           >
-            View all available runs
+            View all RFTs
           </ButtonLink>
         </div>
       )}
@@ -1489,9 +1506,6 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
     ...input.jobs
       .filter((job) => !regionFilter || sameRegion(job.pickupRegion ?? "", regionFilter) || sameRegion(job.destinationRegion ?? "", regionFilter))
       .map((job) => transportJobRouteFeature(job)),
-    ...input.capacities
-      .filter((capacity) => !regionFilter || sameRegion(capacity.originRegion, regionFilter) || sameRegion(capacity.destinationRegion, regionFilter))
-      .map((capacity) => transportCapacityRouteFeature(capacity)),
   ]);
   const points = [
     ...input.listings
@@ -1503,14 +1517,14 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
     ...input.jobs
       .filter((job) => !regionFilter || sameRegion(job.pickupRegion ?? "", regionFilter) || sameRegion(job.destinationRegion ?? "", regionFilter))
       .map((job) => transportFeature(job, "Regional transport")),
-    ...transportHotspotFeatures(input.jobs, input.capacities, regionFilter),
+    ...transportHotspotFeatures(input.jobs, [], regionFilter),
     ...regionalInsights.map(regionFeature),
   ].filter(Boolean) as Feature[];
   return {
     eyebrow: "Regional intelligence map",
     title: regionFilter ? `${regionFilter} operating hub` : "Australian operating hub",
     description:
-      "Paddock supply, livestock demand, driver route availability, transport movement, and early rain/feed pressure signals in one place.",
+      "Paddock supply, livestock demand, farmer-created transport RFTs, active movement, and early rain/feed pressure signals in one place.",
     points,
     routes,
     bounds: regionFilter ? boundsForPoints(points) : australiaBounds,
@@ -1543,8 +1557,8 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
   const request = input.requests.find((item) => item.id === agreement.requestId);
   const job = input.jobs.find((item) => item.agreementId === agreement.id);
   const points = [
-    request ? requestFeature(request, "Agreement pickup") : coordinateFeature(mapCoordinates.dale, "requests", "Dale pickup", "Livestock origin", agreement.livestock),
-    listing ? listingFeature(listing, "Agreement destination") : coordinateFeature(mapCoordinates.gundagai, "paddocks", "Brett paddock", "Destination", agreement.feed),
+    request ? requestFeature(request, "Agreement pickup") : coordinateFeature(mapCoordinates.dale, "requests", "Livestock pickup", "Livestock origin", agreement.livestock),
+    listing ? listingFeature(listing, "Agreement destination") : coordinateFeature(mapCoordinates.gundagai, "paddocks", "Landowner paddock", "Destination", agreement.feed),
     job ? transportFeature(job, "Private agreement transport") : null,
     ...farmers
       .filter((farmer) => [agreement.farmerAId, agreement.farmerBId, job?.driverId].includes(farmer.id))
@@ -1555,7 +1569,7 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
       "agreement-route",
       "Pickup to paddock",
       "transport",
-      "Dale to Brett movement",
+      "Livestock movement",
       "Private agreement transport corridor",
       "/transport/jobs",
       agreement.pickupLocation ?? request?.originLocation ?? mapCoordinates.dale,
@@ -1564,7 +1578,7 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
   ]);
   return {
     eyebrow: "Agreement map",
-    title: "Private Dale, Brett and Wayne route",
+    title: "Private agreement transport route",
     description:
       "Only agreement-relevant pickup, destination, parties, and transport position. Commercial agistment pricing stays out of the driver view.",
     points,
@@ -1574,7 +1588,7 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
       { label: "Agreement", value: agreement.status },
       { label: "Stock", value: agreement.livestock },
       { label: "Transport", value: job ? job.status.replace("_", " ") : "not requested" },
-      { label: "Privacy", value: "Wayne sees logistics only" },
+      { label: "Privacy", value: "Carrier sees logistics only" },
     ],
     actions: [
       {
@@ -1595,68 +1609,53 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
 
 function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext {
   const driver = farmers.find((farmer) => farmer.id === input.driverId) ?? farmers.find((farmer) => farmer.id === "driver-1");
-  const jobs = input.jobs.filter(
+  const acceptedRuns = input.jobs.filter(
     (job) =>
       job.id === input.transportId ||
-      job.status === "available" ||
-      job.driverId === input.driverId
+      (job.driverId === input.driverId && job.status !== "available")
   );
-  const availableRequests = input.requests.filter(
-    (request) => request.transportRequired !== "No"
-  );
-  const driverCapacities = input.capacities.filter(
-    (capacity) => capacity.status === "published" && capacity.driverId === input.driverId
-  );
-  const points = [
-    driver ? profileFeature(driver) : null,
-    ...jobs.map((job) => transportFeature(job, job.status === "available" ? "Available job" : "Accepted job")),
-    ...availableRequests.map((request) => requestFeature(request, "Available transport lead")),
-    ...transportHotspotFeatures(jobs, driverCapacities, undefined, "Driver route hotspot"),
-  ].filter(Boolean) as Feature[];
-  const routes = routeCollection(
-    [
-      ...jobs.map((job) => driverJobRouteFeature(job)),
-      ...availableRequests.map((request) => driverRequestRouteFeature(request)),
-      ...driverCapacities.map((capacity) => driverCapacityRouteFeature(capacity)),
-    ]
-  );
-  const driverBoardItems: DriverBoardItem[] = [
-    ...jobs.map((job) => ({
+  const openRfts = input.jobs.filter((job) => job.status === "available");
+  const visibleJobs = [
+    ...openRfts,
+    ...acceptedRuns.filter((job) => !openRfts.some((openJob) => openJob.id === job.id)),
+  ];
+  const driverBoardItems: DriverBoardItem[] = visibleJobs.map((job) => {
+    const routeState = routeStateForTransportJob(job);
+    return {
       id: `job-${job.id}`,
-      label: job.status === "available" ? `${job.livestockCount} available job` : `${job.livestockCount} negotiation route`,
+      label:
+        job.status === "available"
+          ? `RFT: ${job.livestockCount}`
+          : routeState === "negotiation"
+            ? `${job.livestockCount} negotiation route`
+            : `${job.livestockCount} accepted run`,
       detail: `${job.pickupRegion ?? job.pickup} to ${job.destinationRegion ?? job.destination} - ${routeDistanceLabel(driverJobRouteFeature(job))} - ${monthFromText(job.preferredDate)} - ${transportPriceLabel(job)}`,
-      status: routeStateForTransportJob(job) === "negotiation" ? "negotiation" : job.status.replace("_", " "),
+      status: job.status === "available" ? "open RFT" : routeState === "negotiation" ? "negotiation" : job.status.replace("_", " "),
       href: `/transport/${job.id}`,
       featureId: `route-${job.id}`,
-    })),
-    ...availableRequests.map((request) => ({
-      id: `request-route-${request.id}`,
-      label: `${request.headCount} ${request.stockType.toLowerCase()} available route`,
-      detail: `${request.originLocation?.region ?? "Pickup region"} to ${request.preferredRegions[0] ?? "preferred paddock region"} - ${routeDistanceLabel(driverRequestRouteFeature(request))} - ${monthFromText("")} - Quote pending`,
-      status: "available",
-      href: "/transport/jobs",
-      featureId: `driver-request-route-${request.id}`,
-    })),
-    ...driverCapacities.map((capacity) => ({
-      id: `capacity-${capacity.id}`,
-      label: `${capacity.headCapacity} head backload lane`,
-      detail: `${capacity.originRegion} to ${capacity.destinationRegion} - ${routeDistanceLabel(driverCapacityRouteFeature(capacity))} - ${monthFromText(`${capacity.earliestDate} ${capacity.latestDate}`)} - ${transportCapacityPriceLabel(capacity)}`,
-      status: "capacity",
-      href: "/transport/available",
-      featureId: `driver-capacity-route-${capacity.id}`,
-    })),
-  ];
+    };
+  });
+  const openRftCount = openRfts.length;
+  const acceptedRunCount = acceptedRuns.filter((job) => job.status !== "available").length;
+  const points = [
+    driver ? profileFeature(driver) : null,
+    ...visibleJobs.map((job) => transportFeature(job, job.status === "available" ? "Open farmer RFT" : "Accepted run")),
+    ...transportHotspotFeatures(visibleJobs, [], undefined, "Driver RFT hotspot"),
+  ].filter(Boolean) as Feature[];
+  const routes = routeCollection(
+    visibleJobs.map((job) => driverJobRouteFeature(job))
+  );
   return {
-    eyebrow: "Driver job map",
-    title: `${driver?.name ?? "Driver"} job radar`,
+    eyebrow: "Driver RFT map",
+    title: `${driver?.name ?? "Driver"} RFT radar`,
     description:
-      "Available work, accepted runs, route corridors, dates, and backload lanes without exposing private agistment terms.",
+      "Farmer-created RFT routes, accepted runs, dates, stock, and route corridors without exposing private agistment terms.",
     points,
     routes,
     bounds: stateViewBounds.NSW,
     driverBoard: {
-      title: "Wayne's route board",
-      helper: "Start state-by-state. NSW is the default; switch to QLD for northern work, then focus a route.",
+      title: "Route board",
+      helper: "Start state-by-state. NSW is the default; switch to QLD for northern work, then focus a farmer RFT or accepted run.",
       states: [
         { label: "NSW routes", bounds: stateViewBounds.NSW },
         { label: "QLD routes", bounds: stateViewBounds.QLD },
@@ -1664,15 +1663,15 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
       items: driverBoardItems,
     },
     metrics: [
-      { label: "Available routes", value: String(jobs.filter((job) => job.status === "available").length + availableRequests.length) },
-      { label: "Accepted jobs", value: String(jobs.filter((job) => job.status !== "available").length) },
-      { label: "Backload lanes", value: String(driverCapacities.length) },
+      { label: "Open RFTs", value: String(openRftCount) },
+      { label: "Accepted runs", value: String(acceptedRunCount) },
+      { label: "RFT source", value: "Livestock owner / landowner" },
       { label: "Driver privacy", value: "No agistment rate layer" },
     ],
     actions: [
       {
         href: "/transport/jobs",
-        label: "Available jobs",
+        label: "Open RFT map",
         variant: "primary",
         icon: <Truck className="h-4 w-4" aria-hidden />,
       },
@@ -1816,7 +1815,7 @@ function driverRequestRouteFeature(request: LivestockRequest): LineFeature | nul
     route.properties.routeState = "available";
     route.properties.priceLabel = "Quote pending";
     route.properties.metric = routeMetric(request.duration, "", route, route.properties.priceLabel);
-    route.properties.privacy = "Available transport lead. Wayne sees pickup, destination region, stock, and timing only.";
+    route.properties.privacy = "Available transport lead. Carrier sees pickup, destination region, stock, and timing only.";
   }
   return route;
 }
@@ -1827,7 +1826,7 @@ function transportCapacityRouteFeature(capacity: TransportCapacity): LineFeature
     `${capacity.originRegion} to ${capacity.destinationRegion}`,
     "transport",
     `${capacity.headCapacity} head capacity, ${capacity.earliestDate} to ${capacity.latestDate}`,
-    `${capacity.stockTypes.join(", ")} availability from ${capacity.driverId === "driver-1" ? "Wayne" : "Sharon"}.`,
+    `${capacity.stockTypes.join(", ")} availability from a transport provider.`,
     "/transport/available",
     coordinateForRegion(capacity.originRegion),
     coordinateForRegion(capacity.destinationRegion)
@@ -1857,8 +1856,8 @@ function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | 
     `driver-capacity-route-${capacity.id}`,
     `${capacity.originRegion} to ${capacity.destinationRegion}`,
     "transport",
-    `${capacity.headCapacity} head backload lane, ${capacity.earliestDate} to ${capacity.latestDate}`,
-    `${capacity.stockTypes.join(", ")} capacity on ${capacity.truckLabel ?? "Wayne's truck"}.`,
+    `${capacity.headCapacity} head carrier capacity, ${capacity.earliestDate} to ${capacity.latestDate}`,
+    `${capacity.stockTypes.join(", ")} capacity on ${capacity.truckLabel ?? "truck"}.`,
     "/transport/available",
     coordinateForRegion(capacity.originRegion),
     coordinateForRegion(capacity.destinationRegion)
@@ -1867,13 +1866,13 @@ function driverCapacityRouteFeature(capacity: TransportCapacity): LineFeature | 
     route.properties.routeState = "capacity";
     route.properties.priceLabel = transportCapacityPriceLabel(capacity);
     route.properties.metric = routeMetric(
-      `${capacity.headCapacity} head backload lane`,
+      `${capacity.headCapacity} head carrier capacity`,
       `${capacity.earliestDate} ${capacity.latestDate}`,
       route,
       route.properties.priceLabel
     );
     route.properties.routeHeadline = `${capacity.originRegion} → ${capacity.destinationRegion}`;
-    route.properties.stockSummary = `${capacity.headCapacity} head backload, ${capacity.stockTypes.join("/")}`;
+    route.properties.stockSummary = `${capacity.headCapacity} head capacity, ${capacity.stockTypes.join("/")}`;
     route.properties.dateWindow =
       capacity.earliestDate === capacity.latestDate
         ? capacity.earliestDate

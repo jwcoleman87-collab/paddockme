@@ -11,6 +11,7 @@ import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   getAgreement,
@@ -19,6 +20,7 @@ import {
   farmers,
   type Agreement,
 } from "@/lib/dummyData";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 
 /**
  * Read-only tear-sheet view of an agreement. Designed to screenshot or print
@@ -34,6 +36,20 @@ export default async function WorkspaceSnapshotPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const currentUserProfile = await getCurrentUserProfile();
+  if (currentUserProfile) {
+    return (
+      <RealAccountEmptyState
+        title="No agreement snapshot found."
+        body="Agreement snapshots are created from live customer workspaces."
+        primaryHref="/agreements"
+        primaryLabel="Back to my work"
+        secondaryHref="/request/new"
+        secondaryLabel="Create request"
+      />
+    );
+  }
+
   const agreement = getAgreement(id);
   if (!agreement) notFound();
 
@@ -105,9 +121,9 @@ export default async function WorkspaceSnapshotPage({
                       {both
                         ? "Both agreed"
                         : section.agreedByA
-                          ? `Awaiting ${farmerB?.name.split(" ")[0] ?? "Farmer B"}`
+                          ? `Awaiting ${farmerB?.name.split(" ")[0] ?? "Landowner"}`
                           : section.agreedByB
-                            ? `Awaiting ${farmerA?.name.split(" ")[0] ?? "Farmer A"}`
+                            ? `Awaiting ${farmerA?.name.split(" ")[0] ?? "Livestock owner"}`
                             : "Not yet agreed"}
                     </span>
                   </div>
@@ -155,8 +171,8 @@ export default async function WorkspaceSnapshotPage({
                   <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
                     {artefact.kind} · uploaded by{" "}
                     {artefact.uploadedBy === "farmerA"
-                      ? farmerA?.name.split(" ")[0] ?? "Farmer A"
-                      : farmerB?.name.split(" ")[0] ?? "Farmer B"}
+                      ? farmerA?.name.split(" ")[0] ?? "Livestock owner"
+                      : farmerB?.name.split(" ")[0] ?? "Landowner"}
                   </p>
                 </div>
               </Card>

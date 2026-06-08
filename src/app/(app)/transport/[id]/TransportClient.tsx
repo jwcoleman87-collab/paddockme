@@ -35,18 +35,18 @@ import type { TransportJobStatus } from "@/lib/dummyData";
 const roles: { id: TransportRole; label: string; helper: string }[] = [
   {
     id: "farmerA",
-    label: "Farmer A",
-    helper: "Livestock owner (Dale)",
+    label: "Livestock owner",
+    helper: "Livestock owner",
   },
   {
     id: "farmerB",
-    label: "Farmer B",
-    helper: "Landowner (Brett)",
+    label: "Landowner",
+    helper: "Landowner",
   },
   {
     id: "driver",
     label: "Driver",
-    helper: "Transporter (Wayne)",
+    helper: "Transport provider",
   },
 ];
 
@@ -54,9 +54,9 @@ const senderProfile: Record<
   TransportRole,
   { id: string; name: string; role: string; avatarUrl: string }
 > = {
-  farmerA: { id: "farmer-a", name: "Dale", role: "Livestock owner", avatarUrl: "/avatars/dale.jpg" },
-  farmerB: { id: "farmer-b", name: "Brett", role: "Landowner", avatarUrl: "/avatars/brett.jpg" },
-  driver: { id: "driver-1", name: "Wayne", role: "Driver", avatarUrl: "/avatars/wayne.jpg" },
+  farmerA: { id: "farmer-a", name: "Livestock owner", role: "Livestock owner", avatarUrl: "/avatars/dale.jpg" },
+  farmerB: { id: "farmer-b", name: "Landowner", role: "Landowner", avatarUrl: "/avatars/brett.jpg" },
+  driver: { id: "driver-1", name: "Transport provider", role: "Driver", avatarUrl: "/avatars/wayne.jpg" },
 };
 
 export function TransportClient({
@@ -152,7 +152,7 @@ export function TransportClient({
   function setRole(next: TransportRole) {
     if (next === role) return;
     setRoleState(next);
-    flash(`Viewing as ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+    flash(`Role view changed to ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
   }
 
   const derivedTimeline: TransportTimelineEntry[] = useMemo(() => {
@@ -410,7 +410,7 @@ export function TransportClient({
           <div className="flex items-center gap-2 text-sage-deep">
             <Users className="h-5 w-5" aria-hidden />
             <h2 className="text-sm font-bold uppercase tracking-wide">
-              Viewing as
+              Role view
             </h2>
           </div>
           <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
@@ -486,7 +486,7 @@ export function TransportClient({
         }
         right={
           <ChatPanel
-            title="Farmer A, Farmer B and Driver"
+            title="Livestock owner, Landowner and Driver"
             messages={messages}
             onlineCount={3}
             sections={sectionsForChat}

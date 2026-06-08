@@ -157,7 +157,7 @@ const advanceLabels: Partial<
   Record<AgreementLifecycleState, { label: string; helper: string }>
 > = {
   Negotiating: {
-    label: "Send to Farmer B",
+    label: "Send to Landowner",
     helper: "Move the draft into negotiation.",
   },
   "Ready to finalise": {
@@ -679,7 +679,7 @@ function TransportTabContent({
               Transport pricing isn&apos;t visible to you.
             </p>
             <p className="mt-1 text-sm leading-relaxed text-bark/70">
-              The haulage rate sits between Farmer A and the driver. You see
+              The haulage rate sits between Livestock owner and the driver. You see
               pickup, delivery, and arrival timing - the commercial detail
               between the other two parties stays between them.
             </p>
@@ -763,7 +763,7 @@ function TransportPricingSummary({
         </p>
       )}
       <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-stone">
-        Proposed by {quote.proposedBy === "driver" ? "Driver" : "Farmer A"}{" "}
+        Proposed by {quote.proposedBy === "driver" ? "Driver" : "Livestock owner"}{" "}
         &middot; {quote.at}
       </p>
     </section>
@@ -853,7 +853,7 @@ function AgreementOverview({
             guidance={{
               title: "Agreement sections still need mutual sign-off",
               explanation:
-                "This caution means at least one section has not been agreed by both Dale and Brett.",
+                "This caution means at least one section has not been agreed by both parties.",
               tip: "Open the Terms tab, check the sections marked awaiting a party, then have that party tap their agree control once the wording is right.",
             }}
             onOpenGuidance={setGuidance}
@@ -981,7 +981,7 @@ const readinessGuidance: Record<string, AttentionGuidance> = {
     title: "Transport is not ready yet",
     explanation:
       "This caution means the stock movement is still provisional and the agreement is waiting on transport confirmation.",
-    tip: "Open the transport room, confirm pickup and delivery details with Wayne, then return here once the plan is confirmed.",
+    tip: "Open the transport room, confirm pickup and delivery details with the carrier, then return here once the plan is confirmed.",
     sectionId: "transport",
   },
 };
@@ -1178,7 +1178,7 @@ function SectionCard({
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
   const uploaderLabel =
-    viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
+    viewerParty === "A" ? "Livestock owner" : "Landowner";
 
   const alignment = getSectionAlignment(section, agreedByA, agreedByB);
 
@@ -1305,13 +1305,13 @@ function SectionCard({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <PartyAgreeButton
-            party="Farmer A"
+            party="Livestock owner"
             agreed={agreedByA}
             interactive={viewerParty === "A"}
             onClick={onToggleA}
           />
           <PartyAgreeButton
-            party="Farmer B"
+            party="Landowner"
             agreed={agreedByB}
             interactive={viewerParty === "B"}
             onClick={onToggleB}
@@ -1389,7 +1389,7 @@ function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
     label: artefact.label,
     kind: artefact.kind,
     description: artefact.description,
-    uploaderLabel: artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B",
+    uploaderLabel: artefact.uploadedBy === "farmerA" ? "Livestock owner" : "Landowner",
     sectionId: artefact.sectionId,
     recordDetails: artefactRecordDetails[artefact.id],
   };
@@ -1401,8 +1401,8 @@ function getSectionAlignment(
   agreedByB: boolean
 ): { label: "agreed" | "pending" | "needs attention"; tone: "success" | "warning" | "neutral" } {
   if (agreedByA && agreedByB) return { label: "agreed", tone: "success" };
-  const farmerAValue = section.detail.find((row) => row.label === "Farmer A value")?.value;
-  const farmerBValue = section.detail.find((row) => row.label === "Farmer B value")?.value;
+  const farmerAValue = section.detail.find((row) => row.label === "Livestock owner value")?.value;
+  const farmerBValue = section.detail.find((row) => row.label === "Landowner value")?.value;
   if (!farmerAValue || !farmerBValue) return { label: "pending", tone: "neutral" };
   if (farmerAValue.trim().toLowerCase() !== farmerBValue.trim().toLowerCase()) {
     return { label: "needs attention", tone: "warning" };
@@ -1423,7 +1423,7 @@ const artefactRecordDetails: Record<string, ViewableArtefact["recordDetails"]> =
       { label: "Vet / certifier", value: "Central West Large Animal Clinic" },
     ],
     notes:
-      "Record matches the Stock section and supports Dale's readiness checklist. Drenching note is attached to the same certificate pack.",
+      "Record matches the Stock section and supports the readiness checklist. Drenching note is attached to the same certificate pack.",
   },
   "art-nlis-doc": {
     title: "NLIS movement list - Mob DM-100",
@@ -1432,7 +1432,7 @@ const artefactRecordDetails: Record<string, ViewableArtefact["recordDetails"]> =
       { label: "Head count", value: "100 cattle" },
       { label: "PIC of origin", value: "NA123456" },
       { label: "Tag range", value: "982 000402100001 to 982 000402100100" },
-      { label: "Uploaded by", value: "Dale Morgan" },
+      { label: "Uploaded by", value: "Livestock owner" },
     ],
     notes:
       "The tag list is on file for the current movement and can be checked against the transport manifest before loading.",
@@ -1467,7 +1467,7 @@ function ArtefactStrip({
     : undefined;
 
   const uploaderLabel =
-    viewerParty === "A" ? "Farmer A (Dale)" : "Farmer B (Brett)";
+    viewerParty === "A" ? "Livestock owner" : "Landowner";
 
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
@@ -1555,7 +1555,7 @@ function ArtefactCard({
         ? MapIcon
         : FileText;
   const uploader =
-    artefact.uploadedBy === "farmerA" ? "Farmer A" : "Farmer B";
+    artefact.uploadedBy === "farmerA" ? "Livestock owner" : "Landowner";
 
   return (
     <button

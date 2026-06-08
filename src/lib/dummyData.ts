@@ -290,7 +290,7 @@ export type AgreementLifecycleEvent = {
   at: string;
   from: AgreementLifecycleState | null;
   to: AgreementLifecycleState;
-  byParty: "Farmer A" | "Farmer B" | "System";
+  byParty: "Livestock owner" | "Landowner" | "System";
   note?: string;
 };
 
@@ -384,8 +384,8 @@ export type TransportQuoteStatus =
  * A single price proposal in the transport pricing chain.
  *
  * Visibility: rows are visible only to the two commercial parties on the
- * transport job - Farmer A (livestock owner, pays) and the driver (paid).
- * Farmer B (landowner) never appears in the SELECT scope. This is the
+ * transport job - Livestock owner (livestock owner, pays) and the driver (paid).
+ * Landowner (landowner) never appears in the SELECT scope. This is the
  * landowner-visibility wall, mirror-image of the driver-visibility wall
  * that excludes drivers from the agreement rate.
  */
@@ -443,7 +443,7 @@ export type TransportJob = {
   sections: TransportSection[];
   artefacts: TransportArtefact[];
   timeline: TransportTimelineEntry[];
-  /** Commercial pricing chain. Visible to Farmer A and Driver only. */
+  /** Commercial pricing chain. Visible to Livestock owner and Driver only. */
   quotes: TransportQuote[];
   /** Pointer to the accepted quote in the chain, if any. */
   acceptedQuoteId?: string;
@@ -452,7 +452,7 @@ export type TransportJob = {
 export const farmers: Farmer[] = [
   {
     id: "farmer-a",
-    name: "Dale Morgan",
+    name: "Livestock Owner",
     role: "Livestock Owner",
     region: "Central West NSW",
     location: mapCoordinates.dale,
@@ -485,7 +485,7 @@ export const farmers: Farmer[] = [
   },
   {
     id: "farmer-tash",
-    name: "Tash Reilly",
+    name: "Horse Owner",
     role: "Livestock Owner",
     region: "Hunter NSW",
     location: mapCoordinates.tash,
@@ -517,7 +517,7 @@ export const farmers: Farmer[] = [
   },
   {
     id: "farmer-b",
-    name: "Brett Donnelly",
+    name: "Landowner",
     role: "Landowner",
     region: "Southern NSW",
     location: mapCoordinates.brett,
@@ -554,7 +554,7 @@ export const farmers: Farmer[] = [
   },
   {
     id: "farmer-lyn",
-    name: "Lyn Whitfield",
+    name: "Spare Paddock Owner",
     role: "Landowner",
     region: "Northern Tablelands NSW",
     location: mapCoordinates.lyn,
@@ -590,7 +590,7 @@ export const farmers: Farmer[] = [
   },
   {
     id: "driver-1",
-    name: "Wayne Hayes",
+    name: "Carrier",
     role: "Transport Provider",
     region: "Riverina NSW",
     location: mapCoordinates.wayne,
@@ -614,7 +614,7 @@ export const farmers: Farmer[] = [
         {
           rego: "WH B-D 01",
           config: "Kenworth K200 + B-double, double-deck",
-          driver: "Wayne Hayes",
+          driver: "Carrier",
         },
       ],
     },
@@ -635,13 +635,13 @@ export const farmers: Farmer[] = [
   },
   {
     id: "driver-2",
-    name: "Sharon Mackie",
+    name: "Fleet Carrier",
     role: "Transport Provider",
     region: "Goondiwindi QLD",
     location: mapCoordinates.sharon,
     verified: true,
     tagline: "Multi-truck family business, fleet utilisation is the game.",
-    bio: "12-truck operation, depot in Goondiwindi. Same app as Wayne - profile carries the difference (fleet, drivers, accreditations).",
+    bio: "12-truck operation, depot in Goondiwindi. Same app surface - profile carries the difference (fleet, drivers, accreditations).",
     mobileVerified: true,
     preparednessScore: 88,
     transport: {
@@ -681,11 +681,8 @@ export const farmers: Farmer[] = [
 ];
 
 /**
- * The three personas surfaced in the prototype's persona switcher.
- * Dale (livestock owner), Brett (landowner), Wayne (driver) - the trio whose
- * profile photos are wired up. Other seed farmers stay in `farmers` so
- * downstream data (Sharon's transport capacity rows, Lyn's listings, etc.)
- * still has people to attach to.
+ * Sample role records surfaced in the prototype shell. Named research
+ * archetypes stay out of the product UI so real accounts feel like real users.
  */
 export const featuredFarmers: Farmer[] = farmers.filter((farmer) =>
   ["farmer-a", "farmer-b", "driver-1"].includes(farmer.id)
@@ -828,7 +825,7 @@ export const agreements: Agreement[] = [
     fencing: "Secure",
     transportRequired: true,
     weeksRemaining: 12,
-    lastUpdate: "Brett updated feed and water details 18 minutes ago",
+    lastUpdate: "Landowner updated feed and water details 18 minutes ago",
     readinessChecklist: [
       { label: "NLIS tagged", complete: true },
       { label: "Vaccination records uploaded", complete: true },
@@ -839,10 +836,10 @@ export const agreements: Agreement[] = [
       {
         id: "parties",
         label: "Parties",
-        summary: "Dale Morgan and Brett Donnelly",
+        summary: "Livestock owner and landowner",
         detail: [
-          { label: "Livestock owner", value: "Dale Morgan, Central West NSW" },
-          { label: "Landowner", value: "Brett Donnelly, Southern NSW" },
+          { label: "Livestock owner", value: "Central West NSW" },
+          { label: "Landowner", value: "Southern NSW" },
         ],
         agreedByA: true,
         agreedByB: true,
@@ -903,11 +900,11 @@ export const agreements: Agreement[] = [
       {
         id: "transport",
         label: "Transport",
-        summary: "B-double pickup tentatively booked with Wayne Hayes",
+        summary: "B-double pickup tentatively booked with carrier",
         detail: [
-          { label: "Pickup", value: "Dale Morgan property, Central West" },
+          { label: "Pickup", value: "Central West property" },
           { label: "Destination", value: "Glenbarra River Paddocks" },
-          { label: "Operator", value: "Wayne Hayes (single B-double)" },
+          { label: "Operator", value: "Carrier (single B-double)" },
           { label: "Preferred date", value: "Friday 22 May" },
         ],
         agreedByA: true,
@@ -969,15 +966,15 @@ export const agreements: Agreement[] = [
         at: "Mon 12 May, 8:42 AM",
         from: null,
         to: "Draft",
-        byParty: "Farmer A",
+        byParty: "Livestock owner",
         note: "Request matched to Glenbarra River Paddocks.",
       },
       {
         at: "Mon 12 May, 4:11 PM",
         from: "Draft",
         to: "Negotiating",
-        byParty: "Farmer B",
-        note: "Brett opened the workspace and added paddock detail.",
+        byParty: "Landowner",
+        note: "Landowner opened the workspace and added paddock detail.",
       },
     ],
   },
@@ -988,7 +985,7 @@ export const workspaceMessages: Message[] = [
     id: "msg-1",
     threadId: "agreement-glenbarra",
     senderId: "farmer-a",
-    senderName: "Dale",
+    senderName: "Livestock owner",
     senderRole: "Livestock owner",
     body: "The cattle can be ready by next Friday. Are the yards suitable for a B-double pickup?",
     time: "9:12 AM",
@@ -998,7 +995,7 @@ export const workspaceMessages: Message[] = [
     id: "msg-2",
     threadId: "agreement-glenbarra",
     senderId: "farmer-b",
-    senderName: "Brett",
+    senderName: "Landowner",
     senderRole: "Landowner",
     body: "The main lane is fine. Wet-weather access is best from the north gate. I added that note to the agreement.",
     time: "9:19 AM",
@@ -1008,7 +1005,7 @@ export const workspaceMessages: Message[] = [
     id: "msg-3",
     threadId: "agreement-glenbarra",
     senderId: "farmer-a",
-    senderName: "Dale",
+    senderName: "Livestock owner",
     senderRole: "Livestock owner",
     body: "Good. I still want to talk through the weekly terms before we finalise.",
     time: "9:26 AM",
@@ -1023,7 +1020,7 @@ export const transportJobs: TransportJob[] = [
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
     driverId: "driver-1",
-    pickup: "Dale Morgan, Central West NSW",
+    pickup: "Central West property",
     destination: "Glenbarra River Paddocks, Southern NSW",
     pickupLocation: mapCoordinates.dale,
     destinationLocation: mapCoordinates.gundagai,
@@ -1032,7 +1029,7 @@ export const transportJobs: TransportJob[] = [
     destinationRegion: "Southern NSW",
     livestockCount: "100 cattle",
     preferredDate: "Friday 22 May",
-    driver: "Wayne Hayes",
+    driver: "Carrier",
     status: "accepted",
     routeSummary: "Central West to Gundagai via Wagga corridor",
     agreementContext: {
@@ -1044,14 +1041,14 @@ export const transportJobs: TransportJob[] = [
       {
         id: "pickup",
         label: "Pickup",
-        summary: "Dale Morgan property, Friday 22 May from 7 AM",
+        summary: "Central West property, Friday 22 May from 7 AM",
         status: "Confirmed",
         confirmations: { farmerA: true, farmerB: false, driver: true },
         detail: [
-          { label: "Property", value: "Dale Morgan, Central West NSW" },
+          { label: "Property", value: "Central West NSW" },
           { label: "Loading window", value: "Friday 22 May, from 7:00 AM" },
           { label: "Yards", value: "Loading race + head bail, B-double access" },
-          { label: "On-site contact", value: "Dale Morgan, 04xx xxx xxx" },
+          { label: "On-site contact", value: "Livestock owner, 04xx xxx xxx" },
         ],
       },
       {
@@ -1086,13 +1083,13 @@ export const transportJobs: TransportJob[] = [
       {
         id: "delivery",
         label: "Delivery",
-        summary: "Glenbarra North gate, Brett on site",
+        summary: "Glenbarra North gate, landowner on site",
         status: "Pending",
         confirmations: { farmerA: false, farmerB: true, driver: false },
         detail: [
           { label: "Property", value: "Glenbarra River Paddocks" },
           { label: "Gate", value: "North gate (B-double compatible)" },
-          { label: "On-site contact", value: "Brett Donnelly, 04xx xxx xxx" },
+          { label: "On-site contact", value: "Landowner, 04xx xxx xxx" },
           { label: "Wet weather", value: "Avoid creek crossing" },
         ],
       },
@@ -1153,17 +1150,17 @@ export const transportJobs: TransportJob[] = [
     timeline: [
       {
         title: "Job booked",
-        detail: "Wayne accepted the load on Tuesday.",
+        detail: "Carrier accepted the load on Tuesday.",
         complete: true,
       },
       {
         title: "Loading scheduled",
-        detail: "Friday 22 May, 7 AM at Dale's yards.",
+        detail: "Friday 22 May, 7 AM at the pickup yards.",
         complete: true,
       },
       {
         title: "In transit",
-        detail: "Departure pending confirmation from Brett at delivery gate.",
+        detail: "Departure pending confirmation from the landowner at delivery gate.",
         complete: false,
       },
       {
@@ -1201,7 +1198,7 @@ export const transportMessages: Message[] = [
     id: "transport-msg-1",
     threadId: "transport-glenbarra",
     senderId: "driver-1",
-    senderName: "Wayne",
+    senderName: "Carrier",
     senderRole: "Driver",
     body: "I can load Friday morning if yards are ready by 7 AM.",
     time: "10:03 AM",
@@ -1210,7 +1207,7 @@ export const transportMessages: Message[] = [
     id: "transport-msg-2",
     threadId: "transport-glenbarra",
     senderId: "farmer-a",
-    senderName: "Dale",
+    senderName: "Livestock owner",
     senderRole: "Livestock owner",
     body: "Works for us. I will have the first mob in the yards Thursday afternoon.",
     time: "10:08 AM",
@@ -1219,7 +1216,7 @@ export const transportMessages: Message[] = [
     id: "transport-msg-3",
     threadId: "transport-glenbarra",
     senderId: "farmer-b",
-    senderName: "Brett",
+    senderName: "Landowner",
     senderRole: "Landowner",
     body: "North gate is the best entry. Please avoid the creek crossing if it rains.",
     time: "10:14 AM",

@@ -3,14 +3,37 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 
-export default function LandownerHomePage() {
+export default async function LandownerHomePage() {
+  const currentUserProfile = await getCurrentUserProfile();
+  if (currentUserProfile) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Landowner home"
+          title="Your paddock inbox."
+          description="Live requests and listing activity will appear here once you publish paddocks."
+        />
+        <RealAccountEmptyState
+          title="No landowner activity yet."
+          body="List your first paddock so livestock owners can find available agistment."
+          primaryHref="/listings/new"
+          primaryLabel="List a paddock"
+          secondaryHref="/requests"
+          secondaryLabel="View requests"
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
         eyebrow="Landowner home"
-        title="Brett's paddock inbox."
+        title="Your paddock inbox."
         description="Manage listings, see incoming stock requests, and decide what needs a reply."
         action={<ButtonLink href="/listings/new">List another paddock</ButtonLink>}
       />
@@ -22,10 +45,10 @@ export default function LandownerHomePage() {
             <StatusBadge tone="info">Incoming request</StatusBadge>
           </div>
           <h2 className="text-2xl font-bold text-sage-deep">
-            Dale wants to agist 100 Angus at Glenbarra.
+            A livestock owner wants to agist 100 Angus at Glenbarra.
           </h2>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-bark/85">
-            Dale Morgan is looking for 3 months in Southern NSW. Rate and final
+            A livestock owner is looking for 3 months in Southern NSW. Rate and final
             terms still need attention before either side can lock it in.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -37,7 +60,7 @@ export default function LandownerHomePage() {
             href="/workspace/agreement-glenbarra?as=landowner"
             className="mt-5"
           >
-            Review Dale's request
+            Review request
             <ArrowRight className="h-4 w-4" aria-hidden />
           </ButtonLink>
         </Card>

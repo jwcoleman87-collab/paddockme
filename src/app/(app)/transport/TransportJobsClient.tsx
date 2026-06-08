@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -11,6 +12,7 @@ import {
   List,
   Map,
   MapPin,
+  PackageCheck,
   Route,
   Truck,
 } from "lucide-react";
@@ -28,18 +30,23 @@ import {
   updateTransportJobStatus,
 } from "@/lib/data/repositories";
 import { farmers, type Farmer, type TransportJob, type TransportJobStatus } from "@/lib/dummyData";
+import { feedRuns, type FeedRun } from "@/lib/feedRuns";
+import { coordinateForRegion, mapCoordinates, type Coordinate } from "@/lib/mapCoordinates";
 
 type Mode = "portal" | "jobs" | "calendar";
 type JobsView = "map" | "list" | "calendar";
+type WorkFilter = "all" | "livestock" | "feed";
 
 type JobsMapRoute = {
   id: string;
+  workType: "livestock" | "feed";
   status: "new" | "accepted" | "in_transit" | "completed";
   pickupTown: string;
   destinationTown: string;
   owner: string;
   livestock: string;
   headCount: string;
+  loadLabel: string;
   summary: string;
   distanceKm: number;
   driveTime: string;
@@ -50,19 +57,52 @@ type JobsMapRoute = {
   start: { x: number; y: number };
   end: { x: number; y: number };
   label: { x: number; y: number };
+  origin: RouteCoordinate;
+  destination: RouteCoordinate;
 };
 
-export function TransportJobsClient({ mode }: { mode: Mode }) {
+type RouteCoordinate = {
+  lat: number;
+  lng: number;
+  label: string;
+};
+
+const GOOGLE_MAPS_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+  "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
+
+const PADDOCKME_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f0ede7" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#e5dfd4" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6d6257" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9dce3" }] },
+  { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#3f3328" }] },
+];
+
+export function TransportJobsClient({
+  mode,
+  initialWorkFilter = "all",
+}: {
+  mode: Mode;
+  initialWorkFilter?: WorkFilter;
+}) {
   const router = useRouter();
   const flash = useFlash();
   const [jobs, setJobs] = useState<TransportJob[]>([]);
   const [view, setView] = useState<JobsView>("map");
+  const [workFilter, setWorkFilter] = useState<WorkFilter>(initialWorkFilter);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
   const [activeProfileId, setActiveProfileId] = useState<string>("farmer-a");
 
   useEffect(() => {
     void listTransportJobs().then(setJobs);
   }, []);
+
+  useEffect(() => {
+    setWorkFilter(initialWorkFilter);
+  }, [initialWorkFilter]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -115,7 +155,7 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
     selectPersona("driver-1");
     const { state } = await updateTransportJobStatus(job.id, "accepted");
     setJobs(state.transportJobs);
-    flash("Job accepted. It has been added to Wayne's calendar.", "success");
+    flash("RFT accepted. It has been added to your calendar.", "success");
     router.push(`/transport/${job.id}`);
   }
 
@@ -130,13 +170,20 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
     }
 
     return (
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <PortalCard
           icon={<Truck />}
-          title="Available jobs"
+          title="Open RFTs"
           value={`${available.length}`}
           href="/transport/jobs"
-          cta="Browse jobs"
+          cta="Open RFT map"
+        />
+        <PortalCard
+          icon={<PackageCheck />}
+          title="Feed runs"
+          value={`${feedRuns.length}`}
+          href="/transport/jobs?work=feed"
+          cta="See hay & silage"
         />
         <PortalCard
           icon={<CalendarDays />}
@@ -159,13 +206,28 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
   const list = mode === "jobs" ? available : accepted;
 
   const mapRoutes = useMemo(() => buildJobsMapRoutes(jobs), [jobs]);
-  const activeRoute = mapRoutes.find((route) => route.id === activeRouteId) ?? mapRoutes[0];
+  const filteredMapRoutes = useMemo(
+    () =>
+      mapRoutes.filter((route) =>
+        workFilter === "all" ? true : route.workType === workFilter
+      ),
+    [mapRoutes, workFilter]
+  );
+  const activeRoute =
+    filteredMapRoutes.find((route) => route.id === activeRouteId) ??
+    filteredMapRoutes[0];
 
   if (mode === "jobs" && view === "map") {
     return (
       <JobsMapView
-        routes={mapRoutes}
+        routes={filteredMapRoutes}
+        allRoutes={mapRoutes}
         activeId={activeRoute?.id ?? null}
+        workFilter={workFilter}
+        onWorkFilterChange={(nextFilter) => {
+          setWorkFilter(nextFilter);
+          setActiveRouteId(null);
+        }}
         onSelect={setActiveRouteId}
         onOpen={(route) => router.push(route.href)}
         onShowList={() => setView("list")}
@@ -181,15 +243,15 @@ export function TransportJobsClient({ mode }: { mode: Mode }) {
           {mode === "jobs" ? <Truck className="h-6 w-6" /> : <CalendarDays className="h-6 w-6" />}
         </div>
         <h2 className="text-lg font-bold text-sage-deep">
-          {mode === "jobs" ? "No available transport jobs." : "No accepted jobs yet."}
+          {mode === "jobs" ? "No open transport RFTs." : "No accepted jobs yet."}
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
           {mode === "jobs"
-            ? "Request transport from an agreement workspace to create a job Wayne can accept."
-            : "Accepted jobs appear here after Wayne accepts them from the job board."}
+            ? "Farmers create RFTs from an agreement workspace once the route and stock details are known."
+            : "Accepted jobs appear here after you accept them from the job board."}
         </p>
         <ButtonLink href={mode === "jobs" ? "/agreements" : "/transport/jobs"} className="mt-4 inline-flex">
-          {mode === "jobs" ? "Open agreements" : "Browse jobs"}
+          {mode === "jobs" ? "Open agreements" : "Browse RFTs"}
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
       </Card>
@@ -308,7 +370,7 @@ function FarmerTransportPortal({
           <InfoTile label="Livestock" value={latestJob.livestockCount} />
         </div>
         <ButtonLink href="/transport/available" variant="secondary" className="mt-5">
-          Browse transport capacity
+          View carrier capacity
         </ButtonLink>
       </Card>
     </div>
@@ -317,14 +379,20 @@ function FarmerTransportPortal({
 
 function JobsMapView({
   routes,
+  allRoutes,
   activeId,
+  workFilter,
+  onWorkFilterChange,
   onSelect,
   onOpen,
   onShowList,
   onShowCalendar,
 }: {
   routes: JobsMapRoute[];
+  allRoutes: JobsMapRoute[];
   activeId: string | null;
+  workFilter: WorkFilter;
+  onWorkFilterChange: (filter: WorkFilter) => void;
   onSelect: (id: string) => void;
   onOpen: (route: JobsMapRoute) => void;
   onShowList: () => void;
@@ -339,16 +407,41 @@ function JobsMapView({
     }),
     { jobs: 0, fee: 0, distance: 0, minutes: 0 }
   );
+  const livestockCount = allRoutes.filter((route) => route.workType === "livestock").length;
+  const feedCount = allRoutes.filter((route) => route.workType === "feed").length;
+
   return (
     <section className="overflow-hidden rounded-[8px] border border-mist bg-warm-white shadow-sm shadow-bark/5">
       <div className="grid min-h-[74dvh] lg:grid-cols-[22rem_minmax(0,1fr)]">
         <aside className="border-b border-mist bg-cream p-4 lg:border-b-0 lg:border-r">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-bark">Jobs Map</h2>
-              <p className="mt-1 text-sm text-stone">View and manage Wayne's transport jobs.</p>
+              <h2 className="text-2xl font-bold text-bark">RFT Route Map</h2>
+              <p className="mt-1 text-sm text-stone">
+                Livestock plus feed freight for hay and silage.
+              </p>
             </div>
             <Truck className="h-6 w-6 text-sage-deep" aria-hidden />
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-1 rounded-[8px] border border-mist bg-warm-white p-1">
+            <WorkFilterButton
+              active={workFilter === "all"}
+              label="All"
+              count={allRoutes.length}
+              onClick={() => onWorkFilterChange("all")}
+            />
+            <WorkFilterButton
+              active={workFilter === "livestock"}
+              label="Stock"
+              count={livestockCount}
+              onClick={() => onWorkFilterChange("livestock")}
+            />
+            <WorkFilterButton
+              active={workFilter === "feed"}
+              label="Feed"
+              count={feedCount}
+              onClick={() => onWorkFilterChange("feed")}
+            />
           </div>
           <div className="mt-4 grid grid-cols-3 rounded-[8px] border border-mist bg-warm-white p-1">
             <button type="button" className="min-h-10 rounded-[8px] bg-sage-deep text-sm font-bold text-white">
@@ -362,7 +455,9 @@ function JobsMapView({
             </button>
           </div>
           <div className="mt-5 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-bark">Jobs</h3>
+            <h3 className="text-lg font-bold text-bark">
+              {workFilter === "feed" ? "Feed runs" : "RFTs"}
+            </h3>
             <span className="rounded-full bg-sage-mist px-2.5 py-1 text-xs font-bold text-sage-deep">
               {routes.length}
             </span>
@@ -382,6 +477,9 @@ function JobsMapView({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
+                      <p className="mb-1 text-[0.68rem] font-bold uppercase tracking-wide text-stone">
+                        {route.workType === "feed" ? "Feed run" : "Livestock RFT"}
+                      </p>
                       <StatusPill status={route.status} />
                       <p className="mt-2 text-base font-bold text-bark">{route.destinationTown}</p>
                       <p className="text-xs text-stone">{route.owner}</p>
@@ -393,7 +491,7 @@ function JobsMapView({
                       <MapPin className="h-3.5 w-3.5" aria-hidden />
                       {route.pickupTown} to {route.destinationTown}
                     </span>
-                    <span>{route.headCount} {route.livestock}</span>
+                    <span>{route.loadLabel}</span>
                     <span>{route.summary}</span>
                     <span>{route.distanceKm} km, {route.driveTime}, {route.month}</span>
                   </div>
@@ -403,7 +501,7 @@ function JobsMapView({
                   onClick={() => onOpen(route)}
                   className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-sage-deep px-3 text-sm font-bold text-white transition hover:bg-sage"
                 >
-                  View job
+                  {route.workType === "feed" ? "View feed run" : "View RFT"}
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </button>
               </div>
@@ -412,9 +510,9 @@ function JobsMapView({
         </aside>
         <div className="relative min-h-[38rem] overflow-hidden bg-[#eef3e8]">
           <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2">
-            <MapFilter label="All jobs" />
+            <MapFilter label={workFilter === "feed" ? "Feed runs" : workFilter === "livestock" ? "Livestock RFTs" : "All work"} />
             <MapFilter label="All statuses" />
-            <MapFilter label="Show completed" />
+            <MapFilter label="Hay & silage visible" />
           </div>
           <button
             type="button"
@@ -423,9 +521,9 @@ function JobsMapView({
             <MapPin className="h-4 w-4" aria-hidden />
             Re-centre
           </button>
-          <JobsRouteCanvas routes={routes} activeId={activeId} onSelect={onSelect} onOpen={onOpen} />
+          <GoogleJobsMap routes={routes} activeId={activeId} onSelect={onSelect} onOpen={onOpen} />
           <div className="absolute inset-x-3 bottom-3 z-10 grid gap-3 rounded-[8px] border border-mist bg-warm-white/95 p-4 shadow-lg shadow-bark/10 backdrop-blur sm:grid-cols-4">
-            <SummaryTile icon={<List />} value={String(totals.jobs)} label="Total jobs" />
+            <SummaryTile icon={<List />} value={String(totals.jobs)} label={workFilter === "feed" ? "Feed runs" : "Total jobs"} />
             <SummaryTile icon={<CircleDollarSign />} value={`$${totals.fee.toLocaleString()}`} label="Total earnings" />
             <SummaryTile icon={<Route />} value={`${totals.distance} km`} label="Total distance" />
             <SummaryTile icon={<Clock3 />} value={minutesToDriveTime(totals.minutes)} label="Total drive time" />
@@ -553,6 +651,39 @@ function JobsRouteCanvas({
   );
 }
 
+function WorkFilterButton({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-10 items-center justify-center gap-1 rounded-[8px] px-2 text-sm font-bold transition ${
+        active
+          ? "bg-sage-deep text-white"
+          : "text-sage-deep hover:bg-sage-mist"
+      }`}
+    >
+      {label}
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[0.65rem] ${
+          active ? "bg-white/18 text-white" : "bg-sage-mist text-sage-deep"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
 function MapFilter({ label }: { label: string }) {
   return (
     <button type="button" className="inline-flex min-h-11 items-center rounded-[8px] border border-mist bg-warm-white/95 px-4 text-sm font-bold text-bark shadow-sm">
@@ -575,17 +706,236 @@ function SummaryTile({ icon, value, label }: { icon: React.ReactNode; value: str
   );
 }
 
+function GoogleJobsMap({
+  routes,
+  activeId,
+  onSelect,
+  onOpen,
+}: {
+  routes: JobsMapRoute[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onOpen: (route: JobsMapRoute) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const polylinesRef = useRef<globalThis.Map<string, google.maps.Polyline>>(new globalThis.Map());
+  const markersRef = useRef<globalThis.Map<string, google.maps.Marker[]>>(new globalThis.Map());
+  const infoRef = useRef<google.maps.InfoWindow | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!GOOGLE_MAPS_KEY || !containerRef.current || mapRef.current) return;
+    let cancelled = false;
+    setOptions({ key: GOOGLE_MAPS_KEY, v: "weekly" });
+
+    const timeout = window.setTimeout(() => {
+      if (!mapRef.current && !cancelled) {
+        setMapError("Google Maps timed out. Showing route fallback.");
+      }
+    }, 6000);
+
+    Promise.all([importLibrary("maps")])
+      .then(([mapsLibrary]) => {
+        if (cancelled || !containerRef.current) return;
+        const { Map: GoogleMap } = mapsLibrary as google.maps.MapsLibrary;
+        const map = new GoogleMap(containerRef.current, {
+          center: { lat: -35.2, lng: 149.35 },
+          zoom: 8,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          clickableIcons: false,
+          styles: PADDOCKME_MAP_STYLE,
+        });
+        mapRef.current = map;
+        infoRef.current = new google.maps.InfoWindow();
+        setMapReady(true);
+        setMapError(null);
+      })
+      .catch((error) => {
+        setMapError(error instanceof Error ? error.message : "Google Maps failed to load.");
+      })
+      .finally(() => window.clearTimeout(timeout));
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    for (const polyline of polylinesRef.current.values()) {
+      polyline.setMap(null);
+    }
+    for (const markers of markersRef.current.values()) {
+      markers.forEach((marker) => marker.setMap(null));
+    }
+    polylinesRef.current.clear();
+    markersRef.current.clear();
+
+    const bounds = new google.maps.LatLngBounds();
+
+    routes.forEach((route) => {
+      const colour = statusColour(route.status);
+      const isActive = route.id === activeId;
+      const path = [
+        { lat: route.origin.lat, lng: route.origin.lng },
+        midpointForRoute(route),
+        { lat: route.destination.lat, lng: route.destination.lng },
+      ];
+
+      path.forEach((point) => bounds.extend(point));
+
+      const polyline = new google.maps.Polyline({
+        path,
+        map,
+        geodesic: true,
+        strokeColor: colour.main,
+        strokeOpacity: isActive ? 0.96 : 0.72,
+        strokeWeight: isActive ? 6 : 4,
+        zIndex: isActive ? 20 : 10,
+      });
+      polyline.addListener("click", () => {
+        onSelect(route.id);
+        openRouteInfo(route, map, infoRef.current, onOpen);
+      });
+      polylinesRef.current.set(route.id, polyline);
+
+      const pickupMarker = new google.maps.Marker({
+        position: route.origin,
+        map,
+        label: { text: "A", color: "#ffffff", fontWeight: "700" },
+        title: `Pickup: ${route.pickupTown}`,
+        icon: markerIcon("#2f5d39"),
+        zIndex: isActive ? 25 : 12,
+      });
+      const destinationMarker = new google.maps.Marker({
+        position: route.destination,
+        map,
+        label: { text: "B", color: "#ffffff", fontWeight: "700" },
+        title: `Destination: ${route.destinationTown}`,
+        icon: markerIcon(colour.main),
+        zIndex: isActive ? 26 : 13,
+      });
+      [pickupMarker, destinationMarker].forEach((marker) => {
+        marker.addListener("click", () => {
+          onSelect(route.id);
+          openRouteInfo(route, map, infoRef.current, onOpen);
+        });
+      });
+      markersRef.current.set(route.id, [pickupMarker, destinationMarker]);
+    });
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, 72);
+    }
+  }, [activeId, mapReady, onOpen, onSelect, routes]);
+
+  useEffect(() => {
+    const activeRoute = routes.find((route) => route.id === activeId);
+    if (!activeRoute || !mapRef.current || !infoRef.current) return;
+    openRouteInfo(activeRoute, mapRef.current, infoRef.current, onOpen);
+  }, [activeId, onOpen, routes]);
+
+  if (!GOOGLE_MAPS_KEY || mapError) {
+    return (
+      <>
+        <JobsRouteCanvas routes={routes} activeId={activeId} onSelect={onSelect} onOpen={onOpen} />
+        <div className="absolute left-4 bottom-[7.25rem] z-20 rounded-[8px] border border-amber/25 bg-amber-light px-3 py-2 text-xs font-bold text-amber shadow-sm">
+          Google Maps unavailable, showing fallback routes.
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0">
+      <div ref={containerRef} className="h-full w-full" aria-label="Google map of transport RFT routes" />
+      {!mapReady && (
+        <div className="absolute inset-0 grid place-items-center bg-[#eef3e8] text-sm font-bold text-sage-deep">
+          Loading Google Maps...
+        </div>
+      )}
+    </div>
+  );
+}
+
+function openRouteInfo(
+  route: JobsMapRoute,
+  map: google.maps.Map,
+  info: google.maps.InfoWindow | null,
+  onOpen: (route: JobsMapRoute) => void
+) {
+  if (!info) return;
+  const colour = statusColour(route.status);
+  const content = document.createElement("div");
+  content.className = "min-w-[11rem] max-w-[15rem] text-bark";
+  content.innerHTML = `
+    <div style="font-family: inherit;">
+      <p style="margin:0;font-weight:800;color:#2f5d39;">${escapeHtml(route.destinationTown)}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#6d6257;">${escapeHtml(route.id)} · ${route.distanceKm} km · ${escapeHtml(route.driveTime)}</p>
+      <p style="margin:6px 0 0;font-size:12px;font-weight:700;color:#3f3328;">${escapeHtml(route.loadLabel)}</p>
+      <p style="margin:6px 0 0;font-size:12px;color:#3f3328;">${escapeHtml(route.pickupTown)} to ${escapeHtml(route.destinationTown)}</p>
+      <button type="button" style="margin-top:10px;min-height:34px;border:0;border-radius:8px;background:#2f5d39;color:#fff;font-weight:800;padding:0 12px;cursor:pointer;">${route.workType === "feed" ? "View feed run" : "View RFT"}</button>
+      <span style="display:inline-block;margin-left:6px;border-radius:6px;background:${colour.badge};color:${colour.text};font-size:11px;font-weight:800;padding:5px 7px;text-transform:uppercase;">${escapeHtml(statusLabel(route.status))}</span>
+    </div>
+  `;
+  content.querySelector("button")?.addEventListener("click", () => onOpen(route));
+  info.setContent(content);
+  info.setPosition({
+    lat: route.destination.lat,
+    lng: route.destination.lng,
+  });
+  info.open({ map });
+}
+
+function midpointForRoute(route: JobsMapRoute): google.maps.LatLngLiteral {
+  const offset = route.status === "new" ? 0.08 : route.status === "in_transit" ? -0.08 : 0.04;
+  return {
+    lat: (route.origin.lat + route.destination.lat) / 2 + offset,
+    lng: (route.origin.lng + route.destination.lng) / 2,
+  };
+}
+
+function markerIcon(colour: string): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: colour,
+    fillOpacity: 1,
+    strokeColor: "#fdfcf9",
+    strokeWeight: 2,
+    scale: 12,
+  };
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function StatusPill({ status, compact = false }: { status: JobsMapRoute["status"]; compact?: boolean }) {
-  const label = status === "in_transit" ? "In transit" : status;
   const colour = statusColour(status);
   return (
     <span
       className={`mt-2 inline-flex rounded-[6px] px-2 py-1 text-[0.68rem] font-bold uppercase ${compact ? "" : ""}`}
       style={{ backgroundColor: colour.badge, color: colour.text }}
     >
-      {label}
+      {statusLabel(status)}
     </span>
   );
+}
+
+function statusLabel(status: JobsMapRoute["status"]) {
+  return status === "in_transit" ? "In transit" : status;
 }
 
 function TransportJobCard({
@@ -616,7 +966,7 @@ function TransportJobCard({
       </div>
       {mode === "jobs" ? (
         <Button type="button" onClick={onAccept} className="mt-auto">
-          Accept job
+          Accept RFT
           <ArrowRight className="h-4 w-4" aria-hidden />
         </Button>
       ) : (
@@ -640,14 +990,17 @@ function buildJobsMapRoutes(jobs: TransportJob[]): JobsMapRoute[] {
   const liveRoutes = jobs.map((job, index) => routeFromTransportJob(job, index));
   const demoRoutes: JobsMapRoute[] = [
     ...liveRoutes,
+    ...feedRuns.map(feedRunToRoute),
     {
       id: "REQ-2505",
+      workType: "livestock",
       status: "new",
       pickupTown: "Collector",
       destinationTown: "Braidwood",
-      owner: "Dale (Owner)",
+      owner: "Livestock owner",
       livestock: "Merino ewes",
       headCount: "120",
+      loadLabel: "120 Merino ewes",
       summary: "Collector to Braidwood via Tarago Road",
       distanceKm: 18,
       driveTime: "1h 10m",
@@ -658,15 +1011,19 @@ function buildJobsMapRoutes(jobs: TransportJob[]): JobsMapRoute[] {
       start: { x: 14, y: 72 },
       end: { x: 51, y: 55 },
       label: { x: 36, y: 48 },
+      origin: townCoordinate("Collector"),
+      destination: townCoordinate("Braidwood"),
     },
     {
       id: "JOB-2503",
+      workType: "livestock",
       status: "in_transit",
       pickupTown: "Braidwood",
       destinationTown: "Captains Flat",
-      owner: "Dale (Owner)",
+      owner: "Livestock owner",
       livestock: "Hereford heifers",
       headCount: "60",
+      loadLabel: "60 Hereford heifers",
       summary: "Braidwood to Captains Flat ridge run",
       distanceKm: 42,
       driveTime: "2h 20m",
@@ -677,15 +1034,19 @@ function buildJobsMapRoutes(jobs: TransportJob[]): JobsMapRoute[] {
       start: { x: 51, y: 55 },
       end: { x: 88, y: 50 },
       label: { x: 78, y: 59 },
+      origin: townCoordinate("Braidwood"),
+      destination: townCoordinate("Captains Flat"),
     },
     {
       id: "JOB-2502",
+      workType: "livestock",
       status: "completed",
       pickupTown: "Bungendore",
       destinationTown: "Araluen",
-      owner: "Brett (Landowner)",
+      owner: "Landowner",
       livestock: "Merino ewes",
       headCount: "100",
+      loadLabel: "100 Merino ewes",
       summary: "Bungendore to Araluen south road",
       distanceKm: 55,
       driveTime: "2h 30m",
@@ -696,9 +1057,11 @@ function buildJobsMapRoutes(jobs: TransportJob[]): JobsMapRoute[] {
       start: { x: 60, y: 22 },
       end: { x: 69, y: 87 },
       label: { x: 72, y: 78 },
+      origin: townCoordinate("Bungendore"),
+      destination: townCoordinate("Araluen"),
     },
   ];
-  return demoRoutes.slice(0, 5);
+  return demoRoutes.slice(0, 8);
 }
 
 function routeFromTransportJob(job: TransportJob, index: number): JobsMapRoute {
@@ -707,12 +1070,14 @@ function routeFromTransportJob(job: TransportJob, index: number): JobsMapRoute {
   const fee = job.quotes?.[0]?.amount ? Math.round(job.quotes[0].amount * Number.parseInt(job.livestockCount, 10)) : 450 + index * 80;
   return {
     id: index === 0 ? "JOB-2504" : job.id,
+    workType: "livestock",
     status,
     pickupTown: townFromPlace(job.pickup, job.pickupRegion),
     destinationTown: townFromPlace(job.destination, job.destinationRegion),
-    owner: "Brett (Landowner)",
+    owner: "Landowner",
     livestock: job.livestockCount.replace(/^\d+\s*/, ""),
     headCount: String(Number.parseInt(job.livestockCount, 10) || 100),
+    loadLabel: job.livestockCount,
     summary: job.routeSummary,
     distanceKm: distance,
     driveTime: "1h 45m",
@@ -723,12 +1088,66 @@ function routeFromTransportJob(job: TransportJob, index: number): JobsMapRoute {
     start: { x: 47, y: 55 },
     end: { x: 60, y: 22 },
     label: { x: 64, y: 23 },
+    origin: routeCoordinateFrom(
+      job.pickupLocation ?? coordinateForRegion(job.pickupRegion) ?? mapCoordinates.dale,
+      townFromPlace(job.pickup, job.pickupRegion)
+    ),
+    destination: routeCoordinateFrom(
+      job.destinationLocation ?? coordinateForRegion(job.destinationRegion) ?? mapCoordinates.gundagai,
+      townFromPlace(job.destination, job.destinationRegion)
+    ),
+  };
+}
+
+function feedRunToRoute(run: FeedRun): JobsMapRoute {
+  return {
+    id: run.id,
+    workType: "feed",
+    status: run.status,
+    pickupTown: run.pickupTown,
+    destinationTown: run.destinationTown,
+    owner: run.owner,
+    livestock: run.commodity,
+    headCount: run.load,
+    loadLabel: `${run.commodity}: ${run.load}`,
+    summary: run.summary,
+    distanceKm: run.distanceKm,
+    driveTime: run.driveTime,
+    fee: run.fee,
+    month: run.month,
+    href: run.href,
+    path: "M35 72 C44 62 50 54 58 45 C64 38 72 35 82 31",
+    start: { x: 35, y: 72 },
+    end: { x: 82, y: 31 },
+    label: { x: 62, y: 38 },
+    origin: run.origin,
+    destination: run.destination,
+  };
+}
+
+function townCoordinate(town: string): RouteCoordinate {
+  const coordinates: Record<string, RouteCoordinate> = {
+    Araluen: { lat: -35.645, lng: 149.816, label: "Araluen" },
+    Braidwood: { lat: -35.441, lng: 149.799, label: "Braidwood" },
+    Bungendore: { lat: -35.254, lng: 149.441, label: "Bungendore" },
+    "Captains Flat": { lat: -35.590, lng: 149.445, label: "Captains Flat" },
+    Collector: { lat: -34.917, lng: 149.429, label: "Collector" },
+    Tarago: { lat: -35.069, lng: 149.652, label: "Tarago" },
+  };
+  return coordinates[town] ?? routeCoordinateFrom(mapCoordinates.gundagai, town);
+}
+
+function routeCoordinateFrom(coordinate: Coordinate, label: string): RouteCoordinate {
+  return {
+    lat: coordinate.latitude,
+    lng: coordinate.longitude,
+    label,
   };
 }
 
 function townFromPlace(place: string, region?: string) {
   if (place.includes("Glenbarra")) return "Bungendore";
-  if (place.includes("Dale")) return "Tarago";
+  if (place.includes("Livestock owner")) return "Tarago";
   return region?.replace(" NSW", "") ?? place.split(",")[0] ?? "Route";
 }
 

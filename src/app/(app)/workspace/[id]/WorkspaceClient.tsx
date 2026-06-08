@@ -37,16 +37,16 @@ const partyProfile: Record<
 > = {
   A: {
     id: "farmer-a",
-    name: "Dale",
+    name: "Livestock owner",
     role: "Livestock owner",
-    label: "Farmer A (Dale)",
+    label: "Livestock owner",
     avatarUrl: "/avatars/dale.jpg",
   },
   B: {
     id: "farmer-b",
-    name: "Brett",
+    name: "Landowner",
     role: "Landowner",
-    label: "Farmer B (Brett)",
+    label: "Landowner",
     avatarUrl: "/avatars/brett.jpg",
   },
 };
@@ -88,7 +88,7 @@ export function WorkspaceClient({
     : undefined;
 
   // Read-through of the transport room's live state from localStorage so the
-  // Transport tab in the workspace reflects whatever Farmer A / Driver have
+  // Transport tab in the workspace reflects whatever Livestock owner / Driver have
   // confirmed and negotiated in the room. One-way: the workspace doesn't
   // write transport state, the transport room does.
   const [transportConfirmations, setTransportConfirmations] = useState<
@@ -170,7 +170,7 @@ export function WorkspaceClient({
     } catch {
       // ignore
     }
-    flash(`Viewing as ${partyProfile[next].label}.`, "info");
+    flash(`Role view changed to ${partyProfile[next].label}.`, "info");
   }
 
   function sendMessage(body: string) {
@@ -329,7 +329,7 @@ export function WorkspaceClient({
   };
 
   const advanceLifecycle = (to: AgreementLifecycleState) => {
-    const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
+    const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
     setLifecycleState(to);
     setLifecycleHistory((history) => [
@@ -373,7 +373,7 @@ export function WorkspaceClient({
   };
 
   const cancelLifecycle = () => {
-    const byParty = viewerParty === "A" ? "Farmer A" : "Farmer B";
+    const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
     if (from === "Cancelled" || from === "Completed") return;
     setLifecycleState("Cancelled");
@@ -458,7 +458,7 @@ export function WorkspaceClient({
           <div className="flex items-center gap-2 text-sage-deep">
             <Users className="h-5 w-5" aria-hidden />
             <h2 className="text-sm font-bold uppercase tracking-wide">
-              Viewing as
+              Role view
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -549,7 +549,7 @@ export function WorkspaceClient({
         }
         right={
           <ChatPanel
-            title="Farmer A and Farmer B"
+            title="Livestock owner and Landowner"
             messages={messages}
             onlineCount={2}
             sections={agreement.sections}

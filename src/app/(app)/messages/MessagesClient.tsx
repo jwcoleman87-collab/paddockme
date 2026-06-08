@@ -42,8 +42,7 @@ type Props = {
 
 /**
  * Per-persona messaging inbox. Aggregates the latest message from every
- * agreement workspace and transport room the active persona is part of, so
- * Dale doesn't have to remember which room a reply landed in.
+ * agreement workspace and transport room the active user is part of.
  *
  * Merges localStorage-stored messages over the seed list so the inbox reflects
  * anything the user has typed in the prototype since their last refresh.
@@ -218,9 +217,9 @@ export function MessagesClient({
   return (
     <>
       <p className="mb-4 text-sm font-medium text-bark/75">
-        Viewing as{" "}
+        Role context{" "}
         <span className="font-bold text-sage-deep">{persona.name.split(" ")[0]}</span>
-        . Switch personas in the home view to see other inboxes.
+        .
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {threads.map((thread) => (
@@ -320,12 +319,12 @@ function EmptyState({
       </div>
       <h2 className="text-lg font-bold text-sage-deep">
         {reason === "no-persona"
-          ? "Pick a persona to see their inbox."
+          ? "No account context found."
           : `${personaName?.split(" ")[0] ?? "You"} have no conversations yet.`}
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
         {reason === "no-persona"
-          ? "Head back to the home view and switch to Dale, Brett, or Wayne."
+          ? "Head back to your work overview."
           : "Workspace and transport-room threads land here once they get going."}
       </p>
     </Card>
