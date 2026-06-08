@@ -705,7 +705,14 @@ async function persistProfileToSupabase(state: State): Promise<void> {
 
 function stepIsComplete(step: number, state: State): boolean {
   if (step === 0) return state.role !== null;
-  if (step === 1) return state.region !== null && state.region !== "Other";
+  // For known regions (from the pill list) the value is non-empty. For the
+  // "Other" path the value is whatever the user typed - require at least
+  // two trimmed characters so an empty string can't slip through after they
+  // delete what they typed.
+  if (step === 1) {
+    if (state.region === null || state.region === "Other") return false;
+    return state.region.trim().length > 1;
+  }
   if (step === 2) {
     if (state.role === "livestock") {
       return state.stockTypes.length > 0 && state.headCountBracket !== null;
