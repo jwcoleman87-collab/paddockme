@@ -139,6 +139,10 @@ export function ProfileClient({
 
   if (!farmer) return null;
 
+  if (currentUserProfile) {
+    return <SupabaseProfileSummary profile={currentUserProfile} />;
+  }
+
   const RoleIcon = roleIcon[farmer.role];
   const showPublicView = isTransportProvider && transportViewMode === "public";
   const showDriverDashboard =

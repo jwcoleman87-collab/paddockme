@@ -1,55 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sprout, Truck } from "lucide-react";
+import { ArrowRight, LogIn, Sprout, Truck } from "lucide-react";
 
-// Each landing action doubles as a "Start as..." persona picker. Clicking a
-// tile writes the matching persona id to the same localStorage keys the rest
-// of the app reads from, then dispatches the persona-change event so any
-// already-mounted client component (header avatar, intro banner) refreshes
-// without waiting for a remount.
 const homeActions = [
   {
     href: "/request/new",
     label: "Need agistment",
     description: "Place livestock",
     icon: ArrowRight,
-    personaId: "farmer-a", // Dale Morgan - Livestock Owner
   },
   {
     href: "/listings/new",
     label: "Have Agistment",
     description: "List paddocks",
     icon: Sprout,
-    personaId: "farmer-b", // Brett Donnelly - Landowner
   },
   {
-    href: "/transport/available",
+    href: "/transport/jobs",
     label: "Need Transport",
     description: "Find a run",
     icon: Truck,
-    personaId: "driver-1", // Wayne Hayes - Transport Provider
   },
 ];
-
-function selectPersona(personaId: string) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem("paddockme.profile.persona", personaId);
-    window.localStorage.setItem("paddockme.agreements.persona", personaId);
-    window.dispatchEvent(new Event("paddockme:persona-change"));
-  } catch {
-    // private mode / quota exceeded - the destination page will fall back to
-    // route-based persona detection in AppShellHeaderUser.
-  }
-}
 
 export default function HomePage() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-warm-white pb-28 text-bark">
-      <header className="mx-auto flex max-w-7xl items-center px-5 py-5 md:px-8">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 md:px-8">
         <Link href="/" className="font-display text-2xl text-sage-deep">
           PaddockME
+        </Link>
+        <Link
+          href="/sign-in"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-red-700/30 bg-red-50 px-3.5 text-sm font-bold text-red-700 shadow-sm shadow-bark/5 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+          aria-label="Log in to your PaddockME account"
+        >
+          <LogIn className="h-4 w-4" aria-hidden />
+          Log in
         </Link>
       </header>
 
@@ -73,11 +61,10 @@ export default function HomePage() {
         className="fixed inset-x-0 bottom-6 z-40 px-3 sm:bottom-8"
       >
         <div className="mx-auto grid max-w-[24rem] grid-cols-3 gap-2 rounded-[1.75rem] border border-mist/90 bg-warm-white/95 p-2 shadow-[0_18px_45px_rgba(44,80,48,0.16)] backdrop-blur sm:max-w-4xl">
-          {homeActions.map(({ href, label, description, icon: Icon, personaId }) => (
+          {homeActions.map(({ href, label, description, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              onClick={() => selectPersona(personaId)}
               className="flex min-h-[4.35rem] min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-2 text-center text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:min-h-[4.75rem]"
             >
               <Icon className="h-5 w-5" aria-hidden />

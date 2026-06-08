@@ -7,6 +7,7 @@ import {
   transportJobs,
   type Farmer,
 } from "@/lib/dummyData";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { AgreementsClient } from "./AgreementsClient";
 
 type SearchParams = {
@@ -26,6 +27,7 @@ export default async function AgreementsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const currentUserProfile = await getCurrentUserProfile();
   const showOnboardingWelcome = params.onboarded === "true";
   const hintedRole = params.role
     ? roleToProfileRole[params.role]
@@ -49,6 +51,7 @@ export default async function AgreementsPage({
         agreements={agreements}
         transportJobs={transportJobs}
         listings={paddockListings}
+        currentUserProfile={currentUserProfile}
         showOnboardingWelcome={showOnboardingWelcome}
         initialFarmerId={initialFarmerId}
       />

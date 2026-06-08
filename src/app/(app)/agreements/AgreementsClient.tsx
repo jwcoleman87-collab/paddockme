@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import { ActivityFeed } from "./ActivityFeed";
 import { WhatNeedsYou } from "./WhatNeedsYou";
-import { Avatar } from "@/components/Avatar";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
+import type { CurrentUserProfile } from "@/lib/supabase/currentUser";
 import type {
   Agreement,
   AgreementLifecycleState,
@@ -54,6 +54,7 @@ export function AgreementsClient({
   agreements,
   transportJobs,
   listings,
+  currentUserProfile,
   showOnboardingWelcome = false,
   initialFarmerId,
 }: {
@@ -61,6 +62,7 @@ export function AgreementsClient({
   agreements: Agreement[];
   transportJobs: TransportJob[];
   listings: PaddockListing[];
+  currentUserProfile?: CurrentUserProfile | null;
   showOnboardingWelcome?: boolean;
   initialFarmerId?: string;
 }) {
@@ -71,6 +73,9 @@ export function AgreementsClient({
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const hydratedRef = useRef(false);
   const skipInitialWriteRef = useRef(!initialFarmerId);
+  const realAccount = currentUserProfile
+    ? profileToAccountHome(currentUserProfile)
+    : null;
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
   useEffect(() => {
@@ -151,6 +156,85 @@ export function AgreementsClient({
     if (!farmer || farmer.role !== "Transport Provider") return [];
     return localTransportJobs.filter((job) => job.driverId === farmer.id);
   }, [localTransportJobs, farmer]);
+
+  if (realAccount) {
+    return (
+      <>
+        {showOnboardingWelcome && !welcomeDismissed && (
+          <section
+            aria-label="Welcome"
+            className="mb-5 flex items-start gap-3 rounded-2xl border border-sage-glow bg-sage-mist/55 p-4"
+          >
+            <Sparkles
+              className="mt-0.5 h-5 w-5 shrink-0 text-sage-deep"
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-sage-deep">
+                Welcome to PaddockME.
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-bark/75">
+                Your profile is ready. Start by creating the request, listing,
+                or transport availability that matches your operation.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setWelcomeDismissed(true)}
+              aria-label="Dismiss welcome"
+              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-mist bg-warm-white text-bark transition hover:border-sage/40 hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          </section>
+        )}
+        <Card className="mb-5 bg-sage-deep text-cream">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-semibold text-sage-glow">
+                  <realAccount.Icon className="h-3.5 w-3.5" aria-hidden />
+                  {realAccount.role}
+                </span>
+                {realAccount.region && (
+                  <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-semibold text-sage-glow">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden />
+                    {realAccount.region}
+                  </span>
+                )}
+              </div>
+              <h2 className="text-2xl font-bold">
+                Welcome back, {realAccount.firstName}.
+              </h2>
+              <p className="mt-2 max-w-2xl leading-relaxed text-sage-glow">
+                {realAccount.tagline}
+              </p>
+            </div>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 md:w-[22rem]">
+              <InfoTile
+                tone="subtle"
+                label={realAccount.metricLabel}
+                value="0"
+                className="bg-warm-white/95"
+              />
+              <InfoTile
+                tone="subtle"
+                label="Next step"
+                value={realAccount.nextStep}
+                className="bg-warm-white/95"
+              />
+            </div>
+          </div>
+        </Card>
+        <EmptyHomeState
+          title={realAccount.emptyTitle}
+          helper={realAccount.emptyHelper}
+          ctaHref={realAccount.ctaHref}
+          ctaLabel={realAccount.ctaLabel}
+        />
+      </>
+    );
+  }
 
   if (!farmer) return null;
 
@@ -250,6 +334,61 @@ function readPersonaCookie(): string | null {
 function writePersonaCookie(personaId: string) {
   if (typeof document === "undefined") return;
   document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+function profileToAccountHome(profile: CurrentUserProfile) {
+  const role = profile.accountTypes[0] ?? "Livestock Owner";
+  const firstName =
+    profile.fullName?.trim().split(/\s+/)[0] ??
+    profile.email?.split("@")[0] ??
+    "there";
+  const region = profile.regions[0] ?? null;
+
+  if (role === "Landowner") {
+    return {
+      role,
+      firstName,
+      region,
+      Icon: Tractor,
+      tagline: "Create paddock listings and respond to livestock requests.",
+      metricLabel: "Active listings",
+      nextStep: "List a paddock",
+      emptyTitle: "No paddocks listed yet.",
+      emptyHelper: "Create your first listing so livestock owners can find available agistment.",
+      ctaHref: "/listings/new",
+      ctaLabel: "List a paddock",
+    };
+  }
+
+  if (role === "Transport Provider") {
+    return {
+      role,
+      firstName,
+      region,
+      Icon: Truck,
+      tagline: "Publish transport availability and respond to farmer transport requests.",
+      metricLabel: "Live jobs",
+      nextStep: "Publish capacity",
+      emptyTitle: "No transport jobs yet.",
+      emptyHelper: "Post available capacity or open the transport job board to find work.",
+      ctaHref: "/transport/available",
+      ctaLabel: "Publish capacity",
+    };
+  }
+
+  return {
+    role: "Livestock Owner",
+    firstName,
+    region,
+    Icon: Sprout,
+    tagline: "Create livestock requests and match with suitable paddocks.",
+    metricLabel: "Active agreements",
+    nextStep: "Post a request",
+    emptyTitle: "No active agreements yet.",
+    emptyHelper: "Post your first livestock request to start matching with paddocks.",
+    ctaHref: "/request/new",
+    ctaLabel: "Post a request",
+  };
 }
 
 function PersonaCallout({
@@ -384,9 +523,9 @@ function TransportJobsBody({
     return (
       <EmptyHomeState
         title={`No transport jobs assigned to ${farmerName} yet.`}
-        helper="Publish forward capacity so backloads can be matched to your runs."
-        ctaHref="/profile"
-        ctaLabel="View your transport profile"
+        helper="Open the RFT map to see transport requests farmers have raised from agreements."
+        ctaHref="/transport/jobs"
+        ctaLabel="Open RFT map"
       />
     );
   }
