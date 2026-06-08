@@ -15,6 +15,7 @@ import { ActivityFeed } from "./ActivityFeed";
 import { WhatNeedsYou } from "./WhatNeedsYou";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { ComplianceReadinessPanel } from "@/components/ComplianceReadinessPanel";
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { CurrentUserProfile } from "@/lib/supabase/currentUser";
@@ -244,6 +245,7 @@ export function AgreementsClient({
             </div>
           </div>
         </Card>
+        <ComplianceReadinessPanel />
         <EmptyHomeState
           title={realAccount.emptyTitle}
           helper={realAccount.emptyHelper}

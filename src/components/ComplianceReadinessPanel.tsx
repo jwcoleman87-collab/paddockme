@@ -1,0 +1,326 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  BadgeCheck,
+  FileText,
+  HelpCircle,
+  Lock,
+  ShieldCheck,
+  Upload,
+} from "lucide-react";
+import { Button } from "@/components/Button";
+import { Card } from "@/components/Card";
+import { cn } from "@/lib/utils";
+
+type RequirementKind = "text" | "upload";
+
+type Requirement = {
+  id: string;
+  title: string;
+  summary: string;
+  detail: string;
+  kind: RequirementKind;
+  privacy: "Private" | "Shared when needed" | "Shared with carrier";
+  required?: boolean;
+};
+
+const requirements: Requirement[] = [
+  {
+    id: "pic",
+    title: "Property Identification Code (PIC)",
+    summary: "The property traceability code for where livestock are kept.",
+    detail:
+      "A PIC identifies a livestock property for traceability and disease response. It is commonly needed before stock can move on or off a property, including agistment.",
+    kind: "text",
+    privacy: "Shared when needed",
+    required: true,
+  },
+  {
+    id: "lpa",
+    title: "LPA accreditation",
+    summary: "Confirms access to LPA NVD/eNVD movement documents.",
+    detail:
+      "Livestock Production Assurance supports food safety, animal welfare, and biosecurity declarations. LPA accreditation is usually needed to complete NVD/eNVD paperwork.",
+    kind: "upload",
+    privacy: "Private",
+    required: true,
+  },
+  {
+    id: "nlis",
+    title: "NLIS transfer readiness",
+    summary: "Animal IDs/RFIDs and movement transfer details.",
+    detail:
+      "NLIS records livestock movements between PICs. Keep animal IDs, origin PIC, destination PIC, movement date, and NVD serial details ready.",
+    kind: "upload",
+    privacy: "Shared when needed",
+    required: true,
+  },
+  {
+    id: "nvd",
+    title: "NVD / eNVD",
+    summary: "Movement declaration and waybill information.",
+    detail:
+      "NVD/eNVD paperwork communicates food safety and treatment status as livestock move through the supply chain.",
+    kind: "upload",
+    privacy: "Shared when needed",
+    required: true,
+  },
+  {
+    id: "health",
+    title: "Animal health declarations",
+    summary: "Health status documents for cattle, sheep, or goats.",
+    detail:
+      "Health declarations help hosts, buyers, and transporters understand disease risk and animal health status. Requirements can vary by state and movement type.",
+    kind: "upload",
+    privacy: "Shared when needed",
+  },
+  {
+    id: "vaccines",
+    title: "Vaccination and treatment records",
+    summary: "Vaccines, drenches, treatments, and withholding periods.",
+    detail:
+      "Keep records for treatments, vaccines, drenches, chemical use, and withholding periods so counterparties can assess suitability and food safety risk.",
+    kind: "upload",
+    privacy: "Private",
+    required: true,
+  },
+  {
+    id: "fit-to-load",
+    title: "Fit-to-load checklist",
+    summary: "Animal welfare check before transport.",
+    detail:
+      "Before transport, livestock should be assessed as fit to load. This helps reduce welfare risk and supports transport standards compliance.",
+    kind: "upload",
+    privacy: "Shared with carrier",
+    required: true,
+  },
+  {
+    id: "biosecurity",
+    title: "Biosecurity plan",
+    summary: "Property practices for reducing disease and pest spread.",
+    detail:
+      "A biosecurity plan records how the property manages livestock entry, visitors, vehicles, equipment, isolation, and disease risk.",
+    kind: "upload",
+    privacy: "Private",
+  },
+  {
+    id: "insurance",
+    title: "Insurance and liability",
+    summary: "Relevant insurance documents for agistment or transport.",
+    detail:
+      "Insurance details help clarify responsibility if livestock, property, people, or transport are affected during an agistment or movement.",
+    kind: "upload",
+    privacy: "Private",
+  },
+  {
+    id: "agreement",
+    title: "Agistment agreement terms",
+    summary: "Signed terms covering access, fees, care, and termination.",
+    detail:
+      "An agistment agreement should capture parties, livestock details, property access, fees, responsibilities, movement conditions, insurance, termination, and dispute handling.",
+    kind: "upload",
+    privacy: "Shared when needed",
+  },
+];
+
+type SavedState = {
+  textValues: Record<string, string>;
+  fileNames: Record<string, string>;
+};
+
+const storageKey = "paddockme.compliance_readiness.v1";
+
+export function ComplianceReadinessPanel() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [textValues, setTextValues] = useState<Record<string, string>>({});
+  const [fileNames, setFileNames] = useState<Record<string, string>>({});
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<SavedState>;
+      setTextValues(saved.textValues ?? {});
+      setFileNames(saved.fileNames ?? {});
+    } catch {
+      // Local-only progress should never block the dashboard.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ textValues, fileNames })
+      );
+    } catch {
+      // Ignore private browsing or storage limits.
+    }
+  }, [textValues, fileNames]);
+
+  const completedCount = useMemo(
+    () =>
+      requirements.filter((item) =>
+        item.kind === "text"
+          ? Boolean(textValues[item.id]?.trim())
+          : Boolean(fileNames[item.id])
+      ).length,
+    [fileNames, textValues]
+  );
+
+  return (
+    <section
+      aria-label="Livestock readiness"
+      className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 inline-flex min-h-8 items-center gap-2 rounded-full bg-sage-mist px-3 text-xs font-bold uppercase tracking-wide text-sage-deep">
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+            Readiness vault
+          </div>
+          <h2 className="text-xl font-bold text-sage-deep">
+            Livestock movement paperwork.
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-bark/70">
+            Keep the documents and identifiers you may need for agistment,
+            transport, traceability, welfare, and biosecurity in one place.
+          </p>
+        </div>
+        <div className="rounded-xl border border-mist bg-warm-white px-4 py-3 text-sm">
+          <p className="font-bold text-sage-deep">
+            {completedCount} / {requirements.length} saved
+          </p>
+          <p className="mt-0.5 text-xs font-semibold text-bark/60">
+            Private by default
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {requirements.map((item) => {
+          const complete =
+            item.kind === "text"
+              ? Boolean(textValues[item.id]?.trim())
+              : Boolean(fileNames[item.id]);
+          const isOpen = openId === item.id;
+          return (
+            <Card
+              key={item.id}
+              className={cn(
+                "flex min-h-[13.5rem] flex-col gap-3 p-4",
+                complete && "border-sage/35 bg-sage-mist/25"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className={cn(
+                    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                    complete
+                      ? "bg-sage-deep text-cream"
+                      : "bg-sage-mist text-sage-deep"
+                  )}
+                >
+                  {complete ? (
+                    <BadgeCheck className="h-5 w-5" aria-hidden />
+                  ) : (
+                    <FileText className="h-5 w-5" aria-hidden />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-bold leading-snug text-sage-deep">
+                      {item.title}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(isOpen ? null : item.id)}
+                      aria-expanded={isOpen}
+                      aria-label={`More information about ${item.title}`}
+                      title={`More information about ${item.title}`}
+                      className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                    >
+                      <HelpCircle className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-bark/70">
+                    {item.summary}
+                  </p>
+                </div>
+              </div>
+
+              {isOpen && (
+                <p className="rounded-xl border border-sage-deep/10 bg-warm-white px-3 py-2 text-xs leading-relaxed text-bark/75">
+                  {item.detail}
+                </p>
+              )}
+
+              <div className="mt-auto flex flex-wrap items-center gap-2">
+                <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-warm-white px-2.5 text-xs font-bold text-bark/65">
+                  <Lock className="h-3.5 w-3.5" aria-hidden />
+                  {item.privacy}
+                </span>
+                {item.required && (
+                  <span className="inline-flex min-h-7 items-center rounded-full bg-ochre-light px-2.5 text-xs font-bold text-sage-deep">
+                    Often required
+                  </span>
+                )}
+              </div>
+
+              {item.kind === "text" ? (
+                <label className="block">
+                  <span className="sr-only">{item.title}</span>
+                  <input
+                    value={textValues[item.id] ?? ""}
+                    onChange={(event) =>
+                      setTextValues((current) => ({
+                        ...current,
+                        [item.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Enter PIC"
+                    className="min-h-11 w-full rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-semibold text-bark outline-none transition placeholder:text-bark/45 focus:border-sage focus:ring-2 focus:ring-sage/20"
+                  />
+                </label>
+              ) : (
+                <div>
+                  <input
+                    ref={(node) => {
+                      inputRefs.current[item.id] = node;
+                    }}
+                    type="file"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setFileNames((current) => ({
+                        ...current,
+                        [item.id]: file.name,
+                      }));
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant={complete ? "secondary" : "primary"}
+                    onClick={() => inputRefs.current[item.id]?.click()}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4" aria-hidden />
+                    {complete ? "Replace file" : "Upload"}
+                  </Button>
+                  {fileNames[item.id] && (
+                    <p className="mt-2 truncate text-xs font-semibold text-bark/65">
+                      {fileNames[item.id]}
+                    </p>
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
