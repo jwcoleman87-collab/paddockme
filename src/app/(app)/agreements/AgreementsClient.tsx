@@ -3,8 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Bell,
   CirclePlus,
+  ClipboardCheck,
+  FileText,
   MapPin,
+  Search,
   Sparkles,
   Sprout,
   Tractor,
@@ -26,6 +30,7 @@ import type {
   PaddockListing,
   TransportJob,
 } from "@/lib/dummyData";
+import { livestockRequests } from "@/lib/dummyData";
 import {
   listAgreements,
   listPaddockListings,
@@ -245,13 +250,13 @@ export function AgreementsClient({
             </div>
           </div>
         </Card>
-        <ComplianceReadinessPanel />
-        <EmptyHomeState
-          title={realAccount.emptyTitle}
-          helper={realAccount.emptyHelper}
-          ctaHref={realAccount.ctaHref}
-          ctaLabel={realAccount.ctaLabel}
+        <RealAccountDashboard
+          account={realAccount}
+          listings={localListings}
+          livestockRequestCount={livestockRequests.length}
+          transportJobCount={localTransportJobs.length}
         />
+        <ComplianceReadinessPanel />
       </>
     );
   }
@@ -409,6 +414,207 @@ function profileToAccountHome(profile: CurrentUserProfile) {
     ctaHref: "/request/new",
     ctaLabel: "Post a request",
   };
+}
+
+type AccountHome = ReturnType<typeof profileToAccountHome>;
+
+function RealAccountDashboard({
+  account,
+  listings,
+  livestockRequestCount,
+  transportJobCount,
+}: {
+  account: AccountHome;
+  listings: PaddockListing[];
+  livestockRequestCount: number;
+  transportJobCount: number;
+}) {
+  const nearbyListings = listings.filter((listing) =>
+    account.region ? listing.regionLabel === account.region : true
+  );
+  const snapshot = [
+    {
+      label: "Paddocks",
+      value: `${nearbyListings.length || listings.length}`,
+      detail: account.region ? `Near ${account.region}` : "Available to browse",
+      href: account.region
+        ? `/listings?regions=${encodeURIComponent(account.region)}`
+        : "/listings",
+      icon: Sprout,
+    },
+    {
+      label: "Requests",
+      value: `${livestockRequestCount}`,
+      detail: "Livestock seeking country",
+      href: "/requests",
+      icon: Search,
+    },
+    {
+      label: "Transport",
+      value: `${transportJobCount}`,
+      detail: "Jobs and carrier capacity",
+      href: "/transport/jobs",
+      icon: Truck,
+    },
+  ];
+
+  const workLinks = [
+    {
+      title: account.role === "Landowner" ? "My paddocks" : "My requests",
+      detail:
+        account.role === "Landowner"
+          ? "Create or review agistment listings."
+          : "Post stock requirements and browse matching paddocks.",
+      href: account.role === "Landowner" ? "/listings/new" : "/request/new",
+      icon: ClipboardCheck,
+    },
+    {
+      title: "Messages",
+      detail: "Conversation and agreement updates.",
+      href: "/messages",
+      icon: Bell,
+    },
+    {
+      title: "Documents",
+      detail: "PIC, NVD/eNVD, health and transport records.",
+      href: "#readiness-documents",
+      icon: FileText,
+    },
+  ];
+
+  return (
+    <>
+      <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_1.35fr]">
+        <Card className="flex flex-col gap-4 border-sage/30 bg-sage-mist/30">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sage-deep text-cream">
+              <ArrowRight className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide text-sage-deep">
+                Next action
+              </p>
+              <h3 className="mt-1 text-xl font-bold text-sage-deep">
+                {account.nextStep}
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-bark/70">
+                {account.emptyHelper}
+              </p>
+            </div>
+          </div>
+          <ButtonLink href={account.ctaHref} className="mt-auto w-fit">
+            {account.ctaLabel}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </ButtonLink>
+        </Card>
+
+        <section
+          aria-label="Marketplace snapshot"
+          className="grid gap-3 sm:grid-cols-3"
+        >
+          {snapshot.map((item) => (
+            <SnapshotCard key={item.label} item={item} />
+          ))}
+        </section>
+      </section>
+
+      <section
+        aria-label="Dashboard shortcuts"
+        className="mb-5 grid gap-3 md:grid-cols-3"
+      >
+        {workLinks.map((item) => (
+          <WorkLinkCard key={item.title} item={item} />
+        ))}
+      </section>
+
+      <Card className="mb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-sage-deep">
+              Recommended matches
+            </p>
+            <h3 className="mt-1 text-lg font-bold text-sage-deep">
+              Browse live marketplace activity.
+            </h3>
+            <p className="mt-1 text-sm leading-relaxed text-bark/70">
+              Use nearby paddocks, open livestock requests, and transport jobs
+              to see what is moving before you commit to anything.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink href="/listings" variant="secondary">
+              Paddocks
+            </ButtonLink>
+            <ButtonLink href="/requests" variant="secondary">
+              Requests
+            </ButtonLink>
+          </div>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function SnapshotCard({
+  item,
+}: {
+  item: {
+    label: string;
+    value: string;
+    detail: string;
+    href: string;
+    icon: typeof Sprout;
+  };
+}) {
+  return (
+    <ButtonLink href={item.href} variant="ghost" className="h-full justify-start p-0">
+      <Card className="flex h-full w-full items-start gap-3 p-4 transition hover:border-sage/40 hover:bg-sage-mist/25">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+          <item.icon className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-2xl font-extrabold leading-none text-sage-deep">
+            {item.value}
+          </span>
+          <span className="mt-1 block text-sm font-bold text-bark">
+            {item.label}
+          </span>
+          <span className="mt-0.5 block text-xs leading-snug text-bark/65">
+            {item.detail}
+          </span>
+        </span>
+      </Card>
+    </ButtonLink>
+  );
+}
+
+function WorkLinkCard({
+  item,
+}: {
+  item: {
+    title: string;
+    detail: string;
+    href: string;
+    icon: typeof FileText;
+  };
+}) {
+  return (
+    <ButtonLink href={item.href} variant="ghost" className="h-full justify-start p-0">
+      <Card className="flex h-full w-full items-start gap-3 p-4 transition hover:border-sage/40 hover:bg-sage-mist/25">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cream text-sage-deep">
+          <item.icon className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-sage-deep">
+            {item.title}
+          </span>
+          <span className="mt-1 block text-xs leading-relaxed text-bark/70">
+            {item.detail}
+          </span>
+        </span>
+      </Card>
+    </ButtonLink>
+  );
 }
 
 function PersonaCallout({

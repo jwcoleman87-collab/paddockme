@@ -174,6 +174,7 @@ export function ComplianceReadinessPanel() {
 
   return (
     <section
+      id="readiness-documents"
       aria-label="Livestock readiness"
       className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-3 sm:p-4"
     >
