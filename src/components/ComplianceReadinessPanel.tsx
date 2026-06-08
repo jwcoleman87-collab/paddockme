@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
+  ChevronDown,
   FileText,
   HelpCircle,
   Lock,
@@ -132,6 +133,7 @@ type SavedState = {
 const storageKey = "paddockme.compliance_readiness.v1";
 
 export function ComplianceReadinessPanel() {
+  const [expanded, setExpanded] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [textValues, setTextValues] = useState<Record<string, string>>({});
   const [fileNames, setFileNames] = useState<Record<string, string>>({});
@@ -173,33 +175,44 @@ export function ComplianceReadinessPanel() {
   return (
     <section
       aria-label="Livestock readiness"
-      className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
+      className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-3 sm:p-4"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="mb-2 inline-flex min-h-8 items-center gap-2 rounded-full bg-sage-mist px-3 text-xs font-bold uppercase tracking-wide text-sage-deep">
-            <ShieldCheck className="h-4 w-4" aria-hidden />
-            Readiness vault
-          </div>
-          <h2 className="text-xl font-bold text-sage-deep">
-            Livestock movement paperwork.
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-bark/70">
-            Keep the documents and identifiers you may need for agistment,
-            transport, traceability, welfare, and biosecurity in one place.
-          </p>
-        </div>
-        <div className="rounded-xl border border-mist bg-warm-white px-4 py-3 text-sm">
-          <p className="font-bold text-sage-deep">
-            {completedCount} / {requirements.length} saved
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-bark/60">
-            Private by default
-          </p>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        aria-expanded={expanded}
+        aria-controls="readiness-document-grid"
+        className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-1 text-left transition hover:bg-sage-mist/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+      >
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+          <ShieldCheck className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-bold text-sage-deep">
+            Documents
+          </span>
+          <span className="mt-0.5 block text-sm leading-snug text-bark/70">
+            PIC, NVD/eNVD, health records, biosecurity, fit-to-load and
+            agistment paperwork. Private by default.
+          </span>
+        </span>
+        <span className="hidden shrink-0 rounded-xl border border-mist bg-warm-white px-3 py-2 text-sm font-bold text-sage-deep sm:block">
+          {completedCount} / {requirements.length} saved
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 text-sage-deep transition",
+            expanded && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </button>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {expanded && (
+      <div
+        id="readiness-document-grid"
+        className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+      >
         {requirements.map((item) => {
           const complete =
             item.kind === "text"
@@ -321,6 +334,7 @@ export function ComplianceReadinessPanel() {
           );
         })}
       </div>
+      )}
     </section>
   );
 }
