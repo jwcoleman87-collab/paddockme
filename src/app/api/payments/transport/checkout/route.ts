@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { recordTransportCheckoutSession } from "@/lib/payments/ledger";
+import {
+  createSandboxCheckoutUrl,
+  createSandboxSessionId,
+  isSandboxCheckoutEnabled,
+} from "@/lib/payments/sandboxCheckout";
 import { findTransportPayableSnapshot } from "@/lib/payments/transportPayables";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 
@@ -32,15 +37,26 @@ export async function POST(request: Request) {
     );
   }
 
+  const origin = new URL(request.url).origin;
+
   if (!isStripeConfigured()) {
-    return NextResponse.json(
-      { error: "Stripe test mode is not configured yet" },
-      { status: 503 }
-    );
+    if (!isSandboxCheckoutEnabled()) {
+      return NextResponse.json(
+        { error: "Stripe test mode is not configured yet" },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json({
+      url: createSandboxCheckoutUrl(origin, payable),
+      checkoutSessionId: createSandboxSessionId(payable),
+      provider: "sandbox",
+      ledgerRecorded: false,
+      ledgerReason: "stripe_not_configured_sandbox_checkout",
+    });
   }
 
   const stripe = getStripe();
-  const origin = new URL(request.url).origin;
   const metadata = {
     type: "transport_payable",
     transport_job_id: payable.transportJobId,
@@ -51,28 +67,35 @@ export async function POST(request: Request) {
     source: "paddockme_test_mode",
   };
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    client_reference_id: `transport:${payable.transportJobId}:${payable.quoteId}`,
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: payable.currency.toLowerCase(),
-          unit_amount: payable.amountCents,
-          product_data: {
-            name: "PaddockME transport payable",
-            description: payable.description,
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      client_reference_id: `transport:${payable.transportJobId}:${payable.quoteId}`,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: payable.currency.toLowerCase(),
+            unit_amount: payable.amountCents,
+            product_data: {
+              name: "PaddockME transport payable",
+              description: payable.description,
+            },
           },
         },
-      },
-    ],
-    metadata,
-    payment_intent_data: { metadata },
-    success_url: `${origin}/payments/transport/success?session_id={CHECKOUT_SESSION_ID}&transport_job_id=${encodeURIComponent(payable.transportJobId)}`,
-    cancel_url: `${origin}/payments/transport/cancel?transport_job_id=${encodeURIComponent(payable.transportJobId)}`,
-  });
+      ],
+      metadata,
+      payment_intent_data: { metadata },
+      success_url: `${origin}/payments/transport/success?session_id={CHECKOUT_SESSION_ID}&transport_job_id=${encodeURIComponent(payable.transportJobId)}`,
+      cancel_url: `${origin}/payments/transport/cancel?transport_job_id=${encodeURIComponent(payable.transportJobId)}`,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Stripe session creation failed";
+    console.error("[checkout] Stripe session creation error:", message);
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 
   const ledgerResult = await recordTransportCheckoutSession(payable, session);
 
@@ -83,4 +106,3 @@ export async function POST(request: Request) {
     ledgerReason: ledgerResult.recorded ? undefined : ledgerResult.reason,
   });
 }
-

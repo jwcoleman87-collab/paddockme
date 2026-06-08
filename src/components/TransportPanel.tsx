@@ -39,7 +39,6 @@ import {
 import { cn } from "@/lib/utils";
 import type {
   TransportArtefact,
-  TransportCapacity,
   TransportJob,
   TransportQuote,
   TransportQuoteBasis,
@@ -73,8 +72,8 @@ type TransportPanelProps = {
   onAcceptQuote?: (quoteId: string) => void;
   /** Recipient of a pending quote rejects it. */
   onRejectQuote?: (quoteId: string) => void;
-  /** Driver's other posted capacity rows. Rendered as Possible backloads when role=driver. */
-  backloads?: TransportCapacity[];
+  /** Other farmer-created transport requests visible to drivers as RFT routes. */
+  openRfts?: TransportJob[];
 };
 
 export type TransportQuoteDraft = {
@@ -144,7 +143,7 @@ export function TransportPanel({
   onProposeQuote,
   onAcceptQuote,
   onRejectQuote,
-  backloads,
+  openRfts,
 }: TransportPanelProps) {
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
@@ -200,7 +199,7 @@ export function TransportPanel({
           <TransportOverview
             job={job}
             role={role}
-            backloads={backloads ?? []}
+            openRfts={openRfts ?? []}
           />
         )}
 
@@ -305,7 +304,8 @@ export function TransportPaymentCallout({
               : `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel} accepted`}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-bark/65">
-            Hosted by Stripe in test mode. Card details never touch PaddockME.
+            Stripe test mode when configured; this preview can use a no-money
+            sandbox. Card details never touch PaddockME.
           </p>
         </div>
 
@@ -362,11 +362,11 @@ function TransportTabButton({
 function TransportOverview({
   job,
   role,
-  backloads,
+  openRfts,
 }: {
   job: TransportJob;
   role: TransportRole;
-  backloads: TransportCapacity[];
+  openRfts: TransportJob[];
 }) {
   const isDriver = role === "driver";
 
@@ -445,71 +445,66 @@ function TransportOverview({
         </section>
       )}
 
-      {isDriver && backloads.length > 0 && (
-        <BackloadsPanel job={job} backloads={backloads} />
-      )}
+      {isDriver && <OpenRftsPanel job={job} openRfts={openRfts} />}
     </div>
   );
 }
 
-function BackloadsPanel({
+function OpenRftsPanel({
   job,
-  backloads,
+  openRfts,
 }: {
   job: TransportJob;
-  backloads: TransportCapacity[];
+  openRfts: TransportJob[];
 }) {
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
       <div className="mb-2 flex items-center gap-2 text-sage-deep">
         <Route className="h-5 w-5" aria-hidden />
         <h3 className="text-sm font-bold uppercase tracking-wide">
-          Possible backloads
+          Open RFTs nearby
         </h3>
       </div>
       <p className="mb-4 text-sm leading-relaxed text-bark/70">
-        Your other posted runs that could chain off this delivery at{" "}
-        <span className="font-semibold text-bark">{job.destination}</span>.
-        Turning the empty leg back into a paid leg.
+        Farmer-created transport requests that could fit around this movement
+        to <span className="font-semibold text-bark">{job.destination}</span>.
+        These are routes farmers are waiting on, not driver-posted return legs.
       </p>
-      <ul className="space-y-2">
-        {backloads.map((capacity) => (
-          <BackloadRow key={capacity.id} capacity={capacity} />
-        ))}
-      </ul>
+      {openRfts.length > 0 ? (
+        <ul className="space-y-2">
+          {openRfts.map((rft) => (
+            <OpenRftRow key={rft.id} rft={rft} />
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-lg border border-dashed border-sage-deep/15 bg-warm-white px-4 py-3 text-sm text-bark/65">
+          No other farmer RFTs are waiting near this route yet. New transport
+          requests appear here after Farmer A and Farmer B raise them from an
+          agreement workspace.
+        </p>
+      )}
     </section>
   );
 }
 
-function BackloadRow({ capacity }: { capacity: TransportCapacity }) {
-  const rateLabel = capacity.rateAmount
-    ? `$${capacity.rateAmount.toFixed(2)} ${
-        capacity.rateBasis === "per_head"
-          ? "/ head"
-          : capacity.rateBasis === "per_km"
-            ? "/ km"
-            : "flat"
-      }`
-    : "Rate on enquiry";
+function OpenRftRow({ rft }: { rft: TransportJob }) {
   return (
     <li className="rounded-lg border border-mist bg-warm-white px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-bark">
-            {capacity.originRegion} &rarr; {capacity.destinationRegion}
+            {rft.pickupRegion ?? rft.pickup} &rarr;{" "}
+            {rft.destinationRegion ?? rft.destination}
           </p>
           <p className="mt-0.5 text-xs text-bark/65">
-            {capacity.earliestDate} - {capacity.latestDate} &middot;{" "}
-            {capacity.headCapacity} head &middot; {capacity.stockTypes.join(", ")}
+            {rft.preferredDate} &middot; {rft.livestockCount}
           </p>
-          {capacity.truckLabel && (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
-              {capacity.truckLabel}
-            </p>
-          )}
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
+            {rft.routeSummary}
+          </p>
         </div>
         <span className="rounded-full bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
-          {rateLabel}
+          {rft.status === "available" ? "Open RFT" : rft.status}
         </span>
       </div>
     </li>
@@ -1041,14 +1036,15 @@ function TransportPayableCard({
       <ol className="mt-4 space-y-2 text-sm">
         <PaymentEventRow label="Quote accepted" tone="success" />
         <PaymentEventRow label="Payable opened" tone="warning" />
-        <PaymentEventRow label="Stripe test checkout ready" tone="neutral" />
+        <PaymentEventRow label="Checkout path ready" tone="neutral" />
       </ol>
 
       <div className="mt-4 border-t border-mist pt-4">
         {role === "farmerA" ? (
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-relaxed text-bark/65">
-              Hosted by Stripe in test mode. Card details never touch PaddockME.
+              Stripe test mode when configured; this preview can use a no-money
+              sandbox. Card details never touch PaddockME.
             </p>
             <TransportCheckoutAction job={job} quote={quote} />
           </div>
@@ -1105,12 +1101,11 @@ function TransportCheckoutAction({
       }
 
       window.location.assign(payload.url);
-    } catch (error) {
+    } catch (err) {
+      console.error("[checkout] Client-side error:", err);
       setCheckoutState("error");
       setCheckoutMessage(
-        error instanceof Error
-          ? error.message
-          : "Stripe checkout could not be started"
+        "Couldn't start checkout right now. Try again, or call James direct on 0408 362 590."
       );
     }
   }

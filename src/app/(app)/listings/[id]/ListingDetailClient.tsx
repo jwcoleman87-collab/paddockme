@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Camera, Droplets, Fence, Sprout } from "lucide-react";
+import { ArrowRight, Camera, Droplets, Fence, MapPin, Sprout } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -29,6 +29,7 @@ export function ListingDetailClient({
   const flash = useFlash();
   const [listings, setListings] = useState<PaddockListing[]>([]);
   const [agreementId, setAgreementId] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     void Promise.all([listPaddockListings(), listAgreements()]).then(
@@ -63,9 +64,16 @@ export function ListingDetailClient({
   const mapImageSrc = getListingMapImageSrc(listing.id);
 
   async function openWorkspace() {
-    const { agreement } = await openAgreementWorkspace(listing.id);
-    flash("Agreement opened.", "success");
-    router.push(`/workspace/${agreement.id}`);
+    setOpening(true);
+    try {
+      const { agreement } = await openAgreementWorkspace(listing.id);
+      flash("Agreement opened.", "success");
+      router.push(`/workspace/${agreement.id}`);
+    } catch (err) {
+      console.error("[listing] openWorkspace error:", err);
+      flash("Couldn't open the workspace. Try refreshing the page.", "warning");
+      setOpening(false);
+    }
   }
 
   return (
@@ -97,10 +105,11 @@ export function ListingDetailClient({
           <Card>
             <h2 className="mb-4 text-xl font-bold text-sage-deep">Property summary</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <InfoTile icon={<MapPin />} label="Location" value={listing.location} />
               <InfoTile icon={<Sprout />} label="Acres" value={`${listing.acres}`} />
-              <InfoTile icon={<Sprout />} label="Feed" value={listing.feedStatus} />
               <InfoTile icon={<Droplets />} label="Water" value={listing.waterStatus} />
               <InfoTile icon={<Fence />} label="Fencing" value={listing.fencingStatus} />
+              <InfoTile icon={<Sprout />} label="Feed" value={listing.feedStatus} />
             </div>
           </Card>
 
@@ -124,8 +133,14 @@ export function ListingDetailClient({
               Select this paddock to open the shared Dale and Brett agreement workspace.
             </p>
           )}
-          <Button type="button" onClick={openWorkspace} className="w-full">
-            {agreementId ? "Open workspace" : "Select paddock"}
+          <Button
+            type="button"
+            onClick={openWorkspace}
+            disabled={opening}
+            aria-busy={opening}
+            className="w-full"
+          >
+            {opening ? "Opening" : agreementId ? "Open workspace" : "Select paddock"}
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Button>
           <ButtonLink href="/listings" variant="secondary" className="w-full">
