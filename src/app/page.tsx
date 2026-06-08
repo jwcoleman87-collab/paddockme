@@ -33,7 +33,7 @@ export default function HomePage() {
         </Link>
         <Link
           href="/sign-in"
-          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-red-700/30 bg-red-50 px-3.5 text-sm font-bold text-red-700 shadow-sm shadow-bark/5 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-ochre/35 bg-ochre-light/80 px-3.5 text-sm font-bold text-sage-deep shadow-sm shadow-bark/5 transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
           aria-label="Log in to your PaddockME account"
         >
           <LogIn className="h-4 w-4" aria-hidden />
