@@ -20,14 +20,21 @@ export function AppShellHeaderUser() {
 
   useEffect(() => {
     let mounted = true;
+    // Generation token guards against overlapping loads: when a user signs
+    // out and a different account signs in quickly, the two in-flight
+    // loadSignedInUser calls can finish in reverse order and leave the
+    // header showing the previous user's name. Each call bumps the gen, and
+    // a stale call won't commit state.
+    let gen = 0;
     const supabase = createClient();
 
     async function loadSignedInUser() {
+      const myGen = ++gen;
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!mounted) return;
+      if (!mounted || myGen !== gen) return;
 
       if (!user) {
         setSignedInUser(null);
@@ -40,7 +47,7 @@ export function AppShellHeaderUser() {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (!mounted) return;
+      if (!mounted || myGen !== gen) return;
 
       const metaName =
         (user.user_metadata as { full_name?: string } | null)?.full_name ??

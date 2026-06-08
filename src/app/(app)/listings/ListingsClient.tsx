@@ -14,7 +14,10 @@ import {
   type LivestockRequest,
   type PaddockListing,
 } from "@/lib/dummyData";
-import { listPaddockListings } from "@/lib/data/repositories";
+import {
+  listPaddockListings,
+  listSupabasePaddockListings,
+} from "@/lib/data/repositories";
 
 type FilterGroupKey =
   | "regions"
@@ -83,9 +86,15 @@ const filterGroups: {
 export function ListingsClient({
   listings,
   initialFilters,
+  realAccount = false,
 }: {
   listings: PaddockListing[];
   initialFilters?: InitialFilters;
+  /** When the page is rendered for a real signed-in account, the client
+   * refresh must NOT merge prototype state - that would re-introduce the
+   * Dale/Brett seed paddocks. Skip the prototype-change subscription and
+   * use the strict Supabase-only fetcher. */
+  realAccount?: boolean;
 }) {
   const flash = useFlash();
   const [allListings, setAllListings] = useState(listings);
@@ -98,11 +107,15 @@ export function ListingsClient({
   >();
 
   useEffect(() => {
+    if (realAccount) {
+      void listSupabasePaddockListings().then(setAllListings);
+      return;
+    }
     void listPaddockListings().then(setAllListings);
     const sync = () => void listPaddockListings().then(setAllListings);
     window.addEventListener("paddockme:prototype-change", sync);
     return () => window.removeEventListener("paddockme:prototype-change", sync);
-  }, []);
+  }, [realAccount]);
 
   // Pick up the current persona's open request so the cards can score
   // themselves against it. Only the livestock owner has a request to match

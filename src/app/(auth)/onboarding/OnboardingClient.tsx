@@ -99,6 +99,8 @@ export function OnboardingClient() {
     ...initialState,
     role: intentRole,
   }));
+  const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const totalSteps = 3;
   const canAdvance = stepIsComplete(step, state);
@@ -125,8 +127,25 @@ export function OnboardingClient() {
   }
 
   async function finish() {
+    if (submitting) return;
+    setSubmitting(true);
+    setSaveError(null);
     persistOnboarding(state);
-    await persistProfileToSupabase(state);
+    try {
+      await persistProfileToSupabase(state);
+    } catch (error) {
+      // Without a profile row the middleware bounces every navigation back
+      // here in a loop, so we have to surface the failure instead of pushing
+      // on. Keep the user on this page so they can retry once it's clear
+      // what went wrong (most often: missing RLS policy or trigger).
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We could not save your onboarding answers.";
+      setSaveError(message);
+      setSubmitting(false);
+      return;
+    }
     const params = new URLSearchParams({ onboarded: "true" });
     if (state.role) params.set("role", state.role);
     const separator = nextPath.includes("?") ? "&" : "?";
@@ -213,13 +232,29 @@ export function OnboardingClient() {
           <button
             type="button"
             onClick={finish}
-            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white sm:w-auto"
+            disabled={submitting}
+            className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white sm:w-auto"
           >
             <Check className="h-4 w-4" aria-hidden />
-            Take me to the app
+            {submitting ? "Saving…" : "Take me to the app"}
           </button>
         )}
       </nav>
+      {saveError && (
+        <div
+          role="alert"
+          className="mt-4 rounded-[8px] border border-terra/40 bg-terra-light/50 px-4 py-3 text-sm leading-relaxed text-bark"
+        >
+          <p className="font-bold text-sage-deep">
+            We couldn&apos;t save your onboarding answers.
+          </p>
+          <p className="mt-1 text-bark/80">{saveError}</p>
+          <p className="mt-2 text-xs text-bark/65">
+            Try again in a moment. If this keeps happening, contact support
+            so we can check your account configuration.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -634,41 +669,37 @@ function persistOnboarding(state: State) {
 async function persistProfileToSupabase(state: State): Promise<void> {
   if (!isSupabaseConfigured()) return;
   if (!state.role) return;
-  try {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const stockTypes =
-      state.role === "livestock"
-        ? state.stockTypes
-        : state.role === "landowner"
-          ? state.suitableStock
-          : [];
-    // upsert so this works whether the handle_new_user trigger is
-    // applied or not. Trigger applied: the row exists, we update.
-    // Trigger missing: we create the row fresh.
-    const metaName =
-      (user.user_metadata as { full_name?: string } | null)?.full_name ??
-      null;
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: user.id,
-        full_name: metaName,
-        account_types: [roleToAccountType[state.role]],
-        regions: state.region ? [state.region] : [],
-        stock_types: stockTypes,
-      },
-      { onConflict: "id" }
-    );
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.warn("profile update failed", error.message);
-    }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn("profile update threw", error);
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  const stockTypes =
+    state.role === "livestock"
+      ? state.stockTypes
+      : state.role === "landowner"
+        ? state.suitableStock
+        : [];
+  // upsert so this works whether the handle_new_user trigger is
+  // applied or not. Trigger applied: the row exists, we update.
+  // Trigger missing: we create the row fresh.
+  const metaName =
+    (user.user_metadata as { full_name?: string } | null)?.full_name ??
+    null;
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      full_name: metaName,
+      account_types: [roleToAccountType[state.role]],
+      regions: state.region ? [state.region] : [],
+      stock_types: stockTypes,
+    },
+    { onConflict: "id" }
+  );
+  if (error) {
+    // Bubble up so the caller can show the message instead of trapping the
+    // user in a middleware redirect loop with empty account_types.
+    throw new Error(error.message);
   }
 }
 
