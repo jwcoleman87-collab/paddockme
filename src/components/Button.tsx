@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
 type ButtonVariant = "primary" | "secondary" | "ghost";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-sage-deep text-cream hover:bg-sage-dark",
+  primary: "bg-sage-deep text-cream shadow-sm shadow-sage-deep/10 hover:bg-sage-dark hover:shadow-md hover:shadow-sage-deep/15",
   secondary:
-    "border border-sage-deep/40 bg-warm-white text-sage-deep hover:bg-sage-mist",
-  ghost: "text-sage-deep hover:bg-sage-mist",
+    "border border-sage-deep/40 bg-warm-white text-sage-deep shadow-sm shadow-bark/5 hover:border-sage hover:bg-sage-mist hover:shadow-md hover:shadow-sage-deep/10",
+  ghost: "text-sage-deep hover:bg-sage-mist hover:shadow-sm hover:shadow-sage-deep/10",
 };
 
 const baseClasses =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] px-5 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white disabled:pointer-events-none disabled:opacity-55";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] px-5 py-3 text-sm font-semibold transition-all duration-200 ease-in-out active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
 
 export function Button({
   variant = "primary",

@@ -485,7 +485,7 @@ function RealAccountDashboard({
   return (
     <>
       <section className="mb-5 grid gap-4 lg:grid-cols-[1fr_1.35fr]">
-        <Card className="flex flex-col gap-4 border-sage/30 bg-sage-mist/30">
+        <Card className="flex flex-col gap-4 border-sage/30 bg-sage-mist/30 hover:border-sage/45 hover:shadow-[0_14px_34px_rgba(45,90,61,0.11)]">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sage-deep text-cream">
               <ArrowRight className="h-5 w-5" aria-hidden />
@@ -527,7 +527,7 @@ function RealAccountDashboard({
         ))}
       </section>
 
-      <Card className="mb-5">
+      <Card className="mb-5 hover:border-sage/35 hover:shadow-[0_14px_34px_rgba(63,51,40,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-sage-deep">
@@ -567,9 +567,9 @@ function SnapshotCard({
   };
 }) {
   return (
-    <ButtonLink href={item.href} variant="ghost" className="h-full justify-start p-0">
-      <Card className="flex h-full w-full items-start gap-3 p-4 transition hover:border-sage/40 hover:bg-sage-mist/25">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+    <ButtonLink href={item.href} variant="ghost" className="group h-full justify-start p-0">
+      <Card className="flex h-full w-full items-start gap-3 p-4 hover:border-sage/40 hover:bg-sage-mist/25 hover:shadow-[0_14px_34px_rgba(45,90,61,0.1)]">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep transition-all duration-200 ease-in-out group-hover:bg-sage-deep group-hover:text-cream">
           <item.icon className="h-5 w-5" aria-hidden />
         </span>
         <span className="min-w-0">
@@ -599,9 +599,9 @@ function WorkLinkCard({
   };
 }) {
   return (
-    <ButtonLink href={item.href} variant="ghost" className="h-full justify-start p-0">
-      <Card className="flex h-full w-full items-start gap-3 p-4 transition hover:border-sage/40 hover:bg-sage-mist/25">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cream text-sage-deep">
+    <ButtonLink href={item.href} variant="ghost" className="group h-full justify-start p-0">
+      <Card className="flex h-full w-full items-start gap-3 p-4 hover:border-sage/40 hover:bg-sage-mist/25 hover:shadow-[0_14px_34px_rgba(45,90,61,0.1)]">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cream text-sage-deep transition-all duration-200 ease-in-out group-hover:bg-sage-deep group-hover:text-cream">
           <item.icon className="h-5 w-5" aria-hidden />
         </span>
         <span className="min-w-0">

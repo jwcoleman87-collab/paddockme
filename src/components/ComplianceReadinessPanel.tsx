@@ -183,9 +183,9 @@ export function ComplianceReadinessPanel() {
         onClick={() => setExpanded((current) => !current)}
         aria-expanded={expanded}
         aria-controls="readiness-document-grid"
-        className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-1 text-left transition hover:bg-sage-mist/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+        className="flex w-full cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition-all duration-200 ease-in-out hover:bg-sage-mist/35 hover:shadow-sm hover:shadow-sage-deep/10 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
       >
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep transition-all duration-200 ease-in-out">
           <ShieldCheck className="h-5 w-5" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ export function ComplianceReadinessPanel() {
         </span>
         <ChevronDown
           className={cn(
-            "h-5 w-5 shrink-0 text-sage-deep transition",
+            "h-5 w-5 shrink-0 text-sage-deep transition-transform duration-200 ease-in-out",
             expanded && "rotate-180"
           )}
           aria-hidden
@@ -225,6 +225,7 @@ export function ComplianceReadinessPanel() {
               key={item.id}
               className={cn(
                 "flex min-h-[10.75rem] flex-col gap-2 p-3",
+                "hover:border-sage/40 hover:bg-cream/90 hover:shadow-[0_12px_30px_rgba(63,51,40,0.09)]",
                 complete && "border-sage/35 bg-sage-mist/25"
               )}
             >
@@ -254,7 +255,7 @@ export function ComplianceReadinessPanel() {
                       aria-expanded={isOpen}
                       aria-label={`More information about ${item.title}`}
                       title={`More information about ${item.title}`}
-                      className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                      className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-sage-deep transition-all duration-200 ease-in-out hover:bg-sage-mist active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
                     >
                       <HelpCircle className="h-4 w-4" aria-hidden />
                     </button>
@@ -295,7 +296,7 @@ export function ComplianceReadinessPanel() {
                       }))
                     }
                     placeholder="Enter PIC"
-                    className="min-h-10 w-full rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-semibold text-bark outline-none transition placeholder:text-bark/45 focus:border-sage focus:ring-2 focus:ring-sage/20"
+                    className="min-h-10 w-full rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-semibold text-bark outline-none transition-all duration-200 ease-in-out placeholder:text-bark/45 hover:border-sage/40 focus:border-sage focus:ring-2 focus:ring-sage/20"
                   />
                 </label>
               ) : (
