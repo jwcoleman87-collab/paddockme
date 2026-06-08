@@ -21,6 +21,7 @@ const PUBLIC_PREFIXES = [
   "/sign-up",
   "/forgot-password",
   "/update-password",
+  "/preview",
 ];
 
 const APP_PREFIXES = [

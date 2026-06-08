@@ -93,8 +93,12 @@ export function OnboardingClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeRedirectPath(searchParams.get("next"), "/agreements");
+  const intentRole = roleFromIntent(searchParams.get("intent"));
   const [step, setStep] = useState(0);
-  const [state, setState] = useState<State>(initialState);
+  const [state, setState] = useState<State>(() => ({
+    ...initialState,
+    role: intentRole,
+  }));
 
   const totalSteps = 3;
   const canAdvance = stepIsComplete(step, state);
@@ -684,4 +688,11 @@ function stepIsComplete(step: number, state: State): boolean {
     return false;
   }
   return true;
+}
+
+function roleFromIntent(value: string | null): Role | null {
+  if (value === "livestock" || value === "landowner" || value === "transport") {
+    return value;
+  }
+  return null;
 }

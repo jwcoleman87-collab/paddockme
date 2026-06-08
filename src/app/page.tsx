@@ -5,19 +5,19 @@ import { ArrowRight, LogIn, Sprout, Truck } from "lucide-react";
 
 const homeActions = [
   {
-    href: "/request/new",
+    href: "/preview/agistment",
     label: "Need agistment",
     description: "Place livestock",
     icon: ArrowRight,
   },
   {
-    href: "/listings/new",
+    href: "/preview/paddocks",
     label: "Have Agistment",
     description: "List paddocks",
     icon: Sprout,
   },
   {
-    href: "/transport/jobs",
+    href: "/preview/transport",
     label: "Need Transport",
     description: "Find a run",
     icon: Truck,

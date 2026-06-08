@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getSafeRedirectPath } from "@/lib/redirect";
 import { Loader2, Mail } from "lucide-react";
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const intent = getSafeIntent(searchParams.get("intent"));
+  const next = getSafeRedirectPath(searchParams.get("next"), "/agreements");
+  const onboardingHref = onboardingPath(intent, next);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +46,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
       },
     });
     setLoading(false);
@@ -45,7 +58,7 @@ export default function SignUpPage() {
     // send the new user straight into the onboarding wizard so their
     // profile gets populated before they land on /agreements.
     if (data.session) {
-      router.push("/onboarding");
+      router.push(onboardingHref);
       router.refresh();
       return;
     }
@@ -61,7 +74,7 @@ export default function SignUpPage() {
       type: "signup",
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
       },
     });
     setResending(false);
@@ -211,4 +224,17 @@ export default function SignUpPage() {
       </div>
     </div>
   );
+}
+
+function onboardingPath(intent: string | null, next: string): string {
+  const params = new URLSearchParams({ next });
+  if (intent) params.set("intent", intent);
+  return `/onboarding?${params.toString()}`;
+}
+
+function getSafeIntent(value: string | null): string | null {
+  if (value === "livestock" || value === "landowner" || value === "transport") {
+    return value;
+  }
+  return null;
 }
