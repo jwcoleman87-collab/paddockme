@@ -181,6 +181,7 @@ export function createPaddockListing(input: {
   availabilityWindow: string;
   guideTerms: string;
   summary: string;
+  photos?: string[];
 }): { state: PrototypeState; listing: PaddockListing } {
   const listing: PaddockListing = {
     id: `listing-${Date.now()}`,

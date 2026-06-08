@@ -241,6 +241,9 @@ export type PaddockListing = {
   availabilityWindow: string;
   guideTerms: string;
   summary: string;
+  /** Photo URLs (or data URLs in the prototype). First photo is the
+   * hero image used on cards and detail pages. */
+  photos?: string[];
 };
 
 export type LivestockRequest = {

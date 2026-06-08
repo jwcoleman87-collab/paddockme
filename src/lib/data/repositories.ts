@@ -168,6 +168,7 @@ export async function createPaddockListingRecord(input: {
   availabilityWindow: string;
   guideTerms: string;
   summary: string;
+  photos?: string[];
 }) {
   const local = createPaddockListing(input);
   const supabase = await getAuthedClient();
@@ -192,6 +193,7 @@ export async function createPaddockListingRecord(input: {
       water_type: [input.waterStatus],
       yards: input.summary.toLowerCase().includes("yard"),
       loading_ramp: input.summary.toLowerCase().includes("loading"),
+      photos: input.photos && input.photos.length > 0 ? input.photos : null,
       status: "published",
     })
     .select("*")
@@ -534,6 +536,7 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
       ? `$${row.rate_per_head_week}/head/week`
       : "Discuss terms",
     summary: row.description ?? `${row.acres} acres available in ${row.region}.`,
+    photos: row.photos ?? undefined,
   };
 }
 
