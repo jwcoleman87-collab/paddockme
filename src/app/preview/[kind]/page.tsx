@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   ArrowRight,
   CheckCircle,
@@ -86,10 +86,14 @@ export default async function PreviewPage({
 
   const preview = previews[kind];
   const currentUserProfile = await getCurrentUserProfile();
+  // The /preview/* pages are explicitly marketing material aimed at
+  // logged-out visitors. Signed-in users land directly on the real flow
+  // - no need to re-pitch them with "what you can inspect first" copy.
+  if (currentUserProfile) {
+    redirect(preview.actionHref);
+  }
   const Icon = preview.icon;
-  const actionHref = currentUserProfile
-    ? preview.actionHref
-    : `/sign-up?intent=${encodeURIComponent(preview.intent)}&next=${encodeURIComponent(preview.actionHref)}`;
+  const actionHref = `/sign-up?intent=${encodeURIComponent(preview.intent)}&next=${encodeURIComponent(preview.actionHref)}`;
 
   return (
     <main className="min-h-dvh bg-warm-white text-bark">
@@ -118,11 +122,9 @@ export default async function PreviewPage({
               {preview.actionLabel}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </ButtonLink>
-            {!currentUserProfile && (
-              <ButtonLink href="/sign-in" variant="secondary">
-                Already have an account
-              </ButtonLink>
-            )}
+            <ButtonLink href="/sign-in" variant="secondary">
+              Already have an account
+            </ButtonLink>
           </div>
         </div>
 

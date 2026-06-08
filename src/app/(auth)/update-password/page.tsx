@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,26 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [updated, setUpdated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tracks whether the visitor arrived with a valid recovery session.
+  // Without this guard, a stranger landing on /update-password directly
+  // would just be told "This reset link has expired" - misleading. We
+  // detect "no session at all" and route them back to /forgot-password
+  // with a clearer message.
+  const [sessionState, setSessionState] = useState<
+    "checking" | "ok" | "missing"
+  >("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    void supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setSessionState(data.user ? "ok" : "missing");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +78,35 @@ export default function UpdatePasswordPage() {
           Set a fresh password for your account.
         </p>
 
-        {updated ? (
+        {sessionState === "checking" ? (
+          <div
+            className="rounded-2xl border border-mist bg-warm-white p-6 text-sm text-bark/75"
+            role="status"
+          >
+            <Loader2 className="mb-2 h-4 w-4 animate-spin" />
+            Checking your reset link…
+          </div>
+        ) : sessionState === "missing" ? (
+          <div
+            className="rounded-2xl border border-terra/40 bg-terra-light/40 p-6"
+            role="alert"
+          >
+            <p className="font-semibold text-sage-deep">
+              No active password reset.
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-bark/80">
+              You need to follow the link in the password-reset email we
+              send before you can pick a new password. Request a fresh
+              link to continue.
+            </p>
+            <Link
+              href="/forgot-password"
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-sage-deep px-4 text-sm font-semibold text-cream transition hover:bg-sage-dark"
+            >
+              Send a reset link
+            </Link>
+          </div>
+        ) : updated ? (
           <div className="rounded-2xl border border-sage-glow bg-sage-mist p-6">
             <div className="mb-2 flex items-center gap-3 font-medium text-sage-deep">
               <Check className="h-5 w-5" />

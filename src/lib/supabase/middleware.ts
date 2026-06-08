@@ -83,9 +83,12 @@ export async function updateSession(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
   const isAuthRoute =
-    path.startsWith("/sign-in") ||
-    path.startsWith("/sign-up") ||
-    path.startsWith("/forgot-password");
+    path.startsWith("/sign-in") || path.startsWith("/sign-up");
+  // /forgot-password and /update-password are intentionally not in
+  // isAuthRoute - a signed-in user clicking "Forgot?" should still be able
+  // to land on the reset flow. They sit in PUBLIC_PREFIXES below so the
+  // signed-out gate keeps strangers out of the app shell but still lets
+  // the reset flow render.
   const isOnboardingRoute = path.startsWith(ONBOARDING_PATH);
   const isPublicRoute =
     path === "/" ||

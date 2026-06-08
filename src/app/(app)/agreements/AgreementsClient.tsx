@@ -76,6 +76,24 @@ export function AgreementsClient({
   const realAccount = currentUserProfile
     ? profileToAccountHome(currentUserProfile)
     : null;
+  // Count the records that actually belong to the signed-in real user. We
+  // match by Supabase id only - prototype seeds use farmer-a / farmer-b /
+  // driver-1 ids, so they're naturally excluded for a fresh real account.
+  const realAccountMetricCount = currentUserProfile
+    ? realAccount?.role === "Landowner"
+      ? localListings.filter(
+          (listing) => listing.ownerId === currentUserProfile.id
+        ).length
+      : realAccount?.role === "Transport Provider"
+        ? localTransportJobs.filter(
+            (job) => job.driverId === currentUserProfile.id
+          ).length
+        : localAgreements.filter(
+            (agreement) =>
+              agreement.farmerAId === currentUserProfile.id ||
+              agreement.farmerBId === currentUserProfile.id
+          ).length
+    : 0;
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
   useEffect(() => {
@@ -214,7 +232,7 @@ export function AgreementsClient({
               <InfoTile
                 tone="subtle"
                 label={realAccount.metricLabel}
-                value="0"
+                value={String(realAccountMetricCount)}
                 className="bg-warm-white/95"
               />
               <InfoTile

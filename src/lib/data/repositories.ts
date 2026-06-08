@@ -67,8 +67,12 @@ function mapProfileRow(row: Tables<"profiles">): Farmer {
         ? "Landowner"
         : "Livestock Owner",
     verified: !!row.id_verified,
-    tagline: "Supabase profile",
-    bio: "Profile loaded from Supabase.",
+    // Use the user's own name as a default tagline rather than the literal
+    // string "Supabase profile" - the latter showed up in every agreement
+    // participant card and looked like a placeholder bug. Bio stays empty
+    // until the profile editor is wired (avoiding the same leak).
+    tagline: row.full_name ?? "PaddockME member",
+    bio: "",
     mobileVerified: !!row.phone,
     preparednessScore: row.id_verified ? 70 : 35,
     verifications: [],
