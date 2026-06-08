@@ -199,7 +199,7 @@ export function ComplianceReadinessPanel() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {requirements.map((item) => {
           const complete =
             item.kind === "text"
@@ -210,28 +210,28 @@ export function ComplianceReadinessPanel() {
             <Card
               key={item.id}
               className={cn(
-                "flex min-h-[13.5rem] flex-col gap-3 p-4",
+                "flex min-h-[10.75rem] flex-col gap-2 p-3",
                 complete && "border-sage/35 bg-sage-mist/25"
               )}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2">
                 <span
                   className={cn(
-                    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                     complete
                       ? "bg-sage-deep text-cream"
                       : "bg-sage-mist text-sage-deep"
                   )}
                 >
                   {complete ? (
-                    <BadgeCheck className="h-5 w-5" aria-hidden />
+                    <BadgeCheck className="h-4 w-4" aria-hidden />
                   ) : (
-                    <FileText className="h-5 w-5" aria-hidden />
+                    <FileText className="h-4 w-4" aria-hidden />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-bold leading-snug text-sage-deep">
+                  <div className="flex items-start justify-between gap-1.5">
+                    <h3 className="text-[0.82rem] font-bold leading-snug text-sage-deep">
                       {item.title}
                     </h3>
                     <button
@@ -240,12 +240,12 @@ export function ComplianceReadinessPanel() {
                       aria-expanded={isOpen}
                       aria-label={`More information about ${item.title}`}
                       title={`More information about ${item.title}`}
-                      className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                      className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-sage-deep transition hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
                     >
-                      <HelpCircle className="h-5 w-5" aria-hidden />
+                      <HelpCircle className="h-4 w-4" aria-hidden />
                     </button>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-bark/70">
+                  <p className="mt-0.5 text-xs leading-snug text-bark/70">
                     {item.summary}
                   </p>
                 </div>
@@ -257,14 +257,14 @@ export function ComplianceReadinessPanel() {
                 </p>
               )}
 
-              <div className="mt-auto flex flex-wrap items-center gap-2">
-                <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-warm-white px-2.5 text-xs font-bold text-bark/65">
-                  <Lock className="h-3.5 w-3.5" aria-hidden />
+              <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex min-h-6 items-center gap-1 rounded-full bg-warm-white px-2 text-[0.68rem] font-bold text-bark/65">
+                  <Lock className="h-3 w-3" aria-hidden />
                   {item.privacy}
                 </span>
                 {item.required && (
-                  <span className="inline-flex min-h-7 items-center rounded-full bg-ochre-light px-2.5 text-xs font-bold text-sage-deep">
-                    Often required
+                  <span className="inline-flex min-h-6 items-center rounded-full bg-ochre-light px-2 text-[0.68rem] font-bold text-sage-deep">
+                    Required
                   </span>
                 )}
               </div>
@@ -281,7 +281,7 @@ export function ComplianceReadinessPanel() {
                       }))
                     }
                     placeholder="Enter PIC"
-                    className="min-h-11 w-full rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-semibold text-bark outline-none transition placeholder:text-bark/45 focus:border-sage focus:ring-2 focus:ring-sage/20"
+                    className="min-h-10 w-full rounded-[8px] border border-mist bg-warm-white px-3 text-sm font-semibold text-bark outline-none transition placeholder:text-bark/45 focus:border-sage focus:ring-2 focus:ring-sage/20"
                   />
                 </label>
               ) : (
@@ -305,7 +305,7 @@ export function ComplianceReadinessPanel() {
                     type="button"
                     variant={complete ? "secondary" : "primary"}
                     onClick={() => inputRefs.current[item.id]?.click()}
-                    className="w-full"
+                    className="min-h-10 w-full px-3 text-sm"
                   >
                     <Upload className="h-4 w-4" aria-hidden />
                     {complete ? "Replace file" : "Upload"}
