@@ -691,89 +691,9 @@ export const featuredFarmers: Farmer[] = farmers.filter((farmer) =>
   ["farmer-a", "farmer-b", "driver-1"].includes(farmer.id)
 );
 
-export const paddockListings: PaddockListing[] = [
-  {
-    id: "paddock-glenbarra",
-    title: "Glenbarra River Paddocks",
-    ownerId: "farmer-b",
-    location: "Near Gundagai, NSW",
-    coordinates: mapCoordinates.gundagai,
-    region: "Southern NSW",
-    state: "NSW",
-    regionLabel: "Southern NSW",
-    mapPlaceLabel: "Gundagai",
-    mapDot: { x: 66, y: 72 },
-    mapNearbyPlaces: [
-      { label: "Wagga", x: 56, y: 78 },
-      { label: "Tumut", x: 74, y: 75 },
-      { label: "Yass", x: 75, y: 60 },
-    ],
-    acres: 280,
-    suitableLivestock: ["Cattle", "Sheep", "Goats"],
-    feedStatus: "Excellent",
-    waterStatus: "Permanent",
-    fencingStatus: "Secure",
-    verificationStatus: "Verified provider",
-    availabilityWindow: "Available from 18 May",
-    guideTerms: "Discuss terms",
-    summary:
-      "River flats with strong autumn feed, permanent troughs, and laneway access suitable for truck loading.",
-  },
-  {
-    id: "paddock-wattle-creek",
-    title: "Wattle Creek Holding Block",
-    ownerId: "farmer-b",
-    location: "Cowra, NSW",
-    coordinates: mapCoordinates.cowra,
-    region: "Central West",
-    state: "NSW",
-    regionLabel: "Central West",
-    mapPlaceLabel: "Cowra",
-    mapDot: { x: 58, y: 52 },
-    mapNearbyPlaces: [
-      { label: "Orange", x: 45, y: 42 },
-      { label: "Forbes", x: 48, y: 57 },
-      { label: "Young", x: 66, y: 66 },
-    ],
-    acres: 145,
-    suitableLivestock: ["Sheep", "Goats", "Alpacas", "Pigs", "Poultry"],
-    feedStatus: "Good",
-    waterStatus: "Tank",
-    fencingStatus: "Good",
-    verificationStatus: "Pending verification",
-    availabilityWindow: "Two weeks notice",
-    guideTerms: "Guide only",
-    summary:
-      "Useful short-term holding block with reliable tank water and simple yard access.",
-  },
-  {
-    id: "paddock-hillview",
-    title: "Hillview Improved Pasture",
-    ownerId: "farmer-b",
-    location: "Gippsland, VIC",
-    coordinates: mapCoordinates.gippsland,
-    region: "Gippsland",
-    state: "VIC",
-    regionLabel: "Gippsland",
-    mapPlaceLabel: "Sale",
-    mapDot: { x: 72, y: 54 },
-    mapNearbyPlaces: [
-      { label: "Traralgon", x: 56, y: 55 },
-      { label: "Maffra", x: 68, y: 43 },
-      { label: "Bairnsdale", x: 82, y: 50 },
-    ],
-    acres: 420,
-    suitableLivestock: ["Cattle", "Horses", "Deer", "Bees"],
-    feedStatus: "Good",
-    waterStatus: "Permanent",
-    fencingStatus: "Secure",
-    verificationStatus: "Verified provider",
-    availabilityWindow: "June to September",
-    guideTerms: "Discuss terms",
-    summary:
-      "Improved pasture paddocks with permanent water, shade lines, and good wet-weather access.",
-  },
-];
+// Mock example paddock listings removed - the marketplace now shows only
+// real, user-published agistment land. Empty by design.
+export const paddockListings: PaddockListing[] = [];
 
 export const livestockRequests: LivestockRequest[] = [
   {
@@ -1349,7 +1269,7 @@ export function getFarmer(id: string) {
 }
 
 export function getListing(id: string) {
-  return paddockListings.find((listing) => listing.id === id) ?? paddockListings[0];
+  return paddockListings.find((listing) => listing.id === id);
 }
 
 export function getAgreement(id: string) {

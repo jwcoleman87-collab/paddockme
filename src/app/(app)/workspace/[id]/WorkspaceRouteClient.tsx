@@ -47,6 +47,19 @@ export function WorkspaceRouteClient({
   }
 
   const listing = getListing(agreement.listingId);
+  if (!listing) {
+    return (
+      <Card className="text-center">
+        <h2 className="text-lg font-bold text-sage-deep">Listing unavailable.</h2>
+        <p className="mt-2 text-sm text-bark/70">
+          This example paddock is no longer listed.
+        </p>
+        <ButtonLink href="/listings" className="mt-4 inline-flex">
+          Browse paddocks
+        </ButtonLink>
+      </Card>
+    );
+  }
   const farmerA = farmers.find((f) => f.id === agreement.farmerAId);
   const farmerB = farmers.find((f) => f.id === agreement.farmerBId);
   const partyLine = [farmerA?.name, farmerB?.name].filter(Boolean).join(" & ");

@@ -54,6 +54,7 @@ export default async function WorkspaceSnapshotPage({
   if (!agreement) notFound();
 
   const listing = getListing(agreement.listingId);
+  if (!listing) notFound();
   const transportJob = getTransportJobForAgreement(agreement.id);
   const farmerA = farmers.find((f) => f.id === agreement.farmerAId);
   const farmerB = farmers.find((f) => f.id === agreement.farmerBId);
