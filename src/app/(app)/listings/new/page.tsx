@@ -74,7 +74,7 @@ export default function NewListingPage() {
         "warning"
       );
     }
-    const dataUrls = await Promise.all(accepted.map(readAsDataUrl));
+    const dataUrls = await Promise.all(accepted.map(readCompressedDataUrl));
     setPhotos((current) => [...current, ...dataUrls]);
   }
 
@@ -447,6 +447,53 @@ function readAsDataUrl(file: File): Promise<string> {
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
+  });
+}
+
+// Photos are stored inline as data URLs on the paddock row. A raw phone photo
+// is several MB; attaching a few of them produced an insert payload large
+// enough to fail the publish request ("Could not publish the listing").
+// Resize each image down to a sensible max dimension and re-encode as JPEG so a
+// full set of photos stays small (~150-350 KB each). Falls back to the original
+// data URL if the browser can't decode/encode the image for any reason.
+async function readCompressedDataUrl(file: File): Promise<string> {
+  const MAX_DIMENSION = 1600;
+  const JPEG_QUALITY = 0.72;
+  const original = await readAsDataUrl(file);
+
+  try {
+    const image = await loadImage(original);
+    let width = image.width;
+    let height = image.height;
+    if (width === 0 || height === 0) return original;
+
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+      const scale = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return original;
+    ctx.drawImage(image, 0, 0, width, height);
+
+    const compressed = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    // Guard against the rare case where re-encoding produces a larger string.
+    return compressed.length < original.length ? compressed : original;
+  } catch {
+    return original;
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not decode image"));
+    image.src = src;
   });
 }
 

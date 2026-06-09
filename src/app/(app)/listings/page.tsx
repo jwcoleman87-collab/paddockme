@@ -3,7 +3,7 @@ import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
 import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { paddockListings } from "@/lib/dummyData";
-import { listSupabasePaddockListings } from "@/lib/data/repositories";
+import { listSupabasePaddockListingsServer } from "@/lib/data/serverPaddocks";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { ListingsClient, type InitialFilters } from "./ListingsClient";
 
@@ -24,7 +24,7 @@ export default async function ListingsPage({
   // the repository (Supabase + local-only rows the user has created) and
   // either render them or show the empty-state invite.
   if (currentUserProfile) {
-    const live = await listSupabasePaddockListings();
+    const live = await listSupabasePaddockListingsServer();
     if (live.length === 0) {
       return (
         <>
