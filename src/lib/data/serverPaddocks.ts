@@ -4,7 +4,7 @@ import {
 } from "@/lib/mapCoordinates";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
-import type { PaddockListing } from "@/lib/dummyData";
+import type { LivestockRequest, PaddockListing } from "@/lib/dummyData";
 import type { Tables } from "@/lib/types/database";
 
 /**
@@ -92,4 +92,66 @@ function normaliseState(value: string): PaddockListing["state"] {
     return value as PaddockListing["state"];
   }
   return "NSW";
+}
+
+/** The signed-in landowner's own paddocks (for the My Paddocks management view). */
+export async function listMyPaddockListingsServer(): Promise<PaddockListing[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("paddocks")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapPaddockRow);
+  } catch {
+    return [];
+  }
+}
+
+/** Real open livestock requests, for landowners browsing the requests board. */
+export async function listLivestockRequestsServer(): Promise<LivestockRequest[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("agistment_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapRequestRow);
+  } catch {
+    return [];
+  }
+}
+
+function mapRequestRow(row: Tables<"agistment_requests">): LivestockRequest {
+  return {
+    id: row.id,
+    requesterId: row.requester_id,
+    stockType: row.stock_type,
+    breed: row.breed ?? "Mixed",
+    headCount: row.head_count,
+    duration: row.duration,
+    originLocation: parseCoordinate(
+      row.location,
+      coordinateForRegion(row.preferred_regions?.[0])
+    ),
+    preferredRegions: row.preferred_regions ?? [],
+    transportRequired: "Unsure",
+  };
 }

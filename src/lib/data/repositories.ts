@@ -230,6 +230,68 @@ export async function getPaddockListing(id: string): Promise<PaddockListing | un
   return listings.find((listing) => listing.id === id);
 }
 
+export async function updatePaddockListingRecord(
+  listingId: string,
+  input: {
+    title: string;
+    location: string;
+    region: string;
+    acres: number;
+    suitableLivestock: string[];
+    feedStatus: PaddockListing["feedStatus"];
+    waterStatus: PaddockListing["waterStatus"];
+    fencingStatus: PaddockListing["fencingStatus"];
+    availabilityWindow: string;
+    guideTerms: string;
+    summary: string;
+    photos?: string[];
+  }
+): Promise<{ listing: PaddockListing } | null> {
+  const supabase = await getAuthedClient();
+  if (!supabase) return null;
+  const user = await getCurrentUser(supabase);
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("paddocks")
+    .update({
+      title: input.title,
+      description: input.summary,
+      region: input.region,
+      state: stateForRegion(input.region),
+      location: pointToWkt(coordinateForRegion(input.region)),
+      acres: input.acres,
+      capacity_stock_type: input.suitableLivestock[0] ?? null,
+      pasture_type: input.feedStatus,
+      water_type: [input.waterStatus],
+      yards: input.summary.toLowerCase().includes("yard"),
+      loading_ramp: input.summary.toLowerCase().includes("loading"),
+      photos: input.photos && input.photos.length > 0 ? input.photos : null,
+    })
+    .eq("id", listingId)
+    .eq("owner_id", user.id)
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+  return { listing: mapPaddockRow(data) };
+}
+
+export async function deletePaddockListingRecord(
+  listingId: string
+): Promise<boolean> {
+  const supabase = await getAuthedClient();
+  if (!supabase) return false;
+  const user = await getCurrentUser(supabase);
+  if (!user) return false;
+  const { error } = await supabase
+    .from("paddocks")
+    .delete()
+    .eq("id", listingId)
+    .eq("owner_id", user.id);
+  return !error;
+}
+
 export async function listAgreements(): Promise<Agreement[]> {
   const supabase = await getAuthedClient();
   if (!supabase) return loadPrototypeState().agreements;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   Bell,
@@ -235,12 +236,23 @@ export function AgreementsClient({
               </p>
             </div>
             <div className="grid min-w-0 gap-3 sm:grid-cols-2 md:w-[22rem]">
-              <InfoTile
-                tone="subtle"
-                label={realAccount.metricLabel}
-                value={String(realAccountMetricCount)}
-                className="bg-warm-white/95"
-              />
+              {realAccount.metricHref ? (
+                <Link href={realAccount.metricHref} className="block">
+                  <InfoTile
+                    tone="subtle"
+                    label={realAccount.metricLabel}
+                    value={String(realAccountMetricCount)}
+                    className="bg-warm-white/95 transition hover:bg-warm-white"
+                  />
+                </Link>
+              ) : (
+                <InfoTile
+                  tone="subtle"
+                  label={realAccount.metricLabel}
+                  value={String(realAccountMetricCount)}
+                  className="bg-warm-white/95"
+                />
+              )}
               <InfoTile
                 tone="subtle"
                 label="Next step"
@@ -377,6 +389,7 @@ function profileToAccountHome(profile: CurrentUserProfile) {
       Icon: Tractor,
       tagline: "Create paddock listings and respond to livestock requests.",
       metricLabel: "Active listings",
+      metricHref: "/listings/mine",
       nextStep: "List a paddock",
       emptyTitle: "No paddocks listed yet.",
       emptyHelper: "Create your first listing so livestock owners can find available agistment.",
@@ -393,6 +406,7 @@ function profileToAccountHome(profile: CurrentUserProfile) {
       Icon: Truck,
       tagline: "Publish transport availability and respond to farmer transport requests.",
       metricLabel: "Live jobs",
+      metricHref: undefined,
       nextStep: "Publish capacity",
       emptyTitle: "No transport jobs yet.",
       emptyHelper: "Post available capacity or open the transport job board to find work.",
@@ -408,6 +422,7 @@ function profileToAccountHome(profile: CurrentUserProfile) {
     Icon: Sprout,
     tagline: "Create livestock requests and match with suitable paddocks.",
     metricLabel: "Active agreements",
+    metricHref: undefined,
     nextStep: "Post a request",
     emptyTitle: "No active agreements yet.",
     emptyHelper: "Post your first livestock request to start matching with paddocks.",
