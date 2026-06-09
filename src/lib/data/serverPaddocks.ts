@@ -8,6 +8,13 @@ import type { LivestockRequest, PaddockListing } from "@/lib/dummyData";
 import type { Tables } from "@/lib/types/database";
 
 /**
+ * Marketplace go-live cutoff. Requests created before this instant are
+ * pre-launch test data and are hidden from the live site (non-destructive -
+ * the rows stay in the database). Anything posted after go-live shows up.
+ */
+const MARKETPLACE_LIVE_SINCE = "2026-06-09T11:20:59Z";
+
+/**
  * Server-only paddock listing reads.
  *
  * The browser repositories module (`@/lib/data/repositories`) is marked
@@ -130,6 +137,7 @@ export async function listLivestockRequestsServer(): Promise<LivestockRequest[]>
     const { data, error } = await supabase
       .from("agistment_requests")
       .select("*")
+      .gte("created_at", MARKETPLACE_LIVE_SINCE)
       .order("created_at", { ascending: false });
 
     if (error || !data) return [];
