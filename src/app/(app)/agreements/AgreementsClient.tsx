@@ -62,6 +62,7 @@ export function AgreementsClient({
   transportJobs,
   listings,
   currentUserProfile,
+  realCounts,
   showOnboardingWelcome = false,
   initialFarmerId,
 }: {
@@ -70,6 +71,13 @@ export function AgreementsClient({
   transportJobs: TransportJob[];
   listings: PaddockListing[];
   currentUserProfile?: CurrentUserProfile | null;
+  realCounts?: {
+    paddocks: number;
+    requests: number;
+    transport: number;
+    agreements: number;
+    myListings: number;
+  };
   showOnboardingWelcome?: boolean;
   initialFarmerId?: string;
 }) {
@@ -88,18 +96,10 @@ export function AgreementsClient({
   // driver-1 ids, so they're naturally excluded for a fresh real account.
   const realAccountMetricCount = currentUserProfile
     ? realAccount?.role === "Landowner"
-      ? localListings.filter(
-          (listing) => listing.ownerId === currentUserProfile.id
-        ).length
+      ? realCounts?.myListings ?? 0
       : realAccount?.role === "Transport Provider"
-        ? localTransportJobs.filter(
-            (job) => job.driverId === currentUserProfile.id
-          ).length
-        : localAgreements.filter(
-            (agreement) =>
-              agreement.farmerAId === currentUserProfile.id ||
-              agreement.farmerBId === currentUserProfile.id
-          ).length
+        ? realCounts?.transport ?? 0
+        : realCounts?.agreements ?? 0
     : 0;
   const farmer = farmers.find((f) => f.id === activeId) ?? farmers[0];
 
@@ -264,9 +264,9 @@ export function AgreementsClient({
         </Card>
         <RealAccountDashboard
           account={realAccount}
-          listings={localListings}
-          livestockRequestCount={livestockRequests.length}
-          transportJobCount={localTransportJobs.length}
+          paddockCount={realCounts?.paddocks ?? 0}
+          livestockRequestCount={realCounts?.requests ?? 0}
+          transportJobCount={realCounts?.transport ?? 0}
         />
         <ComplianceReadinessPanel />
       </>
@@ -435,26 +435,21 @@ type AccountHome = ReturnType<typeof profileToAccountHome>;
 
 function RealAccountDashboard({
   account,
-  listings,
+  paddockCount,
   livestockRequestCount,
   transportJobCount,
 }: {
   account: AccountHome;
-  listings: PaddockListing[];
+  paddockCount: number;
   livestockRequestCount: number;
   transportJobCount: number;
 }) {
-  const nearbyListings = listings.filter((listing) =>
-    account.region ? listing.regionLabel === account.region : true
-  );
   const snapshot = [
     {
       label: "Paddocks",
-      value: `${nearbyListings.length || listings.length}`,
-      detail: account.region ? `Near ${account.region}` : "Available to browse",
-      href: account.region
-        ? `/listings?regions=${encodeURIComponent(account.region)}`
-        : "/listings",
+      value: `${paddockCount}`,
+      detail: "Available to browse",
+      href: "/listings",
       icon: Sprout,
     },
     {

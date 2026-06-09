@@ -155,3 +155,23 @@ function mapRequestRow(row: Tables<"agistment_requests">): LivestockRequest {
     transportRequired: "Unsure",
   };
 }
+
+/** Count of agreements the signed-in user is a party to (either side). */
+export async function countAgreementsForUserServer(): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return 0;
+    const { count, error } = await supabase
+      .from("agreements")
+      .select("id", { count: "exact", head: true })
+      .or(`livestock_owner_id.eq.${user.id},landowner_id.eq.${user.id}`);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}

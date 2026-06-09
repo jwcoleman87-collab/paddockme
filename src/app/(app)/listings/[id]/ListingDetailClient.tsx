@@ -122,19 +122,42 @@ export function ListingDetailClient({
 
       <div className="grid gap-5 lg:grid-cols-[1fr_0.42fr]">
         <div className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {mapImageSrc ? (
-              <LocationMapPreview
-                src={mapImageSrc}
-                label={`${listing.mapPlaceLabel} map`}
-                placeLabel={listing.mapPlaceLabel}
-              />
-            ) : (
-              <PhotoPlaceholder label="Paddock map" />
-            )}
-            <PhotoPlaceholder label="Water point" />
-            <PhotoPlaceholder label="Gate and yards" />
-          </div>
+          {listing.photos && listing.photos.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {listing.photos.map((src, index) => (
+                <figure
+                  key={`${index}-${src.slice(0, 16)}`}
+                  className="relative min-h-44 overflow-hidden rounded-xl border border-stone/35 bg-warm-white"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${listing.title} photo ${index + 1}`}
+                    className="h-44 w-full object-cover"
+                  />
+                  {index === 0 && (
+                    <span className="absolute bottom-3 left-3 rounded-md bg-cream/95 px-3 py-1 text-xs font-bold text-sage-deep shadow-sm">
+                      Hero
+                    </span>
+                  )}
+                </figure>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {mapImageSrc ? (
+                <LocationMapPreview
+                  src={mapImageSrc}
+                  label={`${listing.mapPlaceLabel} map`}
+                  placeLabel={listing.mapPlaceLabel}
+                />
+              ) : (
+                <PhotoPlaceholder label="Paddock map" />
+              )}
+              <PhotoPlaceholder label="Water point" />
+              <PhotoPlaceholder label="Gate and yards" />
+            </div>
+          )}
 
           <Card>
             <h2 className="mb-4 text-xl font-bold text-sage-deep">Property summary</h2>

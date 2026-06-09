@@ -8,6 +8,12 @@ import {
   type Farmer,
 } from "@/lib/dummyData";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
+import {
+  countAgreementsForUserServer,
+  listLivestockRequestsServer,
+  listMyPaddockListingsServer,
+  listSupabasePaddockListingsServer,
+} from "@/lib/data/serverPaddocks";
 import { AgreementsClient } from "./AgreementsClient";
 
 type SearchParams = {
@@ -28,6 +34,30 @@ export default async function AgreementsPage({
 }) {
   const params = await searchParams;
   const currentUserProfile = await getCurrentUserProfile();
+  let realCounts:
+    | {
+        paddocks: number;
+        requests: number;
+        transport: number;
+        agreements: number;
+        myListings: number;
+      }
+    | undefined;
+  if (currentUserProfile) {
+    const [paddocks, myListings, requests, agreementCount] = await Promise.all([
+      listSupabasePaddockListingsServer(),
+      listMyPaddockListingsServer(),
+      listLivestockRequestsServer(),
+      countAgreementsForUserServer(),
+    ]);
+    realCounts = {
+      paddocks: paddocks.length,
+      myListings: myListings.length,
+      requests: requests.length,
+      transport: 0,
+      agreements: agreementCount,
+    };
+  }
   const showOnboardingWelcome = params.onboarded === "true";
   const hintedRole = params.role
     ? roleToProfileRole[params.role]
@@ -52,6 +82,7 @@ export default async function AgreementsPage({
         transportJobs={transportJobs}
         listings={paddockListings}
         currentUserProfile={currentUserProfile}
+        realCounts={realCounts}
         showOnboardingWelcome={showOnboardingWelcome}
         initialFarmerId={initialFarmerId}
       />
