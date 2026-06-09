@@ -301,6 +301,8 @@ export type Agreement = {
   id: string;
   listingId: string;
   requestId: string;
+  listingTitle?: string;
+  listingLocation?: string;
   farmerAId: string;
   farmerBId: string;
   status: AgreementLifecycleState;

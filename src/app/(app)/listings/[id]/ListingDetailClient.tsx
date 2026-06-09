@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Camera, Droplets, Fence, MapPin, Sprout } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -32,6 +32,9 @@ export function ListingDetailClient({
   const [listings, setListings] = useState<PaddockListing[]>([]);
   const [agreementId, setAgreementId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const requestId = searchParams.get("request") ?? undefined;
 
   useEffect(() => {
     void Promise.all([listPaddockListings(), listAgreements()]).then(
@@ -43,6 +46,14 @@ export function ListingDetailClient({
       }
     );
   }, [id]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    const supabase = createClient();
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   const listing = useMemo(
     () => listings.find((item) => item.id === id) ?? listings[0],
@@ -64,6 +75,7 @@ export function ListingDetailClient({
   }
 
   const mapImageSrc = getListingMapImageSrc(listing.id);
+  const isOwner = !!userId && listing.ownerId === userId;
 
   async function openWorkspace() {
     setOpening(true);
@@ -80,7 +92,15 @@ export function ListingDetailClient({
           return;
         }
       }
-      const { agreement } = await openAgreementWorkspace(listing.id);
+      const { agreement } = await openAgreementWorkspace(listing.id, requestId);
+      if (!agreement) {
+        flash(
+          "To open a workspace you need an open livestock request to pair with this paddock. Create a request first.",
+          "warning"
+        );
+        setOpening(false);
+        return;
+      }
       flash("Agreement opened.", "success");
       router.push(`/workspace/${agreement.id}`);
     } catch (err) {
@@ -142,21 +162,28 @@ export function ListingDetailClient({
             <p className="rounded-xl border border-sage-deep/15 bg-sage-mist/55 px-4 py-3 text-sm text-bark/75">
               There&apos;s an active agreement on this paddock.
             </p>
+          ) : isOwner ? (
+            <p className="rounded-xl border border-sage-deep/15 bg-cream/55 px-4 py-3 text-sm text-bark/75">
+              This is your paddock. A shared workspace opens automatically when a
+              livestock owner selects it against their request.
+            </p>
           ) : (
             <p className="rounded-xl border border-sage-deep/15 bg-cream/55 px-4 py-3 text-sm text-bark/75">
               Select this paddock to open a shared agreement workspace.
             </p>
           )}
-          <Button
-            type="button"
-            onClick={openWorkspace}
-            disabled={opening}
-            aria-busy={opening}
-            className="w-full"
-          >
-            {opening ? "Opening" : agreementId ? "Open workspace" : "Select paddock"}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Button>
+          {agreementId || !isOwner ? (
+            <Button
+              type="button"
+              onClick={openWorkspace}
+              disabled={opening}
+              aria-busy={opening}
+              className="w-full"
+            >
+              {opening ? "Opening" : agreementId ? "Open workspace" : "Select paddock"}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Button>
+          ) : null}
           <ButtonLink href="/listings" variant="secondary" className="w-full">
             Back to paddocks
           </ButtonLink>

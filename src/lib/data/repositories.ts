@@ -257,11 +257,24 @@ export async function getAgreementRecord(id: string): Promise<Agreement | undefi
   return loadPrototypeState().agreements.find((agreement) => agreement.id === id);
 }
 
-export async function openAgreementWorkspace(listingId: string) {
+export async function openAgreementWorkspace(
+  listingId: string,
+  requestId?: string
+): Promise<{ state: PrototypeState; agreement: Agreement | null }> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(listingId)) {
-    const created = await createSupabaseAgreementForListing(supabase, listingId);
-    if (created) return { state: loadPrototypeState(), agreement: created };
+  if (supabase) {
+    // Real (signed-in) account: only ever return a genuine Supabase agreement.
+    // Never fall back to a prototype id - those can't be reopened later, which
+    // is exactly what produced the dead "agreement-..." workspaces.
+    if (isUuid(listingId)) {
+      const created = await createSupabaseAgreementForListing(
+        supabase,
+        listingId,
+        requestId
+      );
+      if (created) return { state: loadPrototypeState(), agreement: created };
+    }
+    return { state: loadPrototypeState(), agreement: null };
   }
   return openAgreementForListing(listingId);
 }
@@ -564,7 +577,8 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
 
 async function createSupabaseAgreementForListing(
   supabase: SupabaseClient,
-  listingId: string
+  listingId: string,
+  requestId?: string
 ): Promise<Agreement | null> {
   const user = await getCurrentUser(supabase);
   if (!user) return null;
@@ -577,13 +591,30 @@ async function createSupabaseAgreementForListing(
     .single();
   if (!listing) return null;
 
-  const { data: request } = await supabase
-    .from("agistment_requests")
-    .select("*")
-    .eq("requester_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+  // Prefer the specific request the user came in with (e.g. from a match),
+  // otherwise pair against their most recent open request. A landowner viewing
+  // their own paddock has no request of their own, so this returns null and the
+  // caller surfaces a "create a request first" message rather than a broken id.
+  let request: Tables<"agistment_requests"> | null = null;
+  if (requestId && isUuid(requestId)) {
+    const { data } = await supabase
+      .from("agistment_requests")
+      .select("*")
+      .eq("id", requestId)
+      .eq("requester_id", user.id)
+      .maybeSingle();
+    request = data ?? null;
+  }
+  if (!request) {
+    const { data } = await supabase
+      .from("agistment_requests")
+      .select("*")
+      .eq("requester_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    request = data ?? null;
+  }
   if (!request) return null;
 
   const { data: match, error: matchError } = await supabase
@@ -601,6 +632,15 @@ async function createSupabaseAgreementForListing(
     .select("*")
     .single();
   if (matchError || !match) return null;
+
+  // Reuse an existing agreement for this pairing instead of creating duplicates
+  // when the button is clicked more than once.
+  const { data: existingAgreement } = await supabase
+    .from("agreements")
+    .select("*")
+    .eq("match_id", match.id)
+    .maybeSingle();
+  if (existingAgreement) return mapAgreementRow(supabase, existingAgreement);
 
   const { data: agreement, error: agreementError } = await supabase
     .from("agreements")
@@ -710,6 +750,8 @@ async function mapAgreementRow(
     id: row.id,
     listingId: match?.paddock_id ?? agreements[0].listingId,
     requestId: match?.request_id ?? agreements[0].requestId,
+    listingTitle: listing?.title ?? undefined,
+    listingLocation: listing?.region ?? undefined,
     farmerAId: row.livestock_owner_id,
     farmerBId: row.landowner_id,
     status: normaliseAgreementStatus(row.status),
