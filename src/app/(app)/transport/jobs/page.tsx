@@ -1,4 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { TransportJobsClient } from "../TransportJobsClient";
 
 type SearchParams = {
@@ -11,6 +13,26 @@ export default async function TransportJobsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const currentUserProfile = await getCurrentUserProfile();
+  if (currentUserProfile) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Transport RFT map"
+          title="Farmer routes and feed runs waiting for carriers."
+          description="Live RFT routes raised from agistment agreements will appear here for carriers."
+        />
+        <RealAccountEmptyState
+          title="No RFT routes yet."
+          body="Routes raised from agistment agreements will appear here for carriers to quote on."
+          primaryHref="/agreements"
+          primaryLabel="Back to agreements"
+          secondaryHref="/preview/transport"
+          secondaryLabel="See how transport works"
+        />
+      </>
+    );
+  }
   const initialWorkFilter =
     params.work === "feed"
       ? "feed"

@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { ButtonLink } from "@/components/Button";
 import { PaddockMap, type PaddockMapMode } from "@/components/PaddockMap";
 import { PageHeader } from "@/components/PageHeader";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import { agreements, farmers, transportJobs } from "@/lib/dummyData";
 
 type SearchParams = {
@@ -19,6 +21,26 @@ export default async function MapPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const currentUserProfile = await getCurrentUserProfile();
+  if (currentUserProfile) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Map"
+          title="Your paddocks and routes."
+          description="Live paddocks, agreements, and transport routes will appear here as they come in."
+        />
+        <RealAccountEmptyState
+          title="Nothing to map yet."
+          body="Once you have live paddocks, agreements, or transport routes, they'll show on the map here."
+          primaryHref="/listings"
+          primaryLabel="Browse paddocks"
+          secondaryHref="/preview/paddocks"
+          secondaryLabel="See how listings work"
+        />
+      </>
+    );
+  }
   const mode = normaliseMode(params.mode);
   const agreementId = params.agreement ?? agreements[0]?.id;
   const transportId = params.transport ?? transportJobs[0]?.id;
