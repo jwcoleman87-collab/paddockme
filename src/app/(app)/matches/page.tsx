@@ -13,10 +13,17 @@ import {
   type PaddockListing,
 } from "@/lib/dummyData";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
+import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
+import { listSupabasePaddockListingsServer } from "@/lib/data/serverPaddocks";
 
 type MatchSignal = {
   label: string;
   matched: boolean;
+  points: number;
+  matchedDetail: string;
+  missingDetail: string;
+  shortMissingDetail: string;
+  compromise: string;
 };
 
 type ScoredListing = {
@@ -24,6 +31,7 @@ type ScoredListing = {
   score: number;
   signals: MatchSignal[];
   capacityWarning?: string;
+  capacityPenalty: number;
 };
 
 type SearchParams = {
@@ -55,7 +63,13 @@ export default async function MatchesPage({
     );
   }
 
-  const scored = paddockListings
+  // Score against real published paddocks for signed-in users; the mock
+  // listings were removed, so demo visitors simply see no matches.
+  const currentUserProfile = await getCurrentUserProfile();
+  const sourceListings = currentUserProfile
+    ? await listSupabasePaddockListingsServer()
+    : paddockListings;
+  const scored = sourceListings
     .map((listing) => scoreListing(listing, request))
     .sort((a, b) => b.score - a.score);
 
@@ -77,17 +91,30 @@ export default async function MatchesPage({
 
       <RequestSummary request={request} />
 
-      <div className="mt-5 grid gap-5">
-        {scored.map((entry, index) => (
-          <ScoredCard
-            key={entry.listing.id}
-            entry={entry}
-            badge={badgeForRank(index, entry.score, topMatch?.score)}
-          />
-        ))}
-      </div>
+      {scored.length === 0 ? (
+        <Card className="mt-5 text-center">
+          <h2 className="text-lg font-bold text-sage-deep">
+            No paddocks to match yet.
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-bark/70">
+            No live paddocks are listed for this stock and region yet. Browse all
+            paddocks to see everything currently available, or check back as new
+            listings come in.
+          </p>
+        </Card>
+      ) : (
+        <div className="mt-5 grid gap-5">
+          {scored.map((entry, index) => (
+            <ScoredCard
+              key={entry.listing.id}
+              entry={entry}
+              badge={badgeForRank(index, entry.score, topMatch?.score)}
+            />
+          ))}
+        </div>
+      )}
 
-      <div className="mt-6 text-center">
+      <div className="relative z-30 mt-6 text-center">
         <ButtonLink href={listingsHref} variant="ghost">
           Browse all paddocks
           <ArrowRight className="h-4 w-4" aria-hidden />
@@ -208,17 +235,25 @@ function ScoredCard({
   entry: ScoredListing;
   badge: { tone: "success" | "warning" | "neutral"; label: string };
 }) {
+  const shortMissing = shortMissingSummary(entry);
+
   return (
     <article className="relative">
-      <div className="absolute right-4 top-4 z-10">
+      <div className="absolute right-4 top-4 z-10 flex max-w-[min(20rem,calc(100%-2rem))] flex-col items-end gap-1 text-right">
         <StatusBadge tone={badge.tone}>
           Score {entry.score} / 100 &middot; {badge.label}
         </StatusBadge>
+        {shortMissing && (
+          <span className="rounded-md border border-amber-700/25 bg-amber-50 px-2 py-1 text-[0.72rem] font-bold leading-tight text-amber-950 shadow-sm">
+            Why not 100: {shortMissing}
+          </span>
+        )}
       </div>
       <ListingCard
         listing={entry.listing}
         mapImageSrc={getListingMapImageSrc(entry.listing.id)}
       />
+      <ScoreBreakdown entry={entry} />
       {entry.capacityWarning && (
         <Card className="mt-3 border-amber-700/30 bg-amber-50">
           <div className="flex items-start gap-2 text-amber-950">
@@ -232,9 +267,9 @@ function ScoredCard({
           </div>
         </Card>
       )}
-      <Card className="mt-3">
+      <Card className="relative z-20 mt-3">
         <h3 className="text-sm font-bold uppercase tracking-wide text-stone">
-          Why this match
+          Full signal checklist
         </h3>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {entry.signals.map((signal) => (
@@ -269,6 +304,97 @@ function ScoredCard({
   );
 }
 
+function ScoreBreakdown({ entry }: { entry: ScoredListing }) {
+  const matchedSignals = entry.signals.filter((signal) => signal.matched);
+  const missingSignals = entry.signals.filter((signal) => !signal.matched);
+  const missingPoints = 100 - entry.score;
+
+  return (
+    <Card className="relative z-20 mt-3 border-sage-deep/15 bg-cream">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-wide text-stone">
+            Score breakdown
+          </p>
+          <h3 className="mt-1 text-xl font-bold text-sage-deep">
+            {entry.score} points matched. {missingPoints} points to check.
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-bark/75">
+            A lower score is not an automatic no. It shows the parts that need
+            a phone call, inspection, or agreed compromise before this paddock
+            is treated as a safe fit.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {matchedSignals.slice(0, 4).map((signal) => (
+              <span
+                key={signal.label}
+                className="inline-flex items-center gap-1 rounded-sm bg-match-light px-2 py-1 text-xs font-bold text-match"
+              >
+                <Check className="h-3.5 w-3.5" aria-hidden />
+                +{signal.points} {signal.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-amber-700/20 bg-amber-50 p-3">
+          <p className="text-sm font-bold text-amber-950">
+            Why it is not 100%
+          </p>
+          <ul className="mt-2 grid gap-2">
+            {missingSignals.map((signal) => (
+              <li
+                key={signal.label}
+                className="rounded-md border border-amber-700/15 bg-warm-white px-3 py-2"
+              >
+                <div className="flex items-start gap-2">
+                  <Minus className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-bark">
+                      -{signal.points} {signal.label}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-bark/75">
+                      {signal.missingDetail}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-amber-950">
+                      Compromise: {signal.compromise}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+            {entry.capacityPenalty > 0 && entry.capacityWarning && (
+              <li className="rounded-md border border-amber-700/15 bg-warm-white px-3 py-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-bark">
+                      -{entry.capacityPenalty} Capacity risk
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-bark/75">
+                      The requested head count may be too high for the rough
+                      acreage estimate.
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-amber-950">
+                      Compromise: reduce numbers, shorten the stay, or agree a
+                      feed and rotation plan.
+                    </p>
+                  </div>
+                </div>
+              </li>
+            )}
+            {missingSignals.length === 0 && entry.capacityPenalty === 0 && (
+              <li className="rounded-md border border-match/20 bg-match-light/60 px-3 py-2 text-sm font-bold text-match">
+                No major gaps found in the scoring signals.
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function scoreListing(
   listing: PaddockListing,
   request: LivestockRequest
@@ -283,24 +409,81 @@ function scoreListing(
   const capacityWarning = getCapacityWarning(listing, request);
 
   const signals: MatchSignal[] = [
-    { label: `${request.stockType} suitable`, matched: stockMatch },
-    { label: `Region: ${listing.regionLabel}`, matched: regionMatch },
-    { label: "Verified provider", matched: verified },
-    { label: "Good or excellent feed", matched: goodFeed },
-    { label: "Permanent water", matched: permanentWater },
-    { label: "Secure fencing", matched: secureFencing },
+    {
+      label: `${request.stockType} suitable`,
+      matched: stockMatch,
+      points: 30,
+      matchedDetail: `Listed as suitable for ${request.stockType.toLowerCase()}.`,
+      missingDetail: `This paddock is not currently listed as suitable for ${request.stockType.toLowerCase()}.`,
+      shortMissingDetail: `${request.stockType.toLowerCase()} suitability not confirmed`,
+      compromise: `ask the landowner to confirm ${request.stockType.toLowerCase()}-safe fencing, yards, pasture and water before moving stock.`,
+    },
+    {
+      label: `Region: ${listing.regionLabel}`,
+      matched: regionMatch,
+      points: 25,
+      matchedDetail: "Inside the preferred region list.",
+      missingDetail: `${listing.regionLabel} is outside the preferred regions on this request.`,
+      shortMissingDetail: "outside preferred region",
+      compromise: "accept the extra transport time or edit the request regions if this location still works.",
+    },
+    {
+      label: "Verified provider",
+      matched: verified,
+      points: 15,
+      matchedDetail: "Provider has been verified.",
+      missingDetail: "Provider verification is not complete yet.",
+      shortMissingDetail: "provider not verified",
+      compromise: "request inspection notes, references, photos and clear payment terms before agreeing.",
+    },
+    {
+      label: "Good or excellent feed",
+      matched: goodFeed,
+      points: 10,
+      matchedDetail: `Feed is marked ${listing.feedStatus.toLowerCase()}.`,
+      missingDetail: `Feed is marked ${listing.feedStatus.toLowerCase()}, not good or excellent.`,
+      shortMissingDetail: "feed not strong enough",
+      compromise: "budget for supplementary feed or agree a shorter stay.",
+    },
+    {
+      label: "Permanent water",
+      matched: permanentWater,
+      points: 10,
+      matchedDetail: "Permanent water is listed.",
+      missingDetail: `Water is listed as ${listing.waterStatus.toLowerCase()}, not permanent.`,
+      shortMissingDetail: "water not permanent",
+      compromise: "confirm trough capacity, backup supply and who pays if water needs carting.",
+    },
+    {
+      label: "Secure fencing",
+      matched: secureFencing,
+      points: 10,
+      matchedDetail: "Fencing is marked secure.",
+      missingDetail: `Fencing is marked ${listing.fencingStatus.toLowerCase()}, not secure.`,
+      shortMissingDetail: "fencing not marked secure",
+      compromise: "only proceed if upgrades or inspection confirm it is safe for this stock.",
+    },
   ];
 
   const rawScore =
-    (stockMatch ? 30 : 0) +
-    (regionMatch ? 25 : 0) +
-    (verified ? 15 : 0) +
-    (goodFeed ? 10 : 0) +
-    (permanentWater ? 10 : 0) +
-    (secureFencing ? 10 : 0);
-  const score = capacityWarning ? Math.min(rawScore - 20, 80) : rawScore;
+    signals.reduce((total, signal) => total + (signal.matched ? signal.points : 0), 0);
+  const adjustedScore = capacityWarning ? Math.min(rawScore - 20, 80) : rawScore;
+  const score = Math.max(adjustedScore, 0);
+  const capacityPenalty = capacityWarning ? rawScore - score : 0;
 
-  return { listing, score: Math.max(score, 0), signals, capacityWarning };
+  return { listing, score, signals, capacityWarning, capacityPenalty };
+}
+
+function shortMissingSummary(entry: ScoredListing) {
+  if (entry.score >= 100) return null;
+  const missingSignal = entry.signals.find((signal) => !signal.matched);
+  if (missingSignal) {
+    return `${missingSignal.shortMissingDetail} (-${missingSignal.points})`;
+  }
+  if (entry.capacityPenalty > 0) {
+    return `capacity risk (-${entry.capacityPenalty})`;
+  }
+  return `${100 - entry.score} points need checking`;
 }
 
 function getCapacityWarning(
