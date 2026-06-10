@@ -14,6 +14,7 @@ import {
   listLivestockRequestsServer,
   listMyPaddockListingsServer,
   listSupabasePaddockListingsServer,
+  listTransportJobsBoardServer,
   type AgreementSummary,
 } from "@/lib/data/serverPaddocks";
 import { AgreementsClient } from "./AgreementsClient";
@@ -47,19 +48,26 @@ export default async function AgreementsPage({
     | undefined;
   let realAgreements: AgreementSummary[] = [];
   if (currentUserProfile) {
-    const [paddocks, myListings, requests, agreementCount, agreementSummaries] =
-      await Promise.all([
-        listSupabasePaddockListingsServer(),
-        listMyPaddockListingsServer(),
-        listLivestockRequestsServer(),
-        countAgreementsForUserServer(),
-        listAgreementSummariesForUserServer(),
-      ]);
+    const [
+      paddocks,
+      myListings,
+      requests,
+      agreementCount,
+      agreementSummaries,
+      transportJobsBoard,
+    ] = await Promise.all([
+      listSupabasePaddockListingsServer(),
+      listMyPaddockListingsServer(),
+      listLivestockRequestsServer(),
+      countAgreementsForUserServer(),
+      listAgreementSummariesForUserServer(),
+      listTransportJobsBoardServer(),
+    ]);
     realCounts = {
       paddocks: paddocks.length,
       myListings: myListings.length,
       requests: requests.length,
-      transport: 0,
+      transport: transportJobsBoard.length,
       agreements: agreementCount,
     };
     realAgreements = agreementSummaries;

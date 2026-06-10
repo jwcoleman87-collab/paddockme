@@ -1,7 +1,8 @@
 import { PageHeader } from "@/components/PageHeader";
-import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
+import { listTransportJobsBoardServer } from "@/lib/data/serverPaddocks";
 import { TransportJobsClient } from "../TransportJobsClient";
+import { RealJobsBoard } from "./RealJobsBoard";
 
 type SearchParams = {
   work?: string;
@@ -15,21 +16,25 @@ export default async function TransportJobsPage({
   const params = await searchParams;
   const currentUserProfile = await getCurrentUserProfile();
   if (currentUserProfile) {
+    // Real RFT board: live Supabase jobs. Transport providers see every
+    // still-available job (driver-discovery RLS policy) plus their accepted
+    // work; farmers see the jobs raised from their agreements.
+    const jobs = await listTransportJobsBoardServer();
+    const isTransportProvider = currentUserProfile.accountTypes.includes(
+      "Transport Provider"
+    );
     return (
       <>
         <PageHeader
-          eyebrow="Transport RFT map"
-          title="Farmer routes and feed runs waiting for carriers."
-          description="Live RFT routes raised from agistment agreements will appear here for carriers."
+          eyebrow="Transport RFT board"
+          title="Livestock routes waiting for carriers."
+          description={
+            isTransportProvider
+              ? "Live RFTs raised from agistment agreements. Accept a job to open its transport room - route, load, and timing only, never private agistment terms."
+              : "Transport jobs raised from your agreements. Open a job to follow its status and chat with the carrier."
+          }
         />
-        <RealAccountEmptyState
-          title="No RFT routes yet."
-          body="Routes raised from agistment agreements will appear here for carriers to quote on."
-          primaryHref="/agreements"
-          primaryLabel="Back to agreements"
-          secondaryHref="/preview/transport"
-          secondaryLabel="See how transport works"
-        />
+        <RealJobsBoard jobs={jobs} isTransportProvider={isTransportProvider} />
       </>
     );
   }

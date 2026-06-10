@@ -326,6 +326,67 @@ export async function listProfilesByIdServer(
   }
 }
 
+/**
+ * One transport job row for the RFT board. Routes/loads only - the table
+ * deliberately carries no agistment rates, so nothing private leaks to
+ * carriers browsing for work.
+ */
+export type TransportJobSummary = {
+  id: string;
+  status: string;
+  pickup: string;
+  destination: string;
+  livestockCount: string;
+  preferredDate: string;
+  routeSummary: string;
+  /** "mine" = viewer is a party or the assigned driver; "available" = open for any carrier. */
+  relation: "available" | "mine";
+  createdAt: string | null;
+};
+
+/**
+ * Real transport jobs for the signed-in user's RFT board: jobs they're a
+ * party to (farmer side or assigned driver) plus - for transport providers,
+ * via the driver-discovery RLS policy - every still-available job.
+ */
+export async function listTransportJobsBoardServer(): Promise<TransportJobSummary[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("transport_jobs")
+      .select(
+        "id, status, pickup_address, destination_address, livestock_count, preferred_date, route_summary, driver_id, livestock_owner_id, landowner_id, created_at"
+      )
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+
+    return data.map((row) => ({
+      id: row.id,
+      status: row.status,
+      pickup: row.pickup_address ?? "Pickup to confirm",
+      destination: row.destination_address ?? "Destination to confirm",
+      livestockCount: row.livestock_count ?? "Livestock movement",
+      preferredDate: row.preferred_date ?? "Date to confirm",
+      routeSummary: row.route_summary ?? "Route to confirm",
+      relation:
+        row.livestock_owner_id === user.id ||
+        row.landowner_id === user.id ||
+        row.driver_id === user.id
+          ? "mine"
+          : "available",
+      createdAt: row.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Count of agreements the signed-in user is a party to (either side). */
 export async function countAgreementsForUserServer(): Promise<number> {
   if (!isSupabaseConfigured()) return 0;

@@ -410,14 +410,14 @@ function profileToAccountHome(profile: CurrentUserProfile) {
       firstName,
       region,
       Icon: Truck,
-      tagline: "Publish transport availability and respond to farmer transport requests.",
+      tagline: "Find livestock routes raised from agistment agreements and accept the work.",
       metricLabel: "Live jobs",
-      metricHref: undefined,
-      nextStep: "Publish capacity",
+      metricHref: "/transport/jobs",
+      nextStep: "Find transport work",
       emptyTitle: "No transport jobs yet.",
-      emptyHelper: "Post available capacity or open the transport job board to find work.",
-      ctaHref: "/transport/available",
-      ctaLabel: "Publish capacity",
+      emptyHelper: "Open the RFT board to see livestock routes waiting for a carrier.",
+      ctaHref: "/transport/jobs",
+      ctaLabel: "Open the RFT board",
     };
   }
 
