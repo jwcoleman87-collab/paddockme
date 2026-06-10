@@ -10,9 +10,11 @@ import {
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
   countAgreementsForUserServer,
+  listAgreementSummariesForUserServer,
   listLivestockRequestsServer,
   listMyPaddockListingsServer,
   listSupabasePaddockListingsServer,
+  type AgreementSummary,
 } from "@/lib/data/serverPaddocks";
 import { AgreementsClient } from "./AgreementsClient";
 
@@ -43,13 +45,16 @@ export default async function AgreementsPage({
         myListings: number;
       }
     | undefined;
+  let realAgreements: AgreementSummary[] = [];
   if (currentUserProfile) {
-    const [paddocks, myListings, requests, agreementCount] = await Promise.all([
-      listSupabasePaddockListingsServer(),
-      listMyPaddockListingsServer(),
-      listLivestockRequestsServer(),
-      countAgreementsForUserServer(),
-    ]);
+    const [paddocks, myListings, requests, agreementCount, agreementSummaries] =
+      await Promise.all([
+        listSupabasePaddockListingsServer(),
+        listMyPaddockListingsServer(),
+        listLivestockRequestsServer(),
+        countAgreementsForUserServer(),
+        listAgreementSummariesForUserServer(),
+      ]);
     realCounts = {
       paddocks: paddocks.length,
       myListings: myListings.length,
@@ -57,6 +62,7 @@ export default async function AgreementsPage({
       transport: 0,
       agreements: agreementCount,
     };
+    realAgreements = agreementSummaries;
   }
   const showOnboardingWelcome = params.onboarded === "true";
   const hintedRole = params.role
@@ -83,6 +89,7 @@ export default async function AgreementsPage({
         listings={paddockListings}
         currentUserProfile={currentUserProfile}
         realCounts={realCounts}
+        realAgreements={realAgreements}
         showOnboardingWelcome={showOnboardingWelcome}
         initialFarmerId={initialFarmerId}
       />

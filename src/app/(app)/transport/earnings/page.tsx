@@ -9,7 +9,7 @@ export default function TransportEarningsPage() {
       <PageHeader
         eyebrow="Transport earnings"
         title="Earnings view."
-        description="A lightweight placeholder for driver earnings. Payments and payout logic are intentionally out of scope for this MVP build."
+        description="Job history and earnings will appear here. Invoicing and payouts are coming soon."
       />
       <Card className="text-center">
         <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-sage-mist text-sage-deep">

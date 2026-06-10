@@ -24,18 +24,9 @@ const PUBLIC_PREFIXES = [
   "/preview",
 ];
 
-function isPublicBrowseRoute(path: string): boolean {
-  return (
-    path === "/listings" ||
-    (path.startsWith("/listings/") && !path.startsWith("/listings/new")) ||
-    path === "/requests" ||
-    path === "/transport" ||
-    path === "/transport/jobs" ||
-    path === "/transport/available" ||
-    path === "/map"
-  );
-}
-
+// Production accounts only: every marketplace surface requires sign-in.
+// The old "public browse" exemption (listings/requests/transport/map for
+// signed-out visitors) rendered the demo seed world, which is retired.
 const APP_PREFIXES = [
   "/agreements",
   "/home",
@@ -93,8 +84,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     path === "/" ||
     isOnboardingRoute ||
-    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
-    isPublicBrowseRoute(path);
+    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
   const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
 
   if (!user && isAppRoute && !isPublicRoute) {
@@ -114,7 +104,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  if (user && isAppRoute && !isPublicBrowseRoute(path)) {
+  if (user && isAppRoute) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("account_types")

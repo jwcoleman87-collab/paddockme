@@ -26,6 +26,12 @@ export default async function TransportDetailPage({
   const { id } = await params;
   const currentUserProfile = await getCurrentUserProfile();
   if (currentUserProfile) {
+    // Real transport jobs (created via "Request transport" in a workspace)
+    // live in Supabase with uuid ids - let the route client load them.
+    // Anything else is a dead link for a real account.
+    if (isUuid(id)) {
+      return <TransportRouteClient id={id} seedJob={null} />;
+    }
     return (
       <RealAccountEmptyState
         title="No transport room found."
@@ -38,5 +44,9 @@ export default async function TransportDetailPage({
     );
   }
 
-  return <TransportRouteClient id={id} seedJob={getTransportJob(id)} />;
+  return <TransportRouteClient id={id} seedJob={getTransportJob(id) ?? null} />;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

@@ -118,7 +118,7 @@ export default function NewRequestPage() {
     if (transportRequired) {
       params.set("transport", transportRequired);
     }
-    await createLivestockRequestRecord({
+    const created = await createLivestockRequestRecord({
       stockType,
       breed,
       headCount,
@@ -126,6 +126,10 @@ export default function NewRequestPage() {
       preferredRegions: selectedRegions,
       transportRequired: transportRequired as "Yes" | "No" | "Unsure",
     });
+    if (!created) {
+      flash("Couldn't save your request. Please try again.", "warning");
+      return;
+    }
     flash("Request created. Matching paddocks now.", "success");
     router.push(`/matches?${params.toString()}`);
   }

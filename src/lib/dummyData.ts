@@ -237,6 +237,9 @@ export type PaddockListing = {
   feedStatus: "Excellent" | "Good" | "Tight";
   waterStatus: "Permanent" | "Seasonal" | "Tank";
   fencingStatus: "Secure" | "Good" | "Needs inspection";
+  feedNote?: string;
+  waterNote?: string;
+  fencingNote?: string;
   verificationStatus: "Verified provider" | "Pending verification";
   availabilityWindow: string;
   guideTerms: string;
@@ -480,7 +483,7 @@ export const farmers: Farmer[] = [
     verifications: [
       { label: "Mobile verified", status: "Verified", detail: "04xx xxx 281" },
       { label: "PIC of origin", status: "Verified", detail: "NA123456" },
-      { label: "ABN", status: "Pending", detail: "Verification placeholder" },
+      { label: "ABN", status: "Pending", detail: "Pending ABN verification" },
       { label: "NLIS account", status: "Verified" },
     ],
     readiness: [
@@ -547,7 +550,7 @@ export const farmers: Farmer[] = [
     verifications: [
       { label: "Mobile verified", status: "Verified", detail: "04xx xxx 117" },
       { label: "PIC of origin", status: "Verified", detail: "NB987654" },
-      { label: "ABN", status: "Verified", detail: "Verification placeholder" },
+      { label: "ABN", status: "Verified", detail: "ABN verified" },
       { label: "LPA accreditation", status: "Verified" },
       { label: "Biosecurity declaration", status: "Verified", detail: "Last updated 2 weeks ago" },
     ],
@@ -1279,11 +1282,14 @@ export function getListing(id: string) {
 }
 
 export function getAgreement(id: string) {
-  return agreements.find((agreement) => agreement.id === id) ?? agreements[0];
+  // No seed fallback: an unknown id must surface the "not found" state, not
+  // silently render Agreement 1's workspace.
+  return agreements.find((agreement) => agreement.id === id);
 }
 
 export function getTransportJob(id: string) {
-  return transportJobs.find((job) => job.id === id) ?? transportJobs[0];
+  // Same as getAgreement - unknown ids must not leak Transport Job 1.
+  return transportJobs.find((job) => job.id === id);
 }
 
 export function getTransportJobForAgreement(agreementId: string) {

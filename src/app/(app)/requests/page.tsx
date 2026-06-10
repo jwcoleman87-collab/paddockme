@@ -1,6 +1,7 @@
 import { ButtonLink } from "@/components/Button";
+import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
-import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
+import { CirclePlus } from "lucide-react";
 import {
   farmers,
   livestockRequests,
@@ -10,6 +11,7 @@ import {
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
   listLivestockRequestsServer,
+  listProfilesByIdServer,
   listSupabasePaddockListingsServer,
 } from "@/lib/data/serverPaddocks";
 import { RequestsClient } from "./RequestsClient";
@@ -25,32 +27,38 @@ export default async function RequestsPage() {
       listLivestockRequestsServer(),
       listSupabasePaddockListingsServer(),
     ]);
+    // Show real requester names on the cards instead of a generic
+    // "Livestock owner" label.
+    const requesters = await listProfilesByIdServer(
+      requests.map((request) => request.requesterId)
+    );
     return (
       <>
         <PageHeader
           eyebrow="Open requests"
           title="Livestock seeking paddocks."
           description="Live requests from PaddockME customers looking for agistment."
-          action={
-            <ButtonLink href="/listings/new" variant="secondary">
-              List a paddock
-            </ButtonLink>
-          }
         />
         {requests.length === 0 ? (
-          <RealAccountEmptyState
-            title="No open requests yet."
-            body="Live livestock requests will appear here as customers post them. Post your own request, or list a paddock to start receiving inquiries."
-            primaryHref="/request/new"
-            primaryLabel="Post a request"
-            secondaryHref="/listings/new"
-            secondaryLabel="List a paddock"
-          />
+          <Card className="text-center">
+            <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
+              <CirclePlus className="h-6 w-6" aria-hidden />
+            </div>
+            <h1 className="text-xl font-bold text-sage-deep">
+              No open requests yet.
+            </h1>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
+              Live livestock requests will appear here as customers post them.
+              Check back shortly for livestock owners looking for paddock
+              capacity.
+            </p>
+          </Card>
         ) : (
           <RequestsClient
             requests={requests}
-            requestersById={{}}
+            requestersById={requesters}
             paddockListings={listings}
+            currentUserId={currentUserProfile.id}
           />
         )}
       </>

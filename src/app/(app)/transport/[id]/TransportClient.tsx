@@ -361,7 +361,11 @@ export function TransportClient({
 
   async function setStatus(status: TransportJobStatus) {
     const { job: updated } = await updateTransportJobStatus(jobState.id, status);
-    if (updated) setJobState(updated);
+    if (!updated) {
+      flash("Couldn't update the status. Please try again.", "warning");
+      return;
+    }
+    setJobState(updated);
     flash(`Status updated: ${formatTransportStatus(status)}.`, "success");
     appendSystemMessage(`${senderProfile[role].name} updated transport status to ${formatTransportStatus(status)}.`);
   }

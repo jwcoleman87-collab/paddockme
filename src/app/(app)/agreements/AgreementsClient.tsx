@@ -24,6 +24,7 @@ import { ComplianceReadinessPanel } from "@/components/ComplianceReadinessPanel"
 import { InfoTile } from "@/components/InfoTile";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { CurrentUserProfile } from "@/lib/supabase/currentUser";
+import type { AgreementSummary } from "@/lib/data/serverPaddocks";
 import type {
   Agreement,
   AgreementLifecycleState,
@@ -63,6 +64,7 @@ export function AgreementsClient({
   listings,
   currentUserProfile,
   realCounts,
+  realAgreements = [],
   showOnboardingWelcome = false,
   initialFarmerId,
 }: {
@@ -78,6 +80,7 @@ export function AgreementsClient({
     agreements: number;
     myListings: number;
   };
+  realAgreements?: AgreementSummary[];
   showOnboardingWelcome?: boolean;
   initialFarmerId?: string;
 }) {
@@ -262,6 +265,9 @@ export function AgreementsClient({
             </div>
           </div>
         </Card>
+        {realAgreements.length > 0 && (
+          <RealAgreementsSection agreements={realAgreements} />
+        )}
         <RealAccountDashboard
           account={realAccount}
           paddockCount={realCounts?.paddocks ?? 0}
@@ -432,6 +438,71 @@ function profileToAccountHome(profile: CurrentUserProfile) {
 }
 
 type AccountHome = ReturnType<typeof profileToAccountHome>;
+
+/**
+ * The signed-in user's live agreement workspaces. Without this section a
+ * real account had no way back into an open workspace after leaving it.
+ */
+function RealAgreementsSection({
+  agreements,
+}: {
+  agreements: AgreementSummary[];
+}) {
+  return (
+    <section aria-label="Your agreements" className="mb-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-sage-deep">
+          Your agreements
+        </h2>
+        <span className="text-xs font-semibold text-bark/60">
+          {agreements.length} open
+        </span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {agreements.map((agreement) => (
+          <Link
+            key={agreement.id}
+            href={`/workspace/${agreement.id}`}
+            className="block rounded-2xl border border-mist bg-warm-white p-4 transition hover:border-sage/40 hover:bg-sage-mist/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-base font-bold text-sage-deep">
+                  {agreement.listingTitle}
+                </p>
+                <p className="mt-0.5 text-sm text-bark/75">
+                  With {agreement.otherPartyName} · you are the{" "}
+                  {agreement.viewerRole.toLowerCase()}
+                </p>
+              </div>
+              <StatusBadge
+                tone={
+                  lifecycleTone[agreement.status as AgreementLifecycleState] ??
+                  "neutral"
+                }
+              >
+                {agreement.status}
+              </StatusBadge>
+            </div>
+            {agreement.lastMessage ? (
+              <p className="mt-2 truncate text-sm text-bark/70">
+                {agreement.lastMessage.senderName}: {agreement.lastMessage.body}
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-bark/55">
+                No messages yet - open the workspace to start the conversation.
+              </p>
+            )}
+            <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-sage-deep">
+              Open workspace
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function RealAccountDashboard({
   account,

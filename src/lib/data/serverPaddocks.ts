@@ -4,7 +4,7 @@ import {
 } from "@/lib/mapCoordinates";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
-import type { LivestockRequest, PaddockListing } from "@/lib/dummyData";
+import type { Farmer, LivestockRequest, PaddockListing } from "@/lib/dummyData";
 import type { Tables } from "@/lib/types/database";
 
 /**
@@ -162,6 +162,168 @@ function mapRequestRow(row: Tables<"agistment_requests">): LivestockRequest {
     preferredRegions: row.preferred_regions ?? [],
     transportRequired: "Unsure",
   };
+}
+
+/**
+ * Lightweight summary of an agreement for list surfaces (dashboard,
+ * messages inbox). One row per agreement the signed-in user is party to.
+ */
+export type AgreementSummary = {
+  id: string;
+  listingTitle: string;
+  otherPartyName: string;
+  /** Which side the signed-in user is on. */
+  viewerRole: "Livestock owner" | "Landowner";
+  status: string;
+  updatedAt: string | null;
+  lastMessage: { body: string; senderName: string; at: string } | null;
+};
+
+/**
+ * Agreements the signed-in user is a party to, newest first, with the
+ * paddock title, the other party's name, and the latest chat message.
+ * This is what lets real users find their way back into a workspace.
+ */
+export async function listAgreementSummariesForUserServer(): Promise<
+  AgreementSummary[]
+> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data: agreements, error } = await supabase
+      .from("agreements")
+      .select("id, match_id, livestock_owner_id, landowner_id, status, updated_at")
+      .or(`livestock_owner_id.eq.${user.id},landowner_id.eq.${user.id}`)
+      .order("updated_at", { ascending: false });
+    if (error || !agreements || agreements.length === 0) return [];
+
+    const agreementIds = agreements.map((a) => a.id);
+    const matchIds = agreements.map((a) => a.match_id).filter(Boolean);
+    const partyIds = Array.from(
+      new Set(agreements.flatMap((a) => [a.livestock_owner_id, a.landowner_id]))
+    );
+
+    const [{ data: matches }, { data: profiles }, { data: messages }] =
+      await Promise.all([
+        matchIds.length
+          ? supabase.from("matches").select("id, paddock_id").in("id", matchIds)
+          : Promise.resolve({ data: [] as { id: string; paddock_id: string }[] }),
+        supabase.from("profiles").select("id, full_name").in("id", partyIds),
+        supabase
+          .from("messages")
+          .select("agreement_id, body, sender_id, created_at")
+          .in("agreement_id", agreementIds)
+          .order("created_at", { ascending: false }),
+      ]);
+
+    const paddockIds = (matches ?? []).map((m) => m.paddock_id).filter(Boolean);
+    const { data: paddocks } = paddockIds.length
+      ? await supabase.from("paddocks").select("id, title").in("id", paddockIds)
+      : { data: [] as { id: string; title: string }[] };
+
+    const paddockTitleById = new Map(
+      (paddocks ?? []).map((p) => [p.id, p.title])
+    );
+    const paddockIdByMatchId = new Map(
+      (matches ?? []).map((m) => [m.id, m.paddock_id])
+    );
+    const nameById = new Map(
+      (profiles ?? []).map((p) => [p.id, p.full_name ?? "PaddockME user"])
+    );
+    const latestMessageByAgreement = new Map<
+      string,
+      { body: string; sender_id: string; created_at: string }
+    >();
+    for (const message of messages ?? []) {
+      if (!message.agreement_id) continue;
+      if (!latestMessageByAgreement.has(message.agreement_id)) {
+        latestMessageByAgreement.set(message.agreement_id, message);
+      }
+    }
+
+    return agreements.map((agreement) => {
+      const isLivestockOwner = agreement.livestock_owner_id === user.id;
+      const otherPartyId = isLivestockOwner
+        ? agreement.landowner_id
+        : agreement.livestock_owner_id;
+      const paddockId = agreement.match_id
+        ? paddockIdByMatchId.get(agreement.match_id)
+        : undefined;
+      const lastMessage = latestMessageByAgreement.get(agreement.id);
+      return {
+        id: agreement.id,
+        listingTitle:
+          (paddockId ? paddockTitleById.get(paddockId) : undefined) ??
+          "Agreement workspace",
+        otherPartyName: nameById.get(otherPartyId) ?? "PaddockME user",
+        viewerRole: isLivestockOwner ? "Livestock owner" : "Landowner",
+        status: agreement.status ?? "Draft",
+        updatedAt: agreement.updated_at,
+        lastMessage: lastMessage
+          ? {
+              body: lastMessage.body,
+              senderName:
+                lastMessage.sender_id === user.id
+                  ? "You"
+                  : nameById.get(lastMessage.sender_id) ?? "PaddockME user",
+              at: lastMessage.created_at,
+            }
+          : null,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Profile cards for the given user ids (e.g. requesters on the requests
+ * board) so real names show instead of a generic "Livestock owner".
+ */
+export async function listProfilesByIdServer(
+  ids: string[]
+): Promise<Record<string, Farmer>> {
+  if (!isSupabaseConfigured() || ids.length === 0) return {};
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return {};
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, regions, account_types, id_verified, phone")
+      .in("id", Array.from(new Set(ids)));
+    if (error || !data) return {};
+    const result: Record<string, Farmer> = {};
+    for (const row of data) {
+      result[row.id] = {
+        id: row.id,
+        name: row.full_name ?? "PaddockME user",
+        role: row.account_types?.includes("Landowner")
+          ? "Landowner"
+          : row.account_types?.includes("Transport Provider")
+            ? "Transport Provider"
+            : "Livestock Owner",
+        region: row.regions?.[0] ?? "Australia",
+        verified: !!row.id_verified,
+        tagline: row.full_name ?? "PaddockME member",
+        bio: "",
+        mobileVerified: !!row.phone,
+        preparednessScore: row.id_verified ? 70 : 35,
+        verifications: [],
+        readiness: [],
+      };
+    }
+    return result;
+  } catch {
+    return {};
+  }
 }
 
 /** Count of agreements the signed-in user is a party to (either side). */

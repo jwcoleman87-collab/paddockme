@@ -19,10 +19,13 @@ import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
   createAgreementArtefact,
   createAgreementMessage,
+  getAgreementLiveState,
   getCurrentUserId,
+  listAgreementMessages,
   listTransportJobs,
   requestTransportJob,
   updateAgreementSectionAgreement,
+  updateAgreementStatusRecord,
 } from "@/lib/data/repositories";
 import type {
   Agreement,
@@ -99,6 +102,28 @@ export function WorkspaceClient({
   useEffect(() => {
     markThreadSeen(agreement.id, messages.length);
   }, [agreement.id, messages.length]);
+
+  // Live chat sync for real (Supabase) workspaces. Messages used to load once
+  // on mount, so the other party never saw anything new without a full page
+  // reload - "James typed a message and nothing came through for Leona".
+  // Poll every few seconds and merge, keeping any local-only/system messages.
+  const lastLocalMutationRef = useRef(0);
+  useEffect(() => {
+    if (!isRealWorkspace) return;
+    let active = true;
+    const refresh = () => {
+      void listAgreementMessages(agreement.id).then((serverMessages) => {
+        if (!active || serverMessages.length === 0) return;
+        setMessages((current) => mergeMessages(serverMessages, current));
+      });
+    };
+    const interval = window.setInterval(refresh, 5000);
+    refresh();
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [agreement.id, isRealWorkspace]);
 
   const [linkedTransport, setLinkedTransport] = useState<TransportJob | undefined>(
     () => getTransportJobForAgreement(agreement.id)
@@ -265,6 +290,39 @@ export function WorkspaceClient({
     agreement.artefacts
   );
 
+  // Live sync of the other party's section agree-ticks and lifecycle stage
+  // for real workspaces. Skipped briefly after a local change so a poll
+  // response can't clobber an in-flight write with stale data.
+  useEffect(() => {
+    if (!isRealWorkspace) return;
+    let active = true;
+    const refresh = () => {
+      void getAgreementLiveState(agreement.id).then((live) => {
+        if (!active || !live) return;
+        if (Date.now() - lastLocalMutationRef.current < 6000) return;
+        setSectionState((current) => {
+          const next = { ...current };
+          for (const section of live.sections) {
+            next[section.id] = {
+              agreedByA: section.agreedByA,
+              agreedByB: section.agreedByB,
+            };
+          }
+          return next;
+        });
+        setLifecycleState((current) =>
+          current === live.status ? current : live.status
+        );
+      });
+    };
+    const interval = window.setInterval(refresh, 5000);
+    refresh();
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [agreement.id, isRealWorkspace]);
+
   const hydratedRef = useRef(false);
   const storageKey = `paddockme.workspace.${agreement.id}`;
 
@@ -340,6 +398,7 @@ export function WorkspaceClient({
       party === "A"
         ? { ...previous, agreedByA: !previous.agreedByA }
         : { ...previous, agreedByB: !previous.agreedByB };
+    lastLocalMutationRef.current = Date.now();
     setSectionState((current) => ({ ...current, [sectionId]: next }));
     void updateAgreementSectionAgreement({
       agreementId: agreement.id,
@@ -367,7 +426,11 @@ export function WorkspaceClient({
   const advanceLifecycle = (to: AgreementLifecycleState) => {
     const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
+    lastLocalMutationRef.current = Date.now();
     setLifecycleState(to);
+    if (isRealWorkspace) {
+      void updateAgreementStatusRecord(agreement.id, to);
+    }
     setLifecycleHistory((history) => [
       ...history,
       {
@@ -427,7 +490,11 @@ export function WorkspaceClient({
     const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
     if (from === "Cancelled" || from === "Completed") return;
+    lastLocalMutationRef.current = Date.now();
     setLifecycleState("Cancelled");
+    if (isRealWorkspace) {
+      void updateAgreementStatusRecord(agreement.id, "Cancelled");
+    }
     setLifecycleHistory((history) => [
       ...history,
       {
@@ -444,6 +511,10 @@ export function WorkspaceClient({
 
   const requestTransport = async () => {
     const { job } = await requestTransportJob(agreement.id);
+    if (!job) {
+      flash("Couldn't request transport. Please try again.", "warning");
+      return;
+    }
     setLinkedTransport(job);
     setTransportConfirmations(
       Object.fromEntries(
@@ -638,6 +709,16 @@ function readPersonaCookie(): string | null {
 function writePersonaCookie(personaId: string) {
   if (typeof document === "undefined") return;
   document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+/**
+ * Server messages win on ordering; anything the server doesn't know about
+ * (optimistic sends still in flight, local system notices) stays appended.
+ */
+function mergeMessages(serverMessages: Message[], current: Message[]): Message[] {
+  const serverIds = new Set(serverMessages.map((message) => message.id));
+  const localOnly = current.filter((message) => !serverIds.has(message.id));
+  return [...serverMessages, ...localOnly];
 }
 
 function mergeArtefacts(

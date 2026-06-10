@@ -22,15 +22,14 @@ import { InfoTile } from "@/components/InfoTile";
 import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { StatusBadge } from "@/components/StatusBadge";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/googleMapsKey";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { TablesInsert } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
 import type { Farmer, TransportCapacity } from "@/lib/dummyData";
 
-const MAPS_KEY =
-  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
-  "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
+const MAPS_KEY = GOOGLE_MAPS_API_KEY;
 
 function buildRouteMapUrl(origin: string, destination: string): string {
   const enc = encodeURIComponent;

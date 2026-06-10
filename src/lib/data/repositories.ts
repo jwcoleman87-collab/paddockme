@@ -49,9 +49,10 @@ export async function repositoryMode(): Promise<"supabase" | "demo"> {
 export async function listProfiles(): Promise<Farmer[]> {
   const supabase = await getAuthedClient();
   if (!supabase) return farmers;
+  // Real accounts only ever see real profiles - no demo persona merging.
   const { data, error } = await supabase.from("profiles").select("*");
-  if (error || !data) return farmers;
-  return mergeProfiles(data.map(mapProfileRow), farmers);
+  if (error || !data) return [];
+  return data.map(mapProfileRow);
 }
 
 function mapProfileRow(row: Tables<"profiles">): Farmer {
@@ -94,8 +95,8 @@ export async function listLivestockRequests(): Promise<LivestockRequest[]> {
     .from("agistment_requests")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error || !data) return loadPrototypeState().livestockRequests;
-  return mergeRequests(data.map(mapRequestRow), loadPrototypeState().livestockRequests);
+  if (error || !data) return [];
+  return data.map(mapRequestRow);
 }
 
 function mergeRequests(primary: LivestockRequest[], fallback: LivestockRequest[]) {
@@ -117,13 +118,15 @@ export async function createLivestockRequestRecord(input: {
   duration: string;
   preferredRegions: string[];
   transportRequired: LivestockRequest["transportRequired"];
-}) {
-  const local = createLivestockRequest(input);
+}): Promise<{ state: PrototypeState; request: LivestockRequest } | null> {
   const supabase = await getAuthedClient();
-  if (!supabase) return local;
+  // Demo visitors write to the local prototype store only.
+  if (!supabase) return createLivestockRequest(input);
 
+  // Real accounts write to Supabase only - never to localStorage, and a
+  // failed insert surfaces as null instead of silently returning demo data.
   const user = await getCurrentUser(supabase);
-  if (!user) return local;
+  if (!user) return null;
   await ensureProfile(supabase, user);
 
   const { data, error } = await supabase
@@ -141,8 +144,8 @@ export async function createLivestockRequestRecord(input: {
     .select("*")
     .single();
 
-  if (error || !data) return local;
-  return { state: local.state, request: mapRequestRow(data) };
+  if (error || !data) return null;
+  return { state: loadPrototypeState(), request: mapRequestRow(data) };
 }
 
 export async function listPaddockListings(): Promise<PaddockListing[]> {
@@ -154,10 +157,8 @@ export async function listPaddockListings(): Promise<PaddockListing[]> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error || !data) return loadPrototypeState().paddockListings;
-
-  const mapped = data.map(mapPaddockRow);
-  return mergeListings(mapped, loadPrototypeState().paddockListings);
+  if (error || !data) return [];
+  return data.map(mapPaddockRow);
 }
 
 /**
@@ -187,17 +188,22 @@ export async function createPaddockListingRecord(input: {
   feedStatus: PaddockListing["feedStatus"];
   waterStatus: PaddockListing["waterStatus"];
   fencingStatus: PaddockListing["fencingStatus"];
+  feedNote?: string;
+  waterNote?: string;
+  fencingNote?: string;
   availabilityWindow: string;
   guideTerms: string;
   summary: string;
   photos?: string[];
-}) {
-  const local = createPaddockListing(input);
+}): Promise<{ state: PrototypeState; listing: PaddockListing } | null> {
   const supabase = await getAuthedClient();
-  if (!supabase) return local;
+  // Demo visitors write to the local prototype store only.
+  if (!supabase) return createPaddockListing(input);
 
+  // Real accounts write to Supabase only - never to localStorage, and a
+  // failed insert surfaces as null instead of silently returning demo data.
   const user = await getCurrentUser(supabase);
-  if (!user) return local;
+  if (!user) return null;
   await ensureProfile(supabase, user);
 
   const { data, error } = await supabase
@@ -205,7 +211,7 @@ export async function createPaddockListingRecord(input: {
     .insert({
       owner_id: user.id,
       title: input.title,
-      description: input.summary,
+      description: serializePaddockDescription(input),
       region: input.region,
       state: stateForRegion(input.region),
       location: pointToWkt(coordinateForRegion(input.region)),
@@ -221,8 +227,8 @@ export async function createPaddockListingRecord(input: {
     .select("*")
     .single();
 
-  if (error || !data) return local;
-  return { state: local.state, listing: mapPaddockRow(data) };
+  if (error || !data) return null;
+  return { state: loadPrototypeState(), listing: mapPaddockRow(data) };
 }
 
 export async function getPaddockListing(id: string): Promise<PaddockListing | undefined> {
@@ -241,6 +247,9 @@ export async function updatePaddockListingRecord(
     feedStatus: PaddockListing["feedStatus"];
     waterStatus: PaddockListing["waterStatus"];
     fencingStatus: PaddockListing["fencingStatus"];
+    feedNote?: string;
+    waterNote?: string;
+    fencingNote?: string;
     availabilityWindow: string;
     guideTerms: string;
     summary: string;
@@ -256,7 +265,7 @@ export async function updatePaddockListingRecord(
     .from("paddocks")
     .update({
       title: input.title,
-      description: input.summary,
+      description: serializePaddockDescription(input),
       region: input.region,
       state: stateForRegion(input.region),
       location: pointToWkt(coordinateForRegion(input.region)),
@@ -300,21 +309,23 @@ export async function listAgreements(): Promise<Agreement[]> {
     .from("agreements")
     .select("*")
     .order("updated_at", { ascending: false });
-  if (error || !data) return loadPrototypeState().agreements;
-
-  const mapped = await Promise.all(data.map((row) => mapAgreementRow(supabase, row)));
-  return mergeAgreements(mapped, loadPrototypeState().agreements);
+  if (error || !data) return [];
+  return Promise.all(data.map((row) => mapAgreementRow(supabase, row)));
 }
 
 export async function getAgreementRecord(id: string): Promise<Agreement | undefined> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(id)) {
+  if (supabase) {
+    // Real accounts never fall back to prototype agreements - an unknown id
+    // must show "not found", not a demo workspace.
+    if (!isUuid(id)) return undefined;
     const { data, error } = await supabase
       .from("agreements")
       .select("*")
       .eq("id", id)
       .single();
     if (!error && data) return mapAgreementRow(supabase, data);
+    return undefined;
   }
   return loadPrototypeState().agreements.find((agreement) => agreement.id === id);
 }
@@ -350,13 +361,29 @@ export async function openAgreementWorkspace(
 
 /**
  * Landowner offers one of their paddocks against an open livestock request.
- * Local-only for the prototype; Supabase wiring lands when we add a row
- * shape that captures the request<->listing pairing on the server.
+ *
+ * Signed-in accounts create (or reuse) a genuine Supabase agreement so BOTH
+ * parties open the exact same workspace. We never fall back to a prototype
+ * agreement for real users - those live only in this browser's localStorage,
+ * so the livestock owner could never see them (each side ended up on a
+ * different "workspace" with different content and a dead chat).
  */
 export async function offerPaddockForRequest(
   requestId: string,
   listingId: string
-) {
+): Promise<{ state: PrototypeState; agreement: Agreement | null }> {
+  const supabase = await getAuthedClient();
+  if (supabase) {
+    if (isUuid(requestId) && isUuid(listingId)) {
+      const created = await createSupabaseAgreementForRequestOffer(
+        supabase,
+        requestId,
+        listingId
+      );
+      if (created) return { state: loadPrototypeState(), agreement: created };
+    }
+    return { state: loadPrototypeState(), agreement: null };
+  }
   return openAgreementForRequest(requestId, listingId);
 }
 
@@ -367,13 +394,15 @@ export async function listAgreementSections(agreementId: string) {
 
 export async function listAgreementMessages(agreementId: string): Promise<Message[]> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(agreementId)) {
+  if (supabase) {
+    if (!isUuid(agreementId)) return [];
     const { data, error } = await supabase
       .from("messages")
       .select("*, profiles(full_name)")
       .eq("agreement_id", agreementId)
       .order("created_at", { ascending: true });
     if (!error && data) return data.map((row) => mapMessageRow(row, agreementId));
+    return [];
   }
   return getMessages(agreementId);
 }
@@ -447,8 +476,8 @@ export async function listTransportJobs(): Promise<TransportJob[]> {
     .from("transport_jobs")
     .select("*")
     .order("updated_at", { ascending: false });
-  if (error || !data) return loadPrototypeState().transportJobs;
-  return mergeTransportJobs(data.map(mapTransportJobRow), loadPrototypeState().transportJobs);
+  if (error || !data) return [];
+  return data.map(mapTransportJobRow);
 }
 
 export async function listAvailableTransportJobs(): Promise<TransportJob[]> {
@@ -465,22 +494,31 @@ export async function getTransportJobRecord(
   id: string
 ): Promise<TransportJob | undefined> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(id)) {
+  if (supabase) {
+    // Real accounts never fall back to prototype transport jobs.
+    if (!isUuid(id)) return undefined;
     const { data, error } = await supabase
       .from("transport_jobs")
       .select("*")
       .eq("id", id)
       .single();
     if (!error && data) return mapTransportJobRow(data);
+    return undefined;
   }
   return loadPrototypeState().transportJobs.find((job) => job.id === id);
 }
 
-export async function requestTransportJob(agreementId: string) {
+export async function requestTransportJob(
+  agreementId: string
+): Promise<{ state: PrototypeState; job: TransportJob | null }> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(agreementId)) {
-    const created = await createSupabaseTransportJob(supabase, agreementId);
-    if (created) return { state: loadPrototypeState(), job: created };
+  if (supabase) {
+    // Real accounts only create genuine Supabase transport jobs.
+    if (isUuid(agreementId)) {
+      const created = await createSupabaseTransportJob(supabase, agreementId);
+      if (created) return { state: loadPrototypeState(), job: created };
+    }
+    return { state: loadPrototypeState(), job: null };
   }
   return requestTransportForAgreement(agreementId);
 }
@@ -488,9 +526,11 @@ export async function requestTransportJob(agreementId: string) {
 export async function updateTransportJobStatus(
   jobId: string,
   status: TransportJobStatus
-) {
+): Promise<{ state: PrototypeState; job: TransportJob | null }> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(jobId)) {
+  if (supabase) {
+    // Real accounts never mutate prototype transport state.
+    if (!isUuid(jobId)) return { state: loadPrototypeState(), job: null };
     const user = await getCurrentUser(supabase);
     const existing = await getTransportJobRecord(jobId);
     const update: TablesUpdate<"transport_jobs"> = { status };
@@ -511,19 +551,23 @@ export async function updateTransportJobStatus(
       });
       return { state: loadPrototypeState(), job: mapTransportJobRow(data) };
     }
+    return { state: loadPrototypeState(), job: existing ?? null };
   }
-  return updateTransportStatus(jobId, status);
+  const fallback = updateTransportStatus(jobId, status);
+  return { state: fallback.state, job: fallback.job ?? null };
 }
 
 export async function listTransportMessages(jobId: string): Promise<Message[]> {
   const supabase = await getAuthedClient();
-  if (supabase && isUuid(jobId)) {
+  if (supabase) {
+    if (!isUuid(jobId)) return [];
     const { data, error } = await supabase
       .from("messages")
       .select("*, profiles(full_name)")
       .eq("transport_job_id", jobId)
       .order("created_at", { ascending: true });
     if (!error && data) return data.map((row) => mapMessageRow(row, jobId));
+    return [];
   }
   return getTransportMessages(jobId);
 }
@@ -599,6 +643,61 @@ export async function createTransportMessage(input: {
   return mapMessageRow(data, input.transportJobId);
 }
 
+/**
+ * Persist a lifecycle change (Draft -> Negotiating -> ... -> Completed /
+ * Cancelled) so the other party sees the same stage. Previously this state
+ * lived only in component memory and reset on every page load.
+ */
+export async function updateAgreementStatusRecord(
+  agreementId: string,
+  status: AgreementLifecycleState
+): Promise<boolean> {
+  const supabase = await getAuthedClient();
+  if (!supabase || !isUuid(agreementId)) return false;
+  const { error } = await supabase
+    .from("agreements")
+    .update({ status })
+    .eq("id", agreementId);
+  return !error;
+}
+
+export type AgreementLiveState = {
+  status: AgreementLifecycleState;
+  sections: { id: string; agreedByA: boolean; agreedByB: boolean }[];
+};
+
+/**
+ * Light read of the bits of workspace state the other party can change:
+ * lifecycle status + per-section agree flags. Polled by the workspace so
+ * both farmers stay in sync without a manual refresh.
+ */
+export async function getAgreementLiveState(
+  agreementId: string
+): Promise<AgreementLiveState | null> {
+  const supabase = await getAuthedClient();
+  if (!supabase || !isUuid(agreementId)) return null;
+  const [{ data: agreement }, { data: sections }] = await Promise.all([
+    supabase
+      .from("agreements")
+      .select("status")
+      .eq("id", agreementId)
+      .maybeSingle(),
+    supabase
+      .from("agreement_sections")
+      .select("section_key, agreed_by_a, agreed_by_b")
+      .eq("agreement_id", agreementId),
+  ]);
+  if (!agreement) return null;
+  return {
+    status: normaliseAgreementStatus(agreement.status),
+    sections: (sections ?? []).map((row) => ({
+      id: row.section_key,
+      agreedByA: row.agreed_by_a,
+      agreedByB: row.agreed_by_b,
+    })),
+  };
+}
+
 export async function updateAgreementSectionAgreement(input: {
   agreementId: string;
   sectionId: string;
@@ -670,6 +769,7 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
   const feedStatus = normaliseFeed(row.pasture_type);
   const waterStatus = normaliseWater(row.water_type?.[0]);
   const coordinates = parseCoordinate(row.location, coordinateForRegion(row.region));
+  const description = parsePaddockDescription(row.description);
 
   return {
     id: row.id,
@@ -688,14 +788,76 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
     feedStatus,
     waterStatus,
     fencingStatus: row.yards ? "Secure" : "Good",
+    feedNote: description.feedNote,
+    waterNote: description.waterNote,
+    fencingNote: description.fencingNote,
     verificationStatus: "Verified provider",
     availabilityWindow: row.available_from ?? "Available now",
     guideTerms: row.rate_per_head_week
       ? `$${row.rate_per_head_week}/head/week`
       : "Discuss terms",
-    summary: row.description ?? `${row.acres} acres available in ${row.region}.`,
+    summary: description.summary ?? `${row.acres} acres available in ${row.region}.`,
     photos: row.photos ?? undefined,
   };
+}
+
+type PaddockDescriptionInput = {
+  summary: string;
+  feedNote?: string;
+  waterNote?: string;
+  fencingNote?: string;
+};
+
+type PaddockDescriptionPayload = {
+  version: 1;
+  summary: string;
+  tileNotes?: {
+    feed?: string;
+    water?: string;
+    fencing?: string;
+  };
+};
+
+function serializePaddockDescription(input: PaddockDescriptionInput): string {
+  const payload: PaddockDescriptionPayload = {
+    version: 1,
+    summary: input.summary,
+    tileNotes: {
+      feed: cleanOptionalText(input.feedNote),
+      water: cleanOptionalText(input.waterNote),
+      fencing: cleanOptionalText(input.fencingNote),
+    },
+  };
+  return JSON.stringify(payload);
+}
+
+function parsePaddockDescription(value: string | null): {
+  summary?: string;
+  feedNote?: string;
+  waterNote?: string;
+  fencingNote?: string;
+} {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value) as Partial<PaddockDescriptionPayload>;
+    if (parsed && typeof parsed === "object" && parsed.version === 1) {
+      return {
+        summary: typeof parsed.summary === "string" ? parsed.summary : undefined,
+        feedNote: cleanOptionalText(parsed.tileNotes?.feed),
+        waterNote: cleanOptionalText(parsed.tileNotes?.water),
+        fencingNote: cleanOptionalText(parsed.tileNotes?.fencing),
+      };
+    }
+  } catch {
+    // Existing rows store description as plain text.
+  }
+  return { summary: value };
+}
+
+function cleanOptionalText(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : undefined;
 }
 
 async function createSupabaseAgreementForListing(
@@ -740,24 +902,85 @@ async function createSupabaseAgreementForListing(
   }
   if (!request) return null;
 
-  const { data: match, error: matchError } = await supabase
+  return findOrCreateSupabaseAgreement(supabase, request, listing);
+}
+
+/**
+ * Landowner side of workspace creation: the signed-in user owns the paddock
+ * and is offering it against someone else's open livestock request.
+ */
+async function createSupabaseAgreementForRequestOffer(
+  supabase: SupabaseClient,
+  requestId: string,
+  listingId: string
+): Promise<Agreement | null> {
+  const user = await getCurrentUser(supabase);
+  if (!user) return null;
+  await ensureProfile(supabase, user);
+
+  // The paddock being offered must belong to the signed-in landowner.
+  const { data: listing } = await supabase
+    .from("paddocks")
+    .select("*")
+    .eq("id", listingId)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!listing) return null;
+
+  const { data: request } = await supabase
+    .from("agistment_requests")
+    .select("*")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) return null;
+
+  return findOrCreateSupabaseAgreement(supabase, request, listing);
+}
+
+/**
+ * Shared find-or-create for the request<->paddock pairing. Both entry points
+ * (livestock owner opening from a listing, landowner offering against a
+ * request) funnel through here so both parties always land on the SAME
+ * agreement row.
+ *
+ * Note: this deliberately selects-then-inserts rather than upserting. The
+ * `matches` table has insert + select RLS policies but no update policy, so
+ * an upsert hitting an existing row failed with an RLS error for whichever
+ * party arrived second - which is how the two farmers ended up on different
+ * workspaces.
+ */
+async function findOrCreateSupabaseAgreement(
+  supabase: SupabaseClient,
+  request: Tables<"agistment_requests">,
+  listing: Tables<"paddocks">
+): Promise<Agreement | null> {
+  let match: Tables<"matches"> | null = null;
+  const { data: existingMatch } = await supabase
     .from("matches")
-    .upsert(
-      {
+    .select("*")
+    .eq("request_id", request.id)
+    .eq("paddock_id", listing.id)
+    .maybeSingle();
+  match = existingMatch ?? null;
+
+  if (!match) {
+    const { data: insertedMatch, error: matchError } = await supabase
+      .from("matches")
+      .insert({
         request_id: request.id,
         paddock_id: listing.id,
         match_score: 85,
         match_reasons: { source: "mvp_build_03" },
         status: "selected",
-      },
-      { onConflict: "request_id,paddock_id" }
-    )
-    .select("*")
-    .single();
-  if (matchError || !match) return null;
+      })
+      .select("*")
+      .single();
+    if (matchError || !insertedMatch) return null;
+    match = insertedMatch;
+  }
 
   // Reuse an existing agreement for this pairing instead of creating duplicates
-  // when the button is clicked more than once.
+  // when the button is clicked more than once (or by the other party).
   const { data: existingAgreement } = await supabase
     .from("agreements")
     .select("*")
@@ -1014,7 +1237,11 @@ function mapTransportJobRow(row: Tables<"transport_jobs">): TransportJob {
   };
 }
 
-function mapMessageRow(row: any, threadId: string): Message {
+type MessageRowWithSender = Tables<"messages"> & {
+  profiles?: { full_name: string | null } | null;
+};
+
+function mapMessageRow(row: MessageRowWithSender, threadId: string): Message {
   const senderName = row.profiles?.full_name ?? "PaddockME user";
   return {
     id: row.id,
@@ -1023,7 +1250,7 @@ function mapMessageRow(row: any, threadId: string): Message {
     senderName,
     senderRole: "Participant",
     body: row.body,
-    time: new Date(row.created_at).toLocaleTimeString("en-AU", {
+    time: new Date(row.created_at ?? Date.now()).toLocaleTimeString("en-AU", {
       hour: "numeric",
       minute: "2-digit",
     }),

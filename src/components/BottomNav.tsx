@@ -15,7 +15,11 @@ const navItems = [
   { href: "/request/new", label: "Request", icon: Search },
   { href: "/listings", label: "Paddocks", icon: Sprout },
   {
-    href: "/workspace/agreement-glenbarra",
+    // The /workspace index routes each visitor to the right place: real
+    // accounts go to their agreements home, demo visitors to the seed
+    // workspace. Hardcoding a demo agreement id here sent REAL signed-in
+    // users into the demo workspace from the main nav.
+    href: "/workspace",
     label: "Workspace",
     icon: MessageSquare,
     match: ["/workspace"],

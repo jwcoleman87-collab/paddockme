@@ -31,6 +31,7 @@ import {
 } from "@/lib/data/repositories";
 import { farmers, type Farmer, type TransportJob, type TransportJobStatus } from "@/lib/dummyData";
 import { feedRuns, type FeedRun } from "@/lib/feedRuns";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/googleMapsKey";
 import { coordinateForRegion, mapCoordinates, type Coordinate } from "@/lib/mapCoordinates";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -69,9 +70,7 @@ type RouteCoordinate = {
   label: string;
 };
 
-const GOOGLE_MAPS_KEY =
-  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
-  "AIzaSyAG3EVoUUNfk0amP7J40Dy1NpmGG3_1L18";
+const GOOGLE_MAPS_KEY = GOOGLE_MAPS_API_KEY;
 
 const PADDOCKME_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },

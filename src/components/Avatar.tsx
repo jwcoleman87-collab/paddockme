@@ -62,7 +62,7 @@ export function Avatar({
       {showImage ? (
         <Image
           src={src}
-          alt=""
+          alt={name}
           width={sizePx[size]}
           height={sizePx[size]}
           className="h-full w-full object-cover"

@@ -34,6 +34,9 @@ type Props = {
   /** All published paddock listings; the client filters to the active
    * persona's so the "Offer a paddock" picker lists only what they own. */
   paddockListings: PaddockListing[];
+  /** Supabase user id when signed in - used instead of the localStorage
+   * persona so real landowners always see their own paddocks here. */
+  currentUserId?: string;
 };
 
 /**
@@ -48,6 +51,7 @@ export function RequestsClient({
   requests,
   requestersById,
   paddockListings,
+  currentUserId,
 }: Props) {
   const router = useRouter();
   const flash = useFlash();
@@ -76,14 +80,13 @@ export function RequestsClient({
       window.removeEventListener("paddockme:persona-change", onChange);
   }, []);
 
+  const ownerId = currentUserId ?? activePersonaId;
   const myPaddocks = useMemo(
     () =>
-      activePersonaId
-        ? paddockListings.filter(
-            (listing) => listing.ownerId === activePersonaId
-          )
+      ownerId
+        ? paddockListings.filter((listing) => listing.ownerId === ownerId)
         : [],
-    [paddockListings, activePersonaId]
+    [paddockListings, ownerId]
   );
 
   const stockOptions = useMemo(
@@ -148,6 +151,13 @@ export function RequestsClient({
       }
     }
     const { agreement } = await offerPaddockForRequest(request.id, listingId);
+    if (!agreement) {
+      flash(
+        "Couldn't open the agreement workspace. Refresh and try again.",
+        "warning"
+      );
+      return;
+    }
     const requester = requestersById[request.requesterId];
     flash(
       `Workspace opened with ${
