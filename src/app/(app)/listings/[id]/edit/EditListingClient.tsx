@@ -44,6 +44,9 @@ export function EditListingClient({ id }: { id: string }) {
     useState<PaddockListing["waterStatus"]>("Permanent");
   const [fencingStatus, setFencingStatus] =
     useState<PaddockListing["fencingStatus"]>("Good");
+  const [feedNote, setFeedNote] = useState("");
+  const [waterNote, setWaterNote] = useState("");
+  const [fencingNote, setFencingNote] = useState("");
   const [availabilityWindow, setAvailabilityWindow] = useState("");
   const [summary, setSummary] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
@@ -67,6 +70,9 @@ export function EditListingClient({ id }: { id: string }) {
       setFeedStatus(listing.feedStatus);
       setWaterStatus(listing.waterStatus);
       setFencingStatus(listing.fencingStatus);
+      setFeedNote(listing.feedNote ?? "");
+      setWaterNote(listing.waterNote ?? "");
+      setFencingNote(listing.fencingNote ?? "");
       setAvailabilityWindow(listing.availabilityWindow);
       setSummary(listing.summary);
       setPhotos(listing.photos ?? []);
@@ -127,6 +133,9 @@ export function EditListingClient({ id }: { id: string }) {
         feedStatus,
         waterStatus,
         fencingStatus,
+        feedNote: feedNote.trim(),
+        waterNote: waterNote.trim(),
+        fencingNote: fencingNote.trim(),
         availabilityWindow: availabilityWindow.trim() || "Discuss availability",
         guideTerms: "Discuss terms",
         summary: summary.trim(),
@@ -272,7 +281,13 @@ export function EditListingClient({ id }: { id: string }) {
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Feed quality">
+          <ChoiceSection
+            title="Feed quality"
+            noteLabel="Feed notes"
+            noteValue={feedNote}
+            onNoteChange={setFeedNote}
+            notePlaceholder="e.g. Improved pasture with clover and ryegrass, hay available if feed tightens."
+          >
             {feedOptions.map((value) => (
               <SelectablePill
                 key={value}
@@ -284,7 +299,13 @@ export function EditListingClient({ id }: { id: string }) {
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Water availability">
+          <ChoiceSection
+            title="Water availability"
+            noteLabel="Water notes"
+            noteValue={waterNote}
+            onNoteChange={setWaterNote}
+            notePlaceholder="e.g. Permanent troughs on town water, two dams, checked twice weekly."
+          >
             {waterOptions.map((value) => (
               <SelectablePill
                 key={value}
@@ -296,7 +317,13 @@ export function EditListingClient({ id }: { id: string }) {
             ))}
           </ChoiceSection>
 
-          <ChoiceSection title="Fencing condition">
+          <ChoiceSection
+            title="Fencing condition"
+            noteLabel="Fencing notes"
+            noteValue={fencingNote}
+            onNoteChange={setFencingNote}
+            notePlaceholder="e.g. Ringlock boundary, electric internal fence, north gate suitable for trucks."
+          >
             {fencingOptions.map((value) => (
               <SelectablePill
                 key={value}
@@ -434,14 +461,37 @@ function Field({
 function ChoiceSection({
   title,
   children,
+  noteLabel,
+  noteValue,
+  onNoteChange,
+  notePlaceholder,
 }: {
   title: string;
   children: React.ReactNode;
+  noteLabel?: string;
+  noteValue?: string;
+  onNoteChange?: (value: string) => void;
+  notePlaceholder?: string;
 }) {
   return (
     <Card>
       <SectionTitle title={title} />
       <div className="mt-4 flex flex-wrap gap-2">{children}</div>
+      {noteLabel && onNoteChange && (
+        <label className="mt-5 block">
+          <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
+            {noteLabel}
+          </span>
+          <textarea
+            value={noteValue ?? ""}
+            onChange={(event) => onNoteChange(event.target.value)}
+            rows={3}
+            maxLength={360}
+            placeholder={notePlaceholder}
+            className={`${inputClass} mt-2`}
+          />
+        </label>
+      )}
     </Card>
   );
 }

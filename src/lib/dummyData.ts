@@ -282,6 +282,10 @@ export type AgreementArtefact = {
   uploadedBy: "farmerA" | "farmerB";
   description: string;
   sectionId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
 };
 
 export type AgreementLifecycleState =
@@ -374,6 +378,10 @@ export type TransportArtefact = {
   uploadedBy: TransportRole;
   description: string;
   sectionId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
 };
 
 export type TransportTimelineEntry = {
@@ -429,6 +437,8 @@ export type TransportJob = {
   agreementId: string;
   farmerAId: string;
   farmerBId: string;
+  farmerAName?: string;
+  farmerBName?: string;
   driverId: string;
   pickup: string;
   destination: string;

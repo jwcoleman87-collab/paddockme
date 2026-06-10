@@ -1396,6 +1396,10 @@ function toViewableArtefact(artefact: AgreementArtefact): ViewableArtefact {
     description: artefact.description,
     uploaderLabel: artefact.uploadedBy === "farmerA" ? "Livestock owner" : "Landowner",
     sectionId: artefact.sectionId,
+    fileName: artefact.fileName,
+    fileType: artefact.fileType,
+    fileSize: artefact.fileSize,
+    fileDataUrl: artefact.fileDataUrl,
     recordDetails: artefactRecordDetails[artefact.id],
   };
 }

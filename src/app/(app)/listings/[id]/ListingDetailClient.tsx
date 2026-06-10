@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Camera, Droplets, Fence, MapPin, Sprout } from "lucide-react";
+import { ArrowRight, Camera, Droplets, Fence, MapPin, Sprout, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -33,6 +33,7 @@ export function ListingDetailClient({
   const [agreementId, setAgreementId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTile, setActiveTile] = useState<ListingDetailTile | null>(null);
   const searchParams = useSearchParams();
   const requestId = searchParams.get("request") ?? undefined;
 
@@ -76,6 +77,35 @@ export function ListingDetailClient({
 
   const mapImageSrc = getListingMapImageSrc(listing.id);
   const isOwner = !!userId && listing.ownerId === userId;
+  const detailTiles: ListingDetailTile[] = [
+    {
+      id: "water",
+      icon: <Droplets />,
+      label: "Water",
+      value: listing.waterStatus,
+      note: listing.waterNote,
+      fallback:
+        "The landowner has not added extra water notes yet. Confirm source, supply and checking rhythm before moving stock.",
+    },
+    {
+      id: "fencing",
+      icon: <Fence />,
+      label: "Fencing",
+      value: listing.fencingStatus,
+      note: listing.fencingNote,
+      fallback:
+        "The landowner has not added extra fencing notes yet. Confirm boundary condition, gates and internal fencing before moving stock.",
+    },
+    {
+      id: "feed",
+      icon: <Sprout />,
+      label: "Feed",
+      value: listing.feedStatus,
+      note: listing.feedNote,
+      fallback:
+        "The landowner has not added extra feed notes yet. Confirm pasture type, expected carrying capacity and supplement plans before moving stock.",
+    },
+  ];
 
   async function openWorkspace() {
     setOpening(true);
@@ -164,9 +194,13 @@ export function ListingDetailClient({
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <InfoTile icon={<MapPin />} label="Location" value={listing.location} />
               <InfoTile icon={<Sprout />} label="Acres" value={`${listing.acres}`} />
-              <InfoTile icon={<Droplets />} label="Water" value={listing.waterStatus} />
-              <InfoTile icon={<Fence />} label="Fencing" value={listing.fencingStatus} />
-              <InfoTile icon={<Sprout />} label="Feed" value={listing.feedStatus} />
+              {detailTiles.map((tile) => (
+                <DetailTile
+                  key={tile.id}
+                  tile={tile}
+                  onOpen={() => setActiveTile(tile)}
+                />
+              ))}
             </div>
           </Card>
 
@@ -212,7 +246,99 @@ export function ListingDetailClient({
           </ButtonLink>
         </aside>
       </div>
+      <TileDetailDialog tile={activeTile} onClose={() => setActiveTile(null)} />
     </>
+  );
+}
+
+type ListingDetailTile = {
+  id: "feed" | "water" | "fencing";
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  note?: string;
+  fallback: string;
+};
+
+function DetailTile({
+  tile,
+  onOpen,
+}: {
+  tile: ListingDetailTile;
+  onOpen: () => void;
+}) {
+  const hasNote = !!tile.note;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="min-w-0 rounded-md border border-stone/25 bg-white p-4 text-left shadow-[inset_0_0_0_1px_rgba(109,98,87,0.08)] transition hover:border-sage/45 hover:bg-sage-mist/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+      aria-label={`Open ${tile.label.toLowerCase()} details`}
+    >
+      <div className="mb-2 text-sage-deep" aria-hidden>
+        {tile.icon}
+      </div>
+      <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.13em] text-stone">
+        {tile.label}
+      </p>
+      <p className="mt-1.5 break-words text-[0.96rem] font-extrabold leading-snug text-bark">
+        {tile.value}
+      </p>
+      <p className="mt-2 text-xs font-bold text-sage-deep">
+        {hasNote ? "View farmer notes" : "View details"}
+      </p>
+    </button>
+  );
+}
+
+function TileDetailDialog({
+  tile,
+  onClose,
+}: {
+  tile: ListingDetailTile | null;
+  onClose: () => void;
+}) {
+  if (!tile) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="listing-tile-detail-title"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-sage-deep/35 px-3 py-6 backdrop-blur-sm sm:items-center sm:px-6"
+    >
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_24px_60px_rgba(34,84,52,0.25)]">
+        <div className="flex items-start justify-between gap-3 border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-stone">
+              {tile.label}
+            </p>
+            <h2
+              id="listing-tile-detail-title"
+              className="mt-1 text-xl font-bold text-sage-deep"
+            >
+              {tile.value}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close details"
+            className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-mist bg-warm-white text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+        <div className="px-5 py-5">
+          <p className="whitespace-pre-line text-base leading-relaxed text-bark/80">
+            {tile.note || tile.fallback}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

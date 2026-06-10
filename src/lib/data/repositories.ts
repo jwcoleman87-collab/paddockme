@@ -440,6 +440,10 @@ export async function createAgreementArtefact(input: {
   description: string;
   kind: AgreementArtefact["kind"];
   sectionId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
 }): Promise<AgreementArtefact | null> {
   const supabase = await getAuthedClient();
   const user = supabase ? await getCurrentUser(supabase) : null;
@@ -454,7 +458,14 @@ export async function createAgreementArtefact(input: {
       description: input.description,
       kind: input.kind,
       section_key: input.sectionId ?? null,
-      metadata: { source: "workspace_metadata" },
+      metadata: {
+        source: "workspace_upload",
+        fileName: input.fileName,
+        fileType: input.fileType,
+        fileSize: input.fileSize,
+        fileDataUrl: input.fileDataUrl,
+      },
+      storage_path: input.fileName ?? null,
     })
     .select("*")
     .single();
@@ -477,7 +488,7 @@ export async function listTransportJobs(): Promise<TransportJob[]> {
     .select("*")
     .order("updated_at", { ascending: false });
   if (error || !data) return [];
-  return data.map(mapTransportJobRow);
+  return Promise.all(data.map((row) => mapTransportJobRow(supabase, row)));
 }
 
 export async function listAvailableTransportJobs(): Promise<TransportJob[]> {
@@ -502,7 +513,7 @@ export async function getTransportJobRecord(
       .select("*")
       .eq("id", id)
       .single();
-    if (!error && data) return mapTransportJobRow(data);
+    if (!error && data) return mapTransportJobRow(supabase, data);
     return undefined;
   }
   return loadPrototypeState().transportJobs.find((job) => job.id === id);
@@ -549,7 +560,7 @@ export async function updateTransportJobStatus(
         changed_by: user.id,
         note: `Status changed to ${formatStatus(status)}.`,
       });
-      return { state: loadPrototypeState(), job: mapTransportJobRow(data) };
+      return { state: loadPrototypeState(), job: await mapTransportJobRow(supabase, data) };
     }
     return { state: loadPrototypeState(), job: existing ?? null };
   }
@@ -1028,7 +1039,7 @@ async function createSupabaseTransportJob(
     .select("*")
     .eq("agreement_id", agreementId)
     .maybeSingle();
-  if (existing.data) return mapTransportJobRow(existing.data);
+  if (existing.data) return mapTransportJobRow(supabase, existing.data);
 
   const { data, error } = await supabase
     .from("transport_jobs")
@@ -1052,7 +1063,7 @@ async function createSupabaseTransportJob(
     .select("*")
     .single();
   if (error || !data) return null;
-  return mapTransportJobRow(data);
+  return mapTransportJobRow(supabase, data);
 }
 
 async function mapAgreementRow(
@@ -1150,6 +1161,7 @@ function mapAgreementArtefactRow(
   row: Tables<"agreement_artefacts">,
   agreement?: Pick<Tables<"agreements">, "livestock_owner_id" | "landowner_id">
 ): AgreementArtefact {
+  const metadata = readArtefactMetadata(row.metadata);
   return {
     id: row.id,
     label: row.label,
@@ -1160,6 +1172,28 @@ function mapAgreementArtefactRow(
         : "farmerA",
     description: row.description ?? "",
     sectionId: row.section_key ?? undefined,
+    fileName: metadata.fileName ?? row.storage_path ?? undefined,
+    fileType: metadata.fileType,
+    fileSize: metadata.fileSize,
+    fileDataUrl: metadata.fileDataUrl,
+  };
+}
+
+function readArtefactMetadata(metadata: Json): {
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
+} {
+  if (!metadata || Array.isArray(metadata) || typeof metadata !== "object") {
+    return {};
+  }
+  return {
+    fileName: typeof metadata.fileName === "string" ? metadata.fileName : undefined,
+    fileType: typeof metadata.fileType === "string" ? metadata.fileType : undefined,
+    fileSize: typeof metadata.fileSize === "number" ? metadata.fileSize : undefined,
+    fileDataUrl:
+      typeof metadata.fileDataUrl === "string" ? metadata.fileDataUrl : undefined,
   };
 }
 
@@ -1214,24 +1248,109 @@ function buildAgreementSections(
   });
 }
 
-function mapTransportJobRow(row: Tables<"transport_jobs">): TransportJob {
+async function mapTransportJobRow(
+  supabase: SupabaseClient,
+  row: Tables<"transport_jobs">
+): Promise<TransportJob> {
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in(
+      "id",
+      [row.livestock_owner_id, row.landowner_id, row.driver_id].filter(
+        Boolean
+      ) as string[]
+    );
+
+  const profilesById = new Map(
+    (profileRows ?? []).map((profile) => [profile.id, profile.full_name])
+  );
+
+  const { data: agreement } = row.agreement_id
+    ? await supabase
+        .from("agreements")
+        .select("match_id, duration_months, status")
+        .eq("id", row.agreement_id)
+        .maybeSingle()
+    : { data: null };
+
+  const { data: match } = agreement?.match_id
+    ? await supabase
+        .from("matches")
+        .select("request_id, paddock_id")
+        .eq("id", agreement.match_id)
+        .maybeSingle()
+    : { data: null };
+
+  const { data: request } = match?.request_id
+    ? await supabase
+        .from("agistment_requests")
+        .select("location, stock_type, breed, head_count, duration")
+        .eq("id", match.request_id)
+        .maybeSingle()
+    : { data: null };
+
+  const { data: listing } = match?.paddock_id
+    ? await supabase
+        .from("paddocks")
+        .select("title, region, location")
+        .eq("id", match.paddock_id)
+        .maybeSingle()
+    : { data: null };
+
+  const farmerAName = profilesById.get(row.livestock_owner_id) ?? "Livestock owner";
+  const farmerBName = profilesById.get(row.landowner_id) ?? "Landowner";
+  const driverName = row.driver_id
+    ? profilesById.get(row.driver_id) ?? "Assigned driver"
+    : "Unassigned";
+  const pickupFallback = request?.location
+    ? `${farmerAName}'s property`
+    : `${farmerAName}'s property`;
+  const destinationFallback = listing
+    ? `${listing.title}, ${listing.region ?? "paddock"}`
+    : `${farmerBName}'s paddock`;
+  const pickup =
+    !row.pickup_address || row.pickup_address === "Livestock owner property"
+      ? pickupFallback
+      : row.pickup_address;
+  const destination =
+    !row.destination_address || row.destination_address === "Selected paddock"
+      ? destinationFallback
+      : row.destination_address;
+  const livestockCount = row.livestock_count ?? (request
+    ? `${request.head_count} ${request.breed ?? ""} ${request.stock_type}`.trim()
+    : "Livestock movement");
+  const routeSummary =
+    !row.route_summary || row.route_summary === "Pickup to selected agistment paddock"
+      ? `${pickup} to ${destination}`
+      : row.route_summary;
+
   return {
     ...transportJobs[0],
     id: row.id,
     agreementId: row.agreement_id,
     farmerAId: row.livestock_owner_id,
     farmerBId: row.landowner_id,
+    farmerAName,
+    farmerBName,
     driverId: row.driver_id ?? "driver-1",
-    pickup: row.pickup_address ?? "Livestock owner property",
-    destination: row.destination_address ?? "Selected paddock",
-    pickupLocation: parseCoordinate(row.pickup_location, mapCoordinates.dale),
-    destinationLocation: parseCoordinate(row.destination_location, mapCoordinates.gundagai),
+    pickup,
+    destination,
+    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.dale) : mapCoordinates.dale),
+    destinationLocation: parseCoordinate(row.destination_location, listing ? parseCoordinate(listing.location, coordinateForRegion(listing.region)) : mapCoordinates.gundagai),
     currentLocation: parseCoordinate(row.current_location, parseCoordinate(row.pickup_location, mapCoordinates.dale)),
-    livestockCount: row.livestock_count ?? "Livestock movement",
+    pickupRegion: request ? undefined : transportJobs[0].pickupRegion,
+    destinationRegion: listing?.region ?? transportJobs[0].destinationRegion,
+    livestockCount,
     preferredDate: row.preferred_date ?? "Date to confirm",
-    driver: row.driver_id ? "Assigned driver" : "Unassigned",
+    driver: driverName,
     status: normaliseTransportStatus(row.status),
-    routeSummary: row.route_summary ?? "Pickup to agistment paddock",
+    routeSummary,
+    agreementContext: {
+      duration: request?.duration ?? (agreement?.duration_months ? `${agreement.duration_months} months` : transportJobs[0].agreementContext.duration),
+      weeksRemaining: transportJobs[0].agreementContext.weeksRemaining,
+      agreementStatus: agreement?.status ?? transportJobs[0].agreementContext.agreementStatus,
+    },
     quotes: [],
     acceptedQuoteId: row.accepted_quote_id ?? undefined,
   };

@@ -32,33 +32,6 @@ import {
 } from "@/lib/data/repositories";
 import type { TransportJobStatus } from "@/lib/dummyData";
 
-const roles: { id: TransportRole; label: string; helper: string }[] = [
-  {
-    id: "farmerA",
-    label: "Livestock owner",
-    helper: "Livestock owner",
-  },
-  {
-    id: "farmerB",
-    label: "Landowner",
-    helper: "Landowner",
-  },
-  {
-    id: "driver",
-    label: "Driver",
-    helper: "Transport provider",
-  },
-];
-
-const senderProfile: Record<
-  TransportRole,
-  { id: string; name: string; role: string; avatarUrl: string }
-> = {
-  farmerA: { id: "farmer-a", name: "Livestock owner", role: "Livestock owner", avatarUrl: "/avatars/dale.jpg" },
-  farmerB: { id: "farmer-b", name: "Landowner", role: "Landowner", avatarUrl: "/avatars/brett.jpg" },
-  driver: { id: "driver-1", name: "Transport provider", role: "Driver", avatarUrl: "/avatars/wayne.jpg" },
-};
-
 export function TransportClient({
   job,
   messages: initialMessages,
@@ -97,6 +70,30 @@ export function TransportClient({
         (item) => item.id !== jobState.id && item.status === "available"
       ),
     [allTransportJobs, jobState.id]
+  );
+  const partyProfiles = useMemo(
+    () => buildTransportPartyProfiles(jobState),
+    [jobState]
+  );
+  const roles = useMemo(
+    () => [
+      {
+        id: "farmerA" as const,
+        label: partyProfiles.farmerA.name,
+        helper: "Livestock owner",
+      },
+      {
+        id: "farmerB" as const,
+        label: partyProfiles.farmerB.name,
+        helper: "Landowner",
+      },
+      {
+        id: "driver" as const,
+        label: partyProfiles.driver.name,
+        helper: "Transport provider",
+      },
+    ],
+    [partyProfiles]
   );
 
   const hydratedRef = useRef(false);
@@ -152,7 +149,7 @@ export function TransportClient({
   function setRole(next: TransportRole) {
     if (next === role) return;
     setRoleState(next);
-    flash(`Role view changed to ${senderProfile[next].name} (${senderProfile[next].role}).`, "info");
+    flash(`Role view changed to ${partyProfiles[next].name} (${partyProfiles[next].role}).`, "info");
   }
 
   const derivedTimeline: TransportTimelineEntry[] = useMemo(() => {
@@ -198,7 +195,7 @@ export function TransportClient({
       const section = job.sections.find((s) => s.id === sectionId);
       if (section && next[role] && !previous[role]) {
         appendSystemMessage(
-          `${senderProfile[role].name} confirmed "${section.label}".`,
+          `${partyProfiles[role].name} confirmed "${section.label}".`,
           sectionId
         );
       }
@@ -221,11 +218,15 @@ export function TransportClient({
       description: draft.description,
       uploadedBy: role,
       sectionId: draft.sectionId,
+      fileName: draft.fileName,
+      fileType: draft.fileType,
+      fileSize: draft.fileSize,
+      fileDataUrl: draft.fileDataUrl,
     };
     setArtefacts((current) => [...current, newArtefact]);
     flash(`Artefact "${draft.label}" added.`, "success");
     appendSystemMessage(
-      `${senderProfile[role].name} added artefact "${draft.label}".`,
+      `${partyProfiles[role].name} added artefact "${draft.label}".`,
       draft.sectionId
     );
   }
@@ -272,7 +273,7 @@ export function TransportClient({
       "success"
     );
     appendSystemMessage(
-      `${senderProfile[role].name} ${draft.previousQuoteId ? "countered" : "proposed"} a transport rate of ${headline}.`
+      `${partyProfiles[role].name} ${draft.previousQuoteId ? "countered" : "proposed"} a transport rate of ${headline}.`
     );
   }
 
@@ -290,7 +291,7 @@ export function TransportClient({
     setAcceptedQuoteId(quoteId);
     flash("Transport rate accepted.", "success");
     appendSystemMessage(
-      `${senderProfile[role].name} accepted the transport rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
+      `${partyProfiles[role].name} accepted the transport rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
     );
     appendSystemMessage(
       "Transport payable opened. Payment rails are not connected yet."
@@ -309,7 +310,7 @@ export function TransportClient({
     );
     flash("Quote rejected.", "warning");
     appendSystemMessage(
-      `${senderProfile[role].name} rejected the proposed rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
+      `${partyProfiles[role].name} rejected the proposed rate of $${quote.amount.toFixed(2)} ${quote.currency}.`
     );
   }
 
@@ -335,7 +336,7 @@ export function TransportClient({
   }));
 
   function sendMessage(body: string) {
-    const sender = senderProfile[role];
+    const sender = partyProfiles[role];
     void createTransportMessage({
       transportJobId: jobState.id,
       body,
@@ -357,7 +358,7 @@ export function TransportClient({
     ]);
   }
 
-  const composerSenderLabel = `${senderProfile[role].name} (${senderProfile[role].role})`;
+  const composerSenderLabel = `${partyProfiles[role].name} (${partyProfiles[role].role})`;
 
   async function setStatus(status: TransportJobStatus) {
     const { job: updated } = await updateTransportJobStatus(jobState.id, status);
@@ -367,7 +368,7 @@ export function TransportClient({
     }
     setJobState(updated);
     flash(`Status updated: ${formatTransportStatus(status)}.`, "success");
-    appendSystemMessage(`${senderProfile[role].name} updated transport status to ${formatTransportStatus(status)}.`);
+    appendSystemMessage(`${partyProfiles[role].name} updated transport status to ${formatTransportStatus(status)}.`);
   }
 
   const acceptedQuote = acceptedQuoteId
@@ -442,9 +443,9 @@ export function TransportClient({
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
                 )}
               >
-                <Avatar
-                  name={senderProfile[option.id].name}
-                  src={senderProfile[option.id].avatarUrl}
+                  <Avatar
+                  name={partyProfiles[option.id].name}
+                  src={partyProfiles[option.id].avatarUrl}
                   size="md"
                   ring={active}
                   className="shrink-0"
@@ -490,7 +491,7 @@ export function TransportClient({
         }
         right={
           <ChatPanel
-            title="Livestock owner, Landowner and Driver"
+            title={`${partyProfiles.farmerA.name}, ${partyProfiles.farmerB.name} and ${partyProfiles.driver.name}`}
             messages={messages}
             onlineCount={3}
             sections={sectionsForChat}
@@ -503,6 +504,32 @@ export function TransportClient({
       />
     </div>
   );
+}
+
+function buildTransportPartyProfiles(job: TransportJob): Record<
+  TransportRole,
+  { id: string; name: string; role: string; avatarUrl: string }
+> {
+  return {
+    farmerA: {
+      id: job.farmerAId,
+      name: job.farmerAName ?? "Livestock owner",
+      role: "Livestock owner",
+      avatarUrl: "/avatars/dale.jpg",
+    },
+    farmerB: {
+      id: job.farmerBId,
+      name: job.farmerBName ?? "Landowner",
+      role: "Landowner",
+      avatarUrl: "/avatars/brett.jpg",
+    },
+    driver: {
+      id: job.driverId,
+      name: job.driver,
+      role: "Driver",
+      avatarUrl: "/avatars/wayne.jpg",
+    },
+  };
 }
 
 function shortTime(): string {

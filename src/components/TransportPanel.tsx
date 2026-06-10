@@ -92,6 +92,8 @@ type TransportTab =
   | "artefacts"
   | "timeline";
 
+type PartyLabels = Record<TransportRole, string>;
+
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
   {
     pickup: PackageOpen,
@@ -119,12 +121,6 @@ const sectionStatusTone: Record<
   Pending: "warning",
 };
 
-const roleLabel: Record<TransportRole, string> = {
-  farmerA: "Livestock owner",
-  farmerB: "Landowner",
-  driver: "Driver",
-};
-
 const transportCardClass =
   "min-w-0 overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]";
 
@@ -148,6 +144,7 @@ export function TransportPanel({
   const timelineItems = timeline ?? job.timeline;
   const [activeTab, setActiveTab] = useState<TransportTab>("overview");
   const isDriver = role === "driver";
+  const partyLabels = getTransportPartyLabels(job);
   // The landowner-visibility wall: Landowner never sees the Rate tab. The
   // pricing chain stays between Livestock owner and the driver.
   const showRateTab = role !== "farmerB";
@@ -173,8 +170,9 @@ export function TransportPanel({
           Stock movement room
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          Livestock owner, Landowner and the driver coordinate the move here. Agreement
-          pricing and contract terms stay out of this room by design.
+          {partyLabels.farmerA}, {partyLabels.farmerB} and {partyLabels.driver} coordinate
+          the move here. Agreement pricing and contract terms stay out of this
+          room by design.
         </p>
 
         <div
@@ -211,6 +209,7 @@ export function TransportPanel({
             onSelectSection={onSelectSection}
             confirmations={confirmations}
             onToggleConfirmation={onToggleConfirmation}
+            partyLabels={partyLabels}
           />
         )}
 
@@ -220,6 +219,7 @@ export function TransportPanel({
             quotes={quotes}
             acceptedQuoteId={acceptedQuoteId}
             role={role}
+            partyLabels={partyLabels}
             onPropose={onProposeQuote}
             onAccept={onAcceptQuote}
             onReject={onRejectQuote}
@@ -234,6 +234,7 @@ export function TransportPanel({
             activeSectionId={activeSectionId}
             role={role}
             driverName={job.driver}
+            partyLabels={partyLabels}
             onAddArtefact={onAddArtefact}
           />
         )}
@@ -257,7 +258,8 @@ export function TransportPanel({
             </p>
             <p className="mt-1 text-sm leading-relaxed text-bark/70">
               Commercial detail (agistment duration, rate, contract terms)
-              stays in the agreement workspace between Livestock owner and Landowner.
+              stays in the agreement workspace between {partyLabels.farmerA} and{" "}
+              {partyLabels.farmerB}.
               You see the logistics you need to move the stock.
             </p>
           </div>
@@ -265,6 +267,14 @@ export function TransportPanel({
       )}
     </section>
   );
+}
+
+function getTransportPartyLabels(job: TransportJob): PartyLabels {
+  return {
+    farmerA: job.farmerAName ?? "Livestock owner",
+    farmerB: job.farmerBName ?? "Landowner",
+    driver: job.driver,
+  };
 }
 
 export function TransportPaymentCallout({
@@ -518,6 +528,7 @@ function CoordinationList({
   onSelectSection,
   confirmations,
   onToggleConfirmation,
+  partyLabels,
 }: {
   sections: TransportSection[];
   role: TransportRole;
@@ -525,6 +536,7 @@ function CoordinationList({
   onSelectSection: (sectionId: string) => void;
   confirmations: Record<string, ConfirmationState>;
   onToggleConfirmation: (sectionId: string) => void;
+  partyLabels: PartyLabels;
 }) {
   return (
     <div className="space-y-3">
@@ -547,6 +559,7 @@ function CoordinationList({
             onSelect={() => onSelectSection(section.id)}
             confirmations={liveConfirmations}
             onToggleConfirmation={() => onToggleConfirmation(section.id)}
+            partyLabels={partyLabels}
           />
         );
       })}
@@ -561,6 +574,7 @@ function CoordinationCard({
   onSelect,
   confirmations,
   onToggleConfirmation,
+  partyLabels,
 }: {
   section: TransportSection;
   role: TransportRole;
@@ -568,6 +582,7 @@ function CoordinationCard({
   onSelect: () => void;
   confirmations: ConfirmationState;
   onToggleConfirmation: () => void;
+  partyLabels: PartyLabels;
 }) {
   const Icon = sectionIcons[section.id] ?? Truck;
   const derivedStatus = deriveStatus(confirmations, section.status);
@@ -631,6 +646,7 @@ function CoordinationCard({
           confirmations={confirmations}
           role={role}
           onToggle={onToggleConfirmation}
+          partyLabels={partyLabels}
         />
       </div>
     </article>
@@ -655,25 +671,27 @@ function ConfirmationsRow({
   confirmations,
   role,
   onToggle,
+  partyLabels,
 }: {
   confirmations: ConfirmationState;
   role: TransportRole;
   onToggle: () => void;
+  partyLabels: PartyLabels;
 }) {
   const items: { key: TransportRole; label: string; confirmed: boolean }[] = [
     {
       key: "farmerA",
-      label: roleLabel.farmerA,
+      label: partyLabels.farmerA,
       confirmed: confirmations.farmerA,
     },
     {
       key: "farmerB",
-      label: roleLabel.farmerB,
+      label: partyLabels.farmerB,
       confirmed: confirmations.farmerB,
     },
     {
       key: "driver",
-      label: roleLabel.driver,
+      label: partyLabels.driver,
       confirmed: confirmations.driver,
     },
   ];
@@ -719,9 +737,17 @@ function ConfirmationsRow({
   );
 }
 
-function uploaderLabelFor(role: TransportRole, driverName: string): string {
+function uploaderLabelFor(
+  role: TransportRole,
+  driverName: string,
+  partyLabels?: PartyLabels
+): string {
   if (role === "driver") return `Driver (${driverName})`;
-  return role === "farmerA" ? "Livestock owner" : "Landowner";
+  return partyLabels
+    ? partyLabels[role]
+    : role === "farmerA"
+      ? "Livestock owner"
+      : "Landowner";
 }
 
 function TransportArtefactStrip({
@@ -731,6 +757,7 @@ function TransportArtefactStrip({
   activeSectionId,
   role,
   driverName,
+  partyLabels,
   onAddArtefact,
 }: {
   artefacts: TransportArtefact[];
@@ -739,6 +766,7 @@ function TransportArtefactStrip({
   activeSectionId: string | null;
   role: TransportRole;
   driverName: string;
+  partyLabels: PartyLabels;
   onAddArtefact?: (draft: ArtefactDraft) => void;
 }) {
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
@@ -759,12 +787,16 @@ function TransportArtefactStrip({
         label: activeArtefact.label,
         kind: activeArtefact.kind,
         description: activeArtefact.description,
-        uploaderLabel: uploaderLabelFor(activeArtefact.uploadedBy, driverName),
+        uploaderLabel: uploaderLabelFor(activeArtefact.uploadedBy, driverName, partyLabels),
         sectionId: activeArtefact.sectionId,
+        fileName: activeArtefact.fileName,
+        fileType: activeArtefact.fileType,
+        fileSize: activeArtefact.fileSize,
+        fileDataUrl: activeArtefact.fileDataUrl,
       }
     : null;
 
-  const uploaderLabel = uploaderLabelFor(role, driverName);
+  const uploaderLabel = uploaderLabelFor(role, driverName, partyLabels);
 
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">
@@ -803,6 +835,7 @@ function TransportArtefactStrip({
               artefact={artefact}
               onOpen={() => setActiveArtefactId(artefact.id)}
               driverName={driverName}
+              partyLabels={partyLabels}
               dimmed={
                 !!activeSectionId && artefact.sectionId !== activeSectionId
               }
@@ -842,11 +875,13 @@ function TransportArtefactCard({
   artefact,
   onOpen,
   driverName,
+  partyLabels,
   dimmed,
 }: {
   artefact: TransportArtefact;
   onOpen: () => void;
   driverName: string;
+  partyLabels: PartyLabels;
   dimmed?: boolean;
 }) {
   const kindIcon = artefact.kind;
@@ -856,7 +891,7 @@ function TransportArtefactCard({
       : kindIcon === "map"
         ? MapIcon
         : ClipboardList;
-  const uploader = uploaderLabelFor(artefact.uploadedBy, driverName);
+  const uploader = uploaderLabelFor(artefact.uploadedBy, driverName, partyLabels);
 
   return (
     <button
@@ -887,6 +922,7 @@ function RateNegotiation({
   quotes,
   acceptedQuoteId,
   role,
+  partyLabels,
   onPropose,
   onAccept,
   onReject,
@@ -895,6 +931,7 @@ function RateNegotiation({
   quotes: TransportQuote[];
   acceptedQuoteId?: string;
   role: TransportRole;
+  partyLabels: PartyLabels;
   onPropose?: (draft: TransportQuoteDraft) => void;
   onAccept?: (quoteId: string) => void;
   onReject?: (quoteId: string) => void;
@@ -922,15 +959,20 @@ function RateNegotiation({
           </h3>
         </div>
         <p className="text-sm leading-relaxed text-bark/70">
-          Negotiate the haulage rate here. Visible to Livestock owner and the driver
-          only - the landowner never sees these numbers.
+          Negotiate the haulage rate here. Visible to {partyLabels.farmerA} and{" "}
+          {partyLabels.driver} only - {partyLabels.farmerB} never sees these numbers.
         </p>
       </div>
 
       {acceptedQuote && (
         <>
           <AcceptedQuoteCard quote={acceptedQuote} />
-          <TransportPayableCard job={job} quote={acceptedQuote} role={role} />
+          <TransportPayableCard
+            job={job}
+            quote={acceptedQuote}
+            role={role}
+            partyLabels={partyLabels}
+          />
         </>
       )}
 
@@ -941,6 +983,7 @@ function RateNegotiation({
           youProposedLast={!!youProposedLast}
           onAccept={onAccept ? () => onAccept(pendingQuote.id) : undefined}
           onReject={onReject ? () => onReject(pendingQuote.id) : undefined}
+          partyLabels={partyLabels}
         />
       )}
 
@@ -967,7 +1010,7 @@ function RateNegotiation({
       )}
 
       {quotes.length > 1 && (
-        <QuoteHistorySection quotes={quotes} />
+        <QuoteHistorySection quotes={quotes} partyLabels={partyLabels} />
       )}
     </div>
   );
@@ -977,14 +1020,16 @@ function TransportPayableCard({
   job,
   quote,
   role,
+  partyLabels,
 }: {
   job: TransportJob;
   quote: TransportQuote;
   role: TransportRole;
+  partyLabels: PartyLabels;
 }) {
   const total = estimateTransportTotal(job, quote);
   const basisLabel = quoteBasisLabel(quote.basis);
-  const payerLabel = role === "driver" ? "Livestock owner" : "You";
+  const payerLabel = role === "driver" ? partyLabels.farmerA : "You";
   const payeeLabel = role === "driver" ? "You" : job.driver;
 
   return (
@@ -1050,7 +1095,7 @@ function TransportPayableCard({
           </div>
         ) : (
           <p className="text-xs leading-relaxed text-bark/65">
-            Payment action sits with the livestock owner. Driver payout
+            Payment action sits with {partyLabels.farmerA}. Driver payout
             onboarding comes in the next milestone.
           </p>
         )}
@@ -1195,12 +1240,14 @@ function PendingQuoteCard({
   youProposedLast,
   onAccept,
   onReject,
+  partyLabels,
 }: {
   quote: TransportQuote;
   youCanAct: boolean;
   youProposedLast: boolean;
   onAccept?: () => void;
   onReject?: () => void;
+  partyLabels: PartyLabels;
 }) {
   const basisLabel =
     quote.basis === "per_head"
@@ -1212,7 +1259,9 @@ function PendingQuoteCard({
     <section className="rounded-xl border border-sage-deep/15 bg-warm-white p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-bold uppercase tracking-wide text-stone">
-          {quote.proposedBy === "driver" ? "Driver proposed" : "Livestock owner proposed"}{" "}
+          {quote.proposedBy === "driver"
+            ? `${partyLabels.driver} proposed`
+            : `${partyLabels.farmerA} proposed`}{" "}
           &middot; {quote.at}
         </p>
         <StatusBadge tone="info">
@@ -1261,7 +1310,13 @@ function PendingQuoteCard({
  * question about long quote chains: when there are 3+ counters we render
  * the most recent two and tuck the rest behind a "Show earlier" toggle.
  */
-function QuoteHistorySection({ quotes }: { quotes: TransportQuote[] }) {
+function QuoteHistorySection({
+  quotes,
+  partyLabels,
+}: {
+  quotes: TransportQuote[];
+  partyLabels: PartyLabels;
+}) {
   const [expanded, setExpanded] = useState(false);
   const reversed = quotes.slice().reverse();
   const collapseThreshold = 2;
@@ -1276,7 +1331,11 @@ function QuoteHistorySection({ quotes }: { quotes: TransportQuote[] }) {
       </h4>
       <ol className="space-y-2">
         {head.map((quote) => (
-          <QuoteHistoryRow key={quote.id} quote={quote} />
+          <QuoteHistoryRow
+            key={quote.id}
+            quote={quote}
+            partyLabels={partyLabels}
+          />
         ))}
         {tail.length > 0 && (
           <li>
@@ -1294,7 +1353,13 @@ function QuoteHistorySection({ quotes }: { quotes: TransportQuote[] }) {
   );
 }
 
-function QuoteHistoryRow({ quote }: { quote: TransportQuote }) {
+function QuoteHistoryRow({
+  quote,
+  partyLabels,
+}: {
+  quote: TransportQuote;
+  partyLabels: PartyLabels;
+}) {
   const basisLabel =
     quote.basis === "per_head"
       ? "/ head"
@@ -1316,7 +1381,7 @@ function QuoteHistoryRow({ quote }: { quote: TransportQuote }) {
           ${quote.amount.toFixed(2)} {quote.currency} {basisLabel}
         </p>
         <p className="text-xs text-bark/65">
-          {quote.proposedBy === "driver" ? "Driver" : "Livestock owner"} &middot;{" "}
+          {quote.proposedBy === "driver" ? partyLabels.driver : partyLabels.farmerA} &middot;{" "}
           {quote.at}
         </p>
       </div>

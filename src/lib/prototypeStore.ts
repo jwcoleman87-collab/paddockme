@@ -178,6 +178,9 @@ export function createPaddockListing(input: {
   feedStatus: PaddockListing["feedStatus"];
   waterStatus: PaddockListing["waterStatus"];
   fencingStatus: PaddockListing["fencingStatus"];
+  feedNote?: string;
+  waterNote?: string;
+  fencingNote?: string;
   availabilityWindow: string;
   guideTerms: string;
   summary: string;
@@ -415,6 +418,8 @@ function createTransportJob(agreement: Agreement, listing: PaddockListing): Tran
     agreementId: agreement.id,
     farmerAId: agreement.farmerAId,
     farmerBId: agreement.farmerBId,
+    farmerAName: agreement.farmerAName,
+    farmerBName: agreement.farmerBName,
     driverId: "driver-1",
     pickup: "Central West property",
     destination: `${listing.title}, ${listing.regionLabel}`,

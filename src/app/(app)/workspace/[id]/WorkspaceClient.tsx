@@ -462,6 +462,10 @@ export function WorkspaceClient({
       description: draft.description,
       uploadedBy: viewerParty === "A" ? "farmerA" : "farmerB",
       sectionId: draft.sectionId,
+      fileName: draft.fileName,
+      fileType: draft.fileType,
+      fileSize: draft.fileSize,
+      fileDataUrl: draft.fileDataUrl,
     };
     setArtefacts((current) => [...current, newArtefact]);
     void createAgreementArtefact({
@@ -470,6 +474,10 @@ export function WorkspaceClient({
       description: draft.description,
       kind: draft.kind,
       sectionId: draft.sectionId,
+      fileName: draft.fileName,
+      fileType: draft.fileType,
+      fileSize: draft.fileSize,
+      fileDataUrl: draft.fileDataUrl,
     }).then((saved) => {
       if (saved) {
         setArtefacts((current) =>

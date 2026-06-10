@@ -22,6 +22,10 @@ export type ArtefactDraft = {
   description: string;
   kind: ArtefactDraftKind;
   sectionId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
 };
 
 type SectionRef = {
@@ -59,11 +63,24 @@ export function ArtefactUploadDialog({
 }: ArtefactUploadDialogProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const labelInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const onCloseRef = useRef(onClose);
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [kind, setKind] = useState<ArtefactDraftKind>("document");
   const [sectionId, setSectionId] = useState<string | null>(null);
+  const [fileDraft, setFileDraft] = useState<{
+    name: string;
+    type: string;
+    size: number;
+    dataUrl: string;
+  } | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,6 +89,9 @@ export function ArtefactUploadDialog({
     setDescription("");
     setKind("document");
     setSectionId(initialSectionId);
+    setFileDraft(null);
+    setFileError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     // Focus the label input after a tick so the autoFocus doesn't fight
     // with the focus-trap setup below.
     requestAnimationFrame(() => labelInputRef.current?.focus());
@@ -82,7 +102,7 @@ export function ArtefactUploadDialog({
     function handleKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
@@ -107,13 +127,17 @@ export function ArtefactUploadDialog({
       body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
-  }, [initialSectionId, open, onClose]);
+  }, [initialSectionId, open]);
 
   if (!open) return null;
 
   const trimmedLabel = label.trim();
   const trimmedDescription = description.trim();
-  const canSubmit = trimmedLabel.length > 0 && trimmedDescription.length > 0;
+  const canSubmit =
+    trimmedLabel.length > 0 &&
+    trimmedDescription.length > 0 &&
+    !!fileDraft &&
+    !fileError;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -123,7 +147,39 @@ export function ArtefactUploadDialog({
       description: trimmedDescription,
       kind,
       sectionId: (requireSection ? initialSectionId : sectionId) ?? undefined,
+      fileName: fileDraft?.name,
+      fileType: fileDraft?.type,
+      fileSize: fileDraft?.size,
+      fileDataUrl: fileDraft?.dataUrl,
     });
+  }
+
+  async function handleFileSelected(fileList: FileList | null) {
+    setFileError(null);
+    const file = fileList?.[0];
+    if (!file) {
+      setFileDraft(null);
+      return;
+    }
+
+    const maxBytes = 3 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setFileDraft(null);
+      setFileError("Choose a file under 3 MB.");
+      return;
+    }
+
+    const dataUrl = await readAsDataUrl(file);
+    setFileDraft({
+      name: file.name,
+      type: file.type || "application/octet-stream",
+      size: file.size,
+      dataUrl,
+    });
+    if (file.type.startsWith("image/")) setKind("photo");
+    else if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+      setKind("document");
+    }
   }
 
   return (
@@ -170,6 +226,33 @@ export function ArtefactUploadDialog({
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
+          <div>
+            <label
+              htmlFor="artefact-file"
+              className="text-xs font-bold uppercase tracking-wide text-stone"
+            >
+              File
+            </label>
+            <input
+              id="artefact-file"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+              onChange={(event) => {
+                void handleFileSelected(event.target.files);
+              }}
+              className="mt-1 block w-full rounded-xl border border-sage-deep/15 bg-warm-white px-4 py-3 text-sm font-semibold text-bark file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-sage-deep file:px-3 file:py-2 file:text-sm file:font-bold file:text-cream focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-glow"
+            />
+            {fileDraft && (
+              <p className="mt-2 text-xs font-semibold text-bark/70">
+                Selected {fileDraft.name} ({formatFileSize(fileDraft.size)})
+              </p>
+            )}
+            {fileError && (
+              <p className="mt-2 text-xs font-bold text-terra">{fileError}</p>
+            )}
+          </div>
+
           <div>
             <label
               htmlFor="artefact-label"
@@ -285,4 +368,19 @@ export function ArtefactUploadDialog({
       </div>
     </div>
   );
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

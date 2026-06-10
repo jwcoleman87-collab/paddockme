@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { useEffect, useRef } from "react";
 import {
   FileText,
@@ -21,13 +22,6 @@ const kindLabels = {
   map: "Map",
 };
 
-const kindPreviewHints = {
-  photo: "Real photo upload lands here when artefact uploads are wired.",
-  document:
-    "Real document preview lands here when artefact uploads are wired.",
-  map: "Real interactive map lands here when paddock boundaries are wired.",
-};
-
 const focusableSelector =
   'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
@@ -42,6 +36,10 @@ export type ViewableArtefact = {
   uploaderLabel: string;
   /** Optional section this artefact is discussed in (id matches an anchorable section). */
   sectionId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  fileDataUrl?: string;
   recordDetails?: {
     title: string;
     status: string;
@@ -114,6 +112,10 @@ export function ArtefactViewer({
 
   const Icon = kindIcons[artefact.kind];
   const kindLabel = kindLabels[artefact.kind];
+  const hasImagePreview =
+    artefact.kind === "photo" &&
+    artefact.fileDataUrl &&
+    artefact.fileType?.startsWith("image/");
   const linkedSection = artefact.sectionId
     ? sections.find((section) => section.id === artefact.sectionId)
     : undefined;
@@ -186,18 +188,23 @@ export function ArtefactViewer({
               )}
             </div>
           ) : (
-            <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-sage/35 bg-sage-mist px-4 py-10 text-center">
-              <Icon className="h-12 w-12 text-sage-deep" aria-hidden />
-              <p className="font-semibold text-sage-deep">{kindLabel} preview</p>
-              <p className="max-w-sm text-sm text-bark/70">
-                {kindPreviewHints[artefact.kind]}
-              </p>
-            </div>
+            <ArtefactFilePreview
+              artefact={artefact}
+              hasImagePreview={Boolean(hasImagePreview)}
+              icon={Icon}
+              kindLabel={kindLabel}
+            />
           )}
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
             <MetaRow label="Uploaded by" value={artefact.uploaderLabel} />
             <MetaRow label="Type" value={kindLabel} />
+            {artefact.fileName && (
+              <MetaRow label="File" value={artefact.fileName} />
+            )}
+            {typeof artefact.fileSize === "number" && (
+              <MetaRow label="Size" value={formatFileSize(artefact.fileSize)} />
+            )}
           </dl>
         </div>
 
@@ -229,6 +236,53 @@ export function ArtefactViewer({
   );
 }
 
+function ArtefactFilePreview({
+  artefact,
+  hasImagePreview,
+  icon: Icon,
+  kindLabel,
+}: {
+  artefact: ViewableArtefact;
+  hasImagePreview: boolean;
+  icon: ComponentType<{ className?: string }>;
+  kindLabel: string;
+}) {
+  if (hasImagePreview && artefact.fileDataUrl) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-sage-deep/15 bg-cream">
+        <img
+          src={artefact.fileDataUrl}
+          alt={artefact.label}
+          className="max-h-[60vh] w-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-sage/35 bg-sage-mist px-4 py-10 text-center">
+      <Icon className="h-12 w-12 text-sage-deep" aria-hidden />
+      <p className="font-semibold text-sage-deep">
+        {artefact.fileName ?? `${kindLabel} attachment`}
+      </p>
+      <p className="max-w-sm text-sm text-bark/70">
+        {artefact.fileName
+          ? "Preview is not available for this file type, but the attachment is saved here."
+          : "No file has been attached to this artefact."}
+      </p>
+      {artefact.fileDataUrl && artefact.fileName && (
+        <a
+          href={artefact.fileDataUrl}
+          download={artefact.fileName}
+          className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full bg-sage-deep px-4 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+        >
+          Download file
+        </a>
+      )}
+    </div>
+  );
+}
+
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-mist bg-cream/50 px-4 py-3">
@@ -238,4 +292,10 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 font-semibold text-bark">{value}</dd>
     </div>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
