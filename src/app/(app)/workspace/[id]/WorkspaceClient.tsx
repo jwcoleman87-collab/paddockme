@@ -17,7 +17,9 @@ import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
+  createAgreementArtefact,
   createAgreementMessage,
+  getCurrentUserId,
   listTransportJobs,
   requestTransportJob,
   updateAgreementSectionAgreement,
@@ -31,7 +33,7 @@ import type {
   TransportJob,
 } from "@/lib/dummyData";
 
-const partyProfile: Record<
+const fallbackPartyProfile: Record<
   WorkspaceParty,
   { id: string; name: string; role: string; label: string; avatarUrl: string }
 > = {
@@ -40,14 +42,14 @@ const partyProfile: Record<
     name: "Livestock owner",
     role: "Livestock owner",
     label: "Livestock owner",
-    avatarUrl: "/avatars/dale.jpg",
+    avatarUrl: "",
   },
   B: {
     id: "farmer-b",
     name: "Landowner",
     role: "Landowner",
     label: "Landowner",
-    avatarUrl: "/avatars/brett.jpg",
+    avatarUrl: "",
   },
 };
 
@@ -69,6 +71,24 @@ export function WorkspaceClient({
   messages: Message[];
 }) {
   const flash = useFlash();
+  const isRealWorkspace = isUuid(agreement.id);
+  const partyProfile = useMemo(
+    () => ({
+      A: {
+        ...fallbackPartyProfile.A,
+        id: agreement.farmerAId,
+        name: agreement.farmerAName ?? fallbackPartyProfile.A.name,
+        label: agreement.farmerAName ?? fallbackPartyProfile.A.label,
+      },
+      B: {
+        ...fallbackPartyProfile.B,
+        id: agreement.farmerBId,
+        name: agreement.farmerBName ?? fallbackPartyProfile.B.name,
+        label: agreement.farmerBName ?? fallbackPartyProfile.B.label,
+      },
+    }),
+    [agreement.farmerAId, agreement.farmerAName, agreement.farmerBId, agreement.farmerBName]
+  );
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -111,6 +131,14 @@ export function WorkspaceClient({
   >(linkedTransport?.acceptedQuoteId);
 
   useEffect(() => {
+    if (isRealWorkspace) {
+      void getCurrentUserId().then((userId) => {
+        if (!userId) return;
+        if (userId === agreement.farmerBId) setViewerPartyState("B");
+        if (userId === agreement.farmerAId) setViewerPartyState("A");
+      });
+      return;
+    }
     if (typeof window === "undefined") return;
     const cookiePersona = readPersonaCookie();
     try {
@@ -146,7 +174,7 @@ export function WorkspaceClient({
       // ignore - localStorage may be unavailable
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedTransport?.id]);
+  }, [agreement.farmerAId, agreement.farmerBId, isRealWorkspace, linkedTransport?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -159,6 +187,7 @@ export function WorkspaceClient({
   }, [agreement.id]);
 
   function setViewerParty(next: WorkspaceParty) {
+    if (isRealWorkspace) return;
     if (next === viewerParty) return;
     setViewerPartyState(next);
     writePersonaCookie(partyProfile[next].id);
@@ -179,21 +208,22 @@ export function WorkspaceClient({
       agreementId: agreement.id,
       body,
       sectionId: activeSectionId ?? undefined,
+    }).then((saved) => {
+      setMessages((current) => [
+        ...current,
+        saved ?? {
+          id: `local-${Date.now()}`,
+          threadId: agreement.id,
+          senderId: sender.id,
+          senderName: sender.name,
+          senderRole: sender.role,
+          senderAvatarUrl: sender.avatarUrl,
+          body,
+          time: shortTime(),
+          sectionId: activeSectionId ?? undefined,
+        },
+      ]);
     });
-    setMessages((current) => [
-      ...current,
-      {
-        id: `local-${Date.now()}`,
-        threadId: agreement.id,
-        senderId: sender.id,
-        senderName: sender.name,
-        senderRole: sender.role,
-        senderAvatarUrl: sender.avatarUrl,
-        body,
-        time: shortTime(),
-        sectionId: activeSectionId ?? undefined,
-      },
-    ]);
   }
 
   function appendSystemMessage(body: string, sectionId?: string) {
@@ -239,6 +269,10 @@ export function WorkspaceClient({
   const storageKey = `paddockme.workspace.${agreement.id}`;
 
   useEffect(() => {
+    if (isRealWorkspace) {
+      hydratedRef.current = true;
+      return;
+    }
     if (typeof window === "undefined") return;
     try {
       const stored = window.localStorage.getItem(storageKey);
@@ -264,9 +298,10 @@ export function WorkspaceClient({
     }
     hydratedRef.current = true;
     // Only hydrate once per agreement.
-  }, [storageKey]);
+  }, [isRealWorkspace, storageKey]);
 
   useEffect(() => {
+    if (isRealWorkspace) return;
     if (typeof window === "undefined") return;
     if (!hydratedRef.current) return;
     try {
@@ -290,6 +325,7 @@ export function WorkspaceClient({
     lifecycleHistory,
     messages,
     artefacts,
+    isRealWorkspace,
   ]);
 
   const toggleAgreement = (sectionId: string, party: WorkspaceParty) => {
@@ -365,11 +401,26 @@ export function WorkspaceClient({
       sectionId: draft.sectionId,
     };
     setArtefacts((current) => [...current, newArtefact]);
-    flash(`Artefact "${draft.label}" added.`, "success");
-    appendSystemMessage(
-      `${partyProfile[viewerParty].label} added artefact "${draft.label}".`,
-      draft.sectionId
-    );
+    void createAgreementArtefact({
+      agreementId: agreement.id,
+      label: draft.label,
+      description: draft.description,
+      kind: draft.kind,
+      sectionId: draft.sectionId,
+    }).then((saved) => {
+      if (saved) {
+        setArtefacts((current) =>
+          current.map((artefact) =>
+            artefact.id === newArtefact.id ? saved : artefact
+          )
+        );
+      }
+      flash(`Artefact "${draft.label}" added.`, "success");
+      appendSystemMessage(
+        `${partyProfile[viewerParty].label} added artefact "${draft.label}".`,
+        draft.sectionId
+      );
+    });
   };
 
   const cancelLifecycle = () => {
@@ -422,7 +473,9 @@ export function WorkspaceClient({
     return [
       {
         title: "Request matched to paddock",
-        detail: "100 cattle request matched with Glenbarra River Paddocks.",
+        detail: `${agreement.livestock} request matched with ${
+          agreement.listingTitle ?? "the selected paddock"
+        }.`,
         complete: true,
       },
       {
@@ -451,14 +504,14 @@ export function WorkspaceClient({
         </p>
       </Card>
       <section
-        aria-label="Agreement party switcher"
+        aria-label={isRealWorkspace ? "Agreement parties" : "Agreement party switcher"}
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sage-deep">
             <Users className="h-5 w-5" aria-hidden />
             <h2 className="text-sm font-bold uppercase tracking-wide">
-              Role view
+              {isRealWorkspace ? "Parties" : "Role view"}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -469,7 +522,7 @@ export function WorkspaceClient({
               View snapshot
             </a>
             <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-              Role view
+              {isRealWorkspace ? "Signed in" : "Role view"}
             </span>
           </div>
         </div>
@@ -488,8 +541,10 @@ export function WorkspaceClient({
                 role="radio"
                 aria-checked={active}
                 onClick={() => setViewerParty(party)}
+                disabled={isRealWorkspace}
                 className={cn(
                   "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
+                  isRealWorkspace && "cursor-default",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
                     : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
@@ -538,6 +593,10 @@ export function WorkspaceClient({
               transportHref={transportHref}
               onRequestTransport={requestTransport}
               viewerParty={viewerParty}
+              partyLabels={{
+                A: partyProfile.A.label,
+                B: partyProfile.B.label,
+              }}
               artefacts={artefacts}
               onAddArtefact={addArtefact}
               transportJob={linkedTransport}
@@ -549,7 +608,7 @@ export function WorkspaceClient({
         }
         right={
           <ChatPanel
-            title="Livestock owner and Landowner"
+            title={`${partyProfile.A.label} and ${partyProfile.B.label}`}
             messages={messages}
             onlineCount={2}
             sections={agreement.sections}
@@ -562,6 +621,10 @@ export function WorkspaceClient({
       />
     </div>
   );
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function readPersonaCookie(): string | null {

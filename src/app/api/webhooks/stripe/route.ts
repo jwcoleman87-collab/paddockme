@@ -38,7 +38,16 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     if (session.metadata?.type === "transport_payable") {
-      await recordStripeCheckoutCompleted(session, event.id);
+      try {
+        await recordStripeCheckoutCompleted(session, event.id);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to record payment";
+        console.error("[stripe webhook] ledger write failed:", message);
+        // Return 500 so Stripe retries. recordStripeCheckoutCompleted is
+        // idempotent on provider_event_id, so a later retry won't duplicate.
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
     }
   }
 

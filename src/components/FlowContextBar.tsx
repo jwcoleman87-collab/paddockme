@@ -1,26 +1,26 @@
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
-import { livestockRequests } from "@/lib/dummyData";
 import { cn } from "@/lib/utils";
 
 type FlowContextBarProps = {
   step: string;
   label?: string;
+  summary?: string;
   backHref?: string;
   backLabel?: string;
+  editHref?: string;
   className?: string;
 };
 
 export function FlowContextBar({
   step,
   label = "Your request",
+  summary,
   backHref,
   backLabel = "Back",
+  editHref,
   className,
 }: FlowContextBarProps) {
-  const request = livestockRequests[0];
-  const summary = `${request.headCount} ${request.breed} ${request.stockType} - ${request.preferredRegions.join(", ")} - ${request.duration}`;
-
   return (
     <section
       className={cn(
@@ -34,9 +34,11 @@ export function FlowContextBar({
           <p className="text-xs font-bold uppercase tracking-wide text-bark/85">
             {label}
           </p>
-          <p className="mt-0.5 truncate text-sm font-bold text-sage-deep">
-            {summary}
-          </p>
+          {summary && (
+            <p className="mt-0.5 truncate text-sm font-bold text-sage-deep">
+              {summary}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -52,13 +54,15 @@ export function FlowContextBar({
               {backLabel}
             </Link>
           )}
-          <Link
-            href="/request/new"
-            className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-sage-deep/30 bg-warm-white px-2.5 py-1 text-xs font-bold text-sage-deep hover:bg-sage-mist"
-          >
-            <Pencil className="h-3.5 w-3.5" aria-hidden />
-            Edit request
-          </Link>
+          {editHref && (
+            <Link
+              href={editHref}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-sage-deep/30 bg-warm-white px-2.5 py-1 text-xs font-bold text-sage-deep hover:bg-sage-mist"
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+              Edit request
+            </Link>
+          )}
         </div>
       </div>
     </section>

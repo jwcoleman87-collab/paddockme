@@ -319,6 +319,13 @@ export async function getAgreementRecord(id: string): Promise<Agreement | undefi
   return loadPrototypeState().agreements.find((agreement) => agreement.id === id);
 }
 
+export async function getCurrentUserId(): Promise<string | null> {
+  const supabase = await getAuthedClient();
+  if (!supabase) return null;
+  const user = await getCurrentUser(supabase);
+  return user?.id ?? null;
+}
+
 export async function openAgreementWorkspace(
   listingId: string,
   requestId?: string
@@ -374,8 +381,62 @@ export async function listAgreementMessages(agreementId: string): Promise<Messag
 export async function listAgreementArtefacts(
   agreementId: string
 ): Promise<AgreementArtefact[]> {
+  const supabase = await getAuthedClient();
+  if (supabase && isUuid(agreementId)) {
+    const [{ data, error }, { data: agreement }] = await Promise.all([
+      supabase
+        .from("agreement_artefacts")
+        .select("*")
+        .eq("agreement_id", agreementId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("agreements")
+        .select("livestock_owner_id, landowner_id")
+        .eq("id", agreementId)
+        .maybeSingle(),
+    ]);
+    if (!error && data) {
+      return data.map((row) =>
+        mapAgreementArtefactRow(row, agreement ?? undefined)
+      );
+    }
+  }
   const agreement = await getAgreementRecord(agreementId);
   return agreement?.artefacts ?? [];
+}
+
+export async function createAgreementArtefact(input: {
+  agreementId: string;
+  label: string;
+  description: string;
+  kind: AgreementArtefact["kind"];
+  sectionId?: string;
+}): Promise<AgreementArtefact | null> {
+  const supabase = await getAuthedClient();
+  const user = supabase ? await getCurrentUser(supabase) : null;
+  if (!supabase || !user || !isUuid(input.agreementId)) return null;
+
+  const { data, error } = await supabase
+    .from("agreement_artefacts")
+    .insert({
+      agreement_id: input.agreementId,
+      uploaded_by: user.id,
+      label: input.label,
+      description: input.description,
+      kind: input.kind,
+      section_key: input.sectionId ?? null,
+      metadata: { source: "workspace_metadata" },
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+  const { data: agreement } = await supabase
+    .from("agreements")
+    .select("livestock_owner_id, landowner_id")
+    .eq("id", input.agreementId)
+    .maybeSingle();
+  return mapAgreementArtefactRow(data, agreement ?? undefined);
 }
 
 export async function listTransportJobs(): Promise<TransportJob[]> {
@@ -797,41 +858,59 @@ async function mapAgreementRow(
         .maybeSingle()
     : { data: null };
 
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", [row.livestock_owner_id, row.landowner_id]);
+
+  const profilesById = new Map(
+    (profileRows ?? []).map((profile) => [profile.id, profile.full_name])
+  );
+
   const { data: sectionRows } = await supabase
     .from("agreement_sections")
     .select("*")
     .eq("agreement_id", row.id)
     .order("sort_order", { ascending: true });
 
+  const { data: artefactRows } = await supabase
+    .from("agreement_artefacts")
+    .select("*")
+    .eq("agreement_id", row.id)
+    .order("created_at", { ascending: true });
+
   const sections = sectionRows?.length
     ? sectionRows.map(mapAgreementSectionRow)
-    : agreements[0].sections;
+    : [];
 
   return {
-    ...agreements[0],
     id: row.id,
-    listingId: match?.paddock_id ?? agreements[0].listingId,
-    requestId: match?.request_id ?? agreements[0].requestId,
+    listingId: match?.paddock_id ?? "",
+    requestId: match?.request_id ?? "",
     listingTitle: listing?.title ?? undefined,
     listingLocation: listing?.region ?? undefined,
     farmerAId: row.livestock_owner_id,
     farmerBId: row.landowner_id,
+    farmerAName: profilesById.get(row.livestock_owner_id) ?? "Livestock owner",
+    farmerBName: profilesById.get(row.landowner_id) ?? "Landowner",
     status: normaliseAgreementStatus(row.status),
     livestock: request
       ? `${request.head_count} ${request.breed ?? ""} ${request.stock_type}`.trim()
       : row.head_count
         ? `${row.head_count} head`
-        : agreements[0].livestock,
-    duration: request?.duration ?? (row.duration_months ? `${row.duration_months} months` : agreements[0].duration),
+        : "Livestock",
+    duration: request?.duration ?? (row.duration_months ? `${row.duration_months} months` : "Discuss"),
     pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.dale) : mapCoordinates.dale),
     destinationLocation: parseCoordinate(row.destination_location, listing ? parseCoordinate(listing.location, coordinateForRegion(listing.region)) : mapCoordinates.gundagai),
-    feed: listing?.pasture_type ?? agreements[0].feed,
-    water: listing?.water_type?.[0] ?? agreements[0].water,
-    fencing: listing?.yards ? "Secure" : agreements[0].fencing,
+    feed: listing?.pasture_type ?? "Discuss",
+    water: listing?.water_type?.[0] ?? "Discuss",
+    fencing: listing?.yards ? "Secure" : "Good",
     transportRequired: row.transport_required ?? false,
+    weeksRemaining: 0,
     lastUpdate: "Saved in Supabase",
+    readinessChecklist: [],
     sections,
-    artefacts: [],
+    artefacts: artefactRows?.map((artefact) => mapAgreementArtefactRow(artefact, row)) ?? [],
     lifecycleHistory: [
       {
         at: row.created_at ?? new Date().toISOString(),
@@ -842,6 +921,28 @@ async function mapAgreementRow(
       } satisfies AgreementLifecycleEvent,
     ],
   };
+}
+
+function mapAgreementArtefactRow(
+  row: Tables<"agreement_artefacts">,
+  agreement?: Pick<Tables<"agreements">, "livestock_owner_id" | "landowner_id">
+): AgreementArtefact {
+  return {
+    id: row.id,
+    label: row.label,
+    kind: normaliseArtefactKind(row.kind),
+    uploadedBy:
+      agreement && row.uploaded_by === agreement.landowner_id
+        ? "farmerB"
+        : "farmerA",
+    description: row.description ?? "",
+    sectionId: row.section_key ?? undefined,
+  };
+}
+
+function normaliseArtefactKind(value: string): AgreementArtefact["kind"] {
+  if (value === "photo" || value === "document" || value === "map") return value;
+  return "document";
 }
 
 function mapAgreementSectionRow(row: Tables<"agreement_sections">): AgreementSection {

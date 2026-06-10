@@ -11,13 +11,16 @@ export async function generateMetadata({
   const { id } = await params;
   const agreement = getAgreement(id);
   const listing = agreement ? getListing(agreement.listingId) : undefined;
-  const farmerA = agreement
+  const farmerA = agreement && !agreement.farmerAName
     ? farmers.find((f) => f.id === agreement.farmerAId)
     : undefined;
-  const farmerB = agreement
+  const farmerB = agreement && !agreement.farmerBName
     ? farmers.find((f) => f.id === agreement.farmerBId)
     : undefined;
-  const parts = [farmerA?.name.split(" ")[0], farmerB?.name.split(" ")[0]]
+  const parts = [
+    (agreement?.farmerAName ?? farmerA?.name)?.split(" ")[0],
+    (agreement?.farmerBName ?? farmerB?.name)?.split(" ")[0],
+  ]
     .filter(Boolean)
     .join(" & ");
   const title = listing

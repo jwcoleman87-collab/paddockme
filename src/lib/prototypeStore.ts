@@ -352,6 +352,8 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
     requestId: request.id,
     farmerAId: request.requesterId,
     farmerBId: listing.ownerId,
+    farmerAName: farmerName(request.requesterId, "Livestock owner"),
+    farmerBName: farmerName(listing.ownerId, "Landowner"),
     status: "Draft",
     livestock: `${request.headCount} ${request.breed} ${request.stockType}`,
     duration: request.duration,
@@ -380,6 +382,10 @@ function createAgreement(listing: PaddockListing, request: LivestockRequest): Ag
     artefacts: [],
     lifecycleHistory: history,
   };
+}
+
+function farmerName(id: string, fallback: string): string {
+  return farmers.find((farmer) => farmer.id === id)?.name ?? fallback;
 }
 
 function section(

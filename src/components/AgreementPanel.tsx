@@ -64,6 +64,7 @@ type AgreementPanelProps = {
   onRequestTransport?: () => void;
   /** The party the current viewer represents. Drives which agree button is interactive. */
   viewerParty: WorkspaceParty;
+  partyLabels?: Record<WorkspaceParty, string>;
   /** Live artefacts list (allows the workspace client to lift state above the panel). */
   artefacts: AgreementArtefact[];
   /** Called when the upload dialog submits. */
@@ -191,6 +192,7 @@ export function AgreementPanel({
   transportHref,
   onRequestTransport,
   viewerParty,
+  partyLabels = { A: "Livestock owner", B: "Landowner" },
   artefacts,
   onAddArtefact,
   transportJob,
@@ -298,8 +300,9 @@ export function AgreementPanel({
                     agreedByB: section.agreedByB,
                   }
                 }
-                viewerParty={viewerParty}
-                onSelect={() => onSelectSection(section.id)}
+              viewerParty={viewerParty}
+              partyLabels={partyLabels}
+              onSelect={() => onSelectSection(section.id)}
                 onToggleA={() => onToggleAgreement(section.id, "A")}
                 onToggleB={() => onToggleAgreement(section.id, "B")}
                 artefacts={artefacts.filter(
@@ -324,6 +327,7 @@ export function AgreementPanel({
             onSelectSection={onSelectSection}
             activeSectionId={activeSectionId}
             viewerParty={viewerParty}
+            partyLabels={partyLabels}
             onAddArtefact={onAddArtefact}
           />
         )}
@@ -1143,6 +1147,7 @@ function SectionCard({
   active,
   state,
   viewerParty,
+  partyLabels,
   onSelect,
   onToggleA,
   onToggleB,
@@ -1157,6 +1162,7 @@ function SectionCard({
   active: boolean;
   state: SectionAgreementState;
   viewerParty: WorkspaceParty;
+  partyLabels: Record<WorkspaceParty, string>;
   onSelect: () => void;
   onToggleA: () => void;
   onToggleB: () => void;
@@ -1177,8 +1183,7 @@ function SectionCard({
   const [uploadOpen, setUploadOpen] = useState(false);
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
-  const uploaderLabel =
-    viewerParty === "A" ? "Livestock owner" : "Landowner";
+  const uploaderLabel = partyLabels[viewerParty];
 
   const alignment = getSectionAlignment(section, agreedByA, agreedByB);
 
@@ -1305,13 +1310,13 @@ function SectionCard({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <PartyAgreeButton
-            party="Livestock owner"
+            party={partyLabels.A}
             agreed={agreedByA}
             interactive={viewerParty === "A"}
             onClick={onToggleA}
           />
           <PartyAgreeButton
-            party="Landowner"
+            party={partyLabels.B}
             agreed={agreedByB}
             interactive={viewerParty === "B"}
             onClick={onToggleB}
@@ -1445,6 +1450,7 @@ function ArtefactStrip({
   onSelectSection,
   activeSectionId,
   viewerParty,
+  partyLabels,
   onAddArtefact,
 }: {
   artefacts: AgreementArtefact[];
@@ -1452,6 +1458,7 @@ function ArtefactStrip({
   onSelectSection: (sectionId: string) => void;
   activeSectionId: string | null;
   viewerParty: WorkspaceParty;
+  partyLabels: Record<WorkspaceParty, string>;
   onAddArtefact?: (draft: ArtefactDraft) => void;
 }) {
   const [activeArtefactId, setActiveArtefactId] = useState<string | null>(null);
@@ -1466,8 +1473,7 @@ function ArtefactStrip({
     ? sections.find((section) => section.id === activeSectionId)?.label
     : undefined;
 
-  const uploaderLabel =
-    viewerParty === "A" ? "Livestock owner" : "Landowner";
+  const uploaderLabel = partyLabels[viewerParty];
 
   return (
     <section className="rounded-xl border border-sage-deep/10 bg-cream/60 p-4">

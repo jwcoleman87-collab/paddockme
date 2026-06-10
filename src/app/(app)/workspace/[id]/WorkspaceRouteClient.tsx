@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { FlowContextBar } from "@/components/FlowContextBar";
 import { PageHeader } from "@/components/PageHeader";
-import { farmers, getListing, type Agreement, type Message } from "@/lib/dummyData";
+import { getListing, type Agreement, type Message } from "@/lib/dummyData";
 import {
   getAgreementRecord,
   listAgreementMessages,
@@ -83,9 +83,12 @@ export function WorkspaceRouteClient({
     agreement.listingTitle ??
     getListing(agreement.listingId)?.title ??
     "Agreement workspace";
-  const farmerA = farmers.find((f) => f.id === agreement.farmerAId);
-  const farmerB = farmers.find((f) => f.id === agreement.farmerBId);
-  const partyLine = [farmerA?.name, farmerB?.name].filter(Boolean).join(" & ");
+  const partyLine = [
+    agreement.farmerAName ?? "Livestock owner",
+    agreement.farmerBName ?? "Landowner",
+  ]
+    .filter(Boolean)
+    .join(" & ");
   const partyPrefix = partyLine ? partyLine + ". " : "";
   const description =
     partyPrefix +

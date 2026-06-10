@@ -305,6 +305,8 @@ export type Agreement = {
   listingLocation?: string;
   farmerAId: string;
   farmerBId: string;
+  farmerAName?: string;
+  farmerBName?: string;
   status: AgreementLifecycleState;
   livestock: string;
   duration: string;
@@ -740,6 +742,8 @@ export const agreements: Agreement[] = [
     requestId: "request-100-cattle",
     farmerAId: "farmer-a",
     farmerBId: "farmer-b",
+    farmerAName: "Livestock owner",
+    farmerBName: "Landowner",
     status: "Negotiating",
     livestock: "100 cattle",
     duration: "3 months",

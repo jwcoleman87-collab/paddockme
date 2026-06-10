@@ -58,6 +58,8 @@ export default async function WorkspaceSnapshotPage({
   const transportJob = getTransportJobForAgreement(agreement.id);
   const farmerA = farmers.find((f) => f.id === agreement.farmerAId);
   const farmerB = farmers.find((f) => f.id === agreement.farmerBId);
+  const farmerAName = agreement.farmerAName ?? farmerA?.name ?? "Livestock owner";
+  const farmerBName = agreement.farmerBName ?? farmerB?.name ?? "Landowner";
 
   return (
     <>
@@ -89,8 +91,8 @@ export default async function WorkspaceSnapshotPage({
           <PrintButton />
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <InfoTile tone="subtle" size="sm" label="Livestock owner" value={farmerA?.name ?? "—"} />
-          <InfoTile tone="subtle" size="sm" label="Landowner" value={farmerB?.name ?? "—"} />
+          <InfoTile tone="subtle" size="sm" label="Livestock owner" value={farmerAName} />
+          <InfoTile tone="subtle" size="sm" label="Landowner" value={farmerBName} />
           <InfoTile tone="subtle" size="sm" label="Livestock" value={agreement.livestock} />
           <InfoTile tone="subtle" size="sm" label="Duration" value={agreement.duration} />
         </div>
@@ -122,9 +124,9 @@ export default async function WorkspaceSnapshotPage({
                       {both
                         ? "Both agreed"
                         : section.agreedByA
-                          ? `Awaiting ${farmerB?.name.split(" ")[0] ?? "Landowner"}`
+                          ? `Awaiting ${farmerBName.split(" ")[0] ?? "Landowner"}`
                           : section.agreedByB
-                            ? `Awaiting ${farmerA?.name.split(" ")[0] ?? "Livestock owner"}`
+                            ? `Awaiting ${farmerAName.split(" ")[0] ?? "Livestock owner"}`
                             : "Not yet agreed"}
                     </span>
                   </div>
@@ -172,8 +174,8 @@ export default async function WorkspaceSnapshotPage({
                   <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone">
                     {artefact.kind} · uploaded by{" "}
                     {artefact.uploadedBy === "farmerA"
-                      ? farmerA?.name.split(" ")[0] ?? "Livestock owner"
-                      : farmerB?.name.split(" ")[0] ?? "Landowner"}
+                      ? farmerAName.split(" ")[0] ?? "Livestock owner"
+                      : farmerBName.split(" ")[0] ?? "Landowner"}
                   </p>
                 </div>
               </Card>

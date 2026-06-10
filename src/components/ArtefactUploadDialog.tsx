@@ -152,9 +152,8 @@ export function ArtefactUploadDialog({
               Add a shared artefact
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-bark/70">
-              Real file uploads land when storage is wired. For now the
-              metadata is captured and the tile appears in the strip
-              alongside the seeded artefacts.
+              Add the document details to this workspace so both parties can
+              see it in the relevant agreement section.
             </p>
           </div>
           <button

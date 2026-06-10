@@ -37,6 +37,7 @@ import {
   mapCoordinates,
   type Coordinate,
 } from "@/lib/mapCoordinates";
+import { listRegionBoundaries, type RegionBoundary } from "@/lib/regionBoundaries";
 import { cn } from "@/lib/utils";
 
 export type PaddockMapMode = "regional" | "agreement" | "driver";
@@ -82,7 +83,15 @@ type LineFeature = {
   properties: MapFeatureProperties;
 };
 
-type FeatureCollection<TFeature extends Feature | LineFeature> = {
+type PolygonFeature = {
+  type: "Feature";
+  geometry: { type: "Polygon"; coordinates: [number, number][][] };
+  properties: MapFeatureProperties & {
+    source: string;
+  };
+};
+
+type FeatureCollection<TFeature extends Feature | LineFeature | PolygonFeature> = {
   type: "FeatureCollection";
   features: TFeature[];
 };
@@ -239,6 +248,11 @@ export function PaddockMap({
     return context.routes;
   }, [context.routes, layers.transport, mapZoom, mode, statusFilter]);
 
+  const visibleRegions = useMemo(() => {
+    if (!layers.weather) return emptyPolygonCollection();
+    return context.regions;
+  }, [context.regions, layers.weather]);
+
   const visibleRouteEndpoints = useMemo(
     () => routeEndpointCollection(visibleRoutes.features),
     [visibleRoutes]
@@ -290,6 +304,7 @@ export function PaddockMap({
       <div className={cn("grid lg:grid-cols-[minmax(0,1fr)_22rem]", mode === "driver" ? "min-h-[82dvh]" : "min-h-[72dvh]")}>
         <div className={cn("relative", mode === "driver" ? "min-h-[78dvh]" : "min-h-[68dvh]")}>
           <GoogleOperationalMap
+            regions={visibleRegions.features}
             points={visiblePointData.features}
             routes={visibleRoutes.features}
             routeEndpoints={visibleRouteEndpoints.features}
@@ -307,6 +322,7 @@ export function PaddockMap({
             onError={setGoogleMapError}
           />
           <OperationalMapLayer
+            regions={visibleRegions.features}
             points={visiblePointData.features}
             routes={visibleRoutes.features}
             routeEndpoints={visibleRouteEndpoints.features}
@@ -830,6 +846,7 @@ type RouteOverlayEntry = {
 };
 
 function GoogleOperationalMap({
+  regions,
   points,
   routes,
   routeEndpoints,
@@ -843,6 +860,7 @@ function GoogleOperationalMap({
   selectedFeatureId,
   hoveredFeatureId,
 }: {
+  regions: PolygonFeature[];
   points: Feature[];
   routes: LineFeature[];
   routeEndpoints: Feature[];
@@ -859,7 +877,7 @@ function GoogleOperationalMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<
-    (google.maps.Marker | google.maps.Polyline | google.maps.DirectionsRenderer)[]
+    (google.maps.Marker | google.maps.Polyline | google.maps.Polygon | google.maps.DirectionsRenderer)[]
   >([]);
   const routeOverlaysRef = useRef<RouteOverlayEntry[]>([]);
   // Cluster markers and their MarkerClusterer instance — managed separately
@@ -986,6 +1004,22 @@ function GoogleOperationalMap({
     }
 
     const directionsService = new google.maps.DirectionsService();
+    regions.forEach((regionFeature) => {
+      const polygon = new google.maps.Polygon({
+        map,
+        paths: regionFeature.geometry.coordinates[0].map(googleLatLng),
+        strokeColor: "#7a9b70",
+        strokeOpacity: 0.72,
+        strokeWeight: 1.5,
+        fillColor: "#9b7adf",
+        fillOpacity: 0.12,
+        clickable: true,
+        zIndex: 1,
+      });
+      polygon.addListener("click", () => onSelect(regionFeature.properties));
+      overlaysRef.current.push(polygon);
+    });
+
     routes.forEach((route) => {
       const path = route.geometry.coordinates.map(googleLatLng);
       const [origin] = path;
@@ -1157,7 +1191,9 @@ function GoogleOperationalMap({
       });
     }
 
-    const fitBounds = bounds ?? boundsForPointsAndLines(points, { type: "FeatureCollection", features: routes });
+    const fitBounds =
+      bounds ??
+      boundsForMapFeatures(points, { type: "FeatureCollection", features: routes }, regions);
     if (fitBounds) {
       // Only auto-fit when the bounds prop itself changes meaningfully -
       // not on every layer toggle / selection / re-render. Otherwise the
@@ -1174,7 +1210,7 @@ function GoogleOperationalMap({
         );
       }
     }
-  }, [applyDimming, bounds, mapInitialized, mode, onSelect, points, routeEndpoints, routes]);
+  }, [applyDimming, bounds, mapInitialized, mode, onSelect, points, regions, routeEndpoints, routes]);
 
   if (!googleMapsApiKey) return null;
   return (
@@ -1209,12 +1245,14 @@ function googleLatLng([longitude, latitude]: [number, number]): google.maps.LatL
 }
 
 function OperationalMapLayer({
+  regions,
   points,
   routes,
   routeEndpoints,
   active,
   onSelect,
 }: {
+  regions: PolygonFeature[];
   points: Feature[];
   routes: LineFeature[];
   routeEndpoints: Feature[];
@@ -1261,6 +1299,21 @@ function OperationalMapLayer({
           strokeDasharray="1.4 1.1"
           opacity="0.8"
         />
+        {regions.map((regionFeature) => {
+          const path = polygonPath(regionFeature.geometry.coordinates[0]);
+          return (
+            <path
+              key={regionFeature.properties.id}
+              d={path}
+              fill="#9b7adf"
+              fillOpacity="0.14"
+              stroke="#7a9b70"
+              strokeWidth="0.5"
+              strokeLinejoin="round"
+              opacity="0.96"
+            />
+          );
+        })}
         {routes.map((route) => {
           const path = route.geometry.coordinates
             .map((coordinate, index) => {
@@ -1355,6 +1408,20 @@ function OperationalMapLayer({
         })}
       </svg>
       <div className="absolute inset-0">
+        {regions.map((regionFeature) => {
+          const centre = polygonCentre(regionFeature.geometry.coordinates[0]);
+          const projected = projectCoordinate(centre);
+          return (
+            <button
+              key={regionFeature.properties.id}
+              type="button"
+              onClick={() => onSelect(regionFeature.properties)}
+              className="absolute h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              style={{ left: `${projected.x}%`, top: `${projected.y}%` }}
+              aria-label={`Open ${regionFeature.properties.title}`}
+            />
+          );
+        })}
         {points.map((point) => {
           const projected = projectCoordinate(point.geometry.coordinates);
           return (
@@ -1393,6 +1460,7 @@ type MapContext = {
   eyebrow: string;
   title: string;
   description: string;
+  regions: FeatureCollection<PolygonFeature>;
   points: Feature[];
   routes: FeatureCollection<LineFeature>;
   bounds?: [[number, number], [number, number]];
@@ -1422,6 +1490,24 @@ function projectCoordinate([longitude, latitude]: [number, number]) {
     x: Math.min(91, Math.max(9, x)),
     y: Math.min(91, Math.max(9, y)),
   };
+}
+
+function polygonPath(coordinates: [number, number][]) {
+  return coordinates
+    .map((coordinate, index) => {
+      const projected = projectCoordinate(coordinate);
+      return `${index === 0 ? "M" : "L"} ${projected.x} ${projected.y}`;
+    })
+    .join(" ");
+}
+
+function polygonCentre(coordinates: [number, number][]): [number, number] {
+  if (!coordinates.length) return australiaCentre;
+  const [lngTotal, latTotal] = coordinates.reduce(
+    ([lngSum, latSum], [lng, lat]) => [lngSum + lng, latSum + lat],
+    [0, 0]
+  );
+  return [lngTotal / coordinates.length, latTotal / coordinates.length];
 }
 
 function colourForKind(kind: LayerKey) {
@@ -1520,14 +1606,25 @@ function regionalContext(input: Parameters<typeof buildMapContext>[0]): MapConte
     ...transportHotspotFeatures(input.jobs, [], regionFilter),
     ...regionalInsights.map(regionFeature),
   ].filter(Boolean) as Feature[];
+  const regionNames = new Set<string>([
+    ...(regionFilter ? [regionFilter] : []),
+    ...input.listings.map((listing) => listing.regionLabel),
+    ...input.requests.flatMap((request) => request.preferredRegions),
+    ...input.jobs.flatMap((job) => [job.pickupRegion, job.destinationRegion].filter(Boolean) as string[]),
+    ...regionalInsights.map((insight) => insight.region),
+  ]);
+  const regions = polygonCollection(regionNames);
   return {
     eyebrow: "Regional intelligence map",
     title: regionFilter ? `${regionFilter} operating hub` : "Australian operating hub",
     description:
       "Paddock supply, livestock demand, farmer-created transport RFTs, active movement, and early rain/feed pressure signals in one place.",
+    regions,
     points,
     routes,
-    bounds: regionFilter ? boundsForPoints(points) : australiaBounds,
+    bounds: regionFilter
+      ? boundsForMapFeatures(points, routes, regions.features)
+      : australiaBounds,
     metrics: [
       { label: "Available paddocks", value: String(input.listings.length) },
       { label: "Livestock requests", value: String(input.requests.length) },
@@ -1576,14 +1673,18 @@ function agreementContext(input: Parameters<typeof buildMapContext>[0]): MapCont
       agreement.destinationLocation ?? listing?.coordinates ?? mapCoordinates.gundagai
     ),
   ]);
+  const regions = polygonCollection(
+    [listing?.regionLabel, request?.preferredRegions[0]].filter(Boolean) as string[]
+  );
   return {
     eyebrow: "Agreement map",
     title: "Private agreement transport route",
     description:
       "Only agreement-relevant pickup, destination, parties, and transport position. Commercial agistment pricing stays out of the driver view.",
+    regions,
     points,
     routes,
-    bounds: boundsForPointsAndLines(points, routes),
+    bounds: boundsForMapFeatures(points, routes, regions.features),
     metrics: [
       { label: "Agreement", value: agreement.status },
       { label: "Stock", value: agreement.livestock },
@@ -1645,11 +1746,15 @@ function driverContext(input: Parameters<typeof buildMapContext>[0]): MapContext
   const routes = routeCollection(
     visibleJobs.map((job) => driverJobRouteFeature(job))
   );
+  const regions = polygonCollection(
+    visibleJobs.flatMap((job) => [job.pickupRegion, job.destinationRegion].filter(Boolean) as string[])
+  );
   return {
     eyebrow: "Driver RFT map",
     title: `${driver?.name ?? "Driver"} RFT radar`,
     description:
       "Farmer-created RFT routes, accepted runs, dates, stock, and route corridors without exposing private agistment terms.",
+    regions,
     points,
     routes,
     bounds: stateViewBounds.NSW,
@@ -1984,6 +2089,33 @@ function regionFeature(insight: (typeof regionalInsights)[number]): Feature | nu
   );
 }
 
+function regionPolygonFeature(boundary: RegionBoundary): PolygonFeature {
+  return {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [boundary.coordinates],
+    },
+    properties: {
+      id: `region-boundary-${slugify(boundary.region)}`,
+      kind: "weather",
+      title: `${boundary.region} region`,
+      subtitle: "Simplified regional boundary for marketplace context.",
+      metric: "Display boundary only - verify property boundaries before moving stock.",
+      href: `/listings?regions=${encodeURIComponent(boundary.region)}`,
+      privacy: boundary.source,
+      source: boundary.source,
+    },
+  };
+}
+
+function polygonCollection(regions: Iterable<string>): FeatureCollection<PolygonFeature> {
+  return {
+    type: "FeatureCollection",
+    features: listRegionBoundaries(regions).map(regionPolygonFeature),
+  };
+}
+
 function coordinateFeature(
   coordinate: Coordinate,
   kind: LayerKey,
@@ -2216,6 +2348,10 @@ function emptyLineCollection(): FeatureCollection<LineFeature> {
   return { type: "FeatureCollection", features: [] };
 }
 
+function emptyPolygonCollection(): FeatureCollection<PolygonFeature> {
+  return { type: "FeatureCollection", features: [] };
+}
+
 function boundsForPoints(points: Feature[]): [[number, number], [number, number]] | undefined {
   const coordinates = points.map((point) => point.geometry.coordinates);
   if (!coordinates.length) return undefined;
@@ -2229,6 +2365,18 @@ function boundsForPointsAndLines(
   return boundsForCoordinates([
     ...points.map((point) => point.geometry.coordinates),
     ...lines.features.flatMap((line) => line.geometry.coordinates),
+  ]);
+}
+
+function boundsForMapFeatures(
+  points: Feature[],
+  lines: FeatureCollection<LineFeature>,
+  polygons: PolygonFeature[]
+): [[number, number], [number, number]] | undefined {
+  return boundsForCoordinates([
+    ...points.map((point) => point.geometry.coordinates),
+    ...lines.features.flatMap((line) => line.geometry.coordinates),
+    ...polygons.flatMap((polygon) => polygon.geometry.coordinates.flat()),
   ]);
 }
 
