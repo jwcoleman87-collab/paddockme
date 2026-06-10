@@ -331,6 +331,8 @@ export async function listProfilesByIdServer(
  * deliberately carries no agistment rates, so nothing private leaks to
  * carriers browsing for work.
  */
+export type MapPoint = { latitude: number; longitude: number };
+
 export type TransportJobSummary = {
   id: string;
   status: string;
@@ -342,6 +344,9 @@ export type TransportJobSummary = {
   /** "mine" = viewer is a party or the assigned driver; "available" = open for any carrier. */
   relation: "available" | "mine";
   createdAt: string | null;
+  /** Route endpoints for the map layer; null when the row has no location. */
+  pickupPoint: MapPoint | null;
+  destinationPoint: MapPoint | null;
 };
 
 /**
@@ -361,7 +366,7 @@ export async function listTransportJobsBoardServer(): Promise<TransportJobSummar
     const { data, error } = await supabase
       .from("transport_jobs")
       .select(
-        "id, status, pickup_address, destination_address, livestock_count, preferred_date, route_summary, driver_id, livestock_owner_id, landowner_id, created_at"
+        "id, status, pickup_address, destination_address, livestock_count, preferred_date, route_summary, driver_id, livestock_owner_id, landowner_id, created_at, pickup_location, destination_location"
       )
       .order("created_at", { ascending: false });
     if (error || !data) return [];
@@ -381,6 +386,51 @@ export async function listTransportJobsBoardServer(): Promise<TransportJobSummar
           ? "mine"
           : "available",
       createdAt: row.created_at,
+      pickupPoint: toMapPoint(row.pickup_location),
+      destinationPoint: toMapPoint(row.destination_location),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function toMapPoint(value: unknown): MapPoint | null {
+  if (!value) return null;
+  const parsed = parseCoordinate(value);
+  if (!parsed) return null;
+  return { latitude: parsed.latitude, longitude: parsed.longitude };
+}
+
+/**
+ * Route endpoints for each agreement the signed-in user is party to, for
+ * the live map. Joined with listAgreementSummariesForUserServer by id.
+ */
+export type AgreementRoute = {
+  id: string;
+  status: string;
+  from: MapPoint | null;
+  to: MapPoint | null;
+};
+
+export async function listAgreementRoutesForUserServer(): Promise<AgreementRoute[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from("agreements")
+      .select("id, status, pickup_location, destination_location")
+      .or(`livestock_owner_id.eq.${user.id},landowner_id.eq.${user.id}`)
+      .order("updated_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map((row) => ({
+      id: row.id,
+      status: row.status ?? "Draft",
+      from: toMapPoint(row.pickup_location),
+      to: toMapPoint(row.destination_location),
     }));
   } catch {
     return [];

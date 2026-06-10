@@ -97,11 +97,6 @@ export function WorkspaceRouteClient({
     agreement.duration +
     ". Work each section, chat beside it, finalise when both sides agree.";
 
-  // The /map page only renders seed data for demo visitors right now - for a
-  // real (Supabase) agreement the button would dead-end on an empty state, so
-  // hide it until the live map view is built.
-  const isRealAgreement = isUuid(agreement.id);
-
   return (
     <>
       <PageHeader
@@ -109,15 +104,13 @@ export function WorkspaceRouteClient({
         title={`${listingTitle}.`}
         description={description}
         action={
-          isRealAgreement ? undefined : (
-            <ButtonLink
-              href={`/map?mode=agreement&agreement=${agreement.id}`}
-              variant="secondary"
-            >
-              <Map className="h-4 w-4" aria-hidden />
-              Agreement map
-            </ButtonLink>
-          )
+          <ButtonLink
+            href={`/map?mode=agreement&agreement=${agreement.id}`}
+            variant="secondary"
+          >
+            <Map className="h-4 w-4" aria-hidden />
+            Agreement map
+          </ButtonLink>
         }
       />
       <FlowContextBar

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, MapPin, Truck } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { LiveMap, type LiveMapRoute } from "@/components/LiveMap";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useFlash } from "@/components/FlashProvider";
 import { updateTransportJobStatus } from "@/lib/data/repositories";
@@ -28,8 +29,29 @@ export function RealJobsBoard({
   );
   const mine = jobs.filter((job) => job.relation === "mine");
 
+  const mapRoutes: LiveMapRoute[] = jobs
+    .filter((job) => job.pickupPoint && job.destinationPoint)
+    .map((job) => ({
+      id: job.id,
+      title: job.routeSummary,
+      subtitle: `${job.livestockCount} · pickup ${job.preferredDate}`,
+      href: `/transport/${job.id}`,
+      from: job.pickupPoint!,
+      to: job.destinationPoint!,
+      tone: job.status === "available" ? ("available" as const) : ("active" as const),
+    }));
+
   return (
     <div className="space-y-6">
+      {mapRoutes.length > 0 && (
+        <section aria-label="Route map" className="space-y-2">
+          <LiveMap routes={mapRoutes} />
+          <p className="text-xs font-semibold text-bark/65">
+            Amber routes are waiting for a carrier · green routes are underway.
+            Tap a route for the job.
+          </p>
+        </section>
+      )}
       {isTransportProvider && (
         <section aria-label="Available jobs">
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-sage-deep">
