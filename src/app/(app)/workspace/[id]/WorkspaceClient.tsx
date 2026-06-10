@@ -22,9 +22,10 @@ import {
   getAgreementLiveState,
   getCurrentUserId,
   listAgreementMessages,
-  listTransportJobs,
   requestTransportJob,
+  listTransportJobs,
   updateAgreementSectionAgreement,
+  updateAgreementSectionValue,
   updateAgreementStatusRecord,
 } from "@/lib/data/repositories";
 import type {
@@ -32,6 +33,7 @@ import type {
   AgreementArtefact,
   AgreementLifecycleEvent,
   AgreementLifecycleState,
+  AgreementSection,
   Message,
   TransportJob,
 } from "@/lib/dummyData";
@@ -95,6 +97,16 @@ export function WorkspaceClient({
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  // Section content is editable for real workspaces (dates, pickup address,
+  // terms...), so it lives in state rather than reading agreement.sections
+  // directly. Kept in sync with the other party via the live-state poll.
+  const [sectionsContent, setSectionsContent] = useState<AgreementSection[]>(
+    agreement.sections
+  );
+  const liveAgreement = useMemo(
+    () => ({ ...agreement, sections: sectionsContent }),
+    [agreement, sectionsContent]
+  );
 
   // Mark this workspace's thread as "seen up to the current message count"
   // whenever it changes while the workspace is open. The inbox uses this to
@@ -310,6 +322,20 @@ export function WorkspaceClient({
           }
           return next;
         });
+        // Pick up the other party's edits to section values too.
+        setSectionsContent((current) =>
+          current.map((section) => {
+            const liveSection = live.sections.find(
+              (item) => item.id === section.id
+            );
+            if (!liveSection) return section;
+            return sectionWithValues(
+              section,
+              liveSection.valueA,
+              liveSection.valueB
+            );
+          })
+        );
         setLifecycleState((current) =>
           current === live.status ? current : live.status
         );
@@ -421,6 +447,41 @@ export function WorkspaceClient({
         );
       }
     }
+  };
+
+  const editSectionValue = (sectionId: string, value: string) => {
+    if (!isRealWorkspace) return;
+    const section = sectionsContent.find((item) => item.id === sectionId);
+    lastLocalMutationRef.current = Date.now();
+    setSectionsContent((current) =>
+      current.map((item) => {
+        if (item.id !== sectionId) return item;
+        const valueA =
+          viewerParty === "A" ? value : item.detail[0]?.value ?? "";
+        const valueB =
+          viewerParty === "B" ? value : item.detail[1]?.value ?? "";
+        return sectionWithValues(item, valueA, valueB);
+      })
+    );
+    // Changed wording needs fresh agreement from both sides.
+    setSectionState((current) => ({
+      ...current,
+      [sectionId]: { agreedByA: false, agreedByB: false },
+    }));
+    void updateAgreementSectionValue({
+      agreementId: agreement.id,
+      sectionId,
+      party: viewerParty,
+      value,
+    });
+    flash(
+      `${section?.label ?? "Section"} updated. Both parties need to agree again.`,
+      "info"
+    );
+    appendSystemMessage(
+      `${partyProfile[viewerParty].label} updated "${section?.label ?? sectionId}". Both parties need to re-confirm this section.`,
+      sectionId
+    );
   };
 
   const advanceLifecycle = (to: AgreementLifecycleState) => {
@@ -542,11 +603,11 @@ export function WorkspaceClient({
   };
 
   const timelineItems = useMemo(() => {
-    const mutuallyAgreedCount = agreement.sections.reduce((count, section) => {
+    const mutuallyAgreedCount = sectionsContent.reduce((count, section) => {
       const state = sectionState[section.id] ?? section;
       return state.agreedByA && state.agreedByB ? count + 1 : count;
     }, 0);
-    const totalSections = agreement.sections.length;
+    const totalSections = sectionsContent.length;
     const allAgreed = mutuallyAgreedCount === totalSections;
 
     return [
@@ -569,7 +630,7 @@ export function WorkspaceClient({
         complete: allAgreed,
       },
     ];
-  }, [agreement.sections, sectionState]);
+  }, [sectionsContent, sectionState, agreement.livestock, agreement.listingTitle]);
 
   return (
     <div className="space-y-5">
@@ -659,11 +720,14 @@ export function WorkspaceClient({
         left={
           <div className="space-y-5">
             <AgreementPanel
-              agreement={agreement}
+              agreement={liveAgreement}
               activeSectionId={activeSectionId}
-              onSelectSection={(id) => setActiveSectionId(id)}
+              onSelectSection={(id) =>
+                setActiveSectionId((current) => (current === id ? null : id))
+              }
               sectionState={sectionState}
               onToggleAgreement={toggleAgreement}
+              onEditSectionValue={isRealWorkspace ? editSectionValue : undefined}
               timelineItems={timelineItems}
               lifecycleState={lifecycleState}
               lifecycleHistory={lifecycleHistory}
@@ -690,7 +754,7 @@ export function WorkspaceClient({
             title={`${partyProfile.A.label} and ${partyProfile.B.label}`}
             messages={messages}
             onlineCount={2}
-            sections={agreement.sections}
+            sections={sectionsContent}
             activeSectionId={activeSectionId}
             onSelectSection={setActiveSectionId}
             onSend={sendMessage}
@@ -717,6 +781,25 @@ function readPersonaCookie(): string | null {
 function writePersonaCookie(personaId: string) {
   if (typeof document === "undefined") return;
   document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+/**
+ * Rebuild a section's display strings after either party edits a value.
+ * Mirrors mapAgreementSectionRow in the repositories module.
+ */
+function sectionWithValues(
+  section: AgreementSection,
+  valueA: string,
+  valueB: string
+): AgreementSection {
+  return {
+    ...section,
+    summary: valueA === valueB ? valueA : `${valueA} / ${valueB}`,
+    detail: [
+      { label: "Livestock owner value", value: valueA },
+      { label: "Landowner value", value: valueB },
+    ],
+  };
 }
 
 /**

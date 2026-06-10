@@ -88,25 +88,10 @@ export function ChatPanel({
             : "Conversation history for this workspace."}
         </p>
 
-        {hasSections && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <SectionChip
-              active={!activeSectionId}
-              onClick={() => onSelectSection?.(null)}
-            >
-              All sections
-            </SectionChip>
-            {sections!.map((section) => (
-              <SectionChip
-                key={section.id}
-                active={activeSectionId === section.id}
-                onClick={() => onSelectSection?.(section.id)}
-              >
-                {section.label}
-              </SectionChip>
-            ))}
-          </div>
-        )}
+        {/* The section chip strip used to render here ("All sections",
+            "Pick up", "Stock manifest", ...). Removed - anchoring happens by
+            tapping a section in the agreement panel; tapping it again
+            un-anchors. The chips just duplicated that and crowded the chat. */}
       </div>
 
       <div

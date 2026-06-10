@@ -510,24 +510,27 @@ function buildTransportPartyProfiles(job: TransportJob): Record<
   TransportRole,
   { id: string; name: string; role: string; avatarUrl: string }
 > {
+  // Persona photos belong to the demo seed only. Real accounts get an empty
+  // avatarUrl so the Avatar component falls back to their initials - showing
+  // Dale/Brett/Wayne's faces next to real customer names looked broken.
   return {
     farmerA: {
       id: job.farmerAId,
       name: job.farmerAName ?? "Livestock owner",
       role: "Livestock owner",
-      avatarUrl: "/avatars/dale.jpg",
+      avatarUrl: job.farmerAId === "farmer-a" ? "/avatars/dale.jpg" : "",
     },
     farmerB: {
       id: job.farmerBId,
       name: job.farmerBName ?? "Landowner",
       role: "Landowner",
-      avatarUrl: "/avatars/brett.jpg",
+      avatarUrl: job.farmerBId === "farmer-b" ? "/avatars/brett.jpg" : "",
     },
     driver: {
       id: job.driverId,
       name: job.driver,
       role: "Driver",
-      avatarUrl: "/avatars/wayne.jpg",
+      avatarUrl: job.driverId === "driver-1" ? "/avatars/wayne.jpg" : "",
     },
   };
 }

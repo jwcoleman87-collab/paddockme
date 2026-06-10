@@ -47,7 +47,9 @@ export function ListingCard({
   };
 
   return (
-    <Card className="flex h-full flex-col gap-3 p-4">
+    // self-start stops the grid stretching every card to the tallest row,
+    // which left a big dead gap between the signal tiles and the buttons.
+    <Card className="flex flex-col gap-3 self-start p-4">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.25rem] sm:items-start">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-1.5">

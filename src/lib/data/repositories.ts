@@ -674,7 +674,13 @@ export async function updateAgreementStatusRecord(
 
 export type AgreementLiveState = {
   status: AgreementLifecycleState;
-  sections: { id: string; agreedByA: boolean; agreedByB: boolean }[];
+  sections: {
+    id: string;
+    agreedByA: boolean;
+    agreedByB: boolean;
+    valueA: string;
+    valueB: string;
+  }[];
 };
 
 /**
@@ -695,7 +701,7 @@ export async function getAgreementLiveState(
       .maybeSingle(),
     supabase
       .from("agreement_sections")
-      .select("section_key, agreed_by_a, agreed_by_b")
+      .select("section_key, agreed_by_a, agreed_by_b, farmer_a_value, farmer_b_value")
       .eq("agreement_id", agreementId),
   ]);
   if (!agreement) return null;
@@ -705,8 +711,38 @@ export async function getAgreementLiveState(
       id: row.section_key,
       agreedByA: row.agreed_by_a,
       agreedByB: row.agreed_by_b,
+      valueA: jsonValueToText(row.farmer_a_value),
+      valueB: jsonValueToText(row.farmer_b_value),
     })),
   };
+}
+
+/**
+ * One party edits their side of a section (dates, pickup address, terms...).
+ * Any change resets BOTH agree ticks - new wording needs fresh agreement
+ * from both sides.
+ */
+export async function updateAgreementSectionValue(input: {
+  agreementId: string;
+  sectionId: string;
+  party: "A" | "B";
+  value: string;
+}): Promise<boolean> {
+  const supabase = await getAuthedClient();
+  if (!supabase || !isUuid(input.agreementId)) return false;
+  const patch: TablesUpdate<"agreement_sections"> = {
+    agreed_by_a: false,
+    agreed_by_b: false,
+    status: "pending",
+  };
+  if (input.party === "A") patch.farmer_a_value = { value: input.value };
+  else patch.farmer_b_value = { value: input.value };
+  const { error } = await supabase
+    .from("agreement_sections")
+    .update(patch)
+    .eq("agreement_id", input.agreementId)
+    .eq("section_key", input.sectionId);
+  return !error;
 }
 
 export async function updateAgreementSectionAgreement(input: {

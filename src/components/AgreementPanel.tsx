@@ -54,6 +54,10 @@ type AgreementPanelProps = {
   onSelectSection: (sectionId: string) => void;
   sectionState: Record<string, SectionAgreementState>;
   onToggleAgreement: (sectionId: string, party: WorkspaceParty) => void;
+  /** When provided, each section gets an inline editor so the viewer can
+   * update their side's value (dates, pickup address, terms...). Editing
+   * resets both agree ticks. Real workspaces only. */
+  onEditSectionValue?: (sectionId: string, value: string) => void;
   timelineItems?: TimelineItem[];
   lifecycleState: AgreementLifecycleState;
   lifecycleHistory: AgreementLifecycleEvent[];
@@ -184,6 +188,7 @@ export function AgreementPanel({
   onSelectSection,
   sectionState,
   onToggleAgreement,
+  onEditSectionValue,
   timelineItems = [],
   lifecycleState,
   lifecycleHistory,
@@ -305,6 +310,11 @@ export function AgreementPanel({
               onSelect={() => onSelectSection(section.id)}
                 onToggleA={() => onToggleAgreement(section.id, "A")}
                 onToggleB={() => onToggleAgreement(section.id, "B")}
+                onEditValue={
+                  onEditSectionValue
+                    ? (value: string) => onEditSectionValue(section.id, value)
+                    : undefined
+                }
                 artefacts={artefacts.filter(
                   (artefact) => artefact.sectionId === section.id
                 )}
@@ -1142,6 +1152,84 @@ function AttentionDialog({
   );
 }
 
+/**
+ * Inline editor for the viewer's side of a section - this is how real dates,
+ * pickup addresses and terms get into the agreement. Saving resets both
+ * parties' agree ticks (handled upstream).
+ */
+function SectionValueEditor({
+  sectionLabel,
+  partyLabel,
+  initialValue,
+  onSave,
+}: {
+  sectionLabel: string;
+  partyLabel: string;
+  initialValue: string;
+  onSave: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(initialValue);
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(initialValue);
+          setEditing(true);
+        }}
+        className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+      >
+        <ClipboardCheck className="h-3.5 w-3.5" aria-hidden />
+        Edit your {sectionLabel.toLowerCase()} details
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-sage-deep/15 bg-warm-white px-4 py-3">
+      <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.13em] text-stone">
+        Your {sectionLabel.toLowerCase()} details ({partyLabel})
+      </p>
+      <textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        rows={3}
+        placeholder="e.g. Pickup Tuesday 18 June, 8am, 142 Old Hume Hwy, Berrima"
+        className="mt-2 w-full rounded-xl border border-sage-deep/15 bg-cream/55 px-3 py-2 text-sm text-bark outline-none transition focus:border-sage focus:ring-2 focus:ring-sage-glow"
+      />
+      <p className="mt-1 text-xs text-bark/60">
+        Saving updates your side of this section and asks both parties to
+        agree again.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          onClick={() => {
+            const trimmed = draft.trim();
+            if (!trimmed) return;
+            onSave(trimmed);
+            setEditing(false);
+          }}
+          disabled={draft.trim().length === 0}
+          className="min-h-9 px-4 text-xs"
+        >
+          Save details
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setEditing(false)}
+          className="min-h-9 px-4 text-xs"
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SectionCard({
   section,
   active,
@@ -1151,6 +1239,7 @@ function SectionCard({
   onSelect,
   onToggleA,
   onToggleB,
+  onEditValue,
   artefacts,
   allSections,
   onSelectSection,
@@ -1166,6 +1255,8 @@ function SectionCard({
   onSelect: () => void;
   onToggleA: () => void;
   onToggleB: () => void;
+  /** Saves the viewer's side of this section (real workspaces only). */
+  onEditValue?: (value: string) => void;
   artefacts: AgreementArtefact[];
   allSections: AgreementSection[];
   onSelectSection: (sectionId: string) => void;
@@ -1266,6 +1357,19 @@ function SectionCard({
             );
           })}
         </div>
+
+        {onEditValue && (
+          <SectionValueEditor
+            sectionLabel={section.label}
+            partyLabel={partyLabels[viewerParty]}
+            initialValue={
+              (viewerParty === "A"
+                ? section.detail[0]?.value
+                : section.detail[1]?.value) ?? ""
+            }
+            onSave={onEditValue}
+          />
+        )}
 
         <div className="rounded-xl border border-sage-deep/10 bg-warm-white px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
