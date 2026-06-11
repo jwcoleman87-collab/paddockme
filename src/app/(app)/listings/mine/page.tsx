@@ -30,8 +30,8 @@ export default async function MyPaddocksPage() {
           body="Publish your first paddock so livestock owners can find available agistment. It will show up here for you to manage."
           primaryHref="/listings/new"
           primaryLabel="List a paddock"
-          secondaryHref="/preview/paddocks"
-          secondaryLabel="See how listings work"
+          secondaryHref="/requests"
+          secondaryLabel="See open livestock requests"
         />
       ) : (
         <div className="grid gap-4">

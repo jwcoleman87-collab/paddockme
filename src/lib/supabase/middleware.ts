@@ -21,7 +21,6 @@ const PUBLIC_PREFIXES = [
   "/sign-up",
   "/forgot-password",
   "/update-password",
-  "/preview",
 ];
 
 // Production accounts only: every marketplace surface requires sign-in.
