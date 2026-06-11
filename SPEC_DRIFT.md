@@ -40,14 +40,54 @@ Seeded 2026-06-11 during DEMO-RETIRE-01 Phase 0 (baseline commit `46b5e77`). Upd
 - [§6.15] — (no file) — Public Driver Map pillar **absent**. Additionally middleware (`src/lib/supabase/middleware.ts`) auth-gates all `/map` and `/transport*` routes, so no carrier surface is publicly reachable; spec requires the Driver Map to be public. — debt
 - [§5 step 8] — n/a — "Live transport tracking" per spec is absent (see §6.12); farmers do see live status updates in the transport room, so the loop's information need is partially met. — debt
 
-## Phase 1 notes — demo personas & seed data (what was removed)
+## Phase 1–2 completion notes — what was removed
 
-Filled during Phase 1; see git history of DEMO-RETIRE-01 commits for the full file list.
+Across the DEMO-RETIRE-01 and Codex sessions (commits `08dd012`…HEAD):
+
+- **Deleted demo store/persistence:** `src/lib/prototypeStore.ts`, `src/lib/data/prototypePersistence.ts`.
+- **Deleted demo clients/components:** `MessagesClient`, `RunsClient`, `TransportJobsClient`, `TransportClient` (demo room), `CapacityClient`, `WhatNeedsYou`, `ActivityFeed`, `ComplianceReadinessPanel`, `PaddockMap`, `DummyMap`, `PersonaIntroBanner`, `ListingsExplorer`.
+- **Deleted demo routes:** `/preview/[kind]`, `/landowner`, `/runs`, `/workspace/[id]/snapshot`, `/_marketing_disabled`. `/transport` now redirects to the RFT board; `/transport/available` is an honest "coming soon" placeholder (capacity marketplace rebuild = future brief).
+- **Seed data:** `src/lib/dummyData.ts` stripped to domain TYPES + livestock reference options only (zero personas, zero seed records). Module rename pending — logged under §4.2 debt.
+- **Demo coordinates:** `mapCoordinates` persona keys (dale/brett/tash/lyn/wayne/sharon) replaced with neutral town keys; repository fallbacks re-pointed.
+- **Persona assets:** `public/avatars/{dale,brett,wayne}.jpg` deleted.
+- **Persona-era API:** `PersonaId`, `selectPersona`, `repositoryMode`, merge-with-seed helpers removed from the repository layer; `driver-1` fallback id removed; ChatPanel demo sender-tone removed.
+- **localStorage business data:** all removed (prototype store, workspace/transport browser persistence, `paddockme.onboarding`, persona keys + cookie). Remaining localStorage: `src/lib/inbox.ts` thread-seen counts only — judged trivial UI state (permitted class).
+- **Demo docs:** `docs/DEMO_SCRIPT.md`, `docs/DEMO_CHEATSHEET.md`, `docs/DEMO_REHEARSAL_LOG.md`, `docs/PERSONAS.md` deleted.
+- **Acceptance interpretation:** persona names still appear in historical/business documents (`docs/BUILD_02.md`, handover docs, investor docs, `README.md`) and in the master spec's own legacy-names note. Product code and assets (`src/`, `public/`) have ZERO occurrences (word-boundary grep; "Armidale" is a town, not a persona). Scrubbing James's historical/investor documents was judged out of scope — James to confirm or request a docs scrub.
 
 ## Database cleanup — needs James's confirmation
 
-Filled during Phase 1 from production SELECTs (no rows deleted by the agent).
+No rows were deleted by the agent. Suspected demo/test rows are identifiable as anything created before the marketplace go-live cutoff already used by the app (`2026-06-09T11:20:59Z`, `MARKETPLACE_LIVE_SINCE` in `serverPaddocks.ts`). Run this in the Supabase SQL editor to list them:
 
-## Phase 3 — Core loop verification log
+```sql
+select 'request' as kind, id::text, stock_type || ' x' || head_count as label, created_at
+from public.agistment_requests where created_at < '2026-06-09T11:20:59Z'
+union all
+select 'paddock', id::text, title, created_at from public.paddocks where created_at < '2026-06-09T11:20:59Z'
+union all
+select 'agreement', id::text, coalesce(status,'?'), created_at from public.agreements where created_at < '2026-06-09T11:20:59Z'
+union all
+select 'transport_job', id::text, status, created_at from public.transport_jobs where created_at < '2026-06-09T11:20:59Z'
+order by 1, 4;
+```
 
-Filled during Phase 3.
+Pre-go-live REQUESTS are already hidden from the live site by the cutoff filter; pre-go-live paddocks/agreements/jobs are not filtered. Decide per row: delete, or keep (your own James/Leona test records are in this set — the St Air agreement is real usage and should stay).
+
+## Phase 3 — Core loop verification log (spec §5)
+
+Method: database evidence + code-path references + this session's two-account browser testing (James = livestock owner, Leona = landowner). Fresh-account walk for all three roles still requires James (agent cannot create accounts or enter passwords — see "Items requiring James").
+
+1. Request creation → **works** (verified this session: Supabase `agistment_requests` rows; `request/new/page.tsx` → `createLivestockRequestRecord`, now geocoded via `locationGeocode.ts`).
+2. Listing creation → **works** (St Air + others; `listings/new/page.tsx`; geocoding added by Codex session — geocode-on-create re-verify with a fresh listing pending).
+3. Matches → select → **works** (`/matches` scores live paddocks from the real request id; selection carries request id → agreement).
+4. Agreement + 6 sections → **works** (verified in DB: 6 canonical sections per agreement after migration `20260611210000`).
+5. Section resolution + chat persistence → **works** (verified two-account this session: edits, agree ticks, lifecycle, chat all persist and mirror ~5s polling).
+6. RFT from workspace → **works** (`transport_jobs` row created; creation hardened to require real pickup/destination/coords/start date).
+7. Carrier board + accept → **works** (driver-discovery RLS policy applied; accept assigns driver; needs fresh carrier-account confirmation by James).
+8. Status updates visible to both farmers → **works** (transport room status stepper/history, polling; milestones model applied — first full milestone run pending a real movement).
+9. Status progression events → **works** (`transport_status_events` written per change; verified rows exist for the test job this session).
+10. Payment settlement → **partial by design** (FUTURE brief): on transport completion an agistment settlement record opens from agreement terms with "online payments launching soon — settle directly" handling (`/api/payments/agistment-settlement`); Stripe Connect provider interface and live payouts absent. No UI implies money moved.
+
+RLS pricing wall → **intact**: `agreements` readable only by its two parties (carrier excluded ⇒ no `rate_per_head_week` access); `transport_jobs`/`transport_milestones` carry no agistment pricing; `transport_quotes` exclude the landowner. No policy was weakened this brief; one ADDITIVE select policy (driver discovery of available jobs) and the new `transport_milestones`/`payables` policies were added — logged, not weakening.
+
+Migrations applied to production this session (SQL editor): `20260528123000_payments_ledger_foundation`, `20260610130000` (previously), `20260611190000`, `20260611203000`, `20260611210000`. Local migration files match what was executed.
