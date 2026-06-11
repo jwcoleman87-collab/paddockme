@@ -1,12 +1,6 @@
+import { redirect } from "next/navigation";
 import { ButtonLink } from "@/components/Button";
 import { PageHeader } from "@/components/PageHeader";
-import {
-  agreements,
-  featuredFarmers,
-  paddockListings,
-  transportJobs,
-  type Farmer,
-} from "@/lib/dummyData";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
   countAgreementsForUserServer,
@@ -15,19 +9,11 @@ import {
   listMyPaddockListingsServer,
   listSupabasePaddockListingsServer,
   listTransportJobsBoardServer,
-  type AgreementSummary,
 } from "@/lib/data/serverPaddocks";
 import { AgreementsClient } from "./AgreementsClient";
 
 type SearchParams = {
   onboarded?: string;
-  role?: string;
-};
-
-const roleToProfileRole: Record<string, Farmer["role"]> = {
-  livestock: "Livestock Owner",
-  landowner: "Landowner",
-  transport: "Transport Provider",
 };
 
 export default async function AgreementsPage({
@@ -37,49 +23,32 @@ export default async function AgreementsPage({
 }) {
   const params = await searchParams;
   const currentUserProfile = await getCurrentUserProfile();
-  let realCounts:
-    | {
-        paddocks: number;
-        requests: number;
-        transport: number;
-        agreements: number;
-        myListings: number;
-      }
-    | undefined;
-  let realAgreements: AgreementSummary[] = [];
-  if (currentUserProfile) {
-    const [
-      paddocks,
-      myListings,
-      requests,
-      agreementCount,
-      agreementSummaries,
-      transportJobsBoard,
-    ] = await Promise.all([
-      listSupabasePaddockListingsServer(),
-      listMyPaddockListingsServer(),
-      listLivestockRequestsServer(),
-      countAgreementsForUserServer(),
-      listAgreementSummariesForUserServer(),
-      listTransportJobsBoardServer(),
-    ]);
-    realCounts = {
-      paddocks: paddocks.length,
-      myListings: myListings.length,
-      requests: requests.length,
-      transport: transportJobsBoard.length,
-      agreements: agreementCount,
-    };
-    realAgreements = agreementSummaries;
+  if (!currentUserProfile) {
+    redirect("/sign-in?next=%2Fagreements");
   }
-  const showOnboardingWelcome = params.onboarded === "true";
-  const hintedRole = params.role
-    ? roleToProfileRole[params.role]
-    : undefined;
 
-  const initialFarmerId = hintedRole
-    ? featuredFarmers.find((farmer) => farmer.role === hintedRole)?.id
-    : undefined;
+  const [
+    paddocks,
+    myListings,
+    requests,
+    agreementCount,
+    agreementSummaries,
+    transportJobsBoard,
+  ] = await Promise.all([
+    listSupabasePaddockListingsServer(),
+    listMyPaddockListingsServer(),
+    listLivestockRequestsServer(),
+    countAgreementsForUserServer(),
+    listAgreementSummariesForUserServer(),
+    listTransportJobsBoardServer(),
+  ]);
+  const realCounts = {
+    paddocks: paddocks.length,
+    myListings: myListings.length,
+    requests: requests.length,
+    transport: transportJobsBoard.length,
+    agreements: agreementCount,
+  };
 
   return (
     <>
@@ -91,15 +60,10 @@ export default async function AgreementsPage({
       />
 
       <AgreementsClient
-        farmers={featuredFarmers}
-        agreements={agreements}
-        transportJobs={transportJobs}
-        listings={paddockListings}
         currentUserProfile={currentUserProfile}
         realCounts={realCounts}
-        realAgreements={realAgreements}
-        showOnboardingWelcome={showOnboardingWelcome}
-        initialFarmerId={initialFarmerId}
+        realAgreements={agreementSummaries}
+        showOnboardingWelcome={params.onboarded === "true"}
       />
     </>
   );

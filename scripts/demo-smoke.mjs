@@ -11,6 +11,7 @@ const checks = [
       "Need agistment",
       "Have Agistment",
       "Need Transport",
+      "Log in",
     ],
   },
   {
@@ -55,6 +56,19 @@ const checks = [
     mustInclude: ["Central West", "Southern NSW", "Wayne", "Driver"],
   },
   {
+    path: "/transport/jobs?work=feed",
+    name: "Feed run map entry",
+    mustInclude: [
+      "Farmer routes and feed runs waiting for carriers.",
+      "hay and silage",
+    ],
+  },
+  {
+    path: "/matches?stock=Horses&breed=Standardbred&headCount=38&duration=6-12+months&regions=Southern+NSW&transport=Yes",
+    name: "Horse match score explanation",
+    mustInclude: ["Why not 100", "Score breakdown", "Compromise:"],
+  },
+  {
     path: "/messages",
     name: "Inbox",
     mustInclude: ["Messages"],
@@ -85,7 +99,7 @@ const browserChecks = [
   "On /agreements, click Sections to confirm and confirm it opens /workspace/agreement-glenbarra.",
   "In /workspace/agreement-glenbarra, use Farmer A: Tap to agree, switch to Farmer B (Brett), and confirm the same section.",
   "Click Open transport room and confirm it opens /transport/transport-glenbarra.",
-  "In the transport room, switch to Driver Transporter (Wayne) and confirm the quote/backload moment is visible.",
+  "In the transport room, switch to Driver Transporter (Wayne) and confirm the farmer RFT moment is visible.",
   "Switch to Farmer A Livestock owner (Dale), open the Rate tab, and confirm Accept rate changes the room state.",
   "Use Brett's role view before opening /requests; confirm Offer a paddock opens the Pick a paddock to offer picker.",
 ];

@@ -3,8 +3,6 @@
 import {
   agreements,
   farmers,
-  getMessages,
-  getTransportMessages,
   paddockListings,
   transportJobs,
   type Agreement,
@@ -21,34 +19,53 @@ import {
   type TransportJobStatus,
 } from "@/lib/dummyData";
 import {
-  createLivestockRequest,
-  createPaddockListing,
-  loadPrototypeState,
-  openAgreementForListing,
-  openAgreementForRequest,
-  requestTransportForAgreement,
-  setPrototypePersona,
-  updateTransportStatus,
-  type PersonaId,
-  type PrototypeState,
-} from "@/lib/prototypeStore";
-import {
   coordinateForRegion,
   mapCoordinates,
   parseCoordinate,
   pointToWkt,
+  type Coordinate,
 } from "@/lib/mapCoordinates";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Json, Tables, TablesInsert, TablesUpdate } from "@/lib/types/database";
 
-export async function repositoryMode(): Promise<"supabase" | "demo"> {
-  return (await getAuthedClient()) ? "supabase" : "demo";
+export type PersonaId = "farmer-a" | "farmer-b" | "driver-1" | "driver-2";
+
+export type RepositoryState = {
+  selectedPersona: PersonaId;
+  livestockRequests: LivestockRequest[];
+  paddockListings: PaddockListing[];
+  agreements: Agreement[];
+  transportJobs: TransportJob[];
+  timelineEntries: Array<{
+    id: string;
+    at: string;
+    title: string;
+    detail: string;
+    href?: string;
+  }>;
+};
+
+export async function repositoryMode(): Promise<"supabase" | "offline"> {
+  return (await getAuthedClient()) ? "supabase" : "offline";
+}
+
+function emptyRepositoryState(
+  selectedPersona: PersonaId = "farmer-a"
+): RepositoryState {
+  return {
+    selectedPersona,
+    livestockRequests: [],
+    paddockListings: [],
+    agreements: [],
+    transportJobs: [],
+    timelineEntries: [],
+  };
 }
 
 export async function listProfiles(): Promise<Farmer[]> {
   const supabase = await getAuthedClient();
-  if (!supabase) return farmers;
+  if (!supabase) return [];
   // Real accounts only ever see real profiles - no demo persona merging.
   const { data, error } = await supabase.from("profiles").select("*");
   if (error || !data) return [];
@@ -90,7 +107,7 @@ function mergeProfiles(primary: Farmer[], fallback: Farmer[]): Farmer[] {
 
 export async function listLivestockRequests(): Promise<LivestockRequest[]> {
   const supabase = await getAuthedClient();
-  if (!supabase) return loadPrototypeState().livestockRequests;
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("agistment_requests")
     .select("*")
@@ -106,8 +123,8 @@ function mergeRequests(primary: LivestockRequest[], fallback: LivestockRequest[]
   return Array.from(byId.values());
 }
 
-export function selectPersona(persona: PersonaId): PrototypeState {
-  return setPrototypePersona(persona);
+export function selectPersona(persona: PersonaId): RepositoryState {
+  return emptyRepositoryState(persona);
 }
 
 
@@ -118,12 +135,15 @@ export async function createLivestockRequestRecord(input: {
   duration: string;
   preferredRegions: string[];
   transportRequired: LivestockRequest["transportRequired"];
-}): Promise<{ state: PrototypeState; request: LivestockRequest } | null> {
+  originAddress?: string;
+  originLatitude?: number;
+  originLongitude?: number;
+  originPlaceId?: string | null;
+}): Promise<{ state: RepositoryState; request: LivestockRequest } | null> {
   const supabase = await getAuthedClient();
-  // Demo visitors write to the local prototype store only.
-  if (!supabase) return createLivestockRequest(input);
+  if (!supabase) return null;
 
-  // Real accounts write to Supabase only - never to localStorage, and a
+  // Real accounts write to Supabase only - never to browser fallback state, and a
   // failed insert surfaces as null instead of silently returning demo data.
   const user = await getCurrentUser(supabase);
   if (!user) return null;
@@ -138,19 +158,21 @@ export async function createLivestockRequestRecord(input: {
       head_count: input.headCount,
       duration: input.duration,
       preferred_regions: input.preferredRegions,
-      location: pointToWkt(mapCoordinates.dale),
+      origin_address: input.originAddress ?? null,
+      origin_place_id: input.originPlaceId ?? null,
+      location: pointToWkt(coordinateFromLatLng(input)),
       status: "open",
     })
     .select("*")
     .single();
 
   if (error || !data) return null;
-  return { state: loadPrototypeState(), request: mapRequestRow(data) };
+  return { state: emptyRepositoryState(), request: mapRequestRow(data) };
 }
 
 export async function listPaddockListings(): Promise<PaddockListing[]> {
   const supabase = await getAuthedClient();
-  if (!supabase) return loadPrototypeState().paddockListings;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("paddocks")
@@ -195,12 +217,14 @@ export async function createPaddockListingRecord(input: {
   guideTerms: string;
   summary: string;
   photos?: string[];
-}): Promise<{ state: PrototypeState; listing: PaddockListing } | null> {
+  latitude?: number;
+  longitude?: number;
+  placeId?: string | null;
+}): Promise<{ state: RepositoryState; listing: PaddockListing } | null> {
   const supabase = await getAuthedClient();
-  // Demo visitors write to the local prototype store only.
-  if (!supabase) return createPaddockListing(input);
+  if (!supabase) return null;
 
-  // Real accounts write to Supabase only - never to localStorage, and a
+  // Real accounts write to Supabase only - never to browser fallback state, and a
   // failed insert surfaces as null instead of silently returning demo data.
   const user = await getCurrentUser(supabase);
   if (!user) return null;
@@ -211,10 +235,12 @@ export async function createPaddockListingRecord(input: {
     .insert({
       owner_id: user.id,
       title: input.title,
+      address: input.location,
       description: serializePaddockDescription(input),
       region: input.region,
       state: stateForRegion(input.region),
-      location: pointToWkt(coordinateForRegion(input.region)),
+      location: pointToWkt(coordinateFromLatLng(input)),
+      place_id: input.placeId ?? null,
       acres: input.acres,
       capacity_stock_type: input.suitableLivestock[0] ?? null,
       pasture_type: input.feedStatus,
@@ -228,7 +254,7 @@ export async function createPaddockListingRecord(input: {
     .single();
 
   if (error || !data) return null;
-  return { state: loadPrototypeState(), listing: mapPaddockRow(data) };
+  return { state: emptyRepositoryState(), listing: mapPaddockRow(data) };
 }
 
 export async function getPaddockListing(id: string): Promise<PaddockListing | undefined> {
@@ -254,6 +280,9 @@ export async function updatePaddockListingRecord(
     guideTerms: string;
     summary: string;
     photos?: string[];
+    latitude?: number;
+    longitude?: number;
+    placeId?: string | null;
   }
 ): Promise<{ listing: PaddockListing } | null> {
   const supabase = await getAuthedClient();
@@ -265,10 +294,12 @@ export async function updatePaddockListingRecord(
     .from("paddocks")
     .update({
       title: input.title,
+      address: input.location,
       description: serializePaddockDescription(input),
       region: input.region,
       state: stateForRegion(input.region),
-      location: pointToWkt(coordinateForRegion(input.region)),
+      location: pointToWkt(coordinateFromLatLng(input)),
+      place_id: input.placeId ?? null,
       acres: input.acres,
       capacity_stock_type: input.suitableLivestock[0] ?? null,
       pasture_type: input.feedStatus,
@@ -303,7 +334,7 @@ export async function deletePaddockListingRecord(
 
 export async function listAgreements(): Promise<Agreement[]> {
   const supabase = await getAuthedClient();
-  if (!supabase) return loadPrototypeState().agreements;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("agreements")
@@ -327,7 +358,7 @@ export async function getAgreementRecord(id: string): Promise<Agreement | undefi
     if (!error && data) return mapAgreementRow(supabase, data);
     return undefined;
   }
-  return loadPrototypeState().agreements.find((agreement) => agreement.id === id);
+  return undefined;
 }
 
 export async function getCurrentUserId(): Promise<string | null> {
@@ -340,23 +371,23 @@ export async function getCurrentUserId(): Promise<string | null> {
 export async function openAgreementWorkspace(
   listingId: string,
   requestId?: string
-): Promise<{ state: PrototypeState; agreement: Agreement | null }> {
+): Promise<{ state: RepositoryState; agreement: Agreement | null }> {
   const supabase = await getAuthedClient();
   if (supabase) {
     // Real (signed-in) account: only ever return a genuine Supabase agreement.
     // Never fall back to a prototype id - those can't be reopened later, which
     // is exactly what produced the dead "agreement-..." workspaces.
-    if (isUuid(listingId)) {
+    if (isUuid(listingId) && requestId && isUuid(requestId)) {
       const created = await createSupabaseAgreementForListing(
         supabase,
         listingId,
         requestId
       );
-      if (created) return { state: loadPrototypeState(), agreement: created };
+      if (created) return { state: emptyRepositoryState(), agreement: created };
     }
-    return { state: loadPrototypeState(), agreement: null };
+    return { state: emptyRepositoryState(), agreement: null };
   }
-  return openAgreementForListing(listingId);
+  return { state: emptyRepositoryState(), agreement: null };
 }
 
 /**
@@ -364,14 +395,14 @@ export async function openAgreementWorkspace(
  *
  * Signed-in accounts create (or reuse) a genuine Supabase agreement so BOTH
  * parties open the exact same workspace. We never fall back to a prototype
- * agreement for real users - those live only in this browser's localStorage,
+ * agreement for real users - those are browser-only fallback records,
  * so the livestock owner could never see them (each side ended up on a
  * different "workspace" with different content and a dead chat).
  */
 export async function offerPaddockForRequest(
   requestId: string,
   listingId: string
-): Promise<{ state: PrototypeState; agreement: Agreement | null }> {
+): Promise<{ state: RepositoryState; agreement: Agreement | null }> {
   const supabase = await getAuthedClient();
   if (supabase) {
     if (isUuid(requestId) && isUuid(listingId)) {
@@ -380,11 +411,11 @@ export async function offerPaddockForRequest(
         requestId,
         listingId
       );
-      if (created) return { state: loadPrototypeState(), agreement: created };
+      if (created) return { state: emptyRepositoryState(), agreement: created };
     }
-    return { state: loadPrototypeState(), agreement: null };
+    return { state: emptyRepositoryState(), agreement: null };
   }
-  return openAgreementForRequest(requestId, listingId);
+  return { state: emptyRepositoryState(), agreement: null };
 }
 
 export async function listAgreementSections(agreementId: string) {
@@ -404,7 +435,7 @@ export async function listAgreementMessages(agreementId: string): Promise<Messag
     if (!error && data) return data.map((row) => mapMessageRow(row, agreementId));
     return [];
   }
-  return getMessages(agreementId);
+  return [];
 }
 
 export async function listAgreementArtefacts(
@@ -481,7 +512,7 @@ export async function createAgreementArtefact(input: {
 
 export async function listTransportJobs(): Promise<TransportJob[]> {
   const supabase = await getAuthedClient();
-  if (!supabase) return loadPrototypeState().transportJobs;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("transport_jobs")
@@ -516,32 +547,32 @@ export async function getTransportJobRecord(
     if (!error && data) return mapTransportJobRow(supabase, data);
     return undefined;
   }
-  return loadPrototypeState().transportJobs.find((job) => job.id === id);
+  return undefined;
 }
 
 export async function requestTransportJob(
   agreementId: string
-): Promise<{ state: PrototypeState; job: TransportJob | null }> {
+): Promise<{ state: RepositoryState; job: TransportJob | null }> {
   const supabase = await getAuthedClient();
   if (supabase) {
     // Real accounts only create genuine Supabase transport jobs.
     if (isUuid(agreementId)) {
       const created = await createSupabaseTransportJob(supabase, agreementId);
-      if (created) return { state: loadPrototypeState(), job: created };
+      if (created) return { state: emptyRepositoryState(), job: created };
     }
-    return { state: loadPrototypeState(), job: null };
+    return { state: emptyRepositoryState(), job: null };
   }
-  return requestTransportForAgreement(agreementId);
+  return { state: emptyRepositoryState(), job: null };
 }
 
 export async function updateTransportJobStatus(
   jobId: string,
   status: TransportJobStatus
-): Promise<{ state: PrototypeState; job: TransportJob | null }> {
+): Promise<{ state: RepositoryState; job: TransportJob | null }> {
   const supabase = await getAuthedClient();
   if (supabase) {
     // Real accounts never mutate prototype transport state.
-    if (!isUuid(jobId)) return { state: loadPrototypeState(), job: null };
+    if (!isUuid(jobId)) return { state: emptyRepositoryState(), job: null };
     const user = await getCurrentUser(supabase);
     const existing = await getTransportJobRecord(jobId);
     const update: TablesUpdate<"transport_jobs"> = { status };
@@ -553,6 +584,8 @@ export async function updateTransportJobStatus(
       .select("*")
       .single();
     if (!error && data && user) {
+      await ensureTransportMilestones(supabase, data);
+      await autoPassMilestonesForStatus(supabase, data.id, status, user.id);
       await supabase.from("transport_status_events").insert({
         transport_job_id: jobId,
         from_status: existing?.status ?? null,
@@ -560,12 +593,11 @@ export async function updateTransportJobStatus(
         changed_by: user.id,
         note: `Status changed to ${formatStatus(status)}.`,
       });
-      return { state: loadPrototypeState(), job: await mapTransportJobRow(supabase, data) };
+      return { state: emptyRepositoryState(), job: await mapTransportJobRow(supabase, data) };
     }
-    return { state: loadPrototypeState(), job: existing ?? null };
+    return { state: emptyRepositoryState(), job: existing ?? null };
   }
-  const fallback = updateTransportStatus(jobId, status);
-  return { state: fallback.state, job: fallback.job ?? null };
+  return { state: emptyRepositoryState(), job: null };
 }
 
 export async function listTransportMessages(jobId: string): Promise<Message[]> {
@@ -580,7 +612,7 @@ export async function listTransportMessages(jobId: string): Promise<Message[]> {
     if (!error && data) return data.map((row) => mapMessageRow(row, jobId));
     return [];
   }
-  return getTransportMessages(jobId);
+  return [];
 }
 
 export async function listTransportArtefacts(
@@ -608,6 +640,108 @@ export async function listTransportStatusEvents(jobId: string) {
   }
   const job = await getTransportJobRecord(jobId);
   return job?.timeline ?? [];
+}
+
+export type TransportMilestone = {
+  id: string;
+  label: string;
+  description: string;
+  sortOrder: number;
+  status: "pending" | "passed";
+  passedAt: string | null;
+};
+
+export async function listTransportMilestones(
+  jobId: string
+): Promise<TransportMilestone[]> {
+  const supabase = await getAuthedClient();
+  if (!supabase || !isUuid(jobId)) return [];
+  const { data, error } = await (supabase as any)
+    .from("transport_milestones")
+    .select("*")
+    .eq("transport_job_id", jobId)
+    .order("sort_order", { ascending: true });
+  if (error || !data) return [];
+  return data.map(mapTransportMilestoneRow);
+}
+
+export async function passTransportMilestone(input: {
+  jobId: string;
+  milestoneId: string;
+}): Promise<TransportMilestone | null> {
+  const supabase = await getAuthedClient();
+  const user = supabase ? await getCurrentUser(supabase) : null;
+  if (!supabase || !user || !isUuid(input.jobId) || !isUuid(input.milestoneId)) {
+    return null;
+  }
+
+  const { data: milestone } = await (supabase as any)
+    .from("transport_milestones")
+    .select("*")
+    .eq("id", input.milestoneId)
+    .eq("transport_job_id", input.jobId)
+    .maybeSingle();
+  if (!milestone || milestone.status === "passed") {
+    return milestone ? mapTransportMilestoneRow(milestone) : null;
+  }
+
+  const passedAt = new Date().toISOString();
+  const { data, error } = await (supabase as any)
+    .from("transport_milestones")
+    .update({
+      status: "passed",
+      passed_at: passedAt,
+      passed_by: user.id,
+    })
+    .eq("id", input.milestoneId)
+    .select("*")
+    .single();
+  if (error || !data) return null;
+
+  const job = await getTransportJobRecord(input.jobId);
+  await supabase.from("transport_status_events").insert({
+    transport_job_id: input.jobId,
+    from_status: job?.status ?? null,
+    to_status: job?.status ?? "in_transit",
+    changed_by: user.id,
+    note: `Milestone passed: ${data.label}.`,
+  });
+  return mapTransportMilestoneRow(data);
+}
+
+export type AgreementSettlementSummary = {
+  id: string;
+  agreementId: string;
+  transportJobId: string | null;
+  status: "awaiting_payment" | "payment_recorded" | string;
+  amountCents: number;
+  currency: string;
+  description: string;
+  payerProfileId: string;
+  payeeProfileId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getAgreementSettlementForTransportJob(
+  jobId: string
+): Promise<AgreementSettlementSummary | null> {
+  const supabase = await getAuthedClient();
+  if (!supabase || !isUuid(jobId)) return null;
+  const { data: job } = await supabase
+    .from("transport_jobs")
+    .select("agreement_id")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (!job?.agreement_id) return null;
+  const { data, error } = await (supabase as any)
+    .from("payables")
+    .select("*")
+    .eq("agreement_id", job.agreement_id)
+    .eq("kind", "agistment")
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapSettlementRow(data);
 }
 
 export async function createAgreementMessage(input: {
@@ -805,7 +939,10 @@ function mapRequestRow(row: Tables<"agistment_requests">): LivestockRequest {
     breed: row.breed ?? "Mixed",
     headCount: row.head_count,
     duration: row.duration,
-    originLocation: parseCoordinate(row.location, coordinateForRegion(row.preferred_regions?.[0])),
+    originLocation: parseCoordinate(
+      row.location,
+      coordinateForRegion(row.preferred_regions?.[0])
+    ),
     preferredRegions: row.preferred_regions ?? [],
     transportRequired: "Unsure",
   };
@@ -822,12 +959,12 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
-    location: row.region,
+    location: row.address ?? row.region,
     coordinates,
     region: row.region,
     state: normaliseState(row.state),
     regionLabel: row.region,
-    mapPlaceLabel: row.region,
+    mapPlaceLabel: row.address ?? row.region,
     mapDot: { x: 50, y: 50 },
     mapNearbyPlaces: [],
     acres: row.acres,
@@ -923,30 +1060,13 @@ async function createSupabaseAgreementForListing(
     .single();
   if (!listing) return null;
 
-  // Prefer the specific request the user came in with (e.g. from a match),
-  // otherwise pair against their most recent open request. A landowner viewing
-  // their own paddock has no request of their own, so this returns null and the
-  // caller surfaces a "create a request first" message rather than a broken id.
-  let request: Tables<"agistment_requests"> | null = null;
-  if (requestId && isUuid(requestId)) {
-    const { data } = await supabase
-      .from("agistment_requests")
-      .select("*")
-      .eq("id", requestId)
-      .eq("requester_id", user.id)
-      .maybeSingle();
-    request = data ?? null;
-  }
-  if (!request) {
-    const { data } = await supabase
-      .from("agistment_requests")
-      .select("*")
-      .eq("requester_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    request = data ?? null;
-  }
+  if (!requestId || !isUuid(requestId)) return null;
+  const { data: request } = await supabase
+    .from("agistment_requests")
+    .select("*")
+    .eq("id", requestId)
+    .eq("requester_id", user.id)
+    .maybeSingle();
   if (!request) return null;
 
   return findOrCreateSupabaseAgreement(supabase, request, listing);
@@ -1045,6 +1165,8 @@ async function findOrCreateSupabaseAgreement(
       duration_months: durationMonths(request.duration),
       rate_per_head_week: listing.rate_per_head_week,
       transport_required: true,
+      pickup_address: request.origin_address ?? "Pickup address to confirm",
+      destination_address: listing.address ?? listing.title,
       pickup_location: pointToWkt(parseCoordinate(request.location, mapCoordinates.dale)),
       destination_location: pointToWkt(parseCoordinate(listing.location, coordinateForRegion(listing.region))),
       status: "Draft",
@@ -1077,29 +1199,149 @@ async function createSupabaseTransportJob(
     .maybeSingle();
   if (existing.data) return mapTransportJobRow(supabase, existing.data);
 
+  const { data: match } = await supabase
+    .from("matches")
+    .select("request_id, paddock_id")
+    .eq("id", agreement.match_id)
+    .maybeSingle();
+  if (!match) return null;
+
+  const [{ data: request }, { data: listing }, { data: sections }] =
+    await Promise.all([
+      supabase
+        .from("agistment_requests")
+        .select("origin_address, location, stock_type, breed, head_count, duration")
+        .eq("id", match.request_id)
+        .maybeSingle(),
+      supabase
+        .from("paddocks")
+        .select("title, address, region, location")
+        .eq("id", match.paddock_id)
+        .maybeSingle(),
+      supabase
+        .from("agreement_sections")
+        .select("section_key, farmer_a_value, farmer_b_value, agreed_by_a, agreed_by_b")
+        .eq("agreement_id", agreement.id),
+    ]);
+  if (!request || !listing) return null;
+
+  const pickupAddress = confirmedAddress(
+    agreement.pickup_address ?? request.origin_address
+  );
+  const destinationAddress = confirmedAddress(
+    agreement.destination_address ?? listing.address ?? listing.title
+  );
+  const pickupCoordinate = parseCoordinate(agreement.pickup_location);
+  const destinationCoordinate = parseCoordinate(agreement.destination_location);
+  const startDate =
+    confirmedAgreementSectionValue(sections ?? [], "start_date") ??
+    confirmedAddress(agreement.start_date);
+
+  if (!pickupAddress || !destinationAddress || !pickupCoordinate || !destinationCoordinate || !startDate) {
+    return null;
+  }
+
+  const distanceKm = distanceInKm(pickupCoordinate, destinationCoordinate);
+  const livestockCount = `${request.head_count} ${request.breed ?? ""} ${request.stock_type}`.trim();
+  const routeSummary = `${Math.round(distanceKm)} km: ${pickupAddress} to ${destinationAddress}`;
+
   const { data, error } = await supabase
     .from("transport_jobs")
     .insert({
       agreement_id: agreement.id,
       livestock_owner_id: agreement.livestock_owner_id,
       landowner_id: agreement.landowner_id,
-      pickup_address: "Livestock owner property",
-      destination_address: "Selected paddock",
-      livestock_count: agreement.head_count
-        ? `${agreement.head_count} head`
-        : "Livestock movement",
-      pickup_location: pointToWkt(parseCoordinate(agreement.pickup_location, mapCoordinates.dale)),
-      destination_location: pointToWkt(parseCoordinate(agreement.destination_location, mapCoordinates.gundagai)),
-      current_location: pointToWkt(parseCoordinate(agreement.pickup_location, mapCoordinates.dale)),
-      preferred_date: agreement.start_date,
-      route_summary: "Pickup to selected agistment paddock",
+      pickup_address: pickupAddress,
+      destination_address: destinationAddress,
+      livestock_count: livestockCount,
+      pickup_location: pointToWkt(pickupCoordinate),
+      destination_location: pointToWkt(destinationCoordinate),
+      current_location: pointToWkt(pickupCoordinate),
+      preferred_date: startDate,
+      route_summary: routeSummary,
       status: "available",
-      coordination_state: { source: "mvp_build_03" },
+      coordination_state: {
+        source: "rft_v1",
+        route_distance_km: Math.round(distanceKm),
+        pickup_confirmed: true,
+        destination_confirmed: true,
+        timing_confirmed: true,
+        load_confirmed: true,
+      },
     })
     .select("*")
     .single();
   if (error || !data) return null;
+  await ensureTransportMilestones(supabase, data);
   return mapTransportJobRow(supabase, data);
+}
+
+async function ensureTransportMilestones(
+  supabase: SupabaseClient,
+  job: Pick<
+    Tables<"transport_jobs">,
+    "id" | "pickup_address" | "destination_address" | "pickup_location" | "destination_location"
+  >
+) {
+  const { data: existing } = await (supabase as any)
+    .from("transport_milestones")
+    .select("id")
+    .eq("transport_job_id", job.id)
+    .limit(1);
+  if (existing?.length) return;
+
+  const pickup = job.pickup_address ?? "pickup";
+  const destination = job.destination_address ?? "destination";
+  const milestones = [
+    ["loaded", "Loaded", `Stock loaded at ${pickup}.`],
+    ["departed", "Departed", `Truck has left ${pickup}.`],
+    ["quarter", "Quarter way", "First quarter of the run has been passed."],
+    ["halfway", "Halfway", "Truck has passed the halfway point."],
+    ["three-quarter", "Three-quarter way", "Final quarter of the run is coming up."],
+    ["arriving", "Arriving", `Truck is approaching ${destination}.`],
+    ["delivered", "Delivered", `Stock delivered at ${destination}.`],
+  ] as const;
+
+  await (supabase as any).from("transport_milestones").insert(
+    milestones.map(([, label, description], index) => ({
+      transport_job_id: job.id,
+      label,
+      description,
+      sort_order: index + 1,
+      status: "pending",
+    }))
+  );
+}
+
+async function autoPassMilestonesForStatus(
+  supabase: SupabaseClient,
+  jobId: string,
+  status: TransportJobStatus,
+  userId: string
+) {
+  const maxSortOrder =
+    status === "loading"
+      ? 1
+      : status === "in_transit"
+        ? 2
+        : status === "arrived"
+          ? 6
+          : status === "completed"
+            ? 7
+            : 0;
+  if (maxSortOrder === 0) return;
+
+  const passedAt = new Date().toISOString();
+  await (supabase as any)
+    .from("transport_milestones")
+    .update({
+      status: "passed",
+      passed_at: passedAt,
+      passed_by: userId,
+    })
+    .eq("transport_job_id", jobId)
+    .lte("sort_order", maxSortOrder)
+    .eq("status", "pending");
 }
 
 async function mapAgreementRow(
@@ -1259,13 +1501,25 @@ function buildAgreementSections(
   request: Tables<"agistment_requests">,
   listing: Tables<"paddocks">
 ): TablesInsert<"agreement_sections">[] {
+  const stockOwnerValue = `${request.head_count} ${request.breed ?? ""} ${request.stock_type}`.trim();
+  const stockLandownerValue = `${request.head_count} ${request.stock_type}`.trim();
+  const rate = listing.rate_per_head_week
+    ? `$${listing.rate_per_head_week}/head/week`
+    : "Discuss rate";
+  const transportOwnerValue = "Transport required";
+  const transportLandownerValue = request.origin_address && listing.address
+    ? `${request.origin_address} to ${listing.address}`
+    : "Pickup and delivery to confirm";
+  const specialCondition = listing.title
+    ? `Paddock: ${listing.title}${listing.address ? `, ${listing.address}` : ""}`
+    : "No special conditions recorded yet";
   const values = [
-    ["parties", "Parties", "Livestock owner", "Landowner"],
-    ["stock", "Stock", `${request.head_count} ${request.breed ?? ""} ${request.stock_type}`.trim(), `${request.head_count} ${request.stock_type}`],
-    ["paddock", "Paddock", listing.title, listing.title],
-    ["dates", "Dates", request.duration, request.duration],
-    ["terms", "Rate / Terms", "Discuss terms", listing.rate_per_head_week ? `$${listing.rate_per_head_week}/head/week` : "Discuss terms"],
-    ["transport", "Transport", "Transport requested", "Driver to be confirmed"],
+    ["stock_type", "Stock type", stockOwnerValue, stockLandownerValue],
+    ["duration", "Duration", request.duration, request.duration],
+    ["rate", "Rate", "Discuss rate", rate],
+    ["start_date", "Start date", "Start date to confirm", "Start date to confirm"],
+    ["transport", "Transport", transportOwnerValue, transportLandownerValue],
+    ["special_conditions", "Special conditions", "No special conditions recorded yet", specialCondition],
   ] as const;
 
   return values.map(([key, label, farmerAValue, farmerBValue], index) => {
@@ -1411,6 +1665,102 @@ function mapMessageRow(row: MessageRowWithSender, threadId: string): Message {
     }),
     sectionId: row.section_id ?? undefined,
   };
+}
+
+function mapTransportMilestoneRow(row: any): TransportMilestone {
+  return {
+    id: row.id,
+    label: row.label,
+    description: row.description,
+    sortOrder: row.sort_order,
+    status: row.status === "passed" ? "passed" : "pending",
+    passedAt: row.passed_at ?? null,
+  };
+}
+
+function mapSettlementRow(row: any): AgreementSettlementSummary {
+  return {
+    id: row.id,
+    agreementId: row.agreement_id,
+    transportJobId: row.transport_job_id ?? null,
+    status: row.status,
+    amountCents: row.amount_cents,
+    currency: row.currency,
+    description: row.description,
+    payerProfileId: row.payer_profile_id,
+    payeeProfileId: row.payee_profile_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function coordinateFromLatLng(input: {
+  latitude?: number;
+  longitude?: number;
+  location?: string;
+  originAddress?: string;
+}): Coordinate | undefined {
+  if (typeof input.latitude !== "number" || typeof input.longitude !== "number") {
+    return undefined;
+  }
+  return {
+    latitude: input.latitude,
+    longitude: input.longitude,
+    label: input.originAddress ?? input.location ?? "Mapped location",
+  };
+}
+
+function confirmedAddress(value?: string | null): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const normalised = trimmed.toLowerCase();
+  if (
+    normalised.includes("to confirm") ||
+    normalised === "livestock owner property" ||
+    normalised === "selected paddock"
+  ) {
+    return null;
+  }
+  return trimmed;
+}
+
+function confirmedAgreementSectionValue(
+  rows: Array<{
+    section_key: string;
+    farmer_a_value: Json;
+    farmer_b_value: Json;
+    agreed_by_a: boolean;
+    agreed_by_b: boolean;
+  }>,
+  sectionKey: string
+): string | null {
+  const row = rows.find((item) => item.section_key === sectionKey);
+  if (!row || !row.agreed_by_a || !row.agreed_by_b) return null;
+  const ownerValue = confirmedAddress(jsonValueToText(row.farmer_a_value));
+  const landownerValue = confirmedAddress(jsonValueToText(row.farmer_b_value));
+  return ownerValue ?? landownerValue;
+}
+
+function distanceInKm(
+  from: { latitude: number; longitude: number },
+  to: { latitude: number; longitude: number }
+): number {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to.latitude - from.latitude);
+  const dLng = toRadians(to.longitude - from.longitude);
+  const lat1 = toRadians(from.latitude);
+  const lat2 = toRadians(to.latitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 function mergeListings(

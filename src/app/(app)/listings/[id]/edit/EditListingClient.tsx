@@ -14,6 +14,10 @@ import {
   listPaddockListings,
   updatePaddockListingRecord,
 } from "@/lib/data/repositories";
+import {
+  geocodeLocation,
+  type GeocodedLocation,
+} from "@/lib/locationGeocode";
 import { regions } from "@/lib/regions";
 
 const feedOptions: PaddockListing["feedStatus"][] = ["Excellent", "Good", "Tight"];
@@ -50,6 +54,9 @@ export function EditListingClient({ id }: { id: string }) {
   const [availabilityWindow, setAvailabilityWindow] = useState("");
   const [summary, setSummary] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [confirmedLocation, setConfirmedLocation] =
+    useState<GeocodedLocation | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -64,6 +71,16 @@ export function EditListingClient({ id }: { id: string }) {
       }
       setTitle(listing.title);
       setLocation(listing.location);
+      setConfirmedLocation(
+        listing.coordinates
+          ? {
+              formattedAddress: listing.location,
+              latitude: listing.coordinates.latitude,
+              longitude: listing.coordinates.longitude,
+              placeId: null,
+            }
+          : null
+      );
       setRegion(listing.region);
       setAcres(listing.acres);
       setSuitableLivestock(listing.suitableLivestock);
@@ -118,6 +135,10 @@ export function EditListingClient({ id }: { id: string }) {
       flash("Pick a region.", "warning");
       return;
     }
+    if (!confirmedLocation) {
+      flash("Confirm the property location before saving.", "warning");
+      return;
+    }
     if (suitableLivestock.length === 0) {
       flash("Pick at least one suitable livestock type.", "warning");
       return;
@@ -140,6 +161,9 @@ export function EditListingClient({ id }: { id: string }) {
         guideTerms: "Discuss terms",
         summary: summary.trim(),
         photos,
+        latitude: confirmedLocation.latitude,
+        longitude: confirmedLocation.longitude,
+        placeId: confirmedLocation.placeId,
       });
       if (!result) {
         flash("Could not save changes. Please try again.", "warning");
@@ -174,6 +198,26 @@ export function EditListingClient({ id }: { id: string }) {
       flash("Could not remove the listing. Please try again.", "warning");
       setSubmitting(false);
     }
+  }
+
+  async function confirmListingLocation() {
+    if (!location.trim()) {
+      flash("Add the property location first.", "warning");
+      return;
+    }
+    setGeocoding(true);
+    const result = await geocodeLocation({
+      query: location.trim(),
+      region,
+    });
+    setGeocoding(false);
+    if (!result) {
+      flash("Could not confirm that location. Try a fuller address or nearby town.", "warning");
+      return;
+    }
+    setLocation(result.formattedAddress);
+    setConfirmedLocation(result);
+    flash("Property location confirmed.", "success");
   }
 
   if (status === "loading") {
@@ -227,7 +271,10 @@ export function EditListingClient({ id }: { id: string }) {
               <Field label="Location">
                 <input
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    setConfirmedLocation(null);
+                  }}
                   className={inputClass}
                 />
               </Field>
@@ -256,6 +303,21 @@ export function EditListingClient({ id }: { id: string }) {
                   ))}
                 </select>
               </Field>
+              <div className="sm:col-span-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={confirmListingLocation}
+                  disabled={geocoding}
+                >
+                  {geocoding ? "Checking location" : "Confirm location"}
+                </Button>
+                <p className="mt-2 text-sm font-bold text-bark/70">
+                  {confirmedLocation
+                    ? `Confirmed: ${confirmedLocation.formattedAddress}`
+                    : "Required before saving."}
+                </p>
+              </div>
               <div className="sm:col-span-2">
                 <Field label="Availability window">
                   <input

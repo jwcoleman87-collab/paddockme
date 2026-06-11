@@ -6,15 +6,17 @@ import { ListingCard } from "@/components/ListingCard";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import {
-  livestockRequests,
-  paddockListings,
-  type LivestockRequest,
-  type PaddockListing,
+import { redirect } from "next/navigation";
+import type {
+  LivestockRequest,
+  PaddockListing,
 } from "@/lib/dummyData";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
-import { listSupabasePaddockListingsServer } from "@/lib/data/serverPaddocks";
+import {
+  getSupabaseLivestockRequestServer,
+  listSupabasePaddockListingsServer,
+} from "@/lib/data/serverPaddocks";
 
 type MatchSignal = {
   label: string;
@@ -35,12 +37,7 @@ type ScoredListing = {
 };
 
 type SearchParams = {
-  stock?: string;
-  breed?: string;
-  headCount?: string;
-  duration?: string;
-  regions?: string;
-  transport?: string;
+  request?: string;
 };
 
 export default async function MatchesPage({
@@ -49,8 +46,13 @@ export default async function MatchesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const seed = livestockRequests[0];
-  const request = mergeRequest(seed, params);
+  const currentUserProfile = await getCurrentUserProfile();
+  if (!currentUserProfile) {
+    redirect("/sign-in?next=%2Fmatches");
+  }
+  const request = params.request
+    ? await getSupabaseLivestockRequestServer(params.request)
+    : null;
 
   if (!request) {
     return (
@@ -63,12 +65,8 @@ export default async function MatchesPage({
     );
   }
 
-  // Score against real published paddocks for signed-in users; the mock
-  // listings were removed, so demo visitors simply see no matches.
-  const currentUserProfile = await getCurrentUserProfile();
-  const sourceListings = currentUserProfile
-    ? await listSupabasePaddockListingsServer()
-    : paddockListings;
+  // Score against real published paddocks.
+  const sourceListings = await listSupabasePaddockListingsServer();
   const scored = sourceListings
     .map((listing) => scoreListing(listing, request))
     .sort((a, b) => b.score - a.score);
@@ -108,6 +106,7 @@ export default async function MatchesPage({
             <ScoredCard
               key={entry.listing.id}
               entry={entry}
+              requestId={request.id}
               badge={badgeForRank(index, entry.score, topMatch?.score)}
             />
           ))}
@@ -124,65 +123,9 @@ export default async function MatchesPage({
   );
 }
 
-function mergeRequest(
-  seed: LivestockRequest | undefined,
-  params: SearchParams
-): LivestockRequest | null {
-  if (!seed && !params.stock) return null;
-  const regions = params.regions
-    ? params.regions
-        .split(",")
-        .map((r) => r.trim())
-        .filter(Boolean)
-    : undefined;
-  const headCountParam = params.headCount
-    ? Number.parseInt(params.headCount, 10)
-    : undefined;
-  const transport = parseTransport(params.transport);
-  // When stock is overridden via URL, the seed's breed (e.g. Angus) no longer
-  // applies. Use the explicit breed param if present; otherwise fall back to
-  // "Mixed" when the stock changed; otherwise keep the seed breed.
-  const stockChanged =
-    !!params.stock && !!seed && params.stock !== seed.stockType;
-
-  if (!seed) {
-    return {
-      id: "url-request",
-      requesterId: "farmer-a",
-      stockType: params.stock ?? "Cattle",
-      breed: params.breed ?? "Mixed",
-      headCount:
-        headCountParam !== undefined && !Number.isNaN(headCountParam)
-          ? headCountParam
-          : 100,
-      duration: params.duration ?? "3-6 months",
-      preferredRegions: regions ?? [],
-      transportRequired: transport ?? "Unsure",
-    };
-  }
-  return {
-    ...seed,
-    stockType: params.stock ?? seed.stockType,
-    breed: params.breed ?? (stockChanged ? "Mixed" : seed.breed),
-    headCount:
-      headCountParam !== undefined && !Number.isNaN(headCountParam)
-        ? headCountParam
-        : seed.headCount,
-    duration: params.duration ?? seed.duration,
-    preferredRegions: regions ?? seed.preferredRegions,
-    transportRequired: transport ?? seed.transportRequired,
-  };
-}
-
-function parseTransport(
-  value: string | undefined
-): LivestockRequest["transportRequired"] | undefined {
-  if (value === "Yes" || value === "No" || value === "Unsure") return value;
-  return undefined;
-}
-
 function buildListingsHref(request: LivestockRequest): string {
   const params = new URLSearchParams();
+  params.set("request", request.id);
   params.set("stock", request.stockType);
   if (request.preferredRegions.length > 0) {
     params.set("regions", request.preferredRegions.join(","));
@@ -230,9 +173,11 @@ function RequestSummary({ request }: { request: LivestockRequest }) {
 
 function ScoredCard({
   entry,
+  requestId,
   badge,
 }: {
   entry: ScoredListing;
+  requestId: string;
   badge: { tone: "success" | "warning" | "neutral"; label: string };
 }) {
   const shortMissing = shortMissingSummary(entry);
@@ -252,6 +197,7 @@ function ScoredCard({
       <ListingCard
         listing={entry.listing}
         mapImageSrc={getListingMapImageSrc(entry.listing.id)}
+        requestId={requestId}
       />
       <ScoreBreakdown entry={entry} />
       {entry.capacityWarning && (
@@ -292,7 +238,7 @@ function ScoredCard({
           ))}
         </ul>
         <ButtonLink
-          href={`/listings/${entry.listing.id}`}
+          href={`/listings/${entry.listing.id}?request=${encodeURIComponent(requestId)}`}
           variant="secondary"
           className="mt-4"
         >
@@ -401,6 +347,19 @@ function scoreListing(
 ): ScoredListing {
   const stockMatch = listing.suitableLivestock.includes(request.stockType);
   const regionMatch = request.preferredRegions.includes(listing.regionLabel);
+  const distanceKm =
+    request.originLocation && listing.coordinates
+      ? distanceInKm(request.originLocation, listing.coordinates)
+      : null;
+  const locationMatch = distanceKm !== null ? distanceKm <= 300 : regionMatch;
+  const locationPoints =
+    distanceKm === null
+      ? 25
+      : distanceKm <= 150
+        ? 25
+        : distanceKm <= 300
+          ? 18
+          : 0;
   const verified = listing.verificationStatus === "Verified provider";
   const goodFeed =
     listing.feedStatus === "Excellent" || listing.feedStatus === "Good";
@@ -419,13 +378,24 @@ function scoreListing(
       compromise: `ask the landowner to confirm ${request.stockType.toLowerCase()}-safe fencing, yards, pasture and water before moving stock.`,
     },
     {
-      label: `Region: ${listing.regionLabel}`,
-      matched: regionMatch,
-      points: 25,
-      matchedDetail: "Inside the preferred region list.",
-      missingDetail: `${listing.regionLabel} is outside the preferred regions on this request.`,
-      shortMissingDetail: "outside preferred region",
-      compromise: "accept the extra transport time or edit the request regions if this location still works.",
+      label:
+        distanceKm !== null
+          ? `${Math.round(distanceKm)} km from pickup`
+          : `Region: ${listing.regionLabel}`,
+      matched: locationMatch,
+      points: locationPoints || 25,
+      matchedDetail:
+        distanceKm !== null
+          ? "Inside a practical transport radius for this request."
+          : "Inside the preferred region list.",
+      missingDetail:
+        distanceKm !== null
+          ? `${listing.title} is about ${Math.round(distanceKm)} km from the pickup location.`
+          : `${listing.regionLabel} is outside the preferred regions on this request.`,
+      shortMissingDetail:
+        distanceKm !== null ? "longer transport distance" : "outside preferred region",
+      compromise:
+        "accept the extra transport time or edit the request regions if this location still works.",
     },
     {
       label: "Verified provider",
@@ -472,6 +442,28 @@ function scoreListing(
   const capacityPenalty = capacityWarning ? rawScore - score : 0;
 
   return { listing, score, signals, capacityWarning, capacityPenalty };
+}
+
+function distanceInKm(
+  from: { latitude: number; longitude: number },
+  to: { latitude: number; longitude: number }
+): number {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to.latitude - from.latitude);
+  const dLng = toRadians(to.longitude - from.longitude);
+  const lat1 = toRadians(from.latitude);
+  const lat2 = toRadians(to.latitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 function shortMissingSummary(entry: ScoredListing) {

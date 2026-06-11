@@ -18,7 +18,7 @@ const MARKETPLACE_LIVE_SINCE = "2026-06-09T11:20:59Z";
  * Server-only paddock listing reads.
  *
  * The browser repositories module (`@/lib/data/repositories`) is marked
- * "use client" because it leans on localStorage + the browser Supabase client.
+ * "use client" because it uses the browser Supabase client.
  * Importing it from a Server Component and calling one of its functions throws
  * at runtime ("Attempted to call ... from the server but ... is on the client"),
  * which is what was crashing GET /listings with a 500.
@@ -49,6 +49,32 @@ export async function listSupabasePaddockListingsServer(): Promise<PaddockListin
   }
 }
 
+/** The signed-in user's saved livestock request used as the source for matching. */
+export async function getSupabaseLivestockRequestServer(
+  requestId: string
+): Promise<LivestockRequest | null> {
+  if (!isSupabaseConfigured() || !isUuid(requestId)) return null;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("agistment_requests")
+      .select("*")
+      .eq("id", requestId)
+      .eq("requester_id", user.id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return mapRequestRow(data);
+  } catch {
+    return null;
+  }
+}
+
 // Kept in sync with mapPaddockRow() in @/lib/data/repositories.ts. Pure row ->
 // view mapping with no client-only dependencies, so it is safe on the server.
 function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
@@ -61,12 +87,12 @@ function mapPaddockRow(row: Tables<"paddocks">): PaddockListing {
     id: row.id,
     title: row.title,
     ownerId: row.owner_id,
-    location: row.region,
+    location: row.address ?? row.region,
     coordinates,
     region: row.region,
     state: normaliseState(row.state),
     regionLabel: row.region,
-    mapPlaceLabel: row.region,
+    mapPlaceLabel: row.address ?? row.region,
     mapDot: { x: 50, y: 50 },
     mapNearbyPlaces: [],
     acres: row.acres,
@@ -341,6 +367,7 @@ export type TransportJobSummary = {
   livestockCount: string;
   preferredDate: string;
   routeSummary: string;
+  routeDistanceKm: number | null;
   /** "mine" = viewer is a party or the assigned driver; "available" = open for any carrier. */
   relation: "available" | "mine";
   createdAt: string | null;
@@ -366,7 +393,7 @@ export async function listTransportJobsBoardServer(): Promise<TransportJobSummar
     const { data, error } = await supabase
       .from("transport_jobs")
       .select(
-        "id, status, pickup_address, destination_address, livestock_count, preferred_date, route_summary, driver_id, livestock_owner_id, landowner_id, created_at, pickup_location, destination_location"
+        "id, status, pickup_address, destination_address, livestock_count, preferred_date, route_summary, driver_id, livestock_owner_id, landowner_id, created_at, pickup_location, destination_location, coordination_state"
       )
       .order("created_at", { ascending: false });
     if (error || !data) return [];
@@ -379,6 +406,7 @@ export async function listTransportJobsBoardServer(): Promise<TransportJobSummar
       livestockCount: row.livestock_count ?? "Livestock movement",
       preferredDate: row.preferred_date ?? "Date to confirm",
       routeSummary: row.route_summary ?? "Route to confirm",
+      routeDistanceKm: readRouteDistanceKm(row.coordination_state),
       relation:
         row.livestock_owner_id === user.id ||
         row.landowner_id === user.id ||
@@ -394,11 +422,21 @@ export async function listTransportJobsBoardServer(): Promise<TransportJobSummar
   }
 }
 
+function readRouteDistanceKm(value: unknown): number | null {
+  if (!value || Array.isArray(value) || typeof value !== "object") return null;
+  const distance = (value as { route_distance_km?: unknown }).route_distance_km;
+  return typeof distance === "number" ? distance : null;
+}
+
 function toMapPoint(value: unknown): MapPoint | null {
   if (!value) return null;
   const parsed = parseCoordinate(value);
   if (!parsed) return null;
   return { latitude: parsed.latitude, longitude: parsed.longitude };
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value);
 }
 
 /**

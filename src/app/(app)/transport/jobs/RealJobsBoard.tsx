@@ -170,6 +170,12 @@ function JobCard({
           <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
           Preferred pickup: {job.preferredDate}
         </p>
+        {job.routeDistanceKm !== null && (
+          <p className="flex items-start gap-1.5">
+            <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage-deep" aria-hidden />
+            Route distance: {job.routeDistanceKm} km
+          </p>
+        )}
       </div>
 
       <div className="mt-auto flex flex-wrap items-center gap-2">

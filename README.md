@@ -81,6 +81,7 @@ Set these in `.env.local` for local dev, and in the Vercel project settings for 
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API → `service_role` key (server-only, never expose) |
 | `STRIPE_SECRET_KEY` | Stripe test-mode secret key, or Vercel Marketplace Stripe integration |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook endpoint signing secret for `/api/webhooks/stripe` |
+| `PAYMENTS_SANDBOX_CHECKOUT` | Optional. Defaults to `true`; when Stripe is missing, opens the no-money transport checkout demo instead of returning a dead-end error. |
 
 Google Maps: set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` from Google Cloud and enable the Maps JavaScript API plus Directions API for road-route overlays. Without this key, PaddockME uses the built-in stable map fallback.
 

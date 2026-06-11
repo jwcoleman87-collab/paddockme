@@ -79,6 +79,7 @@ await step("Checkout API rejects unknown payable", async () => {
 });
 
 let checkoutApiStatus = 0;
+let checkoutUrl = "";
 
 await step("Checkout API handles accepted transport payable", async () => {
   const response = await fetch(url("/api/payments/transport/checkout"), {
@@ -91,6 +92,7 @@ await step("Checkout API handles accepted transport payable", async () => {
   });
   checkoutApiStatus = response.status;
   const payload = await response.json();
+  checkoutUrl = typeof payload.url === "string" ? payload.url : "";
 
   if (response.status === 503) {
     if (payload.error !== "Stripe test mode is not configured yet") {
@@ -103,9 +105,25 @@ await step("Checkout API handles accepted transport payable", async () => {
     throw new Error(`Expected 2xx or 503, got ${response.status}`);
   }
 
-  if (typeof payload.url !== "string" || !payload.url.includes("checkout.stripe.com")) {
+  const isStripeCheckout = checkoutUrl.includes("checkout.stripe.com");
+  const isSandboxCheckout = checkoutUrl.includes("/payments/transport/sandbox");
+  if (!isStripeCheckout && !isSandboxCheckout) {
     throw new Error(`Unexpected checkout URL: ${JSON.stringify(payload)}`);
   }
+});
+
+await step("Sandbox checkout page renders without moving money", async () => {
+  await expectText(
+    "/payments/transport/sandbox?transport_job_id=transport-glenbarra&quote_id=quote-glenbarra-1",
+    "Payment demo only"
+  );
+});
+
+await step("Sandbox success page is clearly labelled", async () => {
+  await expectText(
+    "/payments/transport/success?session_id=sandbox_transport-glenbarra_quote-glenbarra-1&transport_job_id=transport-glenbarra&mode=sandbox",
+    "Transport payment demo recorded"
+  );
 });
 
 await step("Stripe webhook rejects missing configuration or signature safely", async () => {
@@ -132,6 +150,14 @@ await step("Transport room surfaces payment action immediately", async () => {
   if (checkoutApiStatus === 503) {
     await page.getByRole("button", { name: "Pay transport", exact: true }).click();
     await page.getByText("Stripe test mode is not configured yet", { exact: true }).waitFor();
+  } else if (checkoutUrl.includes("/payments/transport/sandbox")) {
+    await page.getByRole("button", { name: "Pay transport", exact: true }).click();
+    await page.getByRole("heading", { name: "Sandbox transport checkout", exact: true }).waitFor();
+    await page.getByText("No money moves", { exact: true }).waitFor();
+    await page.getByRole("link", { name: "Record demo payment", exact: true }).click();
+    await page.getByRole("heading", { name: "Transport payment demo recorded", exact: true }).waitFor();
+    await page.getByRole("link", { name: "Back to transport room", exact: true }).click();
+    await page.getByRole("heading", { name: "Transport payment ready", exact: true }).waitFor();
   }
 });
 

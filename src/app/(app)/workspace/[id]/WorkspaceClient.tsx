@@ -15,15 +15,14 @@ import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
-import { getTransportJobForAgreement } from "@/lib/dummyData";
 import {
   createAgreementArtefact,
   createAgreementMessage,
   getAgreementLiveState,
   getCurrentUserId,
   listAgreementMessages,
-  requestTransportJob,
   listTransportJobs,
+  requestTransportJob,
   updateAgreementSectionAgreement,
   updateAgreementSectionValue,
   updateAgreementStatusRecord,
@@ -43,14 +42,14 @@ const fallbackPartyProfile: Record<
   { id: string; name: string; role: string; label: string; avatarUrl: string }
 > = {
   A: {
-    id: "farmer-a",
+    id: "party-a",
     name: "Livestock owner",
     role: "Livestock owner",
     label: "Livestock owner",
     avatarUrl: "",
   },
   B: {
-    id: "farmer-b",
+    id: "party-b",
     name: "Landowner",
     role: "Landowner",
     label: "Landowner",
@@ -59,14 +58,10 @@ const fallbackPartyProfile: Record<
 };
 
 /**
- * Client wrapper for the workspace page.
- *
- * Owns three pieces of UI-only state shared between AgreementPanel and ChatPanel:
- *   1. `activeSectionId`     - which agreement section is anchoring the chat
- *   2. `sectionState`        - per-section, per-party "agree" toggles
- *   3. `lifecycleState`      - the current lifecycle state + audit history
- *
- * None of this is persisted. Persistence + RLS lands in Build 02 Step 4 (needs Supabase).
+ * Client wrapper for the agreement workspace (spec §6.9 - DESIGN-LOCKED).
+ * Production-only: the viewer's side is detected from the signed-in account,
+ * and all state persists in Supabase via the repository layer. Demo mode
+ * (persona switching and browser persistence) is retired.
  */
 export function WorkspaceClient({
   agreement,
@@ -76,7 +71,6 @@ export function WorkspaceClient({
   messages: Message[];
 }) {
   const flash = useFlash();
-  const isRealWorkspace = isUuid(agreement.id);
   const partyProfile = useMemo(
     () => ({
       A: {
@@ -97,9 +91,9 @@ export function WorkspaceClient({
   const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  // Section content is editable for real workspaces (dates, pickup address,
-  // terms...), so it lives in state rather than reading agreement.sections
-  // directly. Kept in sync with the other party via the live-state poll.
+  // Section content is editable (dates, pickup address, terms...), so it
+  // lives in state rather than reading agreement.sections directly. Kept in
+  // sync with the other party via the live-state poll.
   const [sectionsContent, setSectionsContent] = useState<AgreementSection[]>(
     agreement.sections
   );
@@ -115,16 +109,22 @@ export function WorkspaceClient({
     markThreadSeen(agreement.id, messages.length);
   }, [agreement.id, messages.length]);
 
-  // Live chat sync for real (Supabase) workspaces. Messages used to load once
-  // on mount, so the other party never saw anything new without a full page
-  // reload - "James typed a message and nothing came through for Leona".
-  // Poll every few seconds and merge, keeping any local-only/system messages.
+  // Detect which side of the agreement the signed-in user is.
+  useEffect(() => {
+    void getCurrentUserId().then((userId) => {
+      if (!userId) return;
+      if (userId === agreement.farmerBId) setViewerPartyState("B");
+      if (userId === agreement.farmerAId) setViewerPartyState("A");
+    });
+  }, [agreement.farmerAId, agreement.farmerBId]);
+
+  // Live chat sync: poll every few seconds and merge, keeping any
+  // local-only/system messages.
   const lastLocalMutationRef = useRef(0);
   // One-shot guard so the self-healing demotion below doesn't repeat the
   // database write and system message on every poll.
   const autoDemotedRef = useRef(false);
   useEffect(() => {
-    if (!isRealWorkspace) return;
     let active = true;
     const refresh = () => {
       void listAgreementMessages(agreement.id).then((serverMessages) => {
@@ -138,109 +138,97 @@ export function WorkspaceClient({
       active = false;
       window.clearInterval(interval);
     };
-  }, [agreement.id, isRealWorkspace]);
+  }, [agreement.id]);
+
+  // Live sync of the other party's section agree-ticks, edits, and lifecycle
+  // stage. Skipped briefly after a local change so a poll response can't
+  // clobber an in-flight write with stale data.
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void getAgreementLiveState(agreement.id).then((live) => {
+        if (!active || !live) return;
+        if (Date.now() - lastLocalMutationRef.current < 6000) return;
+        setSectionState((current) => {
+          const next = { ...current };
+          for (const section of live.sections) {
+            next[section.id] = {
+              agreedByA: section.agreedByA,
+              agreedByB: section.agreedByB,
+            };
+          }
+          return next;
+        });
+        // Pick up the other party's edits to section values too.
+        setSectionsContent((current) =>
+          current.map((section) => {
+            const liveSection = live.sections.find(
+              (item) => item.id === section.id
+            );
+            if (!liveSection) return section;
+            return sectionWithValues(
+              section,
+              liveSection.valueA,
+              liveSection.valueB
+            );
+          })
+        );
+        // Self-healing guard: a finalised status must never coexist with a
+        // section both parties haven't agreed.
+        const finalised =
+          live.status === "Ready to finalise" ||
+          live.status === "Active" ||
+          live.status === "Completed";
+        const hasUnagreedSection = live.sections.some(
+          (section) => !(section.agreedByA && section.agreedByB)
+        );
+        const effectiveStatus =
+          finalised && hasUnagreedSection ? "Negotiating" : live.status;
+        if (effectiveStatus !== live.status && !autoDemotedRef.current) {
+          autoDemotedRef.current = true;
+          void updateAgreementStatusRecord(agreement.id, "Negotiating");
+          appendSystemMessage(
+            `Agreement moved from ${live.status} back to Negotiating - a section is awaiting agreement from both parties.`
+          );
+        }
+        setLifecycleState((current) =>
+          current === effectiveStatus ? current : effectiveStatus
+        );
+      });
+    };
+    const interval = window.setInterval(refresh, 5000);
+    refresh();
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agreement.id]);
 
   const [linkedTransport, setLinkedTransport] = useState<TransportJob | undefined>(
-    () => getTransportJobForAgreement(agreement.id)
+    undefined
   );
   const transportHref = linkedTransport
     ? `/transport/${linkedTransport.id}`
     : undefined;
 
-  // Read-through of the transport room's live state from localStorage so the
-  // Transport tab in the workspace reflects whatever Livestock owner / Driver have
-  // confirmed and negotiated in the room. One-way: the workspace doesn't
-  // write transport state, the transport room does.
   const [transportConfirmations, setTransportConfirmations] = useState<
     Record<string, { farmerA: boolean; farmerB: boolean; driver: boolean }>
-  >(() =>
-    linkedTransport
-      ? Object.fromEntries(
-          linkedTransport.sections.map((section) => [
-            section.id,
-            { ...section.confirmations },
-          ])
-        )
-      : {}
-  );
+  >({});
   const [transportQuotes, setTransportQuotes] = useState(
     linkedTransport?.quotes ?? []
   );
   const [acceptedTransportQuoteId, setAcceptedTransportQuoteId] = useState<
     string | undefined
-  >(linkedTransport?.acceptedQuoteId);
-
-  useEffect(() => {
-    if (isRealWorkspace) {
-      void getCurrentUserId().then((userId) => {
-        if (!userId) return;
-        if (userId === agreement.farmerBId) setViewerPartyState("B");
-        if (userId === agreement.farmerAId) setViewerPartyState("A");
-      });
-      return;
-    }
-    if (typeof window === "undefined") return;
-    const cookiePersona = readPersonaCookie();
-    try {
-      const stored =
-        window.localStorage.getItem("paddockme.agreements.persona") ??
-        window.localStorage.getItem("paddockme.profile.persona") ??
-        cookiePersona;
-      if (stored === "farmer-b") setViewerPartyState("B");
-      if (stored === "farmer-a") setViewerPartyState("A");
-    } catch {
-      if (cookiePersona === "farmer-b") setViewerPartyState("B");
-      if (cookiePersona === "farmer-a") setViewerPartyState("A");
-    }
-    if (!linkedTransport) return;
-    try {
-      const raw = window.localStorage.getItem(
-        `paddockme.transport.${linkedTransport.id}`
-      );
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        confirmations?: Record<
-          string,
-          { farmerA: boolean; farmerB: boolean; driver: boolean }
-        >;
-        quotes?: typeof transportQuotes;
-        acceptedQuoteId?: string;
-      };
-      if (parsed.confirmations) setTransportConfirmations(parsed.confirmations);
-      if (parsed.quotes) setTransportQuotes(parsed.quotes);
-      if (parsed.acceptedQuoteId !== undefined)
-        setAcceptedTransportQuoteId(parsed.acceptedQuoteId);
-    } catch {
-      // ignore - localStorage may be unavailable
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agreement.farmerAId, agreement.farmerBId, isRealWorkspace, linkedTransport?.id]);
+  >(undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     void listTransportJobs().then((jobs) => {
-      const localJob = jobs.find(
-      (job) => job.agreementId === agreement.id
-      );
-      if (localJob) setLinkedTransport(localJob);
+      const job = jobs.find((item) => item.agreementId === agreement.id);
+      if (job) setLinkedTransport(job);
     });
   }, [agreement.id]);
-
-  function setViewerParty(next: WorkspaceParty) {
-    if (isRealWorkspace) return;
-    if (next === viewerParty) return;
-    setViewerPartyState(next);
-    writePersonaCookie(partyProfile[next].id);
-    try {
-      const personaId = partyProfile[next].id;
-      window.localStorage.setItem("paddockme.profile.persona", personaId);
-      window.localStorage.setItem("paddockme.agreements.persona", personaId);
-      window.dispatchEvent(new CustomEvent("paddockme:persona-change"));
-    } catch {
-      // ignore
-    }
-    flash(`Role view changed to ${partyProfile[next].label}.`, "info");
-  }
 
   function sendMessage(body: string) {
     const sender = partyProfile[viewerParty];
@@ -304,135 +292,6 @@ export function WorkspaceClient({
   const [artefacts, setArtefacts] = useState<AgreementArtefact[]>(
     agreement.artefacts
   );
-
-  // Live sync of the other party's section agree-ticks and lifecycle stage
-  // for real workspaces. Skipped briefly after a local change so a poll
-  // response can't clobber an in-flight write with stale data.
-  useEffect(() => {
-    if (!isRealWorkspace) return;
-    let active = true;
-    const refresh = () => {
-      void getAgreementLiveState(agreement.id).then((live) => {
-        if (!active || !live) return;
-        if (Date.now() - lastLocalMutationRef.current < 6000) return;
-        setSectionState((current) => {
-          const next = { ...current };
-          for (const section of live.sections) {
-            next[section.id] = {
-              agreedByA: section.agreedByA,
-              agreedByB: section.agreedByB,
-            };
-          }
-          return next;
-        });
-        // Pick up the other party's edits to section values too.
-        setSectionsContent((current) =>
-          current.map((section) => {
-            const liveSection = live.sections.find(
-              (item) => item.id === section.id
-            );
-            if (!liveSection) return section;
-            return sectionWithValues(
-              section,
-              liveSection.valueA,
-              liveSection.valueB
-            );
-          })
-        );
-        // Self-healing guard: a finalised status must never coexist with a
-        // section both parties haven't agreed (covers agreements finalised
-        // before the demote-on-edit rule existed).
-        const finalised =
-          live.status === "Ready to finalise" ||
-          live.status === "Active" ||
-          live.status === "Completed";
-        const hasUnagreedSection = live.sections.some(
-          (section) => !(section.agreedByA && section.agreedByB)
-        );
-        const effectiveStatus =
-          finalised && hasUnagreedSection ? "Negotiating" : live.status;
-        if (effectiveStatus !== live.status && !autoDemotedRef.current) {
-          autoDemotedRef.current = true;
-          void updateAgreementStatusRecord(agreement.id, "Negotiating");
-          appendSystemMessage(
-            `Agreement moved from ${live.status} back to Negotiating - a section is awaiting agreement from both parties.`
-          );
-        }
-        setLifecycleState((current) =>
-          current === effectiveStatus ? current : effectiveStatus
-        );
-      });
-    };
-    const interval = window.setInterval(refresh, 5000);
-    refresh();
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [agreement.id, isRealWorkspace]);
-
-  const hydratedRef = useRef(false);
-  const storageKey = `paddockme.workspace.${agreement.id}`;
-
-  useEffect(() => {
-    if (isRealWorkspace) {
-      hydratedRef.current = true;
-      return;
-    }
-    if (typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored) as {
-          sectionState?: Record<string, SectionAgreementState>;
-          lifecycleState?: AgreementLifecycleState;
-          lifecycleHistory?: AgreementLifecycleEvent[];
-          messages?: Message[];
-          artefacts?: AgreementArtefact[];
-        };
-        if (parsed.sectionState) setSectionState(parsed.sectionState);
-        if (parsed.lifecycleState) setLifecycleState(parsed.lifecycleState);
-        if (parsed.lifecycleHistory)
-          setLifecycleHistory(parsed.lifecycleHistory);
-        if (parsed.messages) setMessages(parsed.messages);
-        if (parsed.artefacts) {
-          setArtefacts(mergeArtefacts(agreement.artefacts, parsed.artefacts));
-        }
-      }
-    } catch {
-      // ignore
-    }
-    hydratedRef.current = true;
-    // Only hydrate once per agreement.
-  }, [isRealWorkspace, storageKey]);
-
-  useEffect(() => {
-    if (isRealWorkspace) return;
-    if (typeof window === "undefined") return;
-    if (!hydratedRef.current) return;
-    try {
-      window.localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          sectionState,
-          lifecycleState,
-          lifecycleHistory,
-          messages,
-          artefacts,
-        })
-      );
-    } catch {
-      // ignore - quota / private mode
-    }
-  }, [
-    storageKey,
-    sectionState,
-    lifecycleState,
-    lifecycleHistory,
-    messages,
-    artefacts,
-    isRealWorkspace,
-  ]);
 
   const toggleAgreement = (sectionId: string, party: WorkspaceParty) => {
     // Guard - the panel only renders the viewer's own button as
@@ -506,9 +365,7 @@ export function WorkspaceClient({
         note: reason,
       },
     ]);
-    if (isRealWorkspace) {
-      void updateAgreementStatusRecord(agreement.id, "Negotiating");
-    }
+    void updateAgreementStatusRecord(agreement.id, "Negotiating");
     appendSystemMessage(
       `Agreement moved from ${from} back to Negotiating - ${reason}`
     );
@@ -519,7 +376,6 @@ export function WorkspaceClient({
   };
 
   const editSectionValue = (sectionId: string, value: string) => {
-    if (!isRealWorkspace) return;
     const section = sectionsContent.find((item) => item.id === sectionId);
     lastLocalMutationRef.current = Date.now();
     setSectionsContent((current) =>
@@ -561,9 +417,7 @@ export function WorkspaceClient({
     const from = lifecycleState;
     lastLocalMutationRef.current = Date.now();
     setLifecycleState(to);
-    if (isRealWorkspace) {
-      void updateAgreementStatusRecord(agreement.id, to);
-    }
+    void updateAgreementStatusRecord(agreement.id, to);
     setLifecycleHistory((history) => [
       ...history,
       {
@@ -595,10 +449,6 @@ export function WorkspaceClient({
       description: draft.description,
       uploadedBy: viewerParty === "A" ? "farmerA" : "farmerB",
       sectionId: draft.sectionId,
-      fileName: draft.fileName,
-      fileType: draft.fileType,
-      fileSize: draft.fileSize,
-      fileDataUrl: draft.fileDataUrl,
     };
     setArtefacts((current) => [...current, newArtefact]);
     void createAgreementArtefact({
@@ -607,10 +457,6 @@ export function WorkspaceClient({
       description: draft.description,
       kind: draft.kind,
       sectionId: draft.sectionId,
-      fileName: draft.fileName,
-      fileType: draft.fileType,
-      fileSize: draft.fileSize,
-      fileDataUrl: draft.fileDataUrl,
     }).then((saved) => {
       if (saved) {
         setArtefacts((current) =>
@@ -633,9 +479,7 @@ export function WorkspaceClient({
     if (from === "Cancelled" || from === "Completed") return;
     lastLocalMutationRef.current = Date.now();
     setLifecycleState("Cancelled");
-    if (isRealWorkspace) {
-      void updateAgreementStatusRecord(agreement.id, "Cancelled");
-    }
+    void updateAgreementStatusRecord(agreement.id, "Cancelled");
     setLifecycleHistory((history) => [
       ...history,
       {
@@ -651,9 +495,16 @@ export function WorkspaceClient({
   };
 
   const requestTransport = async () => {
+    if (!allSectionsAgreed) {
+      flash("Resolve every agreement section before pushing an RFT.", "warning");
+      return;
+    }
     const { job } = await requestTransportJob(agreement.id);
     if (!job) {
-      flash("Couldn't request transport. Please try again.", "warning");
+      flash(
+        "Couldn't send the RFT. Confirm the Start date, Transport, pickup location and destination before sending it to carriers.",
+        "warning"
+      );
       return;
     }
     setLinkedTransport(job);
@@ -668,17 +519,19 @@ export function WorkspaceClient({
     setTransportQuotes(job.quotes);
     setAcceptedTransportQuoteId(job.acceptedQuoteId);
     appendSystemMessage(
-      `Transport requested. ${job.driver} can now accept the job.`,
+      "RFT (Request for Transport) sent - carriers can now see and accept this job.",
       "transport"
     );
-    flash("Transport requested.", "success");
+    flash("RFT sent. Carriers are being notified.", "success");
   };
 
+  const mutuallyAgreedCount = sectionsContent.reduce((count, section) => {
+    const state = sectionState[section.id] ?? section;
+    return state.agreedByA && state.agreedByB ? count + 1 : count;
+  }, 0);
+  const allSectionsAgreed = mutuallyAgreedCount === sectionsContent.length;
+
   const timelineItems = useMemo(() => {
-    const mutuallyAgreedCount = sectionsContent.reduce((count, section) => {
-      const state = sectionState[section.id] ?? section;
-      return state.agreedByA && state.agreedByB ? count + 1 : count;
-    }, 0);
     const totalSections = sectionsContent.length;
     const allAgreed = mutuallyAgreedCount === totalSections;
 
@@ -716,50 +569,32 @@ export function WorkspaceClient({
         </p>
       </Card>
       <section
-        aria-label={isRealWorkspace ? "Agreement parties" : "Agreement party switcher"}
+        aria-label="Agreement parties"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sage-deep">
             <Users className="h-5 w-5" aria-hidden />
             <h2 className="text-sm font-bold uppercase tracking-wide">
-              {isRealWorkspace ? "Parties" : "Role view"}
+              Parties
             </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <a
-              href={`/workspace/${agreement.id}/snapshot`}
-              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-mist bg-warm-white px-3 text-xs font-bold text-sage-deep transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
-            >
-              View snapshot
-            </a>
-            <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
-              {isRealWorkspace ? "Signed in" : "Role view"}
-            </span>
-          </div>
+          <span className="inline-flex items-center rounded-full bg-warm-white px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-stone">
+            Signed in
+          </span>
         </div>
-        <div
-          role="radiogroup"
-          aria-label="Choose which side of the agreement you represent"
-          className="grid gap-2 sm:grid-cols-2"
-        >
+        <div className="grid gap-2 sm:grid-cols-2">
           {(["A", "B"] as const).map((party) => {
             const profile = partyProfile[party];
             const active = party === viewerParty;
             return (
-              <button
+              <div
                 key={party}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setViewerParty(party)}
-                disabled={isRealWorkspace}
                 className={cn(
-                  "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-2 text-left transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
-                  isRealWorkspace && "cursor-default",
+                  "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-2 text-left",
                   active
                     ? "border-sage-deep bg-sage-deep text-cream shadow-sm"
-                    : "border-mist bg-warm-white text-bark hover:border-sage/40 hover:bg-sage-mist/40"
+                    : "border-mist bg-warm-white text-bark"
                 )}
               >
                 <Avatar
@@ -780,7 +615,7 @@ export function WorkspaceClient({
                     {profile.role}
                   </span>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -799,7 +634,7 @@ export function WorkspaceClient({
               }
               sectionState={sectionState}
               onToggleAgreement={toggleAgreement}
-              onEditSectionValue={isRealWorkspace ? editSectionValue : undefined}
+              onEditSectionValue={editSectionValue}
               timelineItems={timelineItems}
               lifecycleState={lifecycleState}
               lifecycleHistory={lifecycleHistory}
@@ -807,6 +642,8 @@ export function WorkspaceClient({
               onCancelLifecycle={cancelLifecycle}
               transportHref={transportHref}
               onRequestTransport={requestTransport}
+              canRequestTransport={allSectionsAgreed}
+              requestTransportBlockedReason={`${mutuallyAgreedCount} of ${sectionsContent.length} sections agreed. Resolve every section before pushing an RFT.`}
               viewerParty={viewerParty}
               partyLabels={{
                 A: partyProfile.A.label,
@@ -838,23 +675,6 @@ export function WorkspaceClient({
   );
 }
 
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-function readPersonaCookie(): string | null {
-  if (typeof document === "undefined") return null;
-  const entry = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("paddockme_persona="));
-  return entry ? decodeURIComponent(entry.split("=")[1] ?? "") : null;
-}
-
-function writePersonaCookie(personaId: string) {
-  if (typeof document === "undefined") return;
-  document.cookie = `paddockme_persona=${encodeURIComponent(personaId)}; path=/; max-age=31536000; SameSite=Lax`;
-}
-
 /**
  * Rebuild a section's display strings after either party edits a value.
  * Mirrors mapAgreementSectionRow in the repositories module.
@@ -882,16 +702,6 @@ function mergeMessages(serverMessages: Message[], current: Message[]): Message[]
   const serverIds = new Set(serverMessages.map((message) => message.id));
   const localOnly = current.filter((message) => !serverIds.has(message.id));
   return [...serverMessages, ...localOnly];
-}
-
-function mergeArtefacts(
-  seedArtefacts: AgreementArtefact[],
-  storedArtefacts: AgreementArtefact[]
-): AgreementArtefact[] {
-  const byId = new Map<string, AgreementArtefact>();
-  for (const artefact of seedArtefacts) byId.set(artefact.id, artefact);
-  for (const artefact of storedArtefacts) byId.set(artefact.id, artefact);
-  return Array.from(byId.values());
 }
 
 function nowLabel(): string {

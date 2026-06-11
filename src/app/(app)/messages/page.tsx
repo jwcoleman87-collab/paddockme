@@ -1,75 +1,41 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
-import {
-  agreements,
-  farmers,
-  getMessages,
-  getTransportMessages,
-  transportJobs,
-  type Message,
-} from "@/lib/dummyData";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
   listAgreementSummariesForUserServer,
   type AgreementSummary,
 } from "@/lib/data/serverPaddocks";
-import { MessagesClient } from "./MessagesClient";
 
 export default async function MessagesPage() {
   const currentUserProfile = await getCurrentUserProfile();
-  if (currentUserProfile) {
-    // Real inbox: one thread per agreement workspace the user is party to.
-    // This page used to be a hardcoded empty state, which meant signed-in
-    // users could never find their conversations again.
-    const summaries = await listAgreementSummariesForUserServer();
-    return (
-      <>
-        <PageHeader
-          eyebrow="Messages"
-          title="Your conversations."
-          description="Every agreement workspace you're part of. The latest message lives on top."
-        />
-        {summaries.length === 0 ? (
-          <RealAccountEmptyState
-            title="No live conversations yet."
-            body="Create a request, listing, or transport availability to start a real customer conversation."
-            primaryHref="/request/new"
-            primaryLabel="Create request"
-            secondaryHref="/listings/new"
-            secondaryLabel="List a paddock"
-          />
-        ) : (
-          <RealThreadList summaries={summaries} />
-        )}
-      </>
-    );
+  if (!currentUserProfile) {
+    redirect("/sign-in?next=%2Fmessages");
   }
 
-  const agreementMessages: Record<string, Message[]> = {};
-  for (const agreement of agreements) {
-    agreementMessages[agreement.id] = getMessages(agreement.id);
-  }
-  const transportMessagesById: Record<string, Message[]> = {};
-  for (const job of transportJobs) {
-    transportMessagesById[job.id] = getTransportMessages(job.id);
-  }
-
+  // One thread per agreement workspace the user is party to.
+  const summaries = await listAgreementSummariesForUserServer();
   return (
     <>
       <PageHeader
         eyebrow="Messages"
         title="Your conversations."
-        description="Every workspace and transport room you're part of. The latest message lives on top."
+        description="Every agreement workspace you're part of. The latest message lives on top."
       />
-      <MessagesClient
-        agreements={agreements}
-        transportJobs={transportJobs}
-        farmers={farmers}
-        agreementMessages={agreementMessages}
-        transportMessages={transportMessagesById}
-      />
+      {summaries.length === 0 ? (
+        <RealAccountEmptyState
+          title="No live conversations yet."
+          body="Create a request, listing, or transport availability to start a real customer conversation."
+          primaryHref="/request/new"
+          primaryLabel="Create request"
+          secondaryHref="/listings/new"
+          secondaryLabel="List a paddock"
+        />
+      ) : (
+        <RealThreadList summaries={summaries} />
+      )}
     </>
   );
 }

@@ -1,8 +1,7 @@
-import {
-  transportJobs,
-  type TransportJob,
-  type TransportQuote,
-  type TransportQuoteBasis,
+import type {
+  TransportJob,
+  TransportQuote,
+  TransportQuoteBasis,
 } from "@/lib/dummyData";
 
 export type TransportPayableSnapshot = {
@@ -26,34 +25,12 @@ export function findTransportPayableSnapshot(
   transportJobId: string,
   quoteId: string
 ): TransportPayableSnapshot | null {
-  const job = transportJobs.find((item) => item.id === transportJobId);
-  if (!job) return null;
-
-  const quote = job.quotes.find((item) => item.id === quoteId);
-  if (!quote) return null;
-  if (quote.status !== "accepted" && job.acceptedQuoteId !== quote.id) {
-    return null;
-  }
-
-  const total = estimateTransportTotal(job, quote);
-  if (!total || total <= 0) return null;
-
-  return {
-    transportJobId: job.id,
-    agreementId: job.agreementId,
-    quoteId: quote.id,
-    payerProfileId: job.farmerAId,
-    payeeProfileId: job.driverId,
-    payerLabel: "Livestock owner",
-    payeeLabel: job.driver,
-    amountCents: Math.round(total * 100),
-    amount: total,
-    currency: quote.currency.toUpperCase(),
-    unitAmount: quote.amount,
-    basis: quote.basis,
-    basisLabel: quoteBasisLabel(quote.basis),
-    description: `${job.livestockCount} transport from ${job.pickup} to ${job.destination}`,
-  };
+  // Demo mode retired: quote-backed payables previously resolved from seed
+  // transport jobs. Real quotes are not yet wired to Supabase (spec §6.13 is
+  // a future brief - see SPEC_DRIFT.md), so no payable can be resolved yet.
+  void transportJobId;
+  void quoteId;
+  return null;
 }
 
 export function estimateTransportTotal(

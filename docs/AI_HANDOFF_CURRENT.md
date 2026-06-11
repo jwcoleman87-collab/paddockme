@@ -50,7 +50,7 @@ The command includes the canonical click path:
 - `Sections to confirm` opens `/workspace/agreement-glenbarra`.
 - Dale and Brett can agree the rate section.
 - `Open transport room` opens `/transport/transport-glenbarra`.
-- Wayne's driver view shows transport/backload economics.
+- Wayne's driver view shows farmer-created transport RFTs and accepted runs.
 - Farmer A can see accepted rate state.
 - Brett can open `Pick a paddock to offer`.
 - Wayne's `/runs` pipeline is reachable.

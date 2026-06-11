@@ -14,6 +14,10 @@ import {
 import { SelectablePill } from "@/components/SelectablePill";
 import { stockTypes, type PaddockListing } from "@/lib/dummyData";
 import { createPaddockListingRecord } from "@/lib/data/repositories";
+import {
+  geocodeLocation,
+  type GeocodedLocation,
+} from "@/lib/locationGeocode";
 import { findRegion, regionsGroupedByState } from "@/lib/regions";
 
 const regionPickerGroups = pickerGroupsFromRegions(regionsGroupedByState());
@@ -48,6 +52,9 @@ export default function NewListingPage() {
   const [summary, setSummary] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [confirmedLocation, setConfirmedLocation] =
+    useState<GeocodedLocation | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const MAX_PHOTOS = 6;
@@ -103,6 +110,10 @@ export default function NewListingPage() {
       flash("Add the property location.", "warning");
       return;
     }
+    if (!confirmedLocation) {
+      flash("Confirm the property location before publishing.", "warning");
+      return;
+    }
     if (!region) {
       flash("Pick the region closest to your paddock.", "warning");
       return;
@@ -138,6 +149,9 @@ export default function NewListingPage() {
         guideTerms: "Discuss terms",
         summary: summary.trim(),
         photos,
+        latitude: confirmedLocation.latitude,
+        longitude: confirmedLocation.longitude,
+        placeId: confirmedLocation.placeId,
       });
       if (!created) {
         flash("Could not publish the listing. Please try again.", "warning");
@@ -150,6 +164,26 @@ export default function NewListingPage() {
       flash("Could not publish the listing. Please try again.", "warning");
       setSubmitting(false);
     }
+  }
+
+  async function confirmListingLocation() {
+    if (!location.trim()) {
+      flash("Add the property location first.", "warning");
+      return;
+    }
+    setGeocoding(true);
+    const result = await geocodeLocation({
+      query: location.trim(),
+      region,
+    });
+    setGeocoding(false);
+    if (!result) {
+      flash("Could not confirm that location. Try a fuller address or nearby town.", "warning");
+      return;
+    }
+    setLocation(result.formattedAddress);
+    setConfirmedLocation(result);
+    flash("Property location confirmed.", "success");
   }
 
   return (
@@ -176,8 +210,11 @@ export default function NewListingPage() {
               <TextField
                 label="Location"
                 value={location}
-                onChange={setLocation}
-                placeholder="e.g. Near Gundagai, NSW"
+                onChange={(value) => {
+                  setLocation(value);
+                  setConfirmedLocation(null);
+                }}
+                placeholder="e.g. 42 River Road, Gundagai NSW"
               />
               <NumberField label="Available acres" value={acres} onChange={setAcres} />
               <div className="sm:col-span-2">
@@ -188,6 +225,21 @@ export default function NewListingPage() {
                   placeholder="e.g. 18 May to 30 September"
                 />
               </div>
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={confirmListingLocation}
+                disabled={geocoding}
+              >
+                {geocoding ? "Checking location" : "Confirm location"}
+              </Button>
+              <p className="text-sm font-bold text-bark/70">
+                {confirmedLocation
+                  ? `Confirmed: ${confirmedLocation.formattedAddress}`
+                  : "Required before the listing can go live."}
+              </p>
             </div>
             <div className="mt-5">
               <SearchablePicker
@@ -364,8 +416,8 @@ export default function NewListingPage() {
             <SectionTitle eyebrow="Checklist" title="Publish readiness" />
             <div className="mt-4 space-y-3">
               <ChecklistRow
-                done={title.trim().length > 0 && location.trim().length > 0}
-                label="Name and location set"
+                done={title.trim().length > 0 && !!confirmedLocation}
+                label="Name and location confirmed"
               />
               <ChecklistRow
                 done={suitableLivestock.length > 0}

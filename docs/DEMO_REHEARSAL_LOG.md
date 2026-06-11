@@ -84,7 +84,7 @@ Results:
 - Dale agreed the `Rate and terms` section.
 - Brett agreed the same section after switching to `Farmer B (Brett) Landowner`.
 - `Open transport room` opened `/transport/transport-glenbarra`.
-- Driver view showed Wayne and possible backloads.
+- Driver view showed Wayne and farmer-created transport RFTs.
 - Farmer A opened the `Rate` tab and saw `Rate accepted`.
 - Brett opened the `Pick a paddock to offer` picker from `/requests`.
 - Wayne's `/runs` pipeline was reachable.

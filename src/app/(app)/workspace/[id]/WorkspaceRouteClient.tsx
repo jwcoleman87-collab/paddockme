@@ -6,21 +6,15 @@ import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { FlowContextBar } from "@/components/FlowContextBar";
 import { PageHeader } from "@/components/PageHeader";
-import { getListing, type Agreement, type Message } from "@/lib/dummyData";
+import type { Agreement, Message } from "@/lib/dummyData";
 import {
   getAgreementRecord,
   listAgreementMessages,
 } from "@/lib/data/repositories";
 import { WorkspaceClient } from "./WorkspaceClient";
 
-export function WorkspaceRouteClient({
-  id,
-  seedAgreement = null,
-}: {
-  id: string;
-  seedAgreement?: Agreement | null;
-}) {
-  const [agreement, setAgreement] = useState<Agreement | null>(seedAgreement);
+export function WorkspaceRouteClient({ id }: { id: string }) {
+  const [agreement, setAgreement] = useState<Agreement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -77,12 +71,7 @@ export function WorkspaceRouteClient({
     );
   }
 
-  // Real agreements carry their listing title from Supabase; demo agreements
-  // fall back to the seed listing lookup.
-  const listingTitle =
-    agreement.listingTitle ??
-    getListing(agreement.listingId)?.title ??
-    "Agreement workspace";
+  const listingTitle = agreement.listingTitle ?? "Agreement workspace";
   const partyLine = [
     agreement.farmerAName ?? "Livestock owner",
     agreement.farmerBName ?? "Landowner",
@@ -105,7 +94,7 @@ export function WorkspaceRouteClient({
         description={description}
         action={
           <ButtonLink
-            href={`/map?mode=agreement&agreement=${agreement.id}`}
+            href={`/map?agreement=${agreement.id}`}
             variant="secondary"
           >
             <Map className="h-4 w-4" aria-hidden />
@@ -122,8 +111,4 @@ export function WorkspaceRouteClient({
       <WorkspaceClient agreement={agreement} messages={messages} />
     </>
   );
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

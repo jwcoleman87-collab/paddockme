@@ -116,11 +116,26 @@ export function ListingDetailClient({
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) {
+          const next = requestId
+            ? `/listings/${listing.id}?request=${encodeURIComponent(requestId)}`
+            : `/listings/${listing.id}`;
           router.push(
-            `/sign-in?next=${encodeURIComponent(`/listings/${listing.id}`)}`
+            `/sign-in?next=${encodeURIComponent(next)}`
           );
           return;
         }
+      }
+      if (agreementId) {
+        router.push(`/workspace/${agreementId}`);
+        return;
+      }
+      if (!requestId) {
+        flash(
+          "Create a livestock request first, then choose a paddock from its matches.",
+          "warning"
+        );
+        setOpening(false);
+        return;
       }
       const { agreement } = await openAgreementWorkspace(listing.id, requestId);
       if (!agreement) {

@@ -44,9 +44,11 @@ RLS: rows visible only to the parent transport job's `livestock_owner_id` and `d
 
 UI: a Rate sub-section inside the transport room, conditionally rendered. Driver proposes; Farmer A accepts or counters; system message in chat each time. Farmer B sees nothing about it.
 
-### 3. Driver capacity publishing
+### 3. Farmer-created RFTs first
 
-Wayne and Sharon are currently *passively assigned* — they wait for Farmer A to invite them into a transport room. The actual value proposition for them is *finding backloads* before they get to the assignment step.
+Correction from product review: the driver map is not for truckies to post return legs as the main action. Farmer A and Farmer B raise the transport request from an agistment agreement; carriers then see those RFT routes and quote or accept the work.
+
+Wayne and Sharon still care deeply about utilisation, but PaddockME should surface demand first: agreement-backed RFTs waiting for a carrier.
 
 A new `transport_capacity` model lets a driver post:
 
@@ -57,23 +59,23 @@ A new `transport_capacity` model lets a driver post:
 
 Profile-carries-the-difference: Wayne posts one capacity row at a time; Sharon's dispatch publishes capacity per truck across her fleet. Same form, same table — the volume difference lives in the operator's profile, not in separate surfaces.
 
-### 4. Transport browsing surface
+### 4. Transport RFT browsing surface
 
-Parallel to `/listings`, a new `/transport/available` (working title) where livestock owners can browse posted capacity. Same chip-filter shape — region pairs, date windows, stock types, accreditations (LBCA / TruckSafe / NHVAS). Tap a capacity card → opens a quote request that initiates a transport room with that driver.
+`/transport/jobs` is the primary carrier surface: drivers browse farmer-created RFTs and accepted runs. `/transport/available` remains secondary carrier-capacity context, not the main path.
 
 Symmetry: today a farmer can browse paddocks but not trucks. After this step, they can browse both.
 
-### 5. Backload visibility for drivers
+### 5. RFT visibility for drivers
 
-A driver confirmed on a job needs to see what jobs are near their return route. Sharon's whole business case is *fleet utilisation* — empty kilometres are profit deleted.
+A driver confirmed on a job needs to see the farmer-created RFTs near that movement, without seeing private agistment terms.
 
-UI: inside a confirmed transport room, a "Possible backloads" panel listing other transport jobs that:
+UI: inside a confirmed transport room, an "Open RFTs" panel listing transport requests that:
 
-- Originate near the current job's destination
-- Are within a date window of the current job's delivery
-- Match the truck's capacity and crate config
+- Come from an agreement between Farmer A and Farmer B
+- Expose pickup, delivery, stock, route, and timing
+- Hide agistment rate and private paddock terms from the driver
 
-For Wayne this means one nearby job at a time. For Sharon it means a list across her fleet's confirmed legs. Single dial that turns transport from phone-tag opportunism into systematic matching.
+For Wayne this means one clear route board. For Sharon it means a list across the fleet's operating regions. Single dial that turns transport from phone-tag opportunism into systematic route quoting.
 
 ### 6. Settlement readiness — modelled, not wired
 
@@ -152,11 +154,11 @@ Both walls enforced at the data layer via RLS, not just the UI. Same standard as
 - Transport tab in `AgreementPanel` with role-aware rendering (Farmer A sees rate; Farmer B doesn't)
 - `transport_quotes` table with RLS enforcing the landowner-visibility wall
 - Rate negotiation UI in the transport room (propose / accept / counter / reject)
-- `transport_capacity` table with public RLS
-- `/transport/available` browsing surface with chip filters
-- Driver-side quote initiation when a farmer taps a capacity card
-- Backload panel inside a confirmed transport room
-- Profile-carries-the-difference applied to capacity publishing (Wayne single-truck, Sharon multi-truck — same form, different fleet size on the profile)
+- Farmer-created RFTs exposed through `/transport/jobs`
+- `/transport/available` retained as secondary carrier-capacity context
+- Driver-side quote/accept flow from the RFT board
+- Open RFT panel inside a confirmed transport room
+- Profile-carries-the-difference applied to the carrier view (Wayne single-truck, Sharon multi-truck later)
 - System messages in transport chat for every quote / acceptance / counter
 - Audit history of quote chains
 - Migration files in `supabase/migrations/` keeping schema as code
@@ -184,9 +186,9 @@ When Build 03 finishes, the user must be able to:
 | Switch to Farmer B in the workspace and see no transport rate anywhere | pending |
 | Open the transport room as Wayne and see the rate; switch to Farmer A and see the rate; switch to Farmer B and see no rate field | pending |
 | Confirm via SQL that the landowner cannot SELECT `transport_quotes.amount` for any row tied to their agreement | pending |
-| Post a capacity row as Wayne; see it appear at `/transport/available` for any farmer | pending |
-| Tap a capacity card as Dale and land in a quote-initiated transport room with Wayne | pending |
-| As a confirmed driver, see a Possible Backloads panel listing relevant nearby jobs | pending |
+| Raise a transport RFT from the agreement workspace and see it appear on `/transport/jobs` | pending |
+| Tap an RFT as Wayne and land in the transport room for quote/acceptance | pending |
+| As a confirmed driver, see an Open RFTs panel listing farmer-created routes | pending |
 | Move a quote through propose → counter → accept and see system messages in chat for each step | pending |
 | Push a change to `main` and watch the QA checklist still pass | ongoing |
 

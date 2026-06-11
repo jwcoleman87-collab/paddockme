@@ -72,9 +72,8 @@ surface that this script touches, update the script.
 - Header reads "Central West NSW to Southern NSW. 100 cattle..."
 - Point at the role switcher (Farmer A / Farmer B / Driver).
 - Switch to Driver (Wayne) - point at the pending quote and the
-  Possible Backloads panel: "Wayne sees a return-leg job ready to
-  chain. Empty kilometres are profit deleted - this is the single
-  biggest dial for transport business utilisation."
+  Open RFTs panel: "Wayne sees farmer-created transport requests from
+  agistment agreements, then quotes or accepts the routes he can run."
 - Switch to Farmer A (Dale), open the **Rate** tab, then tap
   **Accept rate** -> system message fires in chat, status flips.
 
@@ -104,7 +103,7 @@ surface that this script touches, update the script.
   found."
 - Switch persona to **Wayne** -> tap **Transport** in the bottom nav
   -> the persona-aware view points to `/runs`. Show the pipeline
-  buckets (In motion / Open offers / Delivered) and posted capacity.
+  buckets (In motion / Open RFTs / Delivered) and the RFT map.
 
 ### Close (5:00)
 

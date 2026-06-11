@@ -185,7 +185,7 @@ export function CapacityPostDialog({
         <div className="flex items-start justify-between gap-3 border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-stone">
-              Post a run &middot; {driverLabel}
+              Share capacity &middot; {driverLabel}
             </p>
             <h2
               id="capacity-post-title"
@@ -350,7 +350,7 @@ export function CapacityPostDialog({
               rows={2}
               maxLength={280}
               className="mt-1 w-full rounded-xl border border-sage-deep/15 bg-warm-white px-4 py-3 text-base text-bark outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
-              placeholder="Backload preferred, crate config locked, fuel surcharge included..."
+              placeholder="Crate config locked, fuel surcharge included, call before loading..."
             />
           </label>
 

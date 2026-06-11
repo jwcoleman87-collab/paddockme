@@ -66,6 +66,8 @@ type AgreementPanelProps = {
   /** href of the transport room linked to this agreement, when one exists. */
   transportHref?: string;
   onRequestTransport?: () => void;
+  canRequestTransport?: boolean;
+  requestTransportBlockedReason?: string;
   /** The party the current viewer represents. Drives which agree button is interactive. */
   viewerParty: WorkspaceParty;
   partyLabels?: Record<WorkspaceParty, string>;
@@ -113,12 +115,12 @@ type AttentionGuidance = {
 
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> =
   {
-    parties: Users,
-    stock: Sprout,
-    paddock: Tractor,
-    dates: Calendar,
-    terms: Banknote,
+    stock_type: Sprout,
+    duration: Calendar,
+    rate: Banknote,
+    start_date: Calendar,
     transport: Truck,
+    special_conditions: Tractor,
   };
 
 const agreementTabs = [
@@ -196,6 +198,8 @@ export function AgreementPanel({
   onCancelLifecycle,
   transportHref,
   onRequestTransport,
+  canRequestTransport = true,
+  requestTransportBlockedReason,
   viewerParty,
   partyLabels = { A: "Livestock owner", B: "Landowner" },
   artefacts,
@@ -382,8 +386,14 @@ export function AgreementPanel({
             Open transport room
           </ButtonLink>
         ) : onRequestTransport ? (
-          <Button type="button" variant="secondary" onClick={onRequestTransport}>
-            Request transport
+          <Button
+            type="button"
+            variant={canRequestTransport ? "primary" : "secondary"}
+            onClick={onRequestTransport}
+            disabled={!canRequestTransport}
+            title={requestTransportBlockedReason}
+          >
+            Push RFT
             <Truck className="h-4 w-4" aria-hidden />
           </Button>
         ) : (
@@ -836,8 +846,8 @@ function AgreementOverview({
     if (fallback) return fallback.agreedByA && fallback.agreedByB;
     return false;
   };
-  const paddockAgreed = sectionAgreed("paddock");
-  const termsAgreed = sectionAgreed("terms");
+  const specialConditionsAgreed = sectionAgreed("special_conditions");
+  const rateAgreed = sectionAgreed("rate");
   const transportAgreed = sectionAgreed("transport");
   const activeArtefact =
     artefacts.find((artefact) => artefact.id === activeArtefactId) ?? null;
@@ -873,36 +883,36 @@ function AgreementOverview({
             onOpenGuidance={setGuidance}
           />
           <AlignmentRow
-            complete={paddockAgreed}
+            complete={specialConditionsAgreed}
             label={
-              paddockAgreed
-                ? "Feed, water and fencing details match"
-                : "Feed, water and fencing details still under review"
+              specialConditionsAgreed
+                ? "Special conditions agreed"
+                : "Special conditions still under review"
             }
             guidance={{
-              title: "Paddock details need confirmation",
+              title: "Special conditions need confirmation",
               explanation:
-                "The feed, water, and fencing row turns green once the paddock section is agreed by both parties.",
-              tip: "Review the paddock photos and details, then confirm the Paddock section if both sides accept them.",
-              sectionId: "paddock",
-              fieldLabel: "Feed",
+                "The special conditions row turns green once both parties accept the notes attached to this placement.",
+              tip: "Confirm any paddock, feed, water, fencing, access, inspection, or owner-specific conditions before finalising.",
+              sectionId: "special_conditions",
+              fieldLabel: "Livestock owner value",
             }}
             onOpenGuidance={setGuidance}
           />
           <AlignmentRow
-            complete={termsAgreed}
+            complete={rateAgreed}
             label={
-              termsAgreed
-                ? "Rate and final terms agreed"
-                : "Rate and final terms require attention"
+              rateAgreed
+                ? "Rate agreed"
+                : "Rate requires attention"
             }
             guidance={{
-              title: "Rate and final terms need attention",
+              title: "Rate needs attention",
               explanation:
-                "The commercial terms have not been accepted by both parties yet, so the agreement cannot be finalised.",
-              tip: "Settle the weekly rate, feed top-up, water, and fencing responsibilities, then mark the Rate and terms section agreed.",
-              sectionId: "terms",
-              fieldLabel: "Rate",
+                "The commercial rate has not been accepted by both parties yet, so the agreement cannot be finalised.",
+              tip: "Settle the weekly rate and any direct payment wording, then mark the Rate section agreed.",
+              sectionId: "rate",
+              fieldLabel: "Landowner value",
             }}
             onOpenGuidance={setGuidance}
           />
@@ -920,7 +930,7 @@ function AgreementOverview({
                   "The transport section still has at least one party waiting to confirm pickup, delivery, or operator details.",
                 tip: "Open the transport room or the Transport section, confirm the pickup window and driver, then have the remaining party agree.",
                 sectionId: "transport",
-                fieldLabel: "Preferred date",
+                fieldLabel: "Landowner value",
               }}
               onOpenGuidance={setGuidance}
             />

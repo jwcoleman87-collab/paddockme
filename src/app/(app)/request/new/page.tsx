@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/Button";
@@ -15,6 +15,10 @@ import {
 import { SelectablePill } from "@/components/SelectablePill";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
 import { createLivestockRequestRecord } from "@/lib/data/repositories";
+import {
+  geocodeLocation,
+  type GeocodedLocation,
+} from "@/lib/locationGeocode";
 import {
   findRegion,
   regionsByLabel,
@@ -57,66 +61,16 @@ export default function NewRequestPage() {
   const selectedRegions = regionLabelsFromIds(selectedRegionIds);
   const [transportRequired, setTransportRequired] = useState("Yes");
   const [headCount, setHeadCount] = useState(100);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem("paddockme.onboarding");
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as {
-        stockTypes?: string[];
-        region?: string;
-        headCountBracket?: string;
-      };
-      let applied = false;
-      if (
-        parsed.stockTypes &&
-        parsed.stockTypes.length > 0 &&
-        stockTypes.includes(parsed.stockTypes[0] as StockType)
-      ) {
-        const nextStockType = parsed.stockTypes[0] as StockType;
-        setStockType(nextStockType);
-        setBreed(animalOptions[nextStockType][0]);
-        applied = true;
-      }
-      if (parsed.region) {
-        const mappedId = mapOnboardingRegion(parsed.region);
-        if (mappedId) {
-          setSelectedRegionIds([mappedId]);
-          applied = true;
-        }
-      }
-      if (parsed.headCountBracket) {
-        const count = headCountFromBracket(parsed.headCountBracket);
-        if (count !== null) {
-          setHeadCount(count);
-          applied = true;
-        }
-      }
-      if (applied) {
-        flash("Pre-filled from your onboarding answers.", "info");
-      }
-    } catch {
-      // ignore - localStorage may be unavailable
-    }
-    // Intentionally run once on mount: we hydrate from onboarding state
-    // without re-running when other deps change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  const [originAddress, setOriginAddress] = useState("");
+  const [confirmedOrigin, setConfirmedOrigin] =
+    useState<GeocodedLocation | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const params = new URLSearchParams();
-    params.set("stock", stockType);
-    params.set("breed", breed);
-    params.set("headCount", String(headCount));
-    params.set("duration", duration);
-    if (selectedRegions.length > 0) {
-      params.set("regions", selectedRegions.join(","));
-    }
-    if (transportRequired) {
-      params.set("transport", transportRequired);
+    if (!confirmedOrigin) {
+      flash("Confirm the pickup property location before matching paddocks.", "warning");
+      return;
     }
     const created = await createLivestockRequestRecord({
       stockType,
@@ -125,18 +79,42 @@ export default function NewRequestPage() {
       duration,
       preferredRegions: selectedRegions,
       transportRequired: transportRequired as "Yes" | "No" | "Unsure",
+      originAddress: confirmedOrigin.formattedAddress,
+      originLatitude: confirmedOrigin.latitude,
+      originLongitude: confirmedOrigin.longitude,
+      originPlaceId: confirmedOrigin.placeId,
     });
     if (!created) {
       flash("Couldn't save your request. Please try again.", "warning");
       return;
     }
     flash("Request created. Matching paddocks now.", "success");
-    router.push(`/matches?${params.toString()}`);
+    router.push(`/matches?request=${encodeURIComponent(created.request.id)}`);
   }
 
   function selectStockType(value: StockType) {
     setStockType(value);
     setBreed(animalOptions[value][0]);
+  }
+
+  async function confirmOriginLocation() {
+    if (!originAddress.trim()) {
+      flash("Add the pickup property location first.", "warning");
+      return;
+    }
+    setGeocoding(true);
+    const result = await geocodeLocation({
+      query: originAddress.trim(),
+      region: selectedRegions[0],
+    });
+    setGeocoding(false);
+    if (!result) {
+      flash("Could not confirm that location. Try a fuller address or nearby town.", "warning");
+      return;
+    }
+    setOriginAddress(result.formattedAddress);
+    setConfirmedOrigin(result);
+    flash("Pickup location confirmed.", "success");
   }
 
   const breedOptions = animalOptions[stockType];
@@ -229,6 +207,42 @@ export default function NewRequestPage() {
 
           <Card>
             <h2 className="mb-4 text-xl font-bold text-sage-deep">
+              Pickup property location
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <label className="block">
+                <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
+                  Address or property locality
+                </span>
+                <input
+                  value={originAddress}
+                  onChange={(event) => {
+                    setOriginAddress(event.target.value);
+                    setConfirmedOrigin(null);
+                  }}
+                  placeholder="e.g. 42 River Road, Gundagai NSW"
+                  className="mt-2 min-h-14 w-full rounded-[8px] border border-stone/35 bg-white px-4 text-lg font-extrabold text-bark shadow-[inset_0_1px_2px_rgba(63,51,40,0.08)] outline-none ring-0 transition focus:border-sage focus:ring-2 focus:ring-sage/25 placeholder:font-semibold placeholder:text-stone/45"
+                />
+              </label>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={confirmOriginLocation}
+                disabled={geocoding}
+                className="sm:min-h-14"
+              >
+                {geocoding ? "Checking" : "Confirm"}
+              </Button>
+            </div>
+            {confirmedOrigin && (
+              <p className="mt-3 rounded-md border border-match/20 bg-match-light/55 px-3 py-2 text-sm font-bold text-match">
+                Confirmed: {confirmedOrigin.formattedAddress}
+              </p>
+            )}
+          </Card>
+
+          <Card>
+            <h2 className="mb-4 text-xl font-bold text-sage-deep">
               Preferred regions
             </h2>
             <SearchablePicker
@@ -263,6 +277,7 @@ export default function NewRequestPage() {
               <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${countUnit} ${breed} ${stockType}`} />
               <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
               <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
+              <InfoTile tone="subtle" size="sm" label="Pickup" value={confirmedOrigin?.formattedAddress ?? "Not confirmed"} />
               <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
             </div>
             <Button type="submit" className="mt-5 w-full">
@@ -290,34 +305,3 @@ function ChoiceSection({
   );
 }
 
-// Onboarding stores the legacy region label; resolve to a canonical
-// region id when one matches. Returns null when the saved label no
-// longer corresponds to a known region.
-function mapOnboardingRegion(onboardingRegion: string): string | null {
-  const direct = findRegion(onboardingRegion);
-  if (direct) return direct.id;
-  // Friendly aliases for older onboarding answers that pre-date the
-  // canonical list.
-  const alias: Record<string, string | undefined> = {
-    "Central West": "central-west-nsw",
-    "Gippsland VIC": "gippsland",
-    "Western VIC": "western-districts-vic",
-  };
-  const aliased = alias[onboardingRegion];
-  return aliased ?? null;
-}
-
-function headCountFromBracket(bracket: string): number | null {
-  switch (bracket) {
-    case "1-20":
-      return 10;
-    case "20-100":
-      return 50;
-    case "100-500":
-      return 250;
-    case "500+":
-      return 600;
-    default:
-      return null;
-  }
-}

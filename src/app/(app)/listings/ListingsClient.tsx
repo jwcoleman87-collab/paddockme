@@ -4,20 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Filter, X } from "lucide-react";
 import { useFlash } from "@/components/FlashProvider";
 import { ListingCard } from "@/components/ListingCard";
-import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
 import { scoreListing } from "@/lib/listingMatch";
 import { cn } from "@/lib/utils";
-import {
-  livestockRequests,
-  type LivestockRequest,
-  type PaddockListing,
+import type {
+  LivestockRequest,
+  PaddockListing,
 } from "@/lib/dummyData";
-import {
-  listPaddockListings,
-  listSupabasePaddockListings,
-} from "@/lib/data/repositories";
+import { listSupabasePaddockListings } from "@/lib/data/repositories";
 
 type FilterGroupKey =
   | "regions"
@@ -86,63 +81,29 @@ const filterGroups: {
 export function ListingsClient({
   listings,
   initialFilters,
-  realAccount = false,
+  requestId,
+  realAccount = true,
 }: {
   listings: PaddockListing[];
   initialFilters?: InitialFilters;
-  /** When the page is rendered for a real signed-in account, the client
-   * refresh must NOT merge prototype state - that would re-introduce the
-   * Dale/Brett seed paddocks. Skip the prototype-change subscription and
-   * use the strict Supabase-only fetcher. */
+  requestId?: string;
+  /** Retained for call-site compatibility; the client is Supabase-only. */
   realAccount?: boolean;
 }) {
+  void realAccount;
   const flash = useFlash();
   const [allListings, setAllListings] = useState(listings);
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...emptyFilters,
     ...initialFilters,
   }));
-  const [activeRequest, setActiveRequest] = useState<
-    LivestockRequest | undefined
-  >();
+  // Per-viewer match scoring against the signed-in owner's open request is
+  // not wired to Supabase yet (demo persona scoring retired - see
+  // SPEC_DRIFT.md). Cards render without scores until that lands.
+  const [activeRequest] = useState<LivestockRequest | undefined>();
 
   useEffect(() => {
-    if (realAccount) {
-      void listSupabasePaddockListings().then(setAllListings);
-      return;
-    }
-    void listPaddockListings().then(setAllListings);
-    const sync = () => void listPaddockListings().then(setAllListings);
-    window.addEventListener("paddockme:prototype-change", sync);
-    return () => window.removeEventListener("paddockme:prototype-change", sync);
-  }, [realAccount]);
-
-  // Pick up the current persona's open request so the cards can score
-  // themselves against it. Only the livestock owner has a request to match
-  // against; landowners and drivers see the same cards without scores.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    function read() {
-      try {
-        const personaId =
-          window.localStorage.getItem("paddockme.agreements.persona") ??
-          window.localStorage.getItem("paddockme.profile.persona");
-        if (!personaId) {
-          setActiveRequest(undefined);
-          return;
-        }
-        const request = livestockRequests.find(
-          (r) => r.requesterId === personaId
-        );
-        setActiveRequest(request);
-      } catch {
-        setActiveRequest(undefined);
-      }
-    }
-    read();
-    window.addEventListener("paddockme:persona-change", read);
-    return () =>
-      window.removeEventListener("paddockme:persona-change", read);
+    void listSupabasePaddockListings().then(setAllListings);
   }, []);
 
   type Row = {
@@ -231,7 +192,6 @@ export function ListingsClient({
 
   return (
     <>
-      <PersonaIntroBanner page="listings" />
       <section
         aria-label="Filter paddocks"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-3 sm:p-4"
@@ -347,6 +307,7 @@ export function ListingsClient({
               matchScore={match?.score}
               matchReasons={match?.reasons}
               mapImageSrc={listing.photos?.[0] ?? getListingMapImageSrc(listing.id)}
+              requestId={requestId}
             />
           ))}
         </div>

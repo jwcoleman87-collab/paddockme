@@ -46,7 +46,7 @@ PaddockME turns agistment from phone tag into one coordinated workspace for live
 
 5. `/transport/transport-glenbarra`
    - Switch to `Driver Transporter (Wayne)`.
-   - Show driver/backload economics.
+   - Show Wayne seeing farmer-created RFT routes and the accepted Glenbarra run.
    - Switch to `Farmer A Livestock owner (Dale)`.
    - Open `Rate`.
    - Show `Rate accepted`.
@@ -67,7 +67,7 @@ PaddockME turns agistment from phone tag into one coordinated workspace for live
 
 10. `/runs`
    - Switch persona to Wayne first if needed.
-   - Show pipeline/backload story.
+   - Show the RFT pipeline: in motion, open RFTs, delivered.
 
 ## Say This About What Is Real
 

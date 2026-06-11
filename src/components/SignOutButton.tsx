@@ -39,14 +39,6 @@ export function SignOutButton() {
     setLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    try {
-      window.localStorage.removeItem("paddockme.agreements.persona");
-      window.localStorage.removeItem("paddockme.profile.persona");
-      document.cookie =
-        "paddockme_persona=; Max-Age=0; path=/; SameSite=Lax";
-    } catch {
-      // Signing out should still work if storage is unavailable.
-    }
     router.push("/sign-in");
     router.refresh();
   }

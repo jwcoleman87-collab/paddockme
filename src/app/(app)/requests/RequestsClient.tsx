@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Filter, MapPin, Truck, X } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
@@ -8,7 +8,6 @@ import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
-import { PersonaIntroBanner } from "@/components/PersonaIntroBanner";
 import { SelectablePill } from "@/components/SelectablePill";
 import { offerPaddockForRequest } from "@/lib/data/repositories";
 import { createClient } from "@/lib/supabase/client";
@@ -34,7 +33,7 @@ type Props = {
   /** All published paddock listings; the client filters to the active
    * persona's so the "Offer a paddock" picker lists only what they own. */
   paddockListings: PaddockListing[];
-  /** Supabase user id when signed in - used instead of the localStorage
+  /** Supabase user id when signed in - used instead of the old browser
    * persona so real landowners always see their own paddocks here. */
   currentUserId?: string;
 };
@@ -56,37 +55,13 @@ export function RequestsClient({
   const router = useRouter();
   const flash = useFlash();
   const [filters, setFilters] = useState<Filters>(empty);
-  const [activePersonaId, setActivePersonaId] = useState<string | undefined>();
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    function read() {
-      try {
-        return (
-          window.localStorage.getItem("paddockme.agreements.persona") ??
-          window.localStorage.getItem("paddockme.profile.persona") ??
-          undefined
-        );
-      } catch {
-        return undefined;
-      }
-    }
-    setActivePersonaId(read());
-    function onChange() {
-      setActivePersonaId(read());
-    }
-    window.addEventListener("paddockme:persona-change", onChange);
-    return () =>
-      window.removeEventListener("paddockme:persona-change", onChange);
-  }, []);
-
-  const ownerId = currentUserId ?? activePersonaId;
   const myPaddocks = useMemo(
     () =>
-      ownerId
-        ? paddockListings.filter((listing) => listing.ownerId === ownerId)
+      currentUserId
+        ? paddockListings.filter((listing) => listing.ownerId === currentUserId)
         : [],
-    [paddockListings, ownerId]
+    [paddockListings, currentUserId]
   );
 
   const stockOptions = useMemo(
@@ -170,8 +145,6 @@ export function RequestsClient({
 
   return (
     <>
-      <PersonaIntroBanner page="requests" />
-
       <section
         aria-label="Filter requests"
         className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"

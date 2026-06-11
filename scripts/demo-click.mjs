@@ -80,7 +80,7 @@ await step("Open transport room from workspace", async () => {
 await step("Driver view shows transport economics", async () => {
   await clickRole("radio", "Driver Transporter (Wayne)");
   await page.waitForFunction(() => document.body.textContent?.includes("Viewing as Wayne"));
-  await page.getByText("Possible backloads", { exact: false }).waitFor();
+  await page.getByText("Open RFTs nearby", { exact: false }).waitFor();
 });
 
 await step("Farmer A can open rate state", async () => {

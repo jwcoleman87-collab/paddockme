@@ -29,11 +29,13 @@ export function ListingCard({
   matchScore,
   matchReasons = [],
   mapImageSrc,
+  requestId,
 }: {
   listing: PaddockListing;
   matchScore?: number;
   matchReasons?: string[];
   mapImageSrc?: string;
+  requestId?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [openTile, setOpenTile] = useState<SignalKey | null>(null);
@@ -128,7 +130,7 @@ export function ListingCard({
             )}
           />
         </button>
-        <ButtonLink href={`/listings/${listing.id}?request=request-100-cattle`}>
+        <ButtonLink href={listingDetailHref(listing.id, requestId)}>
           View details
         </ButtonLink>
       </div>
@@ -142,6 +144,11 @@ export function ListingCard({
       )}
     </Card>
   );
+}
+
+function listingDetailHref(listingId: string, requestId?: string): string {
+  if (!requestId) return `/listings/${listingId}`;
+  return `/listings/${listingId}?request=${encodeURIComponent(requestId)}`;
 }
 
 function ExpandedDetails({ listing }: { listing: PaddockListing }) {

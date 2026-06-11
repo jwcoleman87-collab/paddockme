@@ -130,7 +130,6 @@ export function OnboardingClient() {
     if (submitting) return;
     setSubmitting(true);
     setSaveError(null);
-    persistOnboarding(state);
     try {
       await persistProfileToSupabase(state);
     } catch (error) {
@@ -645,18 +644,6 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function persistOnboarding(state: State) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(
-      "paddockme.onboarding",
-      JSON.stringify(state)
-    );
-  } catch {
-    // localStorage can throw in private modes or when over quota; ignore.
-  }
-}
-
 /**
  * If Supabase is configured AND the user is signed in, write the onboarding
  * answers to public.profiles. The handle_new_user trigger created the row
@@ -664,7 +651,7 @@ function persistOnboarding(state: State) {
  * view can match.
  *
  * Silently no-ops if env vars are missing, no user is signed in, or the
- * insert fails. The localStorage prototype path is unchanged.
+ * insert fails. There is no browser persistence fallback for these answers.
  */
 async function persistProfileToSupabase(state: State): Promise<void> {
   if (!isSupabaseConfigured()) return;

@@ -82,7 +82,7 @@ Acceptance criteria:
 - Agreement section agreement works for Dale and Brett via the party
   "Tap to agree" controls.
 - Transport tab opens the correct transport room. Automated in `npm run demo:click`.
-- Driver view shows a credible quote/backload moment. Automated in `npm run demo:click`.
+- Driver view shows a credible farmer RFT moment. Automated in `npm run demo:click`.
 - Farmer A can open the Rate tab and accept the driver's rate. Automated in `npm run demo:click`.
 - Inbox and snapshot are reachable without dead ends.
 - Brett can offer a paddock against an open request. Automated in `npm run demo:click`.

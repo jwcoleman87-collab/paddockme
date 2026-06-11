@@ -12,11 +12,16 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useFlash } from "@/components/FlashProvider";
 import {
   createTransportMessage,
+  getAgreementSettlementForTransportJob,
   getCurrentUserId,
   getTransportJobRecord,
   listTransportMessages,
+  listTransportMilestones,
   listTransportStatusEvents,
+  passTransportMilestone,
   updateTransportJobStatus,
+  type AgreementSettlementSummary,
+  type TransportMilestone,
 } from "@/lib/data/repositories";
 import { cn } from "@/lib/utils";
 import type { Message, TransportJob, TransportJobStatus } from "@/lib/dummyData";
@@ -65,8 +70,12 @@ export function RealTransportRoom({
   const [timeline, setTimeline] = useState<
     { title: string; detail: string; complete: boolean }[]
   >([]);
+  const [milestones, setMilestones] = useState<TransportMilestone[]>([]);
+  const [settlement, setSettlement] =
+    useState<AgreementSettlementSummary | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [settlementBusy, setSettlementBusy] = useState(false);
   const lastLocalMutationRef = useRef(0);
 
   useEffect(() => {
@@ -84,6 +93,12 @@ export function RealTransportRoom({
       });
       void listTransportStatusEvents(job.id).then((events) => {
         if (active) setTimeline(events);
+      });
+      void listTransportMilestones(job.id).then((nextMilestones) => {
+        if (active) setMilestones(nextMilestones);
+      });
+      void getAgreementSettlementForTransportJob(job.id).then((nextSettlement) => {
+        if (active) setSettlement(nextSettlement);
       });
       void listTransportMessages(job.id).then((serverMessages) => {
         if (!active || serverMessages.length === 0) return;
@@ -126,6 +141,20 @@ export function RealTransportRoom({
     viewerRole === "driver"
       ? STATUS_FLOW[STATUS_FLOW.indexOf(job.status) + 1] ?? null
       : null;
+  const nextMilestone = milestones.find((milestone) => milestone.status !== "passed");
+  const canPassMilestone =
+    viewerRole === "driver" &&
+    job.status === "in_transit" &&
+    !!nextMilestone &&
+    !["Loaded", "Departed", "Arriving", "Delivered"].includes(nextMilestone.label);
+
+  useEffect(() => {
+    if (job.status !== "completed") return;
+    if (viewerRole !== "farmerA" && viewerRole !== "farmerB") return;
+    if (settlement) return;
+    void ensureSettlement("ensure", false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job.status, viewerRole, settlement?.id]);
 
   async function setStatus(status: TransportJobStatus) {
     setUpdating(true);
@@ -138,6 +167,7 @@ export function RealTransportRoom({
         return;
       }
       setJob(updated);
+      void listTransportMilestones(job.id).then(setMilestones);
       lastLocalMutationRef.current = 0;
       flash(`Status updated: ${STATUS_LABELS[updated.status] ?? updated.status}.`, "success");
     } catch {
@@ -156,6 +186,55 @@ export function RealTransportRoom({
         setMessages((current) => [...current, saved]);
       }
     );
+  }
+
+  async function passNextMilestone() {
+    if (!nextMilestone) return;
+    setUpdating(true);
+    const saved = await passTransportMilestone({
+      jobId: job.id,
+      milestoneId: nextMilestone.id,
+    });
+    if (!saved) {
+      flash("Couldn't record that milestone. Please try again.", "warning");
+      setUpdating(false);
+      return;
+    }
+    setMilestones((current) =>
+      current.map((milestone) => (milestone.id === saved.id ? saved : milestone))
+    );
+    flash(`${saved.label} recorded. Farmers can see it now.`, "success");
+    setUpdating(false);
+  }
+
+  async function ensureSettlement(
+    action: "ensure" | "mark_settled",
+    showFlash = true
+  ) {
+    setSettlementBusy(true);
+    const response = await fetch("/api/payments/agistment-settlement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transportJobId: job.id, action }),
+    });
+    if (!response.ok) {
+      if (showFlash) {
+        flash("Couldn't update settlement. Please try again.", "warning");
+      }
+      setSettlementBusy(false);
+      return;
+    }
+    const nextSettlement = await getAgreementSettlementForTransportJob(job.id);
+    setSettlement(nextSettlement);
+    if (showFlash) {
+      flash(
+        action === "mark_settled"
+          ? "Settlement marked as settled."
+          : "Settlement record opened.",
+        "success"
+      );
+    }
+    setSettlementBusy(false);
   }
 
   return (
@@ -220,6 +299,14 @@ export function RealTransportRoom({
               </div>
 
               <StatusStepper status={job.status} />
+
+              <MilestoneTimeline
+                milestones={milestones}
+                canPassMilestone={canPassMilestone}
+                nextMilestoneLabel={nextMilestone?.label}
+                updating={updating}
+                onPassMilestone={passNextMilestone}
+              />
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {canAccept && (
@@ -295,6 +382,16 @@ export function RealTransportRoom({
               )}
             </Card>
 
+            {job.status === "completed" && (
+              <SettlementCard
+                viewerRole={viewerRole}
+                settlement={settlement}
+                busy={settlementBusy}
+                onOpen={() => ensureSettlement("ensure")}
+                onSettle={() => ensureSettlement("mark_settled")}
+              />
+            )}
+
             <Card className="border-sage-deep/10 bg-cream/55">
               <div className="flex items-start gap-2.5">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sage-deep" aria-hidden />
@@ -358,4 +455,187 @@ function StatusStepper({ status }: { status: TransportJobStatus }) {
       })}
     </ol>
   );
+}
+
+function MilestoneTimeline({
+  milestones,
+  canPassMilestone,
+  nextMilestoneLabel,
+  updating,
+  onPassMilestone,
+}: {
+  milestones: TransportMilestone[];
+  canPassMilestone: boolean;
+  nextMilestoneLabel?: string;
+  updating: boolean;
+  onPassMilestone: () => void;
+}) {
+  if (milestones.length === 0) {
+    return (
+      <div className="mt-4 rounded-2xl border border-sage-mist bg-cream/70 p-3">
+        <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
+        <p className="mt-1 text-sm text-bark/70">
+          Milestones will appear once the RFT is accepted. The timeline stays
+          useful even when live GPS is patchy.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="mt-4 rounded-2xl border border-sage-mist bg-cream/70 p-3" aria-label="Transport milestone timeline">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
+          <p className="text-xs font-semibold text-bark/60">
+            Passed milestones light up; the current leg stays clear even without GPS.
+          </p>
+        </div>
+        {canPassMilestone && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onPassMilestone}
+            disabled={updating}
+            className="min-h-10"
+          >
+            <CheckCircle className="h-4 w-4" aria-hidden />
+            {updating ? "Recording..." : `Passed ${nextMilestoneLabel}`}
+          </Button>
+        )}
+      </div>
+      <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+        {milestones.map((milestone) => {
+          const passed = milestone.status === "passed";
+          return (
+            <li
+              key={milestone.id}
+              className={cn(
+                "min-h-20 rounded-xl border p-3",
+                passed
+                  ? "border-sage/40 bg-sage-mist text-sage-deep"
+                  : "border-mist bg-warm-white text-bark/65"
+              )}
+            >
+              <div className="flex items-start gap-2">
+                <span
+                  className={cn(
+                    "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-bold",
+                    passed
+                      ? "border-sage-deep bg-sage-deep text-cream"
+                      : "border-mist bg-cream text-stone"
+                  )}
+                >
+                  {milestone.sortOrder}
+                </span>
+                <div>
+                  <p className="text-sm font-bold">{milestone.label}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed">
+                    {passed && milestone.passedAt
+                      ? `Passed ${relativeTime(milestone.passedAt)}.`
+                      : milestone.description}
+                  </p>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+function SettlementCard({
+  viewerRole,
+  settlement,
+  busy,
+  onOpen,
+  onSettle,
+}: {
+  viewerRole: ViewerRole;
+  settlement: AgreementSettlementSummary | null;
+  busy: boolean;
+  onOpen: () => void;
+  onSettle: () => void;
+}) {
+  if (viewerRole === "driver") {
+    return (
+      <Card className="border-sage-mist bg-cream/60">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-sage-deep">
+          Farmer settlement
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-bark/70">
+          This movement is complete. Agistment settlement is handled between the
+          livestock owner and landowner, separate from carrier pricing.
+        </p>
+      </Card>
+    );
+  }
+
+  if (viewerRole !== "farmerA" && viewerRole !== "farmerB") return null;
+
+  const settled = settlement?.status === "payment_recorded";
+  return (
+    <Card className="border-ochre/40 bg-ochre-light/45">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-sage-deep">
+            Final settlement
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-bark/75">
+            Online payments are launching soon. Settle directly for now; the
+            amount and outcome still stay on the agreement record.
+          </p>
+        </div>
+        <StatusBadge tone={settled ? "success" : "warning"}>
+          {settled ? "Settled" : "Awaiting settlement"}
+        </StatusBadge>
+      </div>
+      {settlement ? (
+        <div className="mt-3 rounded-xl border border-ochre/30 bg-warm-white p-3">
+          <p className="text-lg font-bold text-bark">
+            {formatMoney(settlement.amountCents, settlement.currency)}
+          </p>
+          <p className="mt-1 text-sm text-bark/70">{settlement.description}</p>
+        </div>
+      ) : (
+        <p className="mt-3 text-sm font-semibold text-bark/70">
+          Open the settlement record to calculate what is owed from the
+          agreement terms.
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {!settlement && (
+          <Button type="button" onClick={onOpen} disabled={busy}>
+            {busy ? "Opening..." : "Open settlement record"}
+          </Button>
+        )}
+        {settlement && !settled && (
+          <Button type="button" onClick={onSettle} disabled={busy}>
+            {busy ? "Recording..." : "Mark settled directly"}
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function formatMoney(amountCents: number, currency: string) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: amountCents % 100 === 0 ? 0 : 2,
+  }).format(amountCents / 100);
+}
+
+function relativeTime(iso: string) {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "recently";
+  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }

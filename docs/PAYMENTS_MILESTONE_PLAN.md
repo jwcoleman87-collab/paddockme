@@ -126,7 +126,7 @@ Acceptance:
 
 Goal: let the livestock owner pay an accepted transport quote in Stripe test mode.
 
-Status: in progress. The app now has a hosted Stripe Checkout route, a verified webhook route, and safe UI fallback when Stripe env vars are not configured.
+Status: in progress. The app now has a hosted Stripe Checkout route, a verified webhook route, and a no-money sandbox checkout fallback when Stripe env vars are not configured.
 
 Learn:
 
@@ -141,6 +141,7 @@ Build:
 - Success/cancel return routes.
 - Webhook endpoint that verifies signatures and updates `payment_events` idempotently.
 - Test-mode environment variable documentation.
+- Sandbox checkout page for preview/demo builds where Stripe keys are not ready yet.
 
 Test:
 
@@ -148,14 +149,16 @@ Test:
 - Cancel path leaves payable awaiting payment.
 - Duplicate webhook does not duplicate events.
 - Build and smoke path, including `npm run payments:smoke`.
+- Sandbox fallback path with no card collection and clear no-funds-moving copy.
 
 Deploy:
 
-- Preview deploy with Stripe test-mode env vars configured.
+- Preview deploy with sandbox checkout now; repeat with Stripe test-mode env vars when the account is ready.
 
 Acceptance:
 
 - Dale can pay a transport payable in test mode.
+- Dale can walk the full no-money payment journey before Stripe is configured.
 - The transport room updates from webhook-backed state.
 - Wayne sees payment received, not payout complete.
 

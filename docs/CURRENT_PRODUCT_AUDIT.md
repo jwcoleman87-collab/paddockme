@@ -329,7 +329,7 @@ Browser click rehearsal currently checks:
 - Dale can agree the rate section.
 - Brett can agree the same section.
 - `Open transport room` opens `/transport/transport-glenbarra`.
-- Wayne's driver view shows the transport/backload economics.
+- Wayne's driver view shows farmer-created transport RFTs and accepted runs.
 - Farmer A can open the rate state and see `Rate accepted`.
 - Brett can open the `Pick a paddock to offer` picker.
 - Wayne's `/runs` pipeline is reachable.
