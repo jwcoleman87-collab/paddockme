@@ -10,6 +10,7 @@ import {
   getTransportJobRecord,
   listTransportMessages,
 } from "@/lib/data/repositories";
+import { RealTransportRoom } from "./RealTransportRoom";
 import { TransportClient } from "./TransportClient";
 
 function formatTransportStatus(status: TransportJob["status"]): string {
@@ -72,9 +73,12 @@ export function TransportRouteClient({
         title={job.routeSummary}
         description={`${job.livestockCount} from ${job.pickup} to ${job.destination}. Pickup ${job.preferredDate}. Driver: ${job.driver}. Agistment rate stays hidden from the driver.`}
         action={
-          // The /map page only renders seed data for demo visitors - hide the
-          // button for real (uuid) jobs so it doesn't dead-end.
-          isUuid(job.id) ? undefined : (
+          isUuid(job.id) ? (
+            <ButtonLink href={`/map?transport=${job.id}`} variant="secondary">
+              <Map className="h-4 w-4" aria-hidden />
+              Route map
+            </ButtonLink>
+          ) : (
             <ButtonLink href={`/map?mode=driver&transport=${job.id}&driver=${job.driverId}`} variant="secondary">
               <Map className="h-4 w-4" aria-hidden />
               Driver map
@@ -82,7 +86,13 @@ export function TransportRouteClient({
           )
         }
       />
-      <TransportClient job={job} messages={messages} />
+      {isUuid(job.id) ? (
+        // Real jobs get the live three-party room - role detected from the
+        // signed-in account, no demo role switcher or seed content.
+        <RealTransportRoom job={job} messages={messages} />
+      ) : (
+        <TransportClient job={job} messages={messages} />
+      )}
     </>
   );
 }

@@ -447,6 +447,53 @@ export function WorkspaceClient({
         );
       }
     }
+
+    // Pulling an agree tick off a finalised agreement reopens negotiation.
+    const withdrewAgreement =
+      (previous.agreedByA && !next.agreedByA) ||
+      (previous.agreedByB && !next.agreedByB);
+    if (withdrewAgreement) {
+      const section = agreement.sections.find((s) => s.id === sectionId);
+      demoteLifecycleIfFinalised(
+        `${partyProfile[viewerParty].label} withdrew agreement on "${section?.label ?? sectionId}".`
+      );
+    }
+  };
+
+  /**
+   * A finalised agreement (Ready to finalise / Active / Completed) drops
+   * back to Negotiating the moment either party changes a section or pulls
+   * their agree tick - "Completed" must never sit next to an unagreed
+   * section. Both screens pick the change up via the status poll.
+   */
+  const demoteLifecycleIfFinalised = (reason: string) => {
+    const from = lifecycleState;
+    if (from !== "Ready to finalise" && from !== "Active" && from !== "Completed") {
+      return;
+    }
+    const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
+    lastLocalMutationRef.current = Date.now();
+    setLifecycleState("Negotiating");
+    setLifecycleHistory((history) => [
+      ...history,
+      {
+        at: nowLabel(),
+        from,
+        to: "Negotiating",
+        byParty,
+        note: reason,
+      },
+    ]);
+    if (isRealWorkspace) {
+      void updateAgreementStatusRecord(agreement.id, "Negotiating");
+    }
+    appendSystemMessage(
+      `Agreement moved from ${from} back to Negotiating - ${reason}`
+    );
+    flash(
+      "The agreement is back in Negotiating until both parties re-agree.",
+      "warning"
+    );
   };
 
   const editSectionValue = (sectionId: string, value: string) => {
@@ -481,6 +528,9 @@ export function WorkspaceClient({
     appendSystemMessage(
       `${partyProfile[viewerParty].label} updated "${section?.label ?? sectionId}". Both parties need to re-confirm this section.`,
       sectionId
+    );
+    demoteLifecycleIfFinalised(
+      `"${section?.label ?? sectionId}" was edited after finalisation.`
     );
   };
 
