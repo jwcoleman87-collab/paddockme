@@ -120,6 +120,9 @@ export function WorkspaceClient({
   // reload - "James typed a message and nothing came through for Leona".
   // Poll every few seconds and merge, keeping any local-only/system messages.
   const lastLocalMutationRef = useRef(0);
+  // One-shot guard so the self-healing demotion below doesn't repeat the
+  // database write and system message on every poll.
+  const autoDemotedRef = useRef(false);
   useEffect(() => {
     if (!isRealWorkspace) return;
     let active = true;
@@ -336,8 +339,27 @@ export function WorkspaceClient({
             );
           })
         );
+        // Self-healing guard: a finalised status must never coexist with a
+        // section both parties haven't agreed (covers agreements finalised
+        // before the demote-on-edit rule existed).
+        const finalised =
+          live.status === "Ready to finalise" ||
+          live.status === "Active" ||
+          live.status === "Completed";
+        const hasUnagreedSection = live.sections.some(
+          (section) => !(section.agreedByA && section.agreedByB)
+        );
+        const effectiveStatus =
+          finalised && hasUnagreedSection ? "Negotiating" : live.status;
+        if (effectiveStatus !== live.status && !autoDemotedRef.current) {
+          autoDemotedRef.current = true;
+          void updateAgreementStatusRecord(agreement.id, "Negotiating");
+          appendSystemMessage(
+            `Agreement moved from ${live.status} back to Negotiating - a section is awaiting agreement from both parties.`
+          );
+        }
         setLifecycleState((current) =>
-          current === live.status ? current : live.status
+          current === effectiveStatus ? current : effectiveStatus
         );
       });
     };
