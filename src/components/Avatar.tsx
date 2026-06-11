@@ -36,7 +36,7 @@ type AvatarProps = {
  * the name's initials in a sage chip when src is missing or fails to load.
  *
  * Image errors are swallowed silently and the initials show instead - so a
- * missing /avatars/dale.jpg doesn't break the page.
+ * missing an avatar image doesn't break the page.
  */
 export function Avatar({
   name,

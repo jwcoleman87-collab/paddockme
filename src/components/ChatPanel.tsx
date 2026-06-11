@@ -168,7 +168,6 @@ function MessageBubble({
     <article
       className={cn(
         "rounded-2xl border px-4 py-3.5 shadow-[0_8px_22px_rgba(34,84,52,0.04)] transition",
-        tone === "farmer-b" && "border-sage-deep/12 bg-sage-mist/65",
         tone === "system" && "border-amber/25 bg-amber-light/70",
         tone === "default" && "border-mist bg-warm-white",
         dimmed && "opacity-55"
@@ -206,7 +205,7 @@ function MessageBubble({
   );
 }
 
-function getMessageTone(message: Message): "farmer-b" | "system" | "default" {
+function getMessageTone(message: Message): "system" | "default" {
   if (
     message.senderId === "system" ||
     message.senderRole.toLowerCase().includes("system")
@@ -214,9 +213,6 @@ function getMessageTone(message: Message): "farmer-b" | "system" | "default" {
     return "system";
   }
 
-  if (message.senderId === "farmer-b") {
-    return "farmer-b";
-  }
 
   return "default";
 }

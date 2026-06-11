@@ -5,43 +5,12 @@ export type Coordinate = {
   region?: string;
 };
 
+/**
+ * Neutral representative coordinates for Australian agistment regions.
+ * Used only as REGION-LEVEL fallbacks when a row has no real geocoded
+ * location. (The legacy demo-persona keys were retired with demo mode.)
+ */
 export const mapCoordinates = {
-  dale: {
-    latitude: -33.835,
-    longitude: 148.697,
-    label: "Central West property",
-    region: "Central West NSW",
-  },
-  brett: {
-    latitude: -35.066,
-    longitude: 148.105,
-    label: "Glenbarra River Paddocks",
-    region: "Southern NSW",
-  },
-  tash: {
-    latitude: -32.926,
-    longitude: 151.781,
-    label: "Hunter agistment search area",
-    region: "Hunter NSW",
-  },
-  lyn: {
-    latitude: -30.514,
-    longitude: 151.665,
-    label: "Whitfield Family Block",
-    region: "Northern Tablelands NSW",
-  },
-  wayne: {
-    latitude: -35.115,
-    longitude: 147.367,
-    label: "Carrier base",
-    region: "Riverina NSW",
-  },
-  sharon: {
-    latitude: -28.546,
-    longitude: 150.306,
-    label: "Fleet carrier depot",
-    region: "Goondiwindi QLD",
-  },
   cowra: {
     latitude: -33.835,
     longitude: 148.697,
@@ -54,17 +23,35 @@ export const mapCoordinates = {
     label: "Gundagai",
     region: "Southern NSW",
   },
-  gippsland: {
-    latitude: -37.825,
-    longitude: 147.63,
-    label: "Gippsland",
-    region: "Gippsland VIC",
+  waggaWagga: {
+    latitude: -35.115,
+    longitude: 147.367,
+    label: "Wagga Wagga",
+    region: "Riverina NSW",
+  },
+  newcastle: {
+    latitude: -32.926,
+    longitude: 151.781,
+    label: "Newcastle",
+    region: "Hunter NSW",
   },
   armidale: {
     latitude: -30.514,
     longitude: 151.665,
     label: "Armidale",
     region: "Northern Tablelands NSW",
+  },
+  goondiwindi: {
+    latitude: -28.546,
+    longitude: 150.306,
+    label: "Goondiwindi",
+    region: "Goondiwindi QLD",
+  },
+  gippsland: {
+    latitude: -37.825,
+    longitude: 147.63,
+    label: "Gippsland",
+    region: "Gippsland VIC",
   },
   seQld: {
     latitude: -27.56,
@@ -78,15 +65,15 @@ const regionCoordinateLookup: Record<string, Coordinate> = {
   "Central West": mapCoordinates.cowra,
   "Central West NSW": mapCoordinates.cowra,
   "Southern NSW": mapCoordinates.gundagai,
-  "Riverina NSW": mapCoordinates.wayne,
+  "Riverina NSW": mapCoordinates.waggaWagga,
   "Northern NSW": mapCoordinates.armidale,
   "Northern Tablelands NSW": mapCoordinates.armidale,
-  "Hunter NSW": mapCoordinates.tash,
+  "Hunter NSW": mapCoordinates.newcastle,
   Gippsland: mapCoordinates.gippsland,
   "Gippsland VIC": mapCoordinates.gippsland,
   "SE QLD": mapCoordinates.seQld,
-  "Darling Downs QLD": mapCoordinates.sharon,
-  "Goondiwindi QLD": mapCoordinates.sharon,
+  "Darling Downs QLD": mapCoordinates.goondiwindi,
+  "Goondiwindi QLD": mapCoordinates.goondiwindi,
   "Maranoa QLD": {
     latitude: -26.573,
     longitude: 148.787,

@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import type { CurrentUserProfile } from "@/lib/supabase/currentUser";
 
 /**
- * Production profile view. The demo persona browser (Dale/Brett/Wayne role
+ * Production profile view. The demo persona browser (role
  * switching) is retired with demo mode; this renders the signed-in user's
  * live profile record only. Public profile mode (spec §6.14) is a future
  * brief - logged in SPEC_DRIFT.md.

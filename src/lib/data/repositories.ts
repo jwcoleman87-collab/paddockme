@@ -1,10 +1,6 @@
 "use client";
 
 import {
-  agreements,
-  farmers,
-  paddockListings,
-  transportJobs,
   type Agreement,
   type AgreementArtefact,
   type AgreementLifecycleEvent,
@@ -29,10 +25,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Json, Tables, TablesInsert, TablesUpdate } from "@/lib/types/database";
 
-export type PersonaId = "farmer-a" | "farmer-b" | "driver-1" | "driver-2";
-
 export type RepositoryState = {
-  selectedPersona: PersonaId;
   livestockRequests: LivestockRequest[];
   paddockListings: PaddockListing[];
   agreements: Agreement[];
@@ -46,15 +39,8 @@ export type RepositoryState = {
   }>;
 };
 
-export async function repositoryMode(): Promise<"supabase" | "offline"> {
-  return (await getAuthedClient()) ? "supabase" : "offline";
-}
-
-function emptyRepositoryState(
-  selectedPersona: PersonaId = "farmer-a"
-): RepositoryState {
+function emptyRepositoryState(): RepositoryState {
   return {
-    selectedPersona,
     livestockRequests: [],
     paddockListings: [],
     agreements: [],
@@ -74,7 +60,6 @@ export async function listProfiles(): Promise<Farmer[]> {
 
 function mapProfileRow(row: Tables<"profiles">): Farmer {
   return {
-    ...farmers[0],
     id: row.id,
     name: row.full_name ?? "PaddockME user",
     region: row.regions?.[0] ?? "Australia",
@@ -98,13 +83,6 @@ function mapProfileRow(row: Tables<"profiles">): Farmer {
   };
 }
 
-function mergeProfiles(primary: Farmer[], fallback: Farmer[]): Farmer[] {
-  const byId = new Map<string, Farmer>();
-  for (const profile of fallback) byId.set(profile.id, profile);
-  for (const profile of primary) byId.set(profile.id, profile);
-  return Array.from(byId.values());
-}
-
 export async function listLivestockRequests(): Promise<LivestockRequest[]> {
   const supabase = await getAuthedClient();
   if (!supabase) return [];
@@ -115,18 +93,6 @@ export async function listLivestockRequests(): Promise<LivestockRequest[]> {
   if (error || !data) return [];
   return data.map(mapRequestRow);
 }
-
-function mergeRequests(primary: LivestockRequest[], fallback: LivestockRequest[]) {
-  const byId = new Map<string, LivestockRequest>();
-  for (const request of fallback) byId.set(request.id, request);
-  for (const request of primary) byId.set(request.id, request);
-  return Array.from(byId.values());
-}
-
-export function selectPersona(persona: PersonaId): RepositoryState {
-  return emptyRepositoryState(persona);
-}
-
 
 export async function createLivestockRequestRecord(input: {
   stockType: string;
@@ -186,7 +152,7 @@ export async function listPaddockListings(): Promise<PaddockListing[]> {
 /**
  * Strictly Supabase-backed paddock listings, no prototype fallback. Used by
  * surfaces gated behind a real signed-in account (e.g. `/listings`) where we
- * never want to leak the Dale/Brett seed paddocks to a live customer.
+ * never want to leak retired demo-seed paddocks to a live customer.
  */
 export async function listSupabasePaddockListings(): Promise<PaddockListing[]> {
   const supabase = await getAuthedClient();
@@ -1167,7 +1133,7 @@ async function findOrCreateSupabaseAgreement(
       transport_required: true,
       pickup_address: request.origin_address ?? "Pickup address to confirm",
       destination_address: listing.address ?? listing.title,
-      pickup_location: pointToWkt(parseCoordinate(request.location, mapCoordinates.dale)),
+      pickup_location: pointToWkt(parseCoordinate(request.location, mapCoordinates.cowra)),
       destination_location: pointToWkt(parseCoordinate(listing.location, coordinateForRegion(listing.region))),
       status: "Draft",
       alignment_state: { source: "mvp_build_03" },
@@ -1412,7 +1378,7 @@ async function mapAgreementRow(
         ? `${row.head_count} head`
         : "Livestock",
     duration: request?.duration ?? (row.duration_months ? `${row.duration_months} months` : "Discuss"),
-    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.dale) : mapCoordinates.dale),
+    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.cowra) : mapCoordinates.cowra),
     destinationLocation: parseCoordinate(row.destination_location, listing ? parseCoordinate(listing.location, coordinateForRegion(listing.region)) : mapCoordinates.gundagai),
     feed: listing?.pasture_type ?? "Discuss",
     water: listing?.water_type?.[0] ?? "Discuss",
@@ -1616,31 +1582,33 @@ async function mapTransportJobRow(
       : row.route_summary;
 
   return {
-    ...transportJobs[0],
     id: row.id,
     agreementId: row.agreement_id,
     farmerAId: row.livestock_owner_id,
     farmerBId: row.landowner_id,
     farmerAName,
     farmerBName,
-    driverId: row.driver_id ?? "driver-1",
+    driverId: row.driver_id ?? "",
     pickup,
     destination,
-    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.dale) : mapCoordinates.dale),
+    pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.cowra) : mapCoordinates.cowra),
     destinationLocation: parseCoordinate(row.destination_location, listing ? parseCoordinate(listing.location, coordinateForRegion(listing.region)) : mapCoordinates.gundagai),
-    currentLocation: parseCoordinate(row.current_location, parseCoordinate(row.pickup_location, mapCoordinates.dale)),
-    pickupRegion: request ? undefined : transportJobs[0].pickupRegion,
-    destinationRegion: listing?.region ?? transportJobs[0].destinationRegion,
+    currentLocation: parseCoordinate(row.current_location, parseCoordinate(row.pickup_location, mapCoordinates.cowra)),
+    pickupRegion: undefined,
+    destinationRegion: listing?.region,
     livestockCount,
     preferredDate: row.preferred_date ?? "Date to confirm",
     driver: driverName,
     status: normaliseTransportStatus(row.status),
     routeSummary,
     agreementContext: {
-      duration: request?.duration ?? (agreement?.duration_months ? `${agreement.duration_months} months` : transportJobs[0].agreementContext.duration),
-      weeksRemaining: transportJobs[0].agreementContext.weeksRemaining,
-      agreementStatus: agreement?.status ?? transportJobs[0].agreementContext.agreementStatus,
+      duration: request?.duration ?? (agreement?.duration_months ? `${agreement.duration_months} months` : "Duration to confirm"),
+      weeksRemaining: 0,
+      agreementStatus: agreement?.status ?? "Draft",
     },
+    sections: [],
+    artefacts: [],
+    timeline: [],
     quotes: [],
     acceptedQuoteId: row.accepted_quote_id ?? undefined,
   };
