@@ -448,6 +448,8 @@ export type AgreementRoute = {
   status: string;
   from: MapPoint | null;
   to: MapPoint | null;
+  fromAddress: string | null;
+  toAddress: string | null;
 };
 
 export async function listAgreementRoutesForUserServer(): Promise<AgreementRoute[]> {
@@ -460,7 +462,7 @@ export async function listAgreementRoutesForUserServer(): Promise<AgreementRoute
     if (!user) return [];
     const { data, error } = await supabase
       .from("agreements")
-      .select("id, status, pickup_location, destination_location")
+      .select("id, status, pickup_address, destination_address, pickup_location, destination_location")
       .or(`livestock_owner_id.eq.${user.id},landowner_id.eq.${user.id}`)
       .order("updated_at", { ascending: false });
     if (error || !data) return [];
@@ -469,6 +471,8 @@ export async function listAgreementRoutesForUserServer(): Promise<AgreementRoute
       status: row.status ?? "Draft",
       from: toMapPoint(row.pickup_location),
       to: toMapPoint(row.destination_location),
+      fromAddress: row.pickup_address ?? null,
+      toAddress: row.destination_address ?? null,
     }));
   } catch {
     return [];

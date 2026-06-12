@@ -66,6 +66,8 @@ export default async function MapPage({
       href: `/workspace/${route.id}`,
       from: route.from,
       to: route.to,
+      fromAddress: route.fromAddress,
+      toAddress: route.toAddress,
       tone: "active",
     });
   }
@@ -78,6 +80,8 @@ export default async function MapPage({
       href: `/transport/${job.id}`,
       from: job.pickupPoint,
       to: job.destinationPoint,
+      fromAddress: job.pickup,
+      toAddress: job.destination,
       tone: job.status === "available" ? "available" : "active",
     });
   }

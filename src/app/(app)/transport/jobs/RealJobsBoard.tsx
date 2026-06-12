@@ -38,6 +38,8 @@ export function RealJobsBoard({
       href: `/transport/${job.id}`,
       from: job.pickupPoint!,
       to: job.destinationPoint!,
+      fromAddress: job.pickup,
+      toAddress: job.destination,
       tone: job.status === "available" ? ("available" as const) : ("active" as const),
     }));
 

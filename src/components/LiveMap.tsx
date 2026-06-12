@@ -6,7 +6,7 @@ import { GOOGLE_MAPS_API_KEY } from "@/lib/googleMapsKey";
 
 /**
  * Lean Google Map for REAL data only (no demo/prototype coupling):
- * pins for paddocks, geodesic lines for transport/agreement routes.
+ * pins for paddocks, Google driving directions for transport/agreement routes.
  * Click a pin or route to get a small info window with a link.
  */
 export type LiveMapMarker = {
@@ -25,6 +25,8 @@ export type LiveMapRoute = {
   href?: string;
   from: { latitude: number; longitude: number };
   to: { latitude: number; longitude: number };
+  fromAddress?: string | null;
+  toAddress?: string | null;
   /** "available" routes render amber (waiting for a carrier); "active" sage. */
   tone?: "available" | "active";
 };
@@ -63,7 +65,7 @@ export function LiveMap({
     setOptions({ key: GOOGLE_MAPS_API_KEY, v: "weekly" });
     const guard = window.setTimeout(() => setFailed(true), 8000);
 
-    void importLibrary("maps")
+    void Promise.all([importLibrary("maps"), importLibrary("routes")])
       .then(() => {
         window.clearTimeout(guard);
         if (cancelled || !containerRef.current) return;
@@ -125,13 +127,14 @@ export function LiveMap({
           const from = { lat: route.from.latitude, lng: route.from.longitude };
           const to = { lat: route.to.latitude, lng: route.to.longitude };
           const isFocused = focusRouteId === route.id;
-          const line = new google.maps.Polyline({
+          const routeOverlays = drawFallbackRoute({
             map,
-            path: [from, to],
-            geodesic: true,
-            strokeColor: colour,
-            strokeOpacity: isFocused ? 1 : 0.75,
-            strokeWeight: isFocused ? 5 : 3,
+            route,
+            from,
+            to,
+            colour,
+            isFocused,
+            openInfo,
           });
           const endpoint = new google.maps.Marker({
             map,
@@ -146,11 +149,22 @@ export function LiveMap({
               route.subtitle,
               route.href
             );
-          line.addListener("click", clickHandler);
           endpoint.addListener("click", clickHandler);
-          overlays.push(line, endpoint);
+          overlays.push(...routeOverlays, endpoint);
           bounds.extend(from);
           bounds.extend(to);
+          void drawDrivingRoute({
+            map,
+            route,
+            from,
+            to,
+            colour,
+            isFocused,
+            openInfo,
+            fallbackOverlays: routeOverlays,
+            overlays,
+            bounds,
+          });
           if (isFocused) {
             window.setTimeout(clickHandler, 400);
           }
@@ -203,6 +217,114 @@ export function LiveMap({
       className={`w-full overflow-hidden rounded-2xl border border-sage-deep/15 ${heightClassName}`}
       aria-label="Live map"
     />
+  );
+}
+
+function drawFallbackRoute({
+  map,
+  route,
+  from,
+  to,
+  colour,
+  isFocused,
+  openInfo,
+}: {
+  map: google.maps.Map;
+  route: LiveMapRoute;
+  from: google.maps.LatLngLiteral;
+  to: google.maps.LatLngLiteral;
+  colour: string;
+  isFocused: boolean;
+  openInfo: (
+    anchor: google.maps.LatLng,
+    title: string,
+    subtitle?: string,
+    href?: string
+  ) => void;
+}): google.maps.Polyline[] {
+  const line = new google.maps.Polyline({
+    map,
+    path: [from, to],
+    geodesic: true,
+    strokeColor: colour,
+    strokeOpacity: isFocused ? 0.55 : 0.35,
+    strokeWeight: isFocused ? 4 : 2,
+  });
+  line.addListener("click", () =>
+    openInfo(new google.maps.LatLng(to), route.title, route.subtitle, route.href)
+  );
+  return [line];
+}
+
+function drawDrivingRoute({
+  map,
+  route,
+  from,
+  to,
+  colour,
+  isFocused,
+  openInfo,
+  fallbackOverlays,
+  overlays,
+  bounds,
+}: {
+  map: google.maps.Map;
+  route: LiveMapRoute;
+  from: google.maps.LatLngLiteral;
+  to: google.maps.LatLngLiteral;
+  colour: string;
+  isFocused: boolean;
+  openInfo: (
+    anchor: google.maps.LatLng,
+    title: string,
+    subtitle?: string,
+    href?: string
+  ) => void;
+  fallbackOverlays: google.maps.Polyline[];
+  overlays: { setMap: (map: google.maps.Map | null) => void }[];
+  bounds: google.maps.LatLngBounds;
+}) {
+  const service = new google.maps.DirectionsService();
+  const renderer = new google.maps.DirectionsRenderer({
+    map,
+    suppressMarkers: true,
+    preserveViewport: true,
+    polylineOptions: {
+      strokeColor: colour,
+      strokeOpacity: isFocused ? 1 : 0.85,
+      strokeWeight: isFocused ? 5 : 4,
+    },
+  });
+
+  service.route(
+    {
+      origin: route.fromAddress || from,
+      destination: route.toAddress || to,
+      travelMode: google.maps.TravelMode.DRIVING,
+      region: "AU",
+    },
+    (result, status) => {
+      if (status !== google.maps.DirectionsStatus.OK || !result) {
+        renderer.setMap(null);
+        return;
+      }
+      for (const overlay of fallbackOverlays) overlay.setMap(null);
+      renderer.setDirections(result);
+      overlays.push(renderer);
+      const leg = result.routes[0]?.legs[0];
+      if (leg?.start_location) bounds.extend(leg.start_location);
+      if (leg?.end_location) bounds.extend(leg.end_location);
+      const routePath = result.routes[0]?.overview_path;
+      routePath?.forEach((point) => bounds.extend(point));
+      map.fitBounds(bounds, 48);
+
+      const clickListener = renderer.addListener("click", () =>
+        openInfo(new google.maps.LatLng(to), route.title, route.subtitle, route.href)
+      );
+      overlays.push({
+        setMap: () => google.maps.event.removeListener(clickListener),
+      });
+    }
   );
 }
 
