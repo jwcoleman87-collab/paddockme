@@ -104,6 +104,15 @@ export function parseCoordinate(value: unknown, fallback?: Coordinate): Coordina
         region: fallback?.region,
       };
     }
+    const parsedHexPoint = parsePostgisPointHex(value);
+    if (parsedHexPoint) {
+      return {
+        longitude: parsedHexPoint.longitude,
+        latitude: parsedHexPoint.latitude,
+        label: fallback?.label ?? "Mapped location",
+        region: fallback?.region,
+      };
+    }
   }
   if (typeof value === "object" && !Array.isArray(value)) {
     const candidate = value as { coordinates?: unknown; latitude?: unknown; longitude?: unknown };
@@ -132,4 +141,30 @@ export function parseCoordinate(value: unknown, fallback?: Coordinate): Coordina
     }
   }
   return fallback;
+}
+
+function parsePostgisPointHex(value: string):
+  | { latitude: number; longitude: number }
+  | null {
+  const hex = value.trim();
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length < 42 || hex.length % 2 !== 0) {
+    return null;
+  }
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  const view = new DataView(bytes.buffer);
+  const littleEndian = view.getUint8(0) === 1;
+  const type = view.getUint32(1, littleEndian);
+  const geometryType = type & 0xff;
+  if (geometryType !== 1) return null;
+  let offset = 5;
+  const hasSrid = (type & 0x20000000) !== 0;
+  if (hasSrid) offset += 4;
+  if (bytes.length < offset + 16) return null;
+  const longitude = view.getFloat64(offset, littleEndian);
+  const latitude = view.getFloat64(offset + 8, littleEndian);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude };
 }

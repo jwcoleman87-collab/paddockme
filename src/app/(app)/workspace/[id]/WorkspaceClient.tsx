@@ -297,48 +297,51 @@ export function WorkspaceClient({
     // Guard - the panel only renders the viewer's own button as
     // interactive, but defend against rogue calls just in case.
     if (party !== viewerParty) return;
-    const previous = sectionState[sectionId] ?? {
-      agreedByA: false,
-      agreedByB: false,
-    };
-    const next: SectionAgreementState =
-      party === "A"
-        ? { ...previous, agreedByA: !previous.agreedByA }
-        : { ...previous, agreedByB: !previous.agreedByB };
     lastLocalMutationRef.current = Date.now();
-    setSectionState((current) => ({ ...current, [sectionId]: next }));
-    void updateAgreementSectionAgreement({
-      agreementId: agreement.id,
-      sectionId,
-      agreedByA: next.agreedByA,
-      agreedByB: next.agreedByB,
-    });
+    setSectionState((current) => {
+      const previous = current[sectionId] ?? {
+        agreedByA: false,
+        agreedByB: false,
+      };
+      const next: SectionAgreementState =
+        party === "A"
+          ? { ...previous, agreedByA: !previous.agreedByA }
+          : { ...previous, agreedByB: !previous.agreedByB };
 
-    const justMutuallyAgreed =
-      next.agreedByA &&
-      next.agreedByB &&
-      !(previous.agreedByA && previous.agreedByB);
-    if (justMutuallyAgreed) {
-      const section = agreement.sections.find((s) => s.id === sectionId);
-      if (section) {
-        flash(`Both parties agree on ${section.label}.`, "success");
-        appendSystemMessage(
-          `Both parties agree on "${section.label}".`,
-          section.id
+      void updateAgreementSectionAgreement({
+        agreementId: agreement.id,
+        sectionId,
+        agreedByA: next.agreedByA,
+        agreedByB: next.agreedByB,
+      });
+
+      const justMutuallyAgreed =
+        next.agreedByA &&
+        next.agreedByB &&
+        !(previous.agreedByA && previous.agreedByB);
+      if (justMutuallyAgreed) {
+        const section = agreement.sections.find((s) => s.id === sectionId);
+        if (section) {
+          flash(`Both parties agree on ${section.label}.`, "success");
+          appendSystemMessage(
+            `Both parties agree on "${section.label}".`,
+            section.id
+          );
+        }
+      }
+
+      const withdrewAgreement =
+        (previous.agreedByA && !next.agreedByA) ||
+        (previous.agreedByB && !next.agreedByB);
+      if (withdrewAgreement) {
+        const section = agreement.sections.find((s) => s.id === sectionId);
+        demoteLifecycleIfFinalised(
+          `${partyProfile[viewerParty].label} withdrew agreement on "${section?.label ?? sectionId}".`
         );
       }
-    }
 
-    // Pulling an agree tick off a finalised agreement reopens negotiation.
-    const withdrewAgreement =
-      (previous.agreedByA && !next.agreedByA) ||
-      (previous.agreedByB && !next.agreedByB);
-    if (withdrewAgreement) {
-      const section = agreement.sections.find((s) => s.id === sectionId);
-      demoteLifecycleIfFinalised(
-        `${partyProfile[viewerParty].label} withdrew agreement on "${section?.label ?? sectionId}".`
-      );
-    }
+      return { ...current, [sectionId]: next };
+    });
   };
 
   /**

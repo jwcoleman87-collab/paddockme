@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, Check, Minus, Sparkles } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { InfoTile } from "@/components/InfoTile";
@@ -6,17 +10,15 @@ import { ListingCard } from "@/components/ListingCard";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { redirect } from "next/navigation";
 import type {
   LivestockRequest,
   PaddockListing,
 } from "@/lib/dummyData";
 import { getListingMapImageSrc } from "@/lib/listingMapImages";
-import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
-  getSupabaseLivestockRequestServer,
-  listSupabasePaddockListingsServer,
-} from "@/lib/data/serverPaddocks";
+  listLivestockRequests,
+  listPaddockListings,
+} from "@/lib/data/repositories";
 
 type MatchSignal = {
   label: string;
@@ -36,23 +38,54 @@ type ScoredListing = {
   capacityPenalty: number;
 };
 
-type SearchParams = {
-  request?: string;
-};
+export default function MatchesPage() {
+  const searchParams = useSearchParams();
+  const requestId = searchParams.get("request");
+  const [requests, setRequests] = useState<LivestockRequest[]>([]);
+  const [listings, setListings] = useState<PaddockListing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function MatchesPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const params = await searchParams;
-  const currentUserProfile = await getCurrentUserProfile();
-  if (!currentUserProfile) {
-    redirect("/sign-in?next=%2Fmatches");
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    void Promise.all([listLivestockRequests(), listPaddockListings()])
+      .then(([nextRequests, nextListings]) => {
+        if (!mounted) return;
+        setRequests(nextRequests);
+        setListings(nextListings);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const request = useMemo(
+    () => requests.find((item) => item.id === requestId) ?? null,
+    [requestId, requests]
+  );
+
+  const scored = useMemo(
+    () =>
+      request
+        ? listings
+            .map((listing) => scoreListing(listing, request))
+            .sort((a, b) => b.score - a.score)
+        : [],
+    [listings, request]
+  );
+
+  if (loading) {
+    return (
+      <PageHeader
+        eyebrow="Matches"
+        title="Loading matches."
+        description="Checking your saved request against live paddock listings."
+      />
+    );
   }
-  const request = params.request
-    ? await getSupabaseLivestockRequestServer(params.request)
-    : null;
 
   if (!request) {
     return (
@@ -64,12 +97,6 @@ export default async function MatchesPage({
       />
     );
   }
-
-  // Score against real published paddocks.
-  const sourceListings = await listSupabasePaddockListingsServer();
-  const scored = sourceListings
-    .map((listing) => scoreListing(listing, request))
-    .sort((a, b) => b.score - a.score);
 
   const topMatch = scored[0];
   const listingsHref = buildListingsHref(request);
