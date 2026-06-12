@@ -17,11 +17,11 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
   return (
     <aside
       aria-label="Primary"
-      className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-mist bg-warm-white px-3 py-5 lg:flex print:hidden"
+      className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-sage-deep/10 bg-warm-white/94 px-4 py-5 shadow-[8px_0_28px_rgba(31,42,36,0.04)] backdrop-blur lg:flex print:hidden"
     >
       <Link
         href="/agreements"
-        className="mb-6 px-2 font-display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+        className="mb-7 px-2 text-2xl font-extrabold tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
       >
         <span className="text-bark">Paddock</span>
         <span className="text-ochre">ME</span>
@@ -36,10 +36,10 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage",
+                "flex min-h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage",
                 active
-                  ? "bg-sage-mist font-bold text-sage-deep"
-                  : "text-bark/70 hover:bg-cream hover:text-sage-deep"
+                  ? "bg-sage-deep text-warm-white shadow-sm"
+                  : "text-stone hover:bg-sage-mist hover:text-sage-deep"
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -49,7 +49,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-mist pt-4">{children}</div>
+      <div className="mt-auto border-t border-sage-deep/10 pt-4">{children}</div>
     </aside>
   );
 }

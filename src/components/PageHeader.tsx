@@ -16,21 +16,21 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "mb-4 flex min-w-0 flex-col gap-3 overflow-hidden md:flex-row md:items-end md:justify-between",
+        "mb-6 flex min-w-0 flex-col gap-4 overflow-hidden border-b border-sage-deep/10 pb-5 md:flex-row md:items-end md:justify-between",
         className
       )}
     >
       <div className="min-w-0 max-w-[21.5rem] sm:max-w-3xl">
         {eyebrow && (
-          <p className="mb-3 inline-flex rounded-md bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
+          <p className="mb-3 inline-flex rounded-md border border-sage-deep/10 bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
             {eyebrow}
           </p>
         )}
-        <h1 className="max-w-full break-words text-2xl font-extrabold leading-tight text-sage-deep sm:max-w-2xl md:text-3xl">
+        <h1 className="max-w-full break-words text-2xl font-extrabold leading-tight text-bark sm:max-w-2xl md:text-3xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-2 max-w-full break-words text-sm font-medium leading-relaxed text-bark/85 sm:max-w-2xl">
+          <p className="mt-2 max-w-full break-words text-sm font-medium leading-relaxed text-stone sm:max-w-2xl">
             {description}
           </p>
         )}

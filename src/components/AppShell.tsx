@@ -15,13 +15,13 @@ import { SignOutButton } from "@/components/SignOutButton";
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <FlashProvider>
-      <div className="min-h-dvh overflow-x-hidden bg-warm-white text-bark lg:flex">
+      <div className="min-h-dvh overflow-x-hidden bg-transparent text-bark lg:flex">
         <AppSidebar>
           <div className="flex flex-col gap-2">
             <Link
               href="/profile"
               aria-label="Open profile"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-mist bg-cream pl-1.5 pr-3 text-sage-deep transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+              className="inline-flex min-h-11 items-center gap-2 rounded-[8px] border border-sage-deep/10 bg-warm-white pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage/35 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
             >
               <Suspense fallback={null}>
                 <AppShellHeaderUser />
@@ -32,11 +32,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </AppSidebar>
 
         <div className="flex min-h-dvh w-full min-w-0 flex-col">
-          <header className="sticky top-0 z-30 bg-warm-white/90 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 border-b border-sage-deep/10 bg-warm-white/92 backdrop-blur lg:hidden">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 md:px-8">
               <Link
                 href="/agreements"
-                className="font-display text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                className="text-xl font-extrabold tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
               >
                 <span className="text-bark">Paddock</span>
                 <span className="text-ochre">ME</span>
@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/profile"
                   aria-label="Open profile"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-mist bg-cream pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage-glow hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-[8px] border border-sage-deep/10 bg-warm-white pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage/35 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
                 >
                   <Suspense fallback={null}>
                     <AppShellHeaderUser />

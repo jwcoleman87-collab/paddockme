@@ -88,23 +88,23 @@ function SignUpForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-cream px-5 py-8 sm:px-6 sm:py-12">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-dvh items-center justify-center bg-transparent px-5 py-8 sm:px-6 sm:py-12">
+      <div className="w-full max-w-md rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.08)] sm:p-8">
         <Link
           href="/"
-          className="mb-7 inline-flex min-h-11 items-center font-display text-3xl text-sage-deep sm:mb-8"
+          className="mb-7 inline-flex min-h-11 items-center text-2xl font-extrabold text-bark sm:mb-8"
         >
           PaddockME
         </Link>
-        <h1 className="font-display text-3xl text-sage-deep mb-2">
+        <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Make a new account.
         </h1>
-        <p className="text-bark/85 mb-8">
+        <p className="mb-8 font-medium text-stone">
           One account covers livestock, paddocks, and transport.
         </p>
 
         {emailSent ? (
-          <div className="rounded-2xl bg-sage-mist border border-sage-glow p-6">
+          <div className="rounded-[8px] border border-sage-deep/10 bg-sage-mist p-6">
             <div className="flex items-center gap-3 text-sage-deep font-medium mb-2">
               <Mail className="h-5 w-5" />
               Confirm your email
@@ -117,7 +117,7 @@ function SignUpForm() {
               type="button"
               onClick={handleResendConfirmation}
               disabled={resending}
-              className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-sage-deep/30 px-5 py-2.5 text-sm font-semibold text-sage-deep transition hover:bg-warm-white disabled:opacity-60"
+              className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[8px] border border-sage-deep/20 px-5 py-2.5 text-sm font-bold text-sage-deep transition hover:bg-warm-white disabled:opacity-60"
             >
               {resending && <Loader2 className="h-4 w-4 animate-spin" />}
               Resend confirmation email
@@ -146,7 +146,7 @@ function SignUpForm() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="Pat Murphy"
               />
             </div>
@@ -161,7 +161,7 @@ function SignUpForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="you@farm.com.au"
               />
             </div>
@@ -177,7 +177,7 @@ function SignUpForm() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -193,7 +193,7 @@ function SignUpForm() {
                 minLength={8}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="Type it again"
               />
             </div>
@@ -207,7 +207,7 @@ function SignUpForm() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream transition hover:bg-sage-dark disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-sage-deep px-5 py-3 font-bold text-warm-white transition hover:bg-sage-dark disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create account

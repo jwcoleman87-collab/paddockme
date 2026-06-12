@@ -51,7 +51,7 @@ export function ListingCard({
   return (
     // self-start stops the grid stretching every card to the tallest row,
     // which left a big dead gap between the signal tiles and the buttons.
-    <Card className="flex flex-col gap-3 self-start p-4">
+    <Card className="flex flex-col gap-4 self-start p-4 hover:border-sage/30 hover:shadow-[0_18px_44px_rgba(31,42,36,0.09)]">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.25rem] sm:items-start">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -64,12 +64,12 @@ export function ListingCard({
             >
               {listing.verificationStatus}
             </StatusBadge>
-            <span className="rounded-md border border-stone/25 bg-warm-white px-3 py-1 text-xs font-bold text-bark/85">
+            <span className="rounded-md border border-sage-deep/10 bg-field px-3 py-1 text-xs font-bold text-stone">
               {listing.guideTerms}
             </span>
           </div>
-          <h2 className="text-lg font-bold leading-tight text-sage-deep">{listing.title}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-bark/85">
+          <h2 className="text-lg font-extrabold leading-tight text-bark">{listing.title}</h2>
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-stone">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
             {listing.location}
           </p>
@@ -97,13 +97,13 @@ export function ListingCard({
         <FitInline score={matchScore} reasons={matchReasons} />
       )}
 
-      <p className="text-sm font-medium leading-snug text-bark/90">{listing.summary}</p>
+      <p className="text-sm font-medium leading-relaxed text-stone">{listing.summary}</p>
 
       <div className="flex flex-wrap gap-1.5" aria-label="Suitable livestock">
         {listing.suitableLivestock.map((stockType) => (
           <span
             key={stockType}
-            className="rounded-sm bg-sage-mist px-2 py-1 text-xs font-bold text-sage-deep"
+            className="rounded-md border border-sage-deep/10 bg-sage-mist px-2 py-1 text-xs font-bold text-sage-deep"
           >
             {stockType}
           </span>
@@ -119,7 +119,7 @@ export function ListingCard({
           type="button"
           onClick={() => setExpanded((open) => !open)}
           aria-expanded={expanded}
-          className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-sage-deep/20 bg-warm-white px-3 py-1.5 text-sm font-bold text-sage-deep transition hover:border-sage/60 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+          className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-1.5 rounded-[8px] border border-sage-deep/15 bg-field px-3 py-1.5 text-sm font-bold text-sage-deep transition hover:border-sage/45 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
         >
           {expanded ? "Show less" : "Quick look"}
           <ChevronDown
@@ -155,7 +155,7 @@ function ExpandedDetails({ listing }: { listing: PaddockListing }) {
   return (
     <section
       aria-label="Listing quick look"
-      className="space-y-3 rounded-md border border-sage-deep/10 bg-cream/55 p-3"
+      className="space-y-3 rounded-[8px] border border-sage-deep/10 bg-field p-3"
     >
       <div className="flex items-start gap-2">
         <CalendarRange
@@ -183,7 +183,7 @@ function ExpandedDetails({ listing }: { listing: PaddockListing }) {
 
 function InlineDetail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-mist bg-warm-white px-3 py-2">
+    <div className="rounded-[8px] border border-sage-deep/10 bg-warm-white px-3 py-2">
       <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-stone">
         {label}
       </p>
@@ -262,7 +262,7 @@ function FitInline({
   reasons: string[];
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-y border-mist/80 py-2">
+    <div className="flex items-center justify-between gap-3 border-y border-sage-deep/10 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <span className="text-xs font-bold uppercase tracking-wide text-bark/75">
           Fit
@@ -271,7 +271,7 @@ function FitInline({
           {reasons.slice(0, 3).map((reason) => (
             <span
               key={reason}
-              className="rounded-sm bg-cream px-2 py-1 text-xs font-bold text-bark/85"
+              className="rounded-md bg-field px-2 py-1 text-xs font-bold text-bark/85"
             >
               {reason}
             </span>
@@ -295,7 +295,7 @@ function LocationMapImage({
   placeLabel: string;
 }) {
   return (
-    <div className="relative order-first h-24 overflow-hidden rounded-md border border-stone/35 bg-warm-white sm:order-none sm:h-28">
+    <div className="relative order-first h-24 overflow-hidden rounded-[8px] border border-sage-deep/10 bg-warm-white sm:order-none sm:h-28">
       <img
         src={src}
         alt={label}
@@ -393,7 +393,7 @@ function SignalTile({
       type="button"
       onClick={() => onClick(signalKey)}
       aria-label={`${label}: ${value}, ${strengthLabel}. Tap for detail.`}
-      className="group flex min-h-[5.35rem] flex-col justify-between rounded-md border border-mist bg-warm-white p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:bg-sage-mist/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream cursor-pointer"
+      className="group flex min-h-[5.35rem] cursor-pointer flex-col justify-between rounded-[8px] border border-sage-deep/10 bg-field p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:bg-sage-mist/45 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-warm-white"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wide text-bark/75">

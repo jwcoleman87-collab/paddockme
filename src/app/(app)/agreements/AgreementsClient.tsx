@@ -72,7 +72,7 @@ export function AgreementsClient({
       {showOnboardingWelcome && !welcomeDismissed && (
         <section
           aria-label="Welcome"
-          className="mb-5 flex items-start gap-3 rounded-2xl border border-sage-glow bg-sage-mist/55 p-4"
+          className="mb-5 flex items-start gap-3 rounded-[8px] border border-sage-deep/10 bg-sage-mist p-4"
         >
           <Sparkles
             className="mt-0.5 h-5 w-5 shrink-0 text-sage-deep"
@@ -91,21 +91,21 @@ export function AgreementsClient({
             type="button"
             onClick={() => setWelcomeDismissed(true)}
             aria-label="Dismiss welcome"
-            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-mist bg-warm-white text-bark transition hover:border-sage/40 hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-sage-deep/10 bg-warm-white text-bark transition hover:border-sage/40 hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
         </section>
       )}
 
-      <Card className="mb-5 bg-sage-deep text-cream">
+      <Card className="mb-5 overflow-hidden border-sage-deep bg-sage-deep text-warm-white">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-semibold text-sage-glow">
+          <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-bold text-sage-glow">
             <meta.Icon className="h-3.5 w-3.5" aria-hidden />
             {meta.role}
           </span>
           {meta.region && (
-            <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-semibold text-sage-glow">
+            <span className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-bold text-sage-glow">
               <MapPin className="h-3.5 w-3.5" aria-hidden />
               {meta.region}
             </span>
@@ -118,7 +118,7 @@ export function AgreementsClient({
       </Card>
 
       <section aria-label="Next action" className="mb-5">
-        <div className="flex flex-col gap-3 rounded-r-2xl border border-sage-glow border-l-4 border-l-sage bg-warm-white p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex flex-col gap-3 rounded-[8px] border border-sage-deep/10 border-l-4 border-l-sage bg-warm-white p-4 shadow-[0_12px_32px_rgba(31,42,36,0.05)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-sage-deep">
               Next step
@@ -219,7 +219,7 @@ function RealAgreementsSection({
           <Link
             key={agreement.id}
             href={`/workspace/${agreement.id}`}
-            className="block rounded-2xl border border-mist bg-warm-white p-4 transition hover:border-sage/40 hover:bg-sage-mist/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            className="block rounded-[8px] border border-sage-deep/10 bg-warm-white p-4 shadow-[0_10px_28px_rgba(31,42,36,0.04)] transition hover:border-sage/35 hover:bg-sage-mist/35 hover:shadow-[0_16px_36px_rgba(31,42,36,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">

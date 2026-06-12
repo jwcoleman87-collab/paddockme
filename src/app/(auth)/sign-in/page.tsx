@@ -15,18 +15,18 @@ import { Loader2, Mail } from "lucide-react";
  */
 export default function SignInPage() {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-cream px-5 py-8 sm:px-6 sm:py-12">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-dvh items-center justify-center bg-transparent px-5 py-8 sm:px-6 sm:py-12">
+      <div className="w-full max-w-md rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.08)] sm:p-8">
         <Link
           href="/"
-          className="mb-7 inline-flex min-h-11 items-center font-display text-3xl text-sage-deep sm:mb-8"
+          className="mb-7 inline-flex min-h-11 items-center text-2xl font-extrabold text-bark sm:mb-8"
         >
           PaddockME
         </Link>
-        <h1 className="font-display text-3xl text-sage-deep mb-2">
+        <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Welcome back.
         </h1>
-        <p className="text-bark/85 mb-8">
+        <p className="mb-8 font-medium text-stone">
           Sign in to your account to keep coordinating.
         </p>
 
@@ -48,9 +48,9 @@ export default function SignInPage() {
 function SignInSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-12 rounded-xl bg-mist" />
-      <div className="h-12 rounded-xl bg-mist" />
-      <div className="h-12 rounded-full bg-mist" />
+      <div className="h-12 rounded-[8px] bg-mist" />
+      <div className="h-12 rounded-[8px] bg-mist" />
+      <div className="h-12 rounded-[8px] bg-mist" />
     </div>
   );
 }
@@ -108,7 +108,7 @@ function SignInForm() {
 
   if (magicSent) {
     return (
-      <div className="rounded-2xl bg-sage-mist border border-sage-glow p-6">
+      <div className="rounded-[8px] border border-sage-deep/10 bg-sage-mist p-6">
         <div className="flex items-center gap-3 text-sage-deep font-medium mb-2">
           <Mail className="h-5 w-5" />
           Magic link sent
@@ -133,7 +133,7 @@ function SignInForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+          className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
           placeholder="you@farm.com.au"
         />
       </div>
@@ -156,7 +156,7 @@ function SignInForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+          className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
         />
       </div>
 
@@ -169,14 +169,14 @@ function SignInForm() {
       <button
         type="submit"
         disabled={loading}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream transition hover:bg-sage-dark disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-sage-deep px-5 py-3 font-bold text-warm-white transition hover:bg-sage-dark disabled:opacity-60"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Sign in
       </button>
 
       <div className="relative my-6 text-center text-sm font-medium text-bark/80">
-        <span className="bg-cream px-3 relative z-10">or</span>
+        <span className="relative z-10 bg-warm-white px-3">or</span>
         <span className="absolute inset-x-0 top-1/2 h-px bg-mist" />
       </div>
 
@@ -184,7 +184,7 @@ function SignInForm() {
         type="button"
         onClick={handleMagicLink}
         disabled={loading}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-sage-deep/30 px-5 py-3 font-medium text-sage-deep transition hover:bg-sage-mist disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] border border-sage-deep/20 px-5 py-3 font-bold text-sage-deep transition hover:bg-sage-mist disabled:opacity-60"
       >
         <Mail className="h-4 w-4" />
         Send me a magic link

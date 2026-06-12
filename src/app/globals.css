@@ -12,33 +12,34 @@
   --font-sans: var(--font-outfit), system-ui, sans-serif;
 
   /* Sage — primary brand */
-  --color-sage: #5b8c5a;
-  --color-sage-dark: #3d6b3c;
-  --color-sage-deep: #2c5030;
-  --color-sage-mist: #e7f0e6;
-  --color-sage-glow: #d0e8cf;
+  --color-sage: #3f7a4b;
+  --color-sage-dark: #2f643a;
+  --color-sage-deep: #173f29;
+  --color-sage-mist: #e8f3eb;
+  --color-sage-glow: #cce4d2;
 
   /* Ochre — accent warmth */
-  --color-ochre: #d4a853;
-  --color-ochre-light: #f2e4c1;
+  --color-ochre: #b98322;
+  --color-ochre-light: #f7ebd1;
 
   /* Terra — secondary accent */
-  --color-terra: #c47b5a;
-  --color-terra-light: #f0ddd3;
+  --color-terra: #b76042;
+  --color-terra-light: #f4dfd7;
 
   /* Neutrals */
-  --color-wheat: #f5ecd7;
-  --color-cream: #faf8f3;
-  --color-warm-white: #fdfcf9;
-  --color-bark: #3f3328;
-  --color-stone: #6d6257;
-  --color-mist: #d9d4c8;
+  --color-wheat: #f4efe4;
+  --color-cream: #f7f4ed;
+  --color-warm-white: #fffefa;
+  --color-bark: #1f2a24;
+  --color-stone: #667267;
+  --color-mist: #d9dfd5;
+  --color-field: #f6f7f2;
 
   /* Status — match / amber. NEVER use emoji for state; use lucide icons. */
-  --color-match: #2f7d47;
-  --color-match-light: #e6f5eb;
+  --color-match: #1f7a3f;
+  --color-match-light: #e6f4eb;
   --color-amber: #8a5a12;
-  --color-amber-light: #f7ead0;
+  --color-amber-light: #fbefd7;
 
   /* Rating bars — literal R/A/G used by paddock signal strength tiles. */
   --color-rating-low: #d6402c;
@@ -55,6 +56,10 @@
 body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.94), rgba(246, 247, 242, 0.96)),
+    repeating-linear-gradient(90deg, rgba(23, 63, 41, 0.035) 0, rgba(23, 63, 41, 0.035) 1px, transparent 1px, transparent 96px);
+  color: #1f2a24;
 }
 
 .font-display {
@@ -70,6 +75,15 @@ h3:not(.font-display) {
   font-family: var(--font-body);
   font-style: normal;
   letter-spacing: 0;
+}
+
+::selection {
+  background: #cce4d2;
+  color: #173f29;
+}
+
+:focus-visible {
+  outline-color: #3f7a4b;
 }
 
 .paddockme-range {
