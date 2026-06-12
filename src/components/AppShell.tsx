@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 md:px-8">
               <Link
                 href="/agreements"
-                className="text-xl font-extrabold tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                className="font-display text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
               >
                 <span className="text-bark">Paddock</span>
                 <span className="text-ochre">ME</span>

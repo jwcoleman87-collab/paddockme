@@ -158,7 +158,8 @@ export function OnboardingClient() {
           href="/"
           className="inline-flex min-h-11 items-center font-display text-2xl text-sage-deep"
         >
-          PaddockME
+          <span className="text-bark">Paddock</span>
+          <span className="text-ochre">ME</span>
         </Link>
       </header>
 

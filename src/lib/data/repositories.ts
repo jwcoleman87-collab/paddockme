@@ -542,7 +542,21 @@ export async function updateTransportJobStatus(
     const user = await getCurrentUser(supabase);
     const existing = await getTransportJobRecord(jobId);
     const update: TablesUpdate<"transport_jobs"> = { status };
-    if (status === "accepted" && user) update.driver_id = user.id;
+    if (status === "accepted") {
+      if (!user) return { state: emptyRepositoryState(), job: existing ?? null };
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, account_types")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (
+        !profile?.account_types?.includes("Transport Provider") ||
+        isRemovedTestProfileName(profile.full_name)
+      ) {
+        return { state: emptyRepositoryState(), job: existing ?? null };
+      }
+      update.driver_id = user.id;
+    }
     const { data, error } = await supabase
       .from("transport_jobs")
       .update(update)
@@ -1556,8 +1570,10 @@ async function mapTransportJobRow(
 
   const farmerAName = profilesById.get(row.livestock_owner_id) ?? "Livestock owner";
   const farmerBName = profilesById.get(row.landowner_id) ?? "Landowner";
-  const driverName = row.driver_id
-    ? profilesById.get(row.driver_id) ?? "Assigned driver"
+  const rawDriverName = row.driver_id ? profilesById.get(row.driver_id) : null;
+  const removedTestDriver = isRemovedTestProfileName(rawDriverName);
+  const driverName = row.driver_id && !removedTestDriver
+    ? rawDriverName ?? "Assigned driver"
     : "Unassigned";
   const pickupFallback = request?.location
     ? `${farmerAName}'s property`
@@ -1588,7 +1604,7 @@ async function mapTransportJobRow(
     farmerBId: row.landowner_id,
     farmerAName,
     farmerBName,
-    driverId: row.driver_id ?? "",
+    driverId: removedTestDriver ? "" : row.driver_id ?? "",
     pickup,
     destination,
     pickupLocation: parseCoordinate(row.pickup_location, request ? parseCoordinate(request.location, mapCoordinates.cowra) : mapCoordinates.cowra),
@@ -1599,7 +1615,7 @@ async function mapTransportJobRow(
     livestockCount,
     preferredDate: row.preferred_date ?? "Date to confirm",
     driver: driverName,
-    status: normaliseTransportStatus(row.status),
+    status: removedTestDriver ? "available" : normaliseTransportStatus(row.status),
     routeSummary,
     agreementContext: {
       duration: request?.duration ?? (agreement?.duration_months ? `${agreement.duration_months} months` : "Duration to confirm"),
@@ -1612,6 +1628,10 @@ async function mapTransportJobRow(
     quotes: [],
     acceptedQuoteId: row.accepted_quote_id ?? undefined,
   };
+}
+
+function isRemovedTestProfileName(name: string | null | undefined): boolean {
+  return /^Codex Carrier\b/i.test(name ?? "") || /^Removed test account\b/i.test(name ?? "");
 }
 
 type MessageRowWithSender = Tables<"messages"> & {

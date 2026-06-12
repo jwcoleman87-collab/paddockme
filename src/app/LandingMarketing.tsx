@@ -28,8 +28,9 @@ export function LandingMarketing() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-transparent pb-28 text-bark">
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 md:px-8">
-        <Link href="/" className="text-2xl font-extrabold text-bark">
-          PaddockME
+        <Link href="/" className="font-display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage">
+          <span className="text-bark">Paddock</span>
+          <span className="text-ochre">ME</span>
         </Link>
         <Link
           href="/sign-in"

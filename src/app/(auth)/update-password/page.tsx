@@ -69,7 +69,8 @@ export default function UpdatePasswordPage() {
           href="/"
           className="mb-7 inline-flex min-h-11 items-center font-display text-3xl text-sage-deep sm:mb-8"
         >
-          PaddockME
+          <span className="text-bark">Paddock</span>
+          <span className="text-ochre">ME</span>
         </Link>
         <h1 className="mb-2 font-display text-3xl text-sage-deep">
           Choose a new password.

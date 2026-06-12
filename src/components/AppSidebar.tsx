@@ -21,7 +21,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
     >
       <Link
         href="/agreements"
-        className="mb-7 px-2 text-2xl font-extrabold tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+        className="mb-7 px-2 font-display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
       >
         <span className="text-bark">Paddock</span>
         <span className="text-ochre">ME</span>

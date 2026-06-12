@@ -92,9 +92,10 @@ function SignUpForm() {
       <div className="w-full max-w-md rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.08)] sm:p-8">
         <Link
           href="/"
-          className="mb-7 inline-flex min-h-11 items-center text-2xl font-extrabold text-bark sm:mb-8"
+          className="mb-7 inline-flex min-h-11 items-center font-display text-2xl sm:mb-8"
         >
-          PaddockME
+          <span className="text-bark">Paddock</span>
+          <span className="text-ochre">ME</span>
         </Link>
         <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Make a new account.
