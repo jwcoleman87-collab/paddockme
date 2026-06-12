@@ -219,31 +219,9 @@ export function ListingDetailClient({
             </div>
           </Card>
 
-          <Card>
-            <h2 className="text-xl font-bold text-sage-deep">Operational notes</h2>
-            <p className="mt-3 leading-relaxed text-bark/75">
-              Suitable for {listing.suitableLivestock.join(" and ").toLowerCase()}.
-              Access is best discussed before stock move. Terms are intentionally
-              kept as &quot;{listing.guideTerms.toLowerCase()}&quot; at this stage.
-            </p>
-          </Card>
         </div>
 
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
-          {agreementId ? (
-            <p className="rounded-xl border border-sage-deep/15 bg-sage-mist/55 px-4 py-3 text-sm text-bark/75">
-              There&apos;s an active agreement on this paddock.
-            </p>
-          ) : isOwner ? (
-            <p className="rounded-xl border border-sage-deep/15 bg-cream/55 px-4 py-3 text-sm text-bark/75">
-              This is your paddock. A shared workspace opens automatically when a
-              livestock owner selects it against their request.
-            </p>
-          ) : (
-            <p className="rounded-xl border border-sage-deep/15 bg-cream/55 px-4 py-3 text-sm text-bark/75">
-              Select this paddock to open a shared agreement workspace.
-            </p>
-          )}
           {agreementId || !isOwner ? (
             <Button
               type="button"

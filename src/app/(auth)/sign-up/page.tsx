@@ -99,9 +99,6 @@ function SignUpForm() {
         <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Make a new account.
         </h1>
-        <p className="mb-8 font-medium text-stone">
-          One account covers livestock, paddocks, and transport.
-        </p>
 
         {emailSent ? (
           <div className="rounded-[8px] border border-sage-deep/10 bg-sage-mist p-6">
@@ -109,10 +106,6 @@ function SignUpForm() {
               <Mail className="h-5 w-5" />
               Confirm your email
             </div>
-            <p className="text-bark/80 text-sm leading-relaxed">
-              We sent a confirmation link to {email}. Click it and you&rsquo;ll
-              land back on the app.
-            </p>
             <button
               type="button"
               onClick={handleResendConfirmation}

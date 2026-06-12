@@ -24,7 +24,6 @@ export function Timeline({
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-bark">{item.title}</p>
-              <p className="text-sm font-medium leading-relaxed text-bark/85">{item.detail}</p>
               {index < items.length - 1 && (
                 <div className="mt-4 h-4 w-px bg-mist" aria-hidden />
               )}

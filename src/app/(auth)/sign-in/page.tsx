@@ -26,9 +26,6 @@ export default function SignInPage() {
         <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Welcome back.
         </h1>
-        <p className="mb-8 font-medium text-stone">
-          Sign in to your account to keep coordinating.
-        </p>
 
         <Suspense fallback={<SignInSkeleton />}>
           <SignInForm />
@@ -113,9 +110,6 @@ function SignInForm() {
           <Mail className="h-5 w-5" />
           Magic link sent
         </div>
-        <p className="text-bark/80 text-sm">
-          Check {email} for a sign-in link. You can close this tab.
-        </p>
       </div>
     );
   }

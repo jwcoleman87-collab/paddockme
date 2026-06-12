@@ -321,7 +321,7 @@ export default function NewListingPage() {
 
           <Card>
             <SectionTitle eyebrow="Step 2" title="Summary" />
-            <p className="mt-2 text-sm font-medium text-bark/70">
+            <p className="hidden">
               A short description farmers see first — mention feed, water, access and
               whether there are yards or a loading ramp.
             </p>
@@ -338,7 +338,7 @@ export default function NewListingPage() {
         <aside className="space-y-5">
           <Card>
             <SectionTitle eyebrow="Photos" title="Paddock photos" />
-            <p className="mt-2 text-sm font-medium text-bark/70">
+            <p className="hidden">
               Add paddock, water point, fencing and yards shots. Up to {MAX_PHOTOS}{" "}
               images, 6 MB each.
             </p>

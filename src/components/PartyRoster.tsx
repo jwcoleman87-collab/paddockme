@@ -1,4 +1,4 @@
-import { BadgeCheck, ShieldCheck, Sprout, Truck } from "lucide-react";
+import { BadgeCheck, Sprout, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Farmer } from "@/lib/dummyData";
 
@@ -19,12 +19,8 @@ export function PartyRoster({
     <section className="overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]">
       <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
         <h2 className="text-lg font-bold text-sage-deep">
-          Three parties in this room
+          Parties
         </h2>
-        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/80">
-          Farmers coordinate the agreement. The driver only sees the movement
-          brief: pickup, destination, livestock, access, timing, and chat.
-        </p>
       </div>
 
       <div className="grid gap-3 p-5 sm:grid-cols-3">
@@ -51,20 +47,6 @@ export function PartyRoster({
         />
       </div>
 
-      <div className="flex items-start gap-3 border-t border-sage-deep/12 bg-cream/45 px-5 py-4">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
-          <ShieldCheck className="h-5 w-5" aria-hidden />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-sage-deep">
-            Privacy wall: no private agistment pricing.
-          </p>
-          <p className="mt-1 text-sm font-medium leading-relaxed text-bark/80">
-            This room deliberately excludes rates, terms, and contract detail.
-            Those stay inside the two-party agreement workspace.
-          </p>
-        </div>
-      </div>
     </section>
   );
 }

@@ -229,9 +229,6 @@ export function SearchablePicker(props: SearchablePickerProps) {
       <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
         {label}
       </span>
-      {helper && (
-        <p className="mt-1 text-xs font-medium text-bark/65">{helper}</p>
-      )}
       <button
         ref={triggerRef}
         type="button"

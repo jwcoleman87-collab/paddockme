@@ -286,7 +286,7 @@ function StepRail({ current, total }: { current: number; total: number }) {
   );
 }
 
-function StepHeader({ eyebrow, title, helper }: { eyebrow: string; title: string; helper: string }) {
+function StepHeader({ eyebrow, title, helper: _helper }: { eyebrow: string; title: string; helper: string }) {
   return (
     <div className="mb-5">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-ochre">
@@ -295,9 +295,6 @@ function StepHeader({ eyebrow, title, helper }: { eyebrow: string; title: string
       <h1 className="mt-2 font-display text-3xl text-sage-deep sm:text-4xl">
         {title}
       </h1>
-      <p className="mt-3 max-w-xl text-sm leading-relaxed text-bark/75 sm:text-base">
-        {helper}
-      </p>
     </div>
   );
 }
@@ -342,14 +339,6 @@ function RoleStep({
               />
               <div className="min-w-0">
                 <p className="text-base font-bold">{option.label}</p>
-                <p
-                  className={cn(
-                    "mt-1 text-sm leading-relaxed",
-                    active ? "text-sage-glow" : "text-bark/70"
-                  )}
-                >
-                  {option.helper}
-                </p>
               </div>
             </button>
           );

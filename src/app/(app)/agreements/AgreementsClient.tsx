@@ -82,10 +82,6 @@ export function AgreementsClient({
             <p className="text-sm font-bold text-sage-deep">
               Welcome to PaddockME.
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-bark/75">
-              Your profile is ready. Your next step is below - everything else
-              lives in the menu.
-            </p>
           </div>
           <button
             type="button"
@@ -112,9 +108,6 @@ export function AgreementsClient({
           )}
         </div>
         <h2 className="text-2xl font-bold">Welcome back, {meta.firstName}.</h2>
-        <p className="mt-2 max-w-2xl leading-relaxed text-sage-glow">
-          {meta.tagline}
-        </p>
       </Card>
 
       <section aria-label="Next action" className="mb-5">
@@ -126,9 +119,6 @@ export function AgreementsClient({
             <h3 className="mt-1 text-lg font-bold leading-snug text-bark">
               {nextAction.title}
             </h3>
-            <p className="mt-0.5 text-sm leading-relaxed text-bark/70">
-              {nextAction.detail}
-            </p>
           </div>
           <ButtonLink href={nextAction.ctaHref} className="shrink-0">
             {nextAction.ctaLabel}
@@ -141,7 +131,7 @@ export function AgreementsClient({
         <RealAgreementsSection agreements={realAgreements} />
       )}
 
-      <p className="mt-6 text-sm font-medium text-bark/65">
+      <p className="hidden">
         Browse:{" "}
         <Link href="/listings" className="font-bold text-sage-deep underline-offset-2 hover:underline">
           paddocks ({realCounts?.paddocks ?? 0})
@@ -240,13 +230,9 @@ function RealAgreementsSection({
                 {agreement.status}
               </StatusBadge>
             </div>
-            {agreement.lastMessage ? (
+            {agreement.lastMessage && (
               <p className="mt-2 truncate text-sm text-bark/70">
                 {agreement.lastMessage.senderName}: {agreement.lastMessage.body}
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-bark/55">
-                No messages yet - open the workspace to start the conversation.
               </p>
             )}
             <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-sage-deep">

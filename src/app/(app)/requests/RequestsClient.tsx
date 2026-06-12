@@ -210,10 +210,6 @@ export function RequestsClient({
           <h3 className="text-lg font-bold text-sage-deep">
             No requests match.
           </h3>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/75">
-            Clear filters to see every open request, or check back later as
-            livestock owners post new ones.
-          </p>
           {activeFilterCount > 0 && (
             <Button
               type="button"

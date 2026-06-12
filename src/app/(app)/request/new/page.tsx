@@ -174,9 +174,6 @@ export default function NewRequestPage() {
             <div className="mb-4 flex items-baseline justify-between">
               <div>
                 <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-                <p className="text-sm text-bark/65">
-                  Set the approximate {countUnit === "head" ? "head count" : countUnit}.
-                </p>
               </div>
               <p className="text-4xl font-extrabold text-sage-deep">
                 {headCount}

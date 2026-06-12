@@ -121,11 +121,6 @@ export default function MatchesPage() {
           <h2 className="text-lg font-bold text-sage-deep">
             No paddocks to match yet.
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-bark/70">
-            No live paddocks are listed for this stock and region yet. Browse all
-            paddocks to see everything currently available, or check back as new
-            listings come in.
-          </p>
         </Card>
       ) : (
         <div className="mt-5 grid gap-5">

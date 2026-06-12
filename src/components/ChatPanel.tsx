@@ -71,22 +71,17 @@ export function ChatPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-sage-deep">Live Chat</h2>
-            <p className="mt-0.5 text-sm font-semibold text-bark/70">
-              {title}
-            </p>
+            {title !== "Conversation" && (
+              <p className="mt-0.5 text-sm font-semibold text-bark/70">
+                {title}
+              </p>
+            )}
           </div>
           <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-match/20 bg-match-light px-3 text-xs font-bold text-match">
             <span className="h-2 w-2 rounded-full bg-match" aria-hidden />
             {onlineCount} online
           </span>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-bark/65">
-          {hasSections
-            ? activeSection
-              ? `Anchored to "${activeSection.label}" - replies are tagged to this section.`
-              : "Tap any section in the agreement to anchor the conversation."
-            : "Conversation history for this workspace."}
-        </p>
 
         {/* The section chip strip used to render here ("All sections",
             "Pick up", "Stock manifest", ...). Removed - anchoring happens by

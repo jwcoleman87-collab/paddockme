@@ -46,7 +46,7 @@ export function RealJobsBoard({
       {mapRoutes.length > 0 && (
         <section aria-label="Route map" className="space-y-2">
           <LiveMap routes={mapRoutes} />
-          <p className="text-xs font-semibold text-bark/65">
+          <p className="hidden">
             Amber routes are waiting for a carrier · green routes are underway.
             Tap a route for the job.
           </p>
@@ -62,7 +62,7 @@ export function RealJobsBoard({
               <h3 className="text-lg font-bold text-sage-deep">
                 No open jobs right now.
               </h3>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/75">
+              <p className="hidden">
                 New RFTs raised from agistment agreements will appear here the
                 moment a farmer requests transport. Check back soon.
               </p>
@@ -88,7 +88,7 @@ export function RealJobsBoard({
                 ? "No accepted jobs yet."
                 : "No transport jobs yet."}
             </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/75">
+            <p className="hidden">
               {isTransportProvider
                 ? "Accept an available job above and it moves here with its transport room."
                 : "Request transport from an agreement workspace and the job will appear here."}

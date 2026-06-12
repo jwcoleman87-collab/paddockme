@@ -39,11 +39,6 @@ export default async function RequestsPage() {
           <h1 className="text-xl font-bold text-sage-deep">
             No open requests yet.
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-bark/70">
-            Live livestock requests will appear here as customers post them.
-            Check back shortly for livestock owners looking for paddock
-            capacity.
-          </p>
         </Card>
       ) : (
         <RequestsClient

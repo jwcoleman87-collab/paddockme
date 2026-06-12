@@ -46,11 +46,6 @@ function ProfileSummary({ profile }: { profile: CurrentUserProfile }) {
               <span className="truncate">{profile.email}</span>
             </p>
           )}
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-bark/75">
-            These details come from your onboarding answers. Roles are
-            stackable - you can run livestock, list paddocks, and carry stock
-            from the same account.
-          </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3 md:min-w-[28rem]">
           <InfoTile label="Account types" value={accountTypes} />

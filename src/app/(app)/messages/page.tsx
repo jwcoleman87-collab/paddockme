@@ -65,11 +65,11 @@ function RealThreadList({ summaries }: { summaries: AgreementSummary[] }) {
               <p className="truncate text-sm text-bark/70">
                 {summary.listingTitle}
               </p>
-              <p className="mt-1 truncate text-sm text-bark/80">
-                {summary.lastMessage
-                  ? `${summary.lastMessage.senderName}: ${summary.lastMessage.body}`
-                  : "No messages yet - say g'day."}
-              </p>
+              {summary.lastMessage && (
+                <p className="mt-1 truncate text-sm text-bark/80">
+                  {summary.lastMessage.senderName}: {summary.lastMessage.body}
+                </p>
+              )}
             </div>
             <ArrowRight
               className="mt-1 h-4 w-4 shrink-0 text-sage-deep"

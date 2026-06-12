@@ -548,13 +548,12 @@ export function WorkspaceClient({
       },
       {
         title: "Terms under discussion",
-        detail: `${mutuallyAgreedCount} of ${totalSections} sections mutually agreed. Tap a section to anchor the chat and step through the wording.`,
+        detail: `${mutuallyAgreedCount} of ${totalSections} sections agreed.`,
         complete: allAgreed,
       },
       {
         title: "Final agreement record",
-        detail:
-          "When every section shows 'Both parties agree', the artefact becomes the binding agreement record.",
+        detail: "Ready when every section is agreed.",
         complete: allAgreed,
       },
     ];
@@ -562,15 +561,6 @@ export function WorkspaceClient({
 
   return (
     <div className="space-y-5">
-      <Card className="border-sage/30 bg-sage-mist/70">
-        <p className="text-sm font-bold text-sage-deep">
-          You are {partyProfile[viewerParty].name} ({partyProfile[viewerParty].role}).
-        </p>
-        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
-          You are working with {partyProfile[viewerParty === "A" ? "B" : "A"].name} ({partyProfile[viewerParty === "A" ? "B" : "A"].role}).
-          The agreement becomes real only after both sides agree the open sections.
-        </p>
-      </Card>
       <section
         aria-label="Agreement parties"
         className="rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"

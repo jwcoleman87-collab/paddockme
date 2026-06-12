@@ -72,26 +72,12 @@ export function WorkspaceRouteClient({ id }: { id: string }) {
   }
 
   const listingTitle = agreement.listingTitle ?? "Agreement workspace";
-  const partyLine = [
-    agreement.farmerAName ?? "Livestock owner",
-    agreement.farmerBName ?? "Landowner",
-  ]
-    .filter(Boolean)
-    .join(" & ");
-  const partyPrefix = partyLine ? partyLine + ". " : "";
-  const description =
-    partyPrefix +
-    agreement.livestock +
-    " for " +
-    agreement.duration +
-    ". Work each section, chat beside it, finalise when both sides agree.";
 
   return (
     <>
       <PageHeader
         eyebrow={`Agreement workspace · ${agreement.status}`}
         title={`${listingTitle}.`}
-        description={description}
         action={
           <ButtonLink
             href={`/map?agreement=${agreement.id}`}
@@ -104,7 +90,7 @@ export function WorkspaceRouteClient({ id }: { id: string }) {
       />
       <FlowContextBar
         label="Agreement flow"
-        step="Livestock request -> paddock offer -> agreed terms -> transport"
+        step="Request -> paddock -> agreement -> transport"
         backHref={`/listings/${agreement.listingId}`}
         backLabel="Back to paddock"
       />

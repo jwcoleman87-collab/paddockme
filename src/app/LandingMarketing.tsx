@@ -49,10 +49,6 @@ export function LandingMarketing() {
           <h1 className="max-w-4xl text-5xl font-extrabold leading-[0.98] text-bark md:text-7xl">
             Livestock, paddocks and transport in one clean loop.
           </h1>
-          <p className="mt-6 max-w-[21rem] break-words text-lg font-medium leading-relaxed text-stone sm:max-w-2xl md:text-xl">
-            PaddockME removes hidden coordination costs between livestock, land
-            and transport.
-          </p>
         </div>
       </section>
 
@@ -61,7 +57,7 @@ export function LandingMarketing() {
         className="fixed inset-x-0 bottom-6 z-40 px-3 sm:bottom-8"
       >
         <div className="mx-auto grid max-w-[24rem] grid-cols-3 gap-2 rounded-[18px] border border-sage-deep/10 bg-warm-white/96 p-2 shadow-[0_18px_45px_rgba(31,42,36,0.14)] backdrop-blur sm:max-w-4xl">
-          {homeActions.map(({ href, label, description, icon: Icon }) => (
+          {homeActions.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -70,9 +66,6 @@ export function LandingMarketing() {
               <Icon className="h-5 w-5" aria-hidden />
               <span className="max-w-[6rem] whitespace-normal text-[0.82rem] font-bold leading-tight sm:max-w-none sm:text-sm">
                 {label}
-              </span>
-              <span className="max-w-[6.5rem] truncate text-[0.68rem] font-semibold leading-none text-stone sm:max-w-none sm:text-xs">
-                {description}
               </span>
             </Link>
           ))}

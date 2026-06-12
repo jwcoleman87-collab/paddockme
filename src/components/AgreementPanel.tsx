@@ -255,10 +255,6 @@ export function AgreementPanel({
         <h2 className="text-2xl font-bold text-sage-deep">
           Shared agistment agreement
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          A shared artefact both farmers can review. Tap a section to anchor the
-          chat, then mark each side&apos;s agreement when the wording holds up.
-        </p>
 
         <div
           role="tablist"
@@ -291,13 +287,6 @@ export function AgreementPanel({
 
         {activeTab === "terms" && (
           <div className="space-y-3">
-            <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
-              <h3 className="font-bold text-sage-deep">Terms under review</h3>
-              <p className="mt-1 text-sm leading-relaxed text-bark/65">
-                Select a section to anchor the chat and confirm each party&apos;s
-                agreement state.
-              </p>
-            </div>
             {agreement.sections.map((section) => (
               <SectionCard
                 key={section.id}
