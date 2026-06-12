@@ -2,13 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Filter, MapPin, Truck, X } from "lucide-react";
+import { MapPin, Truck } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
 import { InfoTile } from "@/components/InfoTile";
-import { SelectablePill } from "@/components/SelectablePill";
 import { offerPaddockForRequest } from "@/lib/data/repositories";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -18,14 +17,6 @@ import type {
   LivestockRequest,
   PaddockListing,
 } from "@/lib/dummyData";
-
-type Filters = {
-  stockTypes: string[];
-  regions: string[];
-  transport: string[];
-};
-
-const empty: Filters = { stockTypes: [], regions: [], transport: [] };
 
 type Props = {
   requests: LivestockRequest[];
@@ -54,7 +45,6 @@ export function RequestsClient({
 }: Props) {
   const router = useRouter();
   const flash = useFlash();
-  const [filters, setFilters] = useState<Filters>(empty);
 
   const myPaddocks = useMemo(
     () =>
@@ -63,56 +53,6 @@ export function RequestsClient({
         : [],
     [paddockListings, currentUserId]
   );
-
-  const stockOptions = useMemo(
-    () => uniqueSorted(requests.map((r) => r.stockType)),
-    [requests]
-  );
-  const regionOptions = useMemo(
-    () => uniqueSorted(requests.flatMap((r) => r.preferredRegions)),
-    [requests]
-  );
-  const transportOptions = ["Yes", "No", "Unsure"];
-
-  const filtered = useMemo(
-    () =>
-      requests.filter((request) => {
-        if (
-          filters.stockTypes.length > 0 &&
-          !filters.stockTypes.includes(request.stockType)
-        )
-          return false;
-        if (
-          filters.regions.length > 0 &&
-          !filters.regions.some((r) => request.preferredRegions.includes(r))
-        )
-          return false;
-        if (
-          filters.transport.length > 0 &&
-          !filters.transport.includes(request.transportRequired)
-        )
-          return false;
-        return true;
-      }),
-    [requests, filters]
-  );
-
-  const activeFilterCount =
-    filters.stockTypes.length + filters.regions.length + filters.transport.length;
-
-  function toggle(group: keyof Filters, value: string) {
-    setFilters((current) => {
-      const list = current[group];
-      const next = list.includes(value)
-        ? list.filter((v) => v !== value)
-        : [...list, value];
-      return { ...current, [group]: next };
-    });
-  }
-
-  function clearAll() {
-    setFilters(empty);
-  }
 
   async function offerPaddock(request: LivestockRequest, listingId: string) {
     if (isSupabaseConfigured()) {
@@ -145,57 +85,13 @@ export function RequestsClient({
 
   return (
     <>
-      <section
-        aria-label="Filter requests"
-        className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-4"
-      >
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sage-deep">
-            <Filter className="h-5 w-5" aria-hidden />
-            <h2 className="text-sm font-bold uppercase tracking-wide">
-              Narrow by
-            </h2>
-          </div>
-          {activeFilterCount > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={clearAll}
-              className="min-h-9 px-3 text-xs"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden />
-              Clear ({activeFilterCount})
-            </Button>
-          )}
-        </div>
-
-        <FilterRow
-          label="Stock"
-          options={stockOptions}
-          selected={filters.stockTypes}
-          onToggle={(v) => toggle("stockTypes", v)}
-        />
-        <FilterRow
-          label="Region"
-          options={regionOptions}
-          selected={filters.regions}
-          onToggle={(v) => toggle("regions", v)}
-        />
-        <FilterRow
-          label="Transport"
-          options={transportOptions}
-          selected={filters.transport}
-          onToggle={(v) => toggle("transport", v)}
-        />
-      </section>
-
       <p className="mb-3 text-sm font-medium text-bark/75">
-        {filtered.length} of {requests.length} open requests
+        {requests.length} open {requests.length === 1 ? "request" : "requests"}
       </p>
 
-      {filtered.length > 0 ? (
+      {requests.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2">
-          {filtered.map((request) => (
+          {requests.map((request) => (
             <RequestCard
               key={request.id}
               request={request}
@@ -208,54 +104,11 @@ export function RequestsClient({
       ) : (
         <Card className="text-center">
           <h3 className="text-lg font-bold text-sage-deep">
-            No requests match.
+            No open requests.
           </h3>
-          {activeFilterCount > 0 && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={clearAll}
-              className="mt-4"
-            >
-              <X className="h-4 w-4" aria-hidden />
-              Clear filters
-            </Button>
-          )}
         </Card>
       )}
     </>
-  );
-}
-
-function FilterRow({
-  label,
-  options,
-  selected,
-  onToggle,
-}: {
-  label: string;
-  options: string[];
-  selected: string[];
-  onToggle: (value: string) => void;
-}) {
-  if (options.length === 0) return null;
-  return (
-    <div className="mb-3 last:mb-0">
-      <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-bark/65">
-        {label}
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((option) => (
-          <SelectablePill
-            key={option}
-            selected={selected.includes(option)}
-            onClick={() => onToggle(option)}
-          >
-            {option}
-          </SelectablePill>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -390,11 +243,5 @@ function RequestCard({
         </ButtonLink>
       </div>
     </Card>
-  );
-}
-
-function uniqueSorted<T>(values: T[]): T[] {
-  return Array.from(new Set(values)).sort((a, b) =>
-    String(a).localeCompare(String(b))
   );
 }
