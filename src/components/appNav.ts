@@ -1,4 +1,5 @@
 import {
+  ClipboardList,
   Home,
   Mail,
   Map,
@@ -28,7 +29,14 @@ export const APP_NAV: AppNavItem[] = [
     href: "/agreements",
     label: "My work",
     icon: Home,
-    match: ["/agreements", "/home", "/workspace", "/profile"],
+    match: ["/agreements", "/home", "/profile"],
+    mobile: true,
+  },
+  {
+    href: "/workspace",
+    label: "Workspace",
+    icon: ClipboardList,
+    match: ["/workspace"],
     mobile: true,
   },
   {
@@ -57,7 +65,7 @@ export const APP_NAV: AppNavItem[] = [
     label: "Messages",
     icon: Mail,
     match: ["/messages"],
-    mobile: true,
+    mobile: false,
   },
   {
     href: "/map",
