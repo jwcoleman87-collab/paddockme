@@ -32,6 +32,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+scan-results.json
+CODEX_BRIEF_*.md
 
 # env files (DO NOT commit secrets)
 .env
