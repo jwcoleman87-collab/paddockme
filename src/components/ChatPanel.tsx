@@ -71,11 +71,6 @@ export function ChatPanel({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-sage-deep">Live Chat</h2>
-            {title !== "Conversation" && (
-              <p className="mt-0.5 text-sm font-semibold text-bark/70">
-                {title}
-              </p>
-            )}
           </div>
           <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-match/20 bg-match-light px-3 text-xs font-bold text-match">
             <span className="h-2 w-2 rounded-full bg-match" aria-hidden />

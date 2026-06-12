@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Truck } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -239,23 +238,6 @@ export function RealTransportRoom({
 
   return (
     <div className="space-y-5">
-      <Card className="border-sage/30 bg-sage-mist/70">
-        <p className="text-sm font-bold text-sage-deep">
-          {isParty
-            ? `You are ${viewer.name} (${viewer.role}).`
-            : "You are viewing this job as a carrier."}
-        </p>
-        <p className="mt-1 text-sm font-medium leading-relaxed text-bark/85">
-          {roleLabels.farmerA.name} (livestock owner) and{" "}
-          {roleLabels.farmerB.name} (landowner)
-          {job.driverId
-            ? ` are working with ${roleLabels.driver.name} (driver).`
-            : " are waiting for a carrier to accept this job."}{" "}
-          Route, load and timing only - agistment terms stay private to the
-          farmers.
-        </p>
-      </Card>
-
       <SplitWorkspace
         leftLabel="Job"
         rightLabel="Chat"
@@ -348,9 +330,9 @@ export function RealTransportRoom({
                 )}
               </div>
               {viewerRole === "driver" && !nextStatus && job.status === "completed" && (
-                <p className="mt-3 text-sm font-semibold text-bark/70">
-                  Job complete - nice work. Find your next run on the RFT board.
-                </p>
+                <ButtonLink href="/transport/jobs" variant="secondary">
+                  RFT board
+                </ButtonLink>
               )}
             </Card>
 
@@ -359,9 +341,7 @@ export function RealTransportRoom({
                 Status history
               </h3>
               {timeline.length === 0 ? (
-                <p className="mt-2 text-sm text-bark/65">
-                  Status changes will appear here as the job moves.
-                </p>
+                <p className="mt-2 text-sm text-bark/65">No status history.</p>
               ) : (
                 <ol className="mt-3 space-y-2.5">
                   {timeline.map((event, index) => (
@@ -374,7 +354,6 @@ export function RealTransportRoom({
                         <p className="text-sm font-bold text-sage-deep">
                           {event.title}
                         </p>
-                        <p className="text-sm text-bark/70">{event.detail}</p>
                       </div>
                     </li>
                   ))}
@@ -391,24 +370,6 @@ export function RealTransportRoom({
                 onSettle={() => ensureSettlement("mark_settled")}
               />
             )}
-
-            <Card className="border-sage-deep/10 bg-cream/55">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sage-deep" aria-hidden />
-                <p className="text-sm leading-relaxed text-bark/75">
-                  See this route on the live map from the{" "}
-                  <Link
-                    href={`/map?transport=${job.id}`}
-                    className="font-bold text-sage-deep underline-offset-2 hover:underline"
-                  >
-                    Map tab
-                  </Link>
-                  . Preferred pickup{" "}
-                  <CalendarDays className="inline h-3.5 w-3.5" aria-hidden />{" "}
-                  {job.preferredDate}.
-                </p>
-              </div>
-            </Card>
           </div>
         }
         right={
@@ -474,10 +435,6 @@ function MilestoneTimeline({
     return (
       <div className="mt-4 rounded-2xl border border-sage-mist bg-cream/70 p-3">
         <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
-        <p className="mt-1 text-sm text-bark/70">
-          Milestones will appear once the RFT is accepted. The timeline stays
-          useful even when live GPS is patchy.
-        </p>
       </div>
     );
   }
@@ -487,9 +444,6 @@ function MilestoneTimeline({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
-          <p className="text-xs font-semibold text-bark/60">
-            Passed milestones light up; the current leg stays clear even without GPS.
-          </p>
         </div>
         {canPassMilestone && (
           <Button
@@ -530,11 +484,11 @@ function MilestoneTimeline({
                 </span>
                 <div>
                   <p className="text-sm font-bold">{milestone.label}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed">
-                    {passed && milestone.passedAt
-                      ? `Passed ${relativeTime(milestone.passedAt)}.`
-                      : milestone.description}
-                  </p>
+                  {passed && milestone.passedAt && (
+                    <p className="mt-0.5 text-xs">
+                      Passed {relativeTime(milestone.passedAt)}
+                    </p>
+                  )}
                 </div>
               </div>
             </li>
@@ -564,10 +518,6 @@ function SettlementCard({
         <h3 className="text-sm font-bold uppercase tracking-wide text-sage-deep">
           Farmer settlement
         </h3>
-        <p className="mt-2 text-sm leading-relaxed text-bark/70">
-          This movement is complete. Agistment settlement is handled between the
-          livestock owner and landowner, separate from carrier pricing.
-        </p>
       </Card>
     );
   }
@@ -582,10 +532,6 @@ function SettlementCard({
           <h3 className="text-sm font-bold uppercase tracking-wide text-sage-deep">
             Final settlement
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-bark/75">
-            Online payments are launching soon. Settle directly for now; the
-            amount and outcome still stay on the agreement record.
-          </p>
         </div>
         <StatusBadge tone={settled ? "success" : "warning"}>
           {settled ? "Settled" : "Awaiting settlement"}
@@ -596,13 +542,9 @@ function SettlementCard({
           <p className="text-lg font-bold text-bark">
             {formatMoney(settlement.amountCents, settlement.currency)}
           </p>
-          <p className="mt-1 text-sm text-bark/70">{settlement.description}</p>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-semibold text-bark/70">
-          Open the settlement record to calculate what is owed from the
-          agreement terms.
-        </p>
+        <p className="mt-3 text-sm font-semibold text-bark/70">No settlement record.</p>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         {!settlement && (

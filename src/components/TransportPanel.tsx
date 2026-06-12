@@ -169,11 +169,6 @@ export function TransportPanel({
         <h2 className="text-2xl font-bold text-sage-deep">
           Stock movement room
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          {partyLabels.farmerA}, {partyLabels.farmerB} and {partyLabels.driver} coordinate
-          the move here. Agreement pricing and contract terms stay out of this
-          room by design.
-        </p>
 
         <div
           role="tablist"
@@ -246,25 +241,6 @@ export function TransportPanel({
         )}
       </div>
 
-      {isDriver && (
-        <div className="flex items-start gap-3 border-t border-sage-deep/15 bg-amber-light/45 px-5 py-4">
-          <EyeOff
-            className="mt-0.5 h-5 w-5 shrink-0 text-amber"
-            aria-hidden
-          />
-          <div>
-            <p className="text-sm font-bold text-bark">
-              You&apos;re viewing as the driver.
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-bark/70">
-              Commercial detail (agistment duration, rate, contract terms)
-              stays in the agreement workspace between {partyLabels.farmerA} and{" "}
-              {partyLabels.farmerB}.
-              You see the logistics you need to move the stock.
-            </p>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -312,10 +288,6 @@ export function TransportPaymentCallout({
             {total
               ? `${formatCurrency(total, quote.currency)} ${quote.currency} payable to ${job.driver}`
               : `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel} accepted`}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-bark/65">
-            Stripe test mode when configured; this preview can use a no-money
-            sandbox. Card details never touch PaddockME.
           </p>
         </div>
 
@@ -475,11 +447,6 @@ function OpenRftsPanel({
           Open RFTs nearby
         </h3>
       </div>
-      <p className="mb-4 text-sm leading-relaxed text-bark/70">
-        Farmer-created transport requests that could fit around this movement
-        to <span className="font-semibold text-bark">{job.destination}</span>.
-        These are routes farmers are waiting on, not driver-posted return legs.
-      </p>
       {openRfts.length > 0 ? (
         <ul className="space-y-2">
           {openRfts.map((rft) => (
@@ -488,9 +455,7 @@ function OpenRftsPanel({
         </ul>
       ) : (
         <p className="rounded-lg border border-dashed border-sage-deep/15 bg-warm-white px-4 py-3 text-sm text-bark/65">
-          No other farmer RFTs are waiting near this route yet. New transport
-          requests appear here after Livestock owner and Landowner raise them from an
-          agreement workspace.
+          No nearby RFTs.
         </p>
       )}
     </section>
@@ -540,13 +505,7 @@ function CoordinationList({
 }) {
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-sage-deep/10 bg-cream/60 px-4 py-3">
-        <h3 className="font-bold text-sage-deep">Movement steps</h3>
-        <p className="mt-1 text-sm leading-relaxed text-bark/65">
-          Tap a step to anchor the group chat. Tap your own pill in the
-          confirmations row to lock the step in.
-        </p>
-      </div>
+      <h3 className="font-bold text-sage-deep">Movement steps</h3>
       {sections.map((section) => {
         const liveConfirmations =
           confirmations[section.id] ?? section.confirmations;
@@ -620,7 +579,6 @@ function CoordinationCard({
           </div>
           <StatusBadge tone={tone}>{derivedStatus}</StatusBadge>
         </div>
-        <p className="text-sm text-bark/70">{section.summary}</p>
       </button>
 
       <div className="space-y-4 border-t border-mist bg-cream px-5 py-4">
@@ -637,9 +595,7 @@ function CoordinationCard({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-bark/60">
-            No driver-visible detail recorded yet for this step.
-          </p>
+          <p className="text-sm text-bark/60">No detail recorded.</p>
         )}
 
         <ConfirmationsRow
@@ -824,8 +780,7 @@ function TransportArtefactStrip({
 
       {artefacts.length === 0 ? (
         <p className="rounded-xl border border-dashed border-sage-deep/15 bg-warm-white px-4 py-6 text-center text-sm text-bark/60">
-          No transport artefacts attached yet. Add an NVD, journey plan, or
-          gate access photo when one is on hand.
+          No artefacts.
         </p>
       ) : (
         <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
@@ -958,10 +913,6 @@ function RateNegotiation({
             Transport rate
           </h3>
         </div>
-        <p className="text-sm leading-relaxed text-bark/70">
-          Negotiate the haulage rate here. Visible to {partyLabels.farmerA} and{" "}
-          {partyLabels.driver} only - {partyLabels.farmerB} never sees these numbers.
-        </p>
       </div>
 
       {acceptedQuote && (
@@ -991,11 +942,6 @@ function RateNegotiation({
         <div className="rounded-xl border border-dashed border-sage-deep/15 bg-cream/55 px-4 py-6 text-center">
           <p className="text-sm font-semibold text-bark">
             No quote sent yet.
-          </p>
-          <p className="mt-1 text-sm text-bark/70">
-            {role === "driver"
-              ? "Propose a rate to start the conversation."
-              : "Wait for the driver to send a quote, or propose your own."}
           </p>
         </div>
       )}
@@ -1071,11 +1017,6 @@ function TransportPayableCard({
             ? `${formatCurrency(total, quote.currency)} ${quote.currency} estimated total`
             : `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel}`}
         </p>
-        <p className="mt-1 text-xs leading-relaxed text-bark/65">
-          {total
-            ? `${formatCurrency(quote.amount, quote.currency)} ${quote.currency} ${basisLabel} from the accepted quote.`
-            : "Total will be confirmed before live payment capture."}
-        </p>
       </div>
 
       <ol className="mt-4 space-y-2 text-sm">
@@ -1087,17 +1028,10 @@ function TransportPayableCard({
       <div className="mt-4 border-t border-mist pt-4">
         {role === "farmerA" ? (
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-relaxed text-bark/65">
-              Stripe test mode when configured; this preview can use a no-money
-              sandbox. Card details never touch PaddockME.
-            </p>
             <TransportCheckoutAction job={job} quote={quote} />
           </div>
         ) : (
-          <p className="text-xs leading-relaxed text-bark/65">
-            Payment action sits with {partyLabels.farmerA}. Driver payout
-            onboarding comes in the next milestone.
-          </p>
+          <p className="text-xs text-bark/65">Awaiting payment.</p>
         )}
       </div>
     </section>
