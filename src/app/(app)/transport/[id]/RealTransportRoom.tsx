@@ -15,12 +15,9 @@ import {
   getCurrentUserId,
   getTransportJobRecord,
   listTransportMessages,
-  listTransportMilestones,
   listTransportStatusEvents,
-  passTransportMilestone,
   updateTransportJobStatus,
   type AgreementSettlementSummary,
-  type TransportMilestone,
 } from "@/lib/data/repositories";
 import { cn } from "@/lib/utils";
 import type { Message, TransportJob, TransportJobStatus } from "@/lib/dummyData";
@@ -69,7 +66,6 @@ export function RealTransportRoom({
   const [timeline, setTimeline] = useState<
     { title: string; detail: string; complete: boolean }[]
   >([]);
-  const [milestones, setMilestones] = useState<TransportMilestone[]>([]);
   const [settlement, setSettlement] =
     useState<AgreementSettlementSummary | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
@@ -92,9 +88,6 @@ export function RealTransportRoom({
       });
       void listTransportStatusEvents(job.id).then((events) => {
         if (active) setTimeline(events);
-      });
-      void listTransportMilestones(job.id).then((nextMilestones) => {
-        if (active) setMilestones(nextMilestones);
       });
       void getAgreementSettlementForTransportJob(job.id).then((nextSettlement) => {
         if (active) setSettlement(nextSettlement);
@@ -140,12 +133,6 @@ export function RealTransportRoom({
     viewerRole === "driver"
       ? STATUS_FLOW[STATUS_FLOW.indexOf(job.status) + 1] ?? null
       : null;
-  const nextMilestone = milestones.find((milestone) => milestone.status !== "passed");
-  const canPassMilestone =
-    viewerRole === "driver" &&
-    job.status === "in_transit" &&
-    !!nextMilestone &&
-    !["Loaded", "Departed", "Arriving", "Delivered"].includes(nextMilestone.label);
 
   useEffect(() => {
     if (job.status !== "completed") return;
@@ -166,7 +153,6 @@ export function RealTransportRoom({
         return;
       }
       setJob(updated);
-      void listTransportMilestones(job.id).then(setMilestones);
       lastLocalMutationRef.current = 0;
       flash(`Status updated: ${STATUS_LABELS[updated.status] ?? updated.status}.`, "success");
     } catch {
@@ -185,25 +171,6 @@ export function RealTransportRoom({
         setMessages((current) => [...current, saved]);
       }
     );
-  }
-
-  async function passNextMilestone() {
-    if (!nextMilestone) return;
-    setUpdating(true);
-    const saved = await passTransportMilestone({
-      jobId: job.id,
-      milestoneId: nextMilestone.id,
-    });
-    if (!saved) {
-      flash("Couldn't record that milestone. Please try again.", "warning");
-      setUpdating(false);
-      return;
-    }
-    setMilestones((current) =>
-      current.map((milestone) => (milestone.id === saved.id ? saved : milestone))
-    );
-    flash(`${saved.label} recorded. Farmers can see it now.`, "success");
-    setUpdating(false);
   }
 
   async function ensureSettlement(
@@ -281,14 +248,6 @@ export function RealTransportRoom({
               </div>
 
               <StatusStepper status={job.status} />
-
-              <MilestoneTimeline
-                milestones={milestones}
-                canPassMilestone={canPassMilestone}
-                nextMilestoneLabel={nextMilestone?.label}
-                updating={updating}
-                onPassMilestone={passNextMilestone}
-              />
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {canAccept && (
@@ -418,87 +377,6 @@ function StatusStepper({ status }: { status: TransportJobStatus }) {
   );
 }
 
-function MilestoneTimeline({
-  milestones,
-  canPassMilestone,
-  nextMilestoneLabel,
-  updating,
-  onPassMilestone,
-}: {
-  milestones: TransportMilestone[];
-  canPassMilestone: boolean;
-  nextMilestoneLabel?: string;
-  updating: boolean;
-  onPassMilestone: () => void;
-}) {
-  if (milestones.length === 0) {
-    return (
-      <div className="mt-4 rounded-2xl border border-sage-mist bg-cream/70 p-3">
-        <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
-      </div>
-    );
-  }
-
-  return (
-    <section className="mt-4 rounded-2xl border border-sage-mist bg-cream/70 p-3" aria-label="Transport milestone timeline">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-bold text-sage-deep">Tracking milestones</p>
-        </div>
-        {canPassMilestone && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onPassMilestone}
-            disabled={updating}
-            className="min-h-10"
-          >
-            <CheckCircle className="h-4 w-4" aria-hidden />
-            {updating ? "Recording..." : `Passed ${nextMilestoneLabel}`}
-          </Button>
-        )}
-      </div>
-      <ol className="mt-3 grid gap-2 sm:grid-cols-2">
-        {milestones.map((milestone) => {
-          const passed = milestone.status === "passed";
-          return (
-            <li
-              key={milestone.id}
-              className={cn(
-                "min-h-20 rounded-xl border p-3",
-                passed
-                  ? "border-sage/40 bg-sage-mist text-sage-deep"
-                  : "border-mist bg-warm-white text-bark/65"
-              )}
-            >
-              <div className="flex items-start gap-2">
-                <span
-                  className={cn(
-                    "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-bold",
-                    passed
-                      ? "border-sage-deep bg-sage-deep text-cream"
-                      : "border-mist bg-cream text-stone"
-                  )}
-                >
-                  {milestone.sortOrder}
-                </span>
-                <div>
-                  <p className="text-sm font-bold">{milestone.label}</p>
-                  {passed && milestone.passedAt && (
-                    <p className="mt-0.5 text-xs">
-                      Passed {relativeTime(milestone.passedAt)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
-  );
-}
-
 function SettlementCard({
   viewerRole,
   settlement,
@@ -568,16 +446,4 @@ function formatMoney(amountCents: number, currency: string) {
     currency,
     maximumFractionDigits: amountCents % 100 === 0 ? 0 : 2,
   }).format(amountCents / 100);
-}
-
-function relativeTime(iso: string) {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return "recently";
-  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} hr ago`;
-  const days = Math.round(hours / 24);
-  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
