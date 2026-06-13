@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Wheat, Truck } from "lucide-react";
-import { CattleIcon } from "@/components/paddockme/AnimalIcons";
+import { CattleIcon, WheatIcon, TransportTruckIcon } from "@/components/paddockme/AnimalIcons";
 import { cn } from "@/lib/utils";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
@@ -21,14 +20,14 @@ const roles = [
     id: "landowner",
     label: "Landowner",
     detail: "I have feed",
-    icon: Wheat,
+    icon: WheatIcon,
     next: "/landowner/requests/1023",
   },
   {
     id: "transport",
     label: "Transport Provider",
     detail: "I transport",
-    icon: Truck,
+    icon: TransportTruckIcon,
     next: "/transport/quotes/1023",
   },
 ];
@@ -98,7 +97,12 @@ export function RegisterCard() {
       <p className="mt-4 text-center text-sm text-pm-muted">
         Already have an account?{" "}
         <Link
-          href="/login"
+          href="/sign-in"
           className="font-semibold text-pm-green-900 underline-offset-2 hover:underline"
         >
- 
+          Log in
+        </Link>
+      </p>
+    </div>
+  );
+}

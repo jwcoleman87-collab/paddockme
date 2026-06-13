@@ -1,5 +1,4 @@
 import {
-  Wheat,
   Truck,
   ClipboardPen,
   Handshake,
@@ -8,7 +7,11 @@ import {
   MoveRight,
   LandPlot,
 } from "lucide-react";
-import { CattleIcon } from "@/components/paddockme/AnimalIcons";
+import {
+  CattleIcon,
+  WheatIcon,
+  TransportTruckIcon,
+} from "@/components/paddockme/AnimalIcons";
 import { PrimaryNav } from "@/components/paddockme/PmNav";
 import { RoleChoiceCard, RecentActivityCard } from "@/components/paddockme/PmCards";
 import { paddockmeImages } from "@/lib/paddockmeImages";
@@ -60,14 +63,14 @@ export function PaddockHomepage() {
               />
               <RoleChoiceCard
                 href="/landowner/requests/1023"
-                icon={<Wheat className="h-6 w-6" aria-hidden />}
+                icon={<WheatIcon className="h-6 w-6" />}
                 title="I Have Feed"
                 subtitle="List my property"
                 accent
               />
               <RoleChoiceCard
                 href="/transport/quotes/1023"
-                icon={<Truck className="h-6 w-6" aria-hidden />}
+                icon={<TransportTruckIcon className="h-6 w-6" />}
                 title="I Transport"
                 subtitle="Find transport jobs"
               />
@@ -133,4 +136,8 @@ export function PaddockHomepage() {
         </div>
         <div className="bg-pm-green-900 px-4 py-4 text-center text-xs text-white/60 sm:px-6" id="support">
           © {new Date().getFullYear()} PaddockME · Support: support@paddockme.com.au
-    
+        </div>
+      </footer>
+    </div>
+  );
+}
