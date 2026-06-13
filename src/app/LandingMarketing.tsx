@@ -55,6 +55,21 @@ const howItWorks = [
   { n: 5, label: "Move stock", icon: CalendarCheck },
 ];
 
+const recentActivity = [
+  {
+    icon: CattleIcon,
+    text: "120 head seeking feed near Dubbo NSW",
+  },
+  {
+    icon: WheatIcon,
+    text: "80 acres available near Wagga Wagga",
+  },
+  {
+    icon: TransportTruckIcon,
+    text: "Transport available Sydney → Tamworth",
+  },
+];
+
 export function LandingMarketing() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-cream text-bark">
@@ -162,6 +177,28 @@ export function LandingMarketing() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* Recent activity */}
+      <section className="bg-sage-mist px-5 py-12 md:px-8">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-2xl font-extrabold text-bark">
+            Recent Activity
+          </h2>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+            {recentActivity.map(({ icon: Icon, text }) => (
+              <li
+                key={text}
+                className="flex items-center gap-3 rounded-[8px] border border-sage-deep/10 bg-warm-white p-4 shadow-[0_8px_24px_rgba(31,42,36,0.05)]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-sage-deep text-warm-white">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <span className="text-sm font-medium text-bark">{text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
