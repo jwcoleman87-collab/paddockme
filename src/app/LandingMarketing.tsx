@@ -6,12 +6,15 @@ import {
   ClipboardPen,
   FileSignature,
   Handshake,
-  LandPlot,
   LogIn,
   MoveRight,
   Truck,
-  Wheat,
 } from "lucide-react";
+import {
+  CattleIcon,
+  TransportTruckIcon,
+  WheatIcon,
+} from "@/components/paddockme/AnimalIcons";
 import { cn } from "@/lib/utils";
 
 const marketingLinks = [
@@ -23,21 +26,21 @@ const marketingLinks = [
 const roleChoices = [
   {
     href: "/listings",
-    icon: LandPlot,
+    icon: CattleIcon,
     title: "I Need Feed",
     subtitle: "Find agistment land",
     accent: false,
   },
   {
     href: "/listings/new",
-    icon: Wheat,
+    icon: WheatIcon,
     title: "I Have Feed",
     subtitle: "List my property",
     accent: true,
   },
   {
     href: "/transport/jobs",
-    icon: Truck,
+    icon: TransportTruckIcon,
     title: "I Transport",
     subtitle: "Find transport jobs",
     accent: false,
