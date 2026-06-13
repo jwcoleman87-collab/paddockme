@@ -1,6 +1,7 @@
 "use client";
 
-import { Beef, Cloud, PawPrint, CirclePlus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
+import { CattleIcon, SheepIcon, HorseIcon } from "@/components/paddockme/AnimalIcons";
 import { FlowShell } from "@/components/paddockme/FlowShell";
 import { LivestockTypeCard } from "@/components/paddockme/PmCards";
 import { FormField } from "@/components/paddockme/FormField";
@@ -9,9 +10,9 @@ import { paddockmeImages } from "@/lib/paddockmeImages";
 import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 const livestockTypes = [
-  { label: "Cattle", icon: <Beef className="h-7 w-7" /> },
-  { label: "Sheep", icon: <Cloud className="h-7 w-7" /> },
-  { label: "Horses", icon: <PawPrint className="h-7 w-7" /> },
+  { label: "Cattle", icon: <CattleIcon className="h-7 w-7" /> },
+  { label: "Sheep", icon: <SheepIcon className="h-7 w-7" /> },
+  { label: "Horses", icon: <HorseIcon className="h-7 w-7" /> },
   { label: "Other", icon: <CirclePlus className="h-7 w-7" /> },
 ];
 
