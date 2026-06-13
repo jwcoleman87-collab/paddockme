@@ -1,112 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PawPrint } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { useFlash } from "@/components/FlashProvider";
-import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchablePicker } from "@/components/SearchablePicker";
 import {
-  SearchablePicker,
-  pickerGroupsFromRegions,
-} from "@/components/SearchablePicker";
-import { SelectablePill } from "@/components/SelectablePill";
+  CattleIcon,
+  HorseIcon,
+  SheepIcon,
+} from "@/components/paddockme/AnimalIcons";
+import { RequestProgress } from "@/components/paddockme/RequestProgress";
+import { StockTypeCard } from "@/components/paddockme/StockTypeCard";
 import { animalOptions, stockTypes, type StockType } from "@/lib/dummyData";
-import { createLivestockRequestRecord } from "@/lib/data/repositories";
 import {
   geocodeLocation,
   type GeocodedLocation,
 } from "@/lib/locationGeocode";
-import {
-  findRegion,
-  regionsByLabel,
-  regionsGroupedByState,
-} from "@/lib/regions";
+import { loadRequestDraft, saveRequestDraft } from "@/lib/requestDraft";
 
-const durations = ["1-3 months", "3-6 months", "6-12 months", "12+ months", "Ongoing"];
-const transport = ["Yes", "No", "Unsure"];
+const primaryCards: { value: StockType; label: string; icon: React.ReactNode }[] = [
+  { value: "Cattle", label: "Cattle", icon: <CattleIcon className="h-6 w-6" /> },
+  { value: "Sheep", label: "Sheep", icon: <SheepIcon className="h-6 w-6" /> },
+  { value: "Horses", label: "Horses", icon: <HorseIcon className="h-6 w-6" /> },
+];
+const primaryStockTypes = primaryCards.map((card) => card.value);
+const otherStockTypes = stockTypes.filter(
+  (type) => !primaryStockTypes.includes(type)
+);
 
-// Region picker groups are built from the canonical Australian region
-// list grouped by state. Stored selection is by region id; we convert
-// to/from human labels at the request/URL boundary so existing seed and
-// /matches filters keep working unchanged.
-const regionPickerGroups = pickerGroupsFromRegions(regionsGroupedByState());
-
-function regionIdsFromLabels(labels: string[]): string[] {
-  return labels
-    .map((label) => regionsByLabel[label]?.id)
-    .filter((id): id is string => !!id);
-}
-
-function regionLabelsFromIds(ids: string[]): string[] {
-  return ids
-    .map((id) => findRegion(id)?.label)
-    .filter((label): label is string => !!label);
-}
-
-export default function NewRequestPage() {
+export default function RequestStockPage() {
   const router = useRouter();
   const flash = useFlash();
-  const [stockType, setStockType] = useState<StockType>("Cattle");
-  const [breed, setBreed] = useState("Angus");
-  const [duration, setDuration] = useState("3-6 months");
-  // Stored as region ids. selectedRegionLabels is derived only when we
-  // need to pass labels to URL params / persistence (keeps existing
-  // downstream filters and seed names working).
-  const [selectedRegionIds, setSelectedRegionIds] = useState<string[]>([
-    "southern-nsw",
-  ]);
-  const selectedRegions = regionLabelsFromIds(selectedRegionIds);
-  const [transportRequired, setTransportRequired] = useState("Yes");
+  const [cardSelection, setCardSelection] = useState<StockType | "Other">("Cattle");
+  const [otherType, setOtherType] = useState<StockType>(otherStockTypes[0]);
   const [headCount, setHeadCount] = useState(100);
   const [originAddress, setOriginAddress] = useState("");
-  const [confirmedOrigin, setConfirmedOrigin] =
-    useState<GeocodedLocation | null>(null);
+  const [confirmedOrigin, setConfirmedOrigin] = useState<GeocodedLocation | null>(null);
   const [geocoding, setGeocoding] = useState(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!confirmedOrigin) {
-      flash("Confirm the pickup property location before matching paddocks.", "warning");
-      return;
+  // Hydrate from a draft saved earlier in this session (e.g. coming back
+  // from Step 2 via "Back").
+  useEffect(() => {
+    const draft = loadRequestDraft();
+    if (primaryStockTypes.includes(draft.stockType)) {
+      setCardSelection(draft.stockType);
+    } else {
+      setCardSelection("Other");
+      setOtherType(draft.stockType);
     }
-    const created = await createLivestockRequestRecord({
-      stockType,
-      breed,
-      headCount,
-      duration,
-      preferredRegions: selectedRegions,
-      transportRequired: transportRequired as "Yes" | "No" | "Unsure",
-      originAddress: confirmedOrigin.formattedAddress,
-      originLatitude: confirmedOrigin.latitude,
-      originLongitude: confirmedOrigin.longitude,
-      originPlaceId: confirmedOrigin.placeId,
-    });
-    if (!created) {
-      flash("Couldn't save your request. Please try again.", "warning");
-      return;
-    }
-    flash("Request created. Matching paddocks now.", "success");
-    router.push(`/matches?request=${encodeURIComponent(created.request.id)}`);
-  }
+    setHeadCount(draft.headCount);
+    setOriginAddress(draft.originAddress);
+    setConfirmedOrigin(draft.confirmedOrigin);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function selectStockType(value: StockType) {
-    setStockType(value);
-    setBreed(animalOptions[value][0]);
-  }
+  const stockType: StockType = cardSelection === "Other" ? otherType : cardSelection;
 
   async function confirmOriginLocation() {
     if (!originAddress.trim()) {
-      flash("Add the pickup property location first.", "warning");
+      flash("Add your property location first.", "warning");
       return;
     }
     setGeocoding(true);
-    const result = await geocodeLocation({
-      query: originAddress.trim(),
-      region: selectedRegions[0],
-    });
+    const result = await geocodeLocation({ query: originAddress.trim() });
     setGeocoding(false);
     if (!result) {
       flash("Could not confirm that location. Try a fuller address or nearby town.", "warning");
@@ -114,70 +74,95 @@ export default function NewRequestPage() {
     }
     setOriginAddress(result.formattedAddress);
     setConfirmedOrigin(result);
-    flash("Pickup location confirmed.", "success");
+    flash("Location confirmed.", "success");
   }
 
-  const breedOptions = animalOptions[stockType];
-  const countUnit =
-    stockType === "Bees" ? "hives" : stockType === "Poultry" ? "birds" : "head";
+  function persist() {
+    const draft = loadRequestDraft();
+    const breed = draft.stockType === stockType ? draft.breed : animalOptions[stockType][0];
+    saveRequestDraft({
+      stockType,
+      breed,
+      headCount,
+      originAddress,
+      confirmedOrigin,
+    });
+  }
+
+  function saveAndExit() {
+    persist();
+    flash("Saved. Pick up your request from Home anytime.", "success");
+    router.push("/agreements");
+  }
+
+  function goNext() {
+    if (headCount < 1) {
+      flash("Enter how many head you have.", "warning");
+      return;
+    }
+    if (!confirmedOrigin) {
+      flash("Confirm your current location before continuing.", "warning");
+      return;
+    }
+    persist();
+    router.push("/request/new/requirements");
+  }
 
   return (
     <>
       <PageHeader
-        eyebrow="Need agistment"
-        title="Tell us what needs placing."
-        description="Choose the stock, count, timing, regions and transport need so the app can line up suitable paddocks."
+        eyebrow="New agistment request"
+        title="What stock do you have?"
+        description="Tell us what you're moving and where it's coming from. We'll line up suitable paddocks next."
       />
 
-      <form onSubmit={submit} className="grid gap-5 lg:grid-cols-[0.95fr_0.55fr]">
-        <div className="space-y-5">
-          <ChoiceSection title="Stock type">
-            {stockTypes.map((value) => (
-              <SelectablePill
-                key={value}
-                selected={stockType === value}
-                onClick={() => selectStockType(value)}
-              >
-                {value}
-              </SelectablePill>
-            ))}
-          </ChoiceSection>
+      <RequestProgress current={1} />
 
+      <div className="grid gap-5 lg:grid-cols-[1fr_0.5fr]">
+        <div className="space-y-5">
           <Card>
-            <h2 className="mb-4 text-xl font-bold text-sage-deep">
-              {stockType === "Bees" ? "Bee or hive type" : "Breed or class"}
-            </h2>
-            <SearchablePicker
-              label={
-                stockType === "Bees"
-                  ? "Choose the bee or hive type"
-                  : `Choose the ${stockType.toLowerCase()} breed or class`
-              }
-              placeholder="Choose a breed…"
-              searchPlaceholder="Search breeds"
-              value={breed}
-              onChange={(next) => next && setBreed(next)}
-              groups={[
-                {
-                  id: stockType,
-                  label: stockType,
-                  options: breedOptions.map((option) => ({
-                    id: option,
-                    label: option,
-                  })),
-                },
-              ]}
-            />
+            <h2 className="mb-4 text-xl font-bold text-sage-deep">Stock type</h2>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {primaryCards.map(({ value, label, icon }) => (
+                <StockTypeCard
+                  key={value}
+                  label={label}
+                  icon={icon}
+                  selected={cardSelection === value}
+                  onClick={() => setCardSelection(value)}
+                />
+              ))}
+              <StockTypeCard
+                label="Other"
+                icon={<PawPrint className="h-6 w-6" aria-hidden />}
+                selected={cardSelection === "Other"}
+                onClick={() => setCardSelection("Other")}
+              />
+            </div>
+            {cardSelection === "Other" && (
+              <div className="mt-4">
+                <SearchablePicker
+                  label="Choose the stock type"
+                  placeholder="Choose a stock type…"
+                  searchPlaceholder="Search stock types"
+                  value={otherType}
+                  onChange={(next) => next && setOtherType(next as StockType)}
+                  groups={[
+                    {
+                      id: "other-stock",
+                      label: "Stock types",
+                      options: otherStockTypes.map((type) => ({ id: type, label: type })),
+                    },
+                  ]}
+                />
+              </div>
+            )}
           </Card>
 
           <Card>
             <div className="mb-4 flex items-baseline justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-sage-deep">Head count</h2>
-              </div>
-              <p className="text-4xl font-extrabold text-sage-deep">
-                {headCount}
-              </p>
+              <h2 className="text-xl font-bold text-sage-deep">How many head?</h2>
+              <p className="text-4xl font-extrabold text-sage-deep">{headCount}</p>
             </div>
             <input
               type="range"
@@ -190,22 +175,8 @@ export default function NewRequestPage() {
             />
           </Card>
 
-          <ChoiceSection title="Duration">
-            {durations.map((value) => (
-              <SelectablePill
-                key={value}
-                selected={duration === value}
-                onClick={() => setDuration(value)}
-              >
-                {value}
-              </SelectablePill>
-            ))}
-          </ChoiceSection>
-
           <Card>
-            <h2 className="mb-4 text-xl font-bold text-sage-deep">
-              Pickup property location
-            </h2>
+            <h2 className="mb-4 text-xl font-bold text-sage-deep">Current location</h2>
             <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
               <label className="block">
                 <span className="text-[0.78rem] font-extrabold uppercase tracking-[0.1em] text-stone">
@@ -238,67 +209,32 @@ export default function NewRequestPage() {
             )}
           </Card>
 
-          <Card>
-            <h2 className="mb-4 text-xl font-bold text-sage-deep">
-              Preferred regions
-            </h2>
-            <SearchablePicker
-              label="Choose one or more regions"
-              placeholder="Choose a region…"
-              searchPlaceholder="Search regions"
-              multi
-              value={selectedRegionIds}
-              onChange={setSelectedRegionIds}
-              groups={regionPickerGroups}
-            />
-          </Card>
-        </div>
-
-        <aside className="space-y-5">
-          <ChoiceSection title="Transport required">
-            {transport.map((value) => (
-              <SelectablePill
-                key={value}
-                selected={transportRequired === value}
-                onClick={() => setTransportRequired(value)}
-                className="w-full"
-              >
-                {value}
-              </SelectablePill>
-            ))}
-          </ChoiceSection>
-
-          <Card className="sticky top-24">
-            <h2 className="text-xl font-bold text-sage-deep">Request summary</h2>
-            <div className="mt-4 space-y-3 text-sm">
-              <InfoTile tone="subtle" size="sm" label="Stock" value={`${headCount} ${countUnit} ${breed} ${stockType}`} />
-              <InfoTile tone="subtle" size="sm" label="Duration" value={duration} />
-              <InfoTile tone="subtle" size="sm" label="Regions" value={selectedRegions.join(", ")} />
-              <InfoTile tone="subtle" size="sm" label="Pickup" value={confirmedOrigin?.formattedAddress ?? "Not confirmed"} />
-              <InfoTile tone="subtle" size="sm" label="Transport" value={transportRequired} />
-            </div>
-            <Button type="submit" className="mt-5 w-full">
-              Find matches
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+            <Button type="button" variant="secondary" onClick={saveAndExit}>
+              Save &amp; Exit
+            </Button>
+            <Button type="button" onClick={goNext}>
+              Next
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
-          </Card>
+          </div>
+        </div>
+
+        <aside className="hidden lg:block">
+          <div
+            className="sticky top-24 h-[28rem] overflow-hidden rounded-[8px] bg-sage-deep bg-cover bg-center shadow-[0_14px_36px_rgba(31,42,36,0.1)] relative"
+            style={{ backgroundImage: "url(/images/paddockme/request-step-cow.jpg)" }}
+          >
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-sage-deep/85 via-sage-deep/10 to-transparent"
+              aria-hidden
+            />
+            <p className="absolute inset-x-0 bottom-0 p-6 text-lg font-bold leading-snug text-warm-white">
+              Step 1 of 3 — tell us what&apos;s moving and where it&apos;s coming from.
+            </p>
+          </div>
         </aside>
-      </form>
+      </div>
     </>
   );
 }
-function ChoiceSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <h2 className="mb-4 text-xl font-bold text-sage-deep">{title}</h2>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </Card>
-  );
-}
-

@@ -105,6 +105,11 @@ export async function createLivestockRequestRecord(input: {
   originLatitude?: number;
   originLongitude?: number;
   originPlaceId?: string | null;
+  /**
+   * Free-text "Budget" + "Special requirements" from Screen 4, stored in the
+   * otherwise-unused `required_pasture` column to avoid a schema migration.
+   */
+  requiredPasture?: string | null;
 }): Promise<{ state: RepositoryState; request: LivestockRequest } | null> {
   const supabase = await getAuthedClient();
   if (!supabase) return null;
@@ -126,6 +131,7 @@ export async function createLivestockRequestRecord(input: {
       preferred_regions: input.preferredRegions,
       origin_address: input.originAddress ?? null,
       origin_place_id: input.originPlaceId ?? null,
+      required_pasture: input.requiredPasture ?? null,
       location: pointToWkt(coordinateFromLatLng(input)),
       status: "open",
     })
