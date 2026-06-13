@@ -15,12 +15,20 @@ const POST_AUTH_LANDING = "/agreements";
 const ONBOARDING_PATH = "/onboarding";
 
 const PUBLIC_PREFIXES = [
+  "/account",
   "/auth/callback",
   "/payments/transport",
+  "/properties",
+  "/register",
+  "/requests",
   "/sign-in",
   "/sign-up",
   "/forgot-password",
+  "/landowner/requests",
+  "/landowner/workspaces",
+  "/transport/quotes",
   "/update-password",
+  "/workspaces",
 ];
 
 // Production accounts only: every marketplace surface requires sign-in.
@@ -116,10 +124,3 @@ export async function updateSession(request: NextRequest) {
     if (!hasCompletedOnboarding) {
       url.pathname = ONBOARDING_PATH;
       url.search = "";
-      url.searchParams.set("next", `${path}${request.nextUrl.search}`);
-      return NextResponse.redirect(url);
-    }
-  }
-
-  return supabaseResponse;
-}

@@ -45,23 +45,4 @@ export default function RequestRequirementsPage() {
           onChange={(e) => setRequestDetails({ budget: e.target.value })}
         />
         <FormField
-          label="Special requirements"
-          name="specialRequirements"
-          as="textarea"
-          placeholder="Any specific needs or notes..."
-          value={state.request.specialRequirements}
-          onChange={(e) =>
-            setRequestDetails({ specialRequirements: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="mt-8 flex items-center justify-between">
-        <PmButton variant="outline" href="/requests/new">
-          Back
-        </PmButton>
-        <PmButton href="/requests/matches">Search Matches</PmButton>
-      </div>
-    </FlowShell>
-  );
-}
+          labe

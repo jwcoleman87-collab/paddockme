@@ -56,23 +56,4 @@ export default function TransportQuotesPage() {
               </p>
             )}
 
-            <h2 className="mt-7 text-sm font-bold uppercase tracking-wider text-pm-muted">
-              Available Transporters
-            </h2>
-            <div className="mt-3 space-y-4">
-              {demoTransportQuotes.map((q) => (
-                <TransportQuoteCard
-                  key={q.company}
-                  quote={q}
-                  onAccept={() => handleAccept(q.company, q.price)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <AppBottomNav />
-    </div>
-  );
-}
+          

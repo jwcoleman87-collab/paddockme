@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Check, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Proposal } from "@/lib/paddockmeWorkflow";
 
 /* ---------- ChatPanel (workspace conversation) ---------- */
 
@@ -110,11 +111,11 @@ export function LiveAgreementPanel({
   className?: string;
 }) {
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div className={cn("flex flex-col", className)}>
       <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-pm-muted">
         Live Agreement
       </h3>
-      <dl className="flex-1 space-y-3">
+      <dl className="space-y-3">
         {fields.map((f) => (
           <div
             key={f.label}
@@ -133,8 +134,4 @@ export function LiveAgreementPanel({
         ))}
       </dl>
       <p className="mt-3 text-[11px] text-pm-muted">
-        Last updated {lastUpdated}
-      </p>
-    </div>
-  );
-}
+        Last u

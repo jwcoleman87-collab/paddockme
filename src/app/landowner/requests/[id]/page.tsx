@@ -57,15 +57,11 @@ export default function LandownerRequestPage() {
             </p>
           </div>
           <div className="mt-6 flex gap-3">
-            <PmButton href={`/workspaces/${demoRequest.id}`} className="flex-1">
+            <PmButton
+              href={`/landowner/workspaces/${demoRequest.id}/agreement`}
+              className="flex-1"
+            >
               Accept Discussion
             </PmButton>
             <PmButton variant="outline" href="/" className="flex-1">
-              Decline
-            </PmButton>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
+    

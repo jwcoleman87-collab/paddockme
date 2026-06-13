@@ -1,5 +1,4 @@
 import {
-  Beef,
   Wheat,
   Truck,
   ClipboardPen,
@@ -9,6 +8,7 @@ import {
   MoveRight,
   LandPlot,
 } from "lucide-react";
+import { CattleIcon } from "@/components/paddockme/AnimalIcons";
 import { PrimaryNav } from "@/components/paddockme/PmNav";
 import { RoleChoiceCard, RecentActivityCard } from "@/components/paddockme/PmCards";
 import { paddockmeImages } from "@/lib/paddockmeImages";
@@ -23,7 +23,7 @@ const howItWorks = [
 ];
 
 const activityIcons: Record<string, React.ReactNode> = {
-  cattle: <Beef className="h-5 w-5" aria-hidden />,
+  cattle: <CattleIcon className="h-5 w-5" />,
   land: <LandPlot className="h-5 w-5" aria-hidden />,
   truck: <Truck className="h-5 w-5" aria-hidden />,
 };
@@ -54,7 +54,7 @@ export function PaddockHomepage() {
             <div className="mt-10 flex flex-col gap-4 lg:flex-row">
               <RoleChoiceCard
                 href="/requests/new"
-                icon={<Beef className="h-6 w-6" aria-hidden />}
+                icon={<CattleIcon className="h-6 w-6" />}
                 title="I Need Feed"
                 subtitle="Find agistment land"
               />
@@ -133,8 +133,4 @@ export function PaddockHomepage() {
         </div>
         <div className="bg-pm-green-900 px-4 py-4 text-center text-xs text-white/60 sm:px-6" id="support">
           © {new Date().getFullYear()} PaddockME · Support: support@paddockme.com.au
-        </div>
-      </footer>
-    </div>
-  );
-}
+    

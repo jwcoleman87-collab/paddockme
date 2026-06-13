@@ -53,5 +53,4 @@ next-env.d.ts
 
 # Stuck ghost paths from a failed copy on Windows mount — don't commit
 /.claude/skills/ui-ux-pro-max/
-/.claude/skills/uipro/
-/skills/uipro/
+/.c

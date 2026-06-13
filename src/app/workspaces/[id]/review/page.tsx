@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import {
-  Beef,
   LandPlot,
   CalendarDays,
   CircleDollarSign,
   CreditCard,
   Truck,
 } from "lucide-react";
+import { CattleIcon } from "@/components/paddockme/AnimalIcons";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { ImagePanel } from "@/components/paddockme/ImagePanel";
@@ -17,9 +17,6 @@ import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoRequest } from "@/lib/paddockmeDemoData";
 import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
 
-// Matches the dates suggested on the agreement screen.
-const CONFIRMED_DATES_LABEL = "1 Jun 2025 – 30 Aug 2025";
-
 /** Screen 11 — Agreement Review: clear, safe, final check before accepting. */
 export default function AgreementReviewPage() {
   const router = useRouter();
@@ -27,7 +24,7 @@ export default function AgreementReviewPage() {
   const { agreement } = state;
 
   const rows = [
-    { icon: Beef, label: "Livestock", value: livestockLabel(state.request) },
+    { icon: CattleIcon, label: "Livestock", value: livestockLabel(state.request) },
     {
       icon: LandPlot,
       label: "Property",
@@ -36,9 +33,10 @@ export default function AgreementReviewPage() {
     {
       icon: CalendarDays,
       label: "Duration",
-      value: agreement.datesConfirmed
-        ? `${demoRequest.duration} · ${CONFIRMED_DATES_LABEL}`
-        : `${demoRequest.duration} · Dates not yet confirmed`,
+      value:
+        agreement.datesConfirmed && agreement.datesLabel
+          ? `${demoRequest.duration} · ${agreement.datesLabel}`
+          : `${demoRequest.duration} · Dates not yet confirmed`,
     },
     {
       icon: CircleDollarSign,
@@ -98,48 +96,4 @@ export default function AgreementReviewPage() {
                   >
                     <Icon className="h-4.5 w-4.5" />
                   </span>
-                  <div className="flex flex-1 flex-wrap items-baseline justify-between gap-x-4">
-                    <dt className="text-sm text-pm-muted">{label}</dt>
-                    <dd className="text-sm font-bold text-pm-charcoal">
-                      {value}
-                    </dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-
-            {!readyToAccept && (
-              <p className="mt-4 text-sm text-pm-gold-600">
-                Price, dates and payment terms all need to be agreed on the
-                Agreement screen before you can accept.
-              </p>
-            )}
-
-            <div className="mt-8 flex items-center justify-between gap-3">
-              <PmButton variant="outline" href="/workspaces/1023/agreement">
-                Back
-              </PmButton>
-              <PmButton
-                onClick={handleAccept}
-                disabled={!readyToAccept}
-                className={!readyToAccept ? "opacity-50 cursor-not-allowed" : ""}
-              >
-                {agreement.transportArranged
-                  ? "Accept Agreement"
-                  : "Accept & Arrange Transport"}
-              </PmButton>
-            </div>
-          </div>
-          <div className="hidden md:block">
-            <ImagePanel
-              src={paddockmeImages.agreementReviewSide}
-              alt="Cattle in a green paddock at golden hour"
-            />
-          </div>
-        </div>
-      </main>
-
-      <AppBottomNav />
-    </div>
-  );
-}
+                  <div className="flex flex-1 flex-wrap items-baseline

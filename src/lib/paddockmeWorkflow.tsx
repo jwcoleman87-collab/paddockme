@@ -17,7 +17,19 @@ import {
   type ReactNode,
 } from "react";
 
-const STORAGE_KEY = "paddockme-workflow-v1";
+const STORAGE_KEY = "paddockme-workflow-v2";
+
+// Opening offers — framed as James' (the livestock owner's) initial
+// proposal, which John (the landowner) can accept or counter. Whoever's
+// turn it isn't sees the other side's current offer and can accept it or
+// send back their own.
+export const SUGGESTED_RATE = "$12.50 / head / week";
+export const SUGGESTED_DATES_LABEL = "1 Jun 2025 – 30 Aug 2025";
+export const SUGGESTED_PAYMENT_TERMS = "Monthly in advance";
+export const PAYMENT_TERM_CHOICES = [
+  "Monthly in advance",
+  "Weekly in advance",
+];
 
 export type RequestDetails = {
   livestockType: string;
@@ -30,12 +42,39 @@ export type RequestDetails = {
   specialRequirements: string;
 };
 
+/** A Request For Transport (RFT) sent out to transport companies. */
+export type TransportRequestDetails = {
+  pickupLocation: string;
+  dropoffLocation: string;
+  headCount: number;
+  pickupDate: string;
+  notes: string;
+};
+
+/** A live offer for one term of the deal, and whose "turn" it is. */
+export type Proposal = {
+  value: string;
+  /** Who made this offer — the other person can accept or counter it. */
+  from: "James" | "John";
+};
+
 export type AgreementState = {
   rate: string | null;
   priceAgreed: boolean;
+  pendingRate: Proposal | null;
+
+  datesLabel: string | null;
   datesConfirmed: boolean;
+  pendingDates: Proposal | null;
+
   paymentTerms: string | null;
   paymentTermsConfirmed: boolean;
+  pendingPaymentTerms: Proposal | null;
+
+  /** The RFT James has sent out to transport companies, if any. */
+  transportRequestSent: boolean;
+  transportRequest: TransportRequestDetails | null;
+
   transportCompany: string | null;
   transportPrice: string | null;
   transportArranged: boolean;
@@ -69,9 +108,15 @@ function defaultState(): WorkflowState {
     agreement: {
       rate: null,
       priceAgreed: false,
+      pendingRate: { value: SUGGESTED_RATE, from: "James" },
+      datesLabel: null,
       datesConfirmed: false,
+      pendingDates: { value: SUGGESTED_DATES_LABEL, from: "James" },
       paymentTerms: null,
       paymentTermsConfirmed: false,
+      pendingPaymentTerms: { value: SUGGESTED_PAYMENT_TERMS, from: "James" },
+      transportRequestSent: false,
+      transportRequest: null,
       transportCompany: null,
       transportPrice: null,
       transportArranged: false,
@@ -84,9 +129,12 @@ function defaultState(): WorkflowState {
 type WorkflowContextValue = {
   state: WorkflowState;
   setRequestDetails: (partial: Partial<RequestDetails>) => void;
-  setRate: (rate: string) => void;
-  confirmDates: () => void;
-  setPaymentTerms: (terms: string) => void;
+  proposeRate: (value: string, from: "James" | "John") => void;
+  acceptRate: () => void;
+  proposeDates: (value: string, from: "James" | "John") => void;
+  acceptDates: () => void;
+  proposePaymentTerms: (value: string, from: "James" | "John") => void;
+  acceptPaymentTerms: () => void;
   acceptTransport: (company: string, price: string) => void;
   acceptReview: () => void;
   resetWorkflow: () => void;
@@ -101,6 +149,7 @@ export function PaddockmeWorkflowProvider({
   children: ReactNode;
 }) {
   const [state, setState] = useState<WorkflowState>(defaultState);
+  const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
 
   // Load persisted state on mount (after first paint, so SSR/CSR markup matches).
   useEffect(() => {
@@ -115,146 +164,64 @@ export function PaddockmeWorkflowProvider({
       }
     } catch {
       // ignore corrupt/blocked storage
+    } finally {
+      setHasLoadedStoredState(true);
     }
   }, []);
 
-  // Persist on every change.
+  // Persist on every change after the first localStorage read has completed.
   useEffect(() => {
+    if (!hasLoadedStoredState) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // ignore storage errors (e.g. private browsing)
     }
-  }, [state]);
+  }, [hasLoadedStoredState, state]);
 
   function setRequestDetails(partial: Partial<RequestDetails>) {
     setState((prev) => ({ ...prev, request: { ...prev.request, ...partial } }));
   }
 
-  function setRate(rate: string) {
+  function proposeRate(value: string, from: "James" | "John") {
     setState((prev) => ({
       ...prev,
       agreement: {
         ...prev.agreement,
-        rate,
-        priceAgreed: true,
+        pendingRate: { value, from },
         lastUpdated: new Date().toISOString(),
       },
     }));
   }
 
-  function confirmDates() {
+  function acceptRate() {
+    setState((prev) => {
+      const pending = prev.agreement.pendingRate;
+      if (!pending) return prev;
+      return {
+        ...prev,
+        agreement: {
+          ...prev.agreement,
+          rate: pending.value,
+          priceAgreed: true,
+          pendingRate: null,
+          lastUpdated: new Date().toISOString(),
+        },
+      };
+    });
+  }
+
+  function proposeDates(value: string, from: "James" | "John") {
     setState((prev) => ({
       ...prev,
       agreement: {
         ...prev.agreement,
-        datesConfirmed: true,
+        pendingDates: { value, from },
         lastUpdated: new Date().toISOString(),
       },
     }));
   }
 
-  function setPaymentTerms(terms: string) {
-    setState((prev) => ({
-      ...prev,
-      agreement: {
-        ...prev.agreement,
-        paymentTerms: terms,
-        paymentTermsConfirmed: true,
-        lastUpdated: new Date().toISOString(),
-      },
-    }));
-  }
-
-  function acceptTransport(company: string, price: string) {
-    setState((prev) => ({
-      ...prev,
-      agreement: {
-        ...prev.agreement,
-        transportCompany: company,
-        transportPrice: price,
-        transportArranged: true,
-        lastUpdated: new Date().toISOString(),
-      },
-    }));
-  }
-
-  function acceptReview() {
-    setState((prev) => ({
-      ...prev,
-      agreement: { ...prev.agreement, reviewAccepted: true },
-    }));
-  }
-
-  function resetWorkflow() {
-    setState(defaultState());
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-  }
-
-  const isComplete =
-    state.agreement.priceAgreed &&
-    state.agreement.datesConfirmed &&
-    state.agreement.paymentTermsConfirmed &&
-    state.agreement.transportArranged;
-
-  return (
-    <WorkflowContext.Provider
-      value={{
-        state,
-        setRequestDetails,
-        setRate,
-        confirmDates,
-        setPaymentTerms,
-        acceptTransport,
-        acceptReview,
-        resetWorkflow,
-        isComplete,
-      }}
-    >
-      {children}
-    </WorkflowContext.Provider>
-  );
-}
-
-export function usePaddockmeWorkflow(): WorkflowContextValue {
-  const ctx = useContext(WorkflowContext);
-  if (!ctx) {
-    throw new Error(
-      "usePaddockmeWorkflow must be used within PaddockmeWorkflowProvider",
-    );
-  }
-  return ctx;
-}
-
-/* ---------- Display helpers ---------- */
-
-export function formatDateLong(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-/** e.g. "120 Cattle" */
-export function livestockLabel(request: RequestDetails): string {
-  return `${request.headCount} ${request.livestockType}`;
-}
-
-/** e.g. "Needed until 12 August 2026" */
-export function needUntilLabel(request: RequestDetails): string {
-  return `Needed until ${formatDateLong(request.needUntil)}`;
-}
-
-/** e.g. "10:19 AM" or "Not yet confirmed" */
-export function lastUpdatedLabel(iso: string | null): string {
-  if (!iso) return "Not yet confirmed";
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
+  function acceptDates() {
+    setState((prev) => {
+      const pending = prev.ag

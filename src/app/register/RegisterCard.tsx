@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Beef, Wheat, Truck } from "lucide-react";
+import { Wheat, Truck } from "lucide-react";
+import { CattleIcon } from "@/components/paddockme/AnimalIcons";
 import { cn } from "@/lib/utils";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
@@ -13,7 +14,7 @@ const roles = [
     id: "livestock-owner",
     label: "Livestock Owner",
     detail: "I need feed",
-    icon: Beef,
+    icon: CattleIcon,
     next: "/requests/new",
   },
   {
@@ -100,9 +101,4 @@ export function RegisterCard() {
           href="/login"
           className="font-semibold text-pm-green-900 underline-offset-2 hover:underline"
         >
-          Log in
-        </Link>
-      </p>
-    </div>
-  );
-}
+ 

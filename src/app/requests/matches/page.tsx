@@ -42,12 +42,4 @@ export default function MatchesPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-pm-muted">
-          That&apos;s everything within your search radius. Try
-          &quot;Refine Search&quot; to widen it.
-        </p>
-      </main>
-
-      <AppBottomNav />
-    </div>
-  );
-}
+          That&apos;s everything within your search radius. T

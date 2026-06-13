@@ -58,9 +58,4 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-warm-white text-bark">
-        <PaddockmeWorkflowProvider>{children}</PaddockmeWorkflowProvider>
-      </body>
-    </html>
-  );
-}
+      <body className="min-h-full flex flex-col bg-warm-w

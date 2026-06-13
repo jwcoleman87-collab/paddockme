@@ -32,8 +32,4 @@ export default function RequestSentPage() {
         </p>
         <PmButton href="/workspaces/1023" className="mt-6 w-full">
           Go to My Workspace
-        </PmButton>
-      </div>
-    </main>
-  );
-}
+    

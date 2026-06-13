@@ -88,44 +88,4 @@ export default function WorkspaceOverviewPage() {
             </div>
 
             <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-pm-border pt-5">
-              <div>
-                <dt className="text-xs text-pm-muted">Target Start Date</dt>
-                <dd className="text-sm font-bold text-pm-charcoal">
-                  {w.targetStartDate}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-pm-muted">Duration</dt>
-                <dd className="text-sm font-bold text-pm-charcoal">
-                  {w.duration}
-                </dd>
-              </div>
-            </dl>
-
-            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              {isComplete && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-pm-success/10 px-4 py-2 text-sm font-bold text-pm-success">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden />
-                  Agreement Complete
-                </span>
-              )}
-              <PmButton
-                href={
-                  isComplete
-                    ? `/workspaces/${w.id}/review`
-                    : `/workspaces/${w.id}/agreement`
-                }
-                variant={isComplete ? "outline" : "primary"}
-                className="w-full sm:w-auto"
-              >
-                {isComplete ? "View Final Agreement" : "Continue Agreement"}
-              </PmButton>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <AppBottomNav />
-    </div>
-  );
-}
+   

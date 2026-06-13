@@ -54,17 +54,4 @@ export default function RequestStockPage() {
           }
         />
         <FormField
-          label="Current location"
-          name="location"
-          placeholder="Town or postcode"
-          value={state.request.location}
-          onChange={(e) => setRequestDetails({ location: e.target.value })}
-        />
-      </div>
-
-      <div className="mt-8 flex justify-end">
-        <PmButton href="/requests/new/requirements">Next</PmButton>
-      </div>
-    </FlowShell>
-  );
-}
+          lab
