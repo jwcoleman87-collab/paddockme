@@ -1,0 +1,3 @@
+module.exports=[93794,a=>{"use strict";var b=a.i(7997);a.s(["default",0,function(){return(0,b.jsxs)("div",{role:"status","aria-live":"polite",className:"animate-pulse space-y-4",children:[(0,b.jsx)("span",{className:"sr-only",children:"Loading…"}),(0,b.jsx)("div",{className:"h-8 w-2/3 rounded-[8px] bg-sage-mist","aria-hidden":!0}),(0,b.jsx)("div",{className:"h-4 w-1/2 rounded-[8px] bg-sage-mist/70","aria-hidden":!0}),(0,b.jsxs)("div",{className:"mt-6 grid gap-4 sm:grid-cols-2",children:[(0,b.jsx)("div",{className:"h-40 rounded-[12px] bg-sage-mist/60","aria-hidden":!0}),(0,b.jsx)("div",{className:"h-40 rounded-[12px] bg-sage-mist/60","aria-hidden":!0})]})]})}])},81459,a=>{a.n(a.i(93794))}];
+
+//# sourceMappingURL=src_app_%28app%29_loading_tsx_0olo-rx._.js.map

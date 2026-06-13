@@ -1,0 +1,3 @@
+{
+  "/api/payments/agistment-settlement/route": "app/api/payments/agistment-settlement/route.js"
+}
