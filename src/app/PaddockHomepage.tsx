@@ -1,142 +1,123 @@
+import Link from "next/link";
 import {
-  Truck,
-  ClipboardPen,
+  ClipboardList,
   Handshake,
   FileSignature,
-  CalendarCheck,
-  MoveRight,
-  LandPlot,
+  Truck,
+  ArrowRight,
 } from "lucide-react";
-import {
-  CattleIcon,
-  WheatIcon,
-  TransportTruckIcon,
-} from "@/components/paddockme/AnimalIcons";
-import { PrimaryNav } from "@/components/paddockme/PmNav";
-import { RoleChoiceCard, RecentActivityCard } from "@/components/paddockme/PmCards";
-import { paddockmeImages } from "@/lib/paddockmeImages";
-import { demoRecentActivity } from "@/lib/paddockmeDemoData";
 
-const howItWorks = [
-  { n: 1, label: "Create a request", icon: ClipboardPen },
-  { n: 2, label: "Connect with farmers", icon: Handshake },
-  { n: 3, label: "Agree terms", icon: FileSignature },
-  { n: 4, label: "Organise transport", icon: Truck },
-  { n: 5, label: "Move stock", icon: CalendarCheck },
+const steps = [
+  {
+    icon: ClipboardList,
+    title: "Post a request",
+    body: "Tell us what stock you're moving, when, and what you need.",
+  },
+  {
+    icon: Handshake,
+    title: "Get matched",
+    body: "We connect you with landowners or livestock owners nearby.",
+  },
+  {
+    icon: FileSignature,
+    title: "Agree the details",
+    body: "Negotiate price, dates and terms together in one workspace.",
+  },
+  {
+    icon: Truck,
+    title: "Move your stock",
+    body: "Line up transport and track the job through to completion.",
+  },
 ];
 
-const activityIcons: Record<string, React.ReactNode> = {
-  cattle: <CattleIcon className="h-5 w-5" />,
-  land: <LandPlot className="h-5 w-5" aria-hidden />,
-  truck: <Truck className="h-5 w-5" aria-hidden />,
-};
-
-/** Screen 1 — Homepage. Three obvious paths: Need Feed / Have Feed / Transport. */
+/**
+ * Public marketing homepage shown to signed-out visitors. Signed-in users
+ * are redirected to /agreements before this ever renders (see page.tsx).
+ */
 export function PaddockHomepage() {
   return (
-    <div className="min-h-screen bg-pm-cream-50">
-      <div className="relative">
-        <PrimaryNav />
-        {/* Hero */}
-        <section
-          className="relative flex min-h-[520px] flex-col justify-center bg-pm-green-900 bg-cover bg-center px-4 pb-20 pt-28 sm:px-6"
-          style={{ backgroundImage: `url(${paddockmeImages.homepageHero})` }}
-        >
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-pm-green-900/85 via-pm-green-900/55 to-transparent"
-            aria-hidden
-          />
-          <div className="relative mx-auto w-full max-w-6xl">
-            <h1 className="max-w-xl text-4xl font-extrabold leading-tight text-white sm:text-5xl">
-              Find Feed. Find Stock. Move Livestock.
+    <div className="flex min-h-dvh flex-col">
+      <header className="border-b border-sage-deep/10 bg-warm-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
+          <span className="font-display text-xl">
+            <span className="text-bark">Paddock</span>
+            <span className="text-ochre">ME</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/sign-in"
+              className="inline-flex min-h-11 items-center rounded-[8px] px-4 text-sm font-semibold text-sage-deep transition hover:bg-sage-mist"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="inline-flex min-h-11 items-center rounded-[8px] bg-sage-deep px-4 text-sm font-bold text-warm-white transition hover:bg-sage-dark"
+            >
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        <section className="bg-sage-mist">
+          <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
+            <h1 className="max-w-xl text-4xl font-extrabold leading-tight text-bark sm:text-5xl">
+              Find feed. Find stock. Move livestock.
             </h1>
-            <p className="mt-4 max-w-md text-base text-white/85">
-              Australia&apos;s trusted platform for agistment and livestock
-              transport.
+            <p className="mt-4 max-w-md text-base text-bark/80">
+              PaddockME connects livestock owners, landowners and transport
+              providers across regional Australia to coordinate agistment and
+              stock movement in one place.
             </p>
-            <div className="mt-10 flex flex-col gap-4 lg:flex-row">
-              <RoleChoiceCard
-                href="/requests/new"
-                icon={<CattleIcon className="h-6 w-6" />}
-                title="I Need Feed"
-                subtitle="Find agistment land"
-              />
-              <RoleChoiceCard
-                href="/landowner/requests/1023"
-                icon={<WheatIcon className="h-6 w-6" />}
-                title="I Have Feed"
-                subtitle="List my property"
-                accent
-              />
-              <RoleChoiceCard
-                href="/transport/quotes/1023"
-                icon={<TransportTruckIcon className="h-6 w-6" />}
-                title="I Transport"
-                subtitle="Find transport jobs"
-              />
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/sign-up"
+                className="inline-flex min-h-12 items-center gap-2 rounded-[8px] bg-sage-deep px-6 font-bold text-warm-white transition hover:bg-sage-dark"
+              >
+                Get started
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/sign-in"
+                className="inline-flex min-h-12 items-center rounded-[8px] border border-sage-deep/20 bg-warm-white px-6 font-bold text-sage-deep transition hover:bg-sage-mist"
+              >
+                Sign in
+              </Link>
             </div>
           </div>
         </section>
-      </div>
 
-      {/* How it works */}
-      <section id="how-it-works" className="px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-2xl font-extrabold text-pm-charcoal">
-            How It Works
+        <section className="mx-auto max-w-6xl px-5 py-16 md:px-8">
+          <h2 className="text-center text-2xl font-extrabold text-bark">
+            How it works
           </h2>
-          <ol className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-            {howItWorks.map(({ n, label, icon: Icon }) => (
-              <li key={n} className="flex flex-col items-center gap-2 text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-pm-green-900 text-white">
+          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map(({ icon: Icon, title, body }, i) => (
+              <li
+                key={title}
+                className="rounded-[8px] border border-sage-deep/10 bg-warm-white p-5 text-center shadow-[0_8px_24px_rgba(31,42,36,0.05)]"
+              >
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sage-deep text-warm-white">
                   <Icon className="h-5 w-5" aria-hidden />
                 </span>
-                <span className="text-xs font-bold text-pm-gold-600">
-                  Step {n}
-                </span>
-                <span className="text-sm font-medium text-pm-charcoal">
-                  {label}
-                </span>
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-ochre">
+                  Step {i + 1}
+                </p>
+                <h3 className="mt-1 text-sm font-bold text-bark">{title}</h3>
+                <p className="mt-2 text-sm text-bark/75">{body}</p>
               </li>
             ))}
           </ol>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Recent activity */}
-      <section className="px-4 pb-14 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-2xl border border-pm-border bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-pm-muted">
-            Recent Activity
-          </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            {demoRecentActivity.map((a) => (
-              <RecentActivityCard
-                key={a.headline}
-                icon={activityIcons[a.icon]}
-                headline={a.headline}
-                detail={a.detail}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer banner */}
-      <footer className="relative" id="about">
-        <div
-          className="flex min-h-[160px] items-center bg-cover bg-center px-4 sm:px-6"
-          style={{ backgroundImage: `url(${paddockmeImages.footerFarmBanner})` }}
-        >
-          <div className="absolute inset-0 bg-pm-green-900/60" aria-hidden />
-          <p className="relative mx-auto max-w-6xl w-full text-lg font-bold italic text-white">
-            Built for farmers. Backed by Australia.
-            <MoveRight className="ml-2 inline h-5 w-5" aria-hidden />
-          </p>
-        </div>
-        <div className="bg-pm-green-900 px-4 py-4 text-center text-xs text-white/60 sm:px-6" id="support">
-          © {new Date().getFullYear()} PaddockME · Support: support@paddockme.com.au
-        </div>
+      <footer className="border-t border-sage-deep/10 bg-warm-white px-5 py-6 text-center text-xs text-bark/60 md:px-8">
+        © {new Date().getFullYear()} PaddockME · Support:{" "}
+        <a href="mailto:support@paddockme.com.au" className="underline">
+          support@paddockme.com.au
+        </a>
       </footer>
     </div>
   );
