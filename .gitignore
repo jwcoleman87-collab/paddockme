@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# alternate sandbox build output (set via NEXT_DIST_DIR) — never commit
+/tmp/
+
 # production
 /build
 
@@ -53,4 +56,5 @@ next-env.d.ts
 
 # Stuck ghost paths from a failed copy on Windows mount — don't commit
 /.claude/skills/ui-ux-pro-max/
-/.c
+/.claude/skills/uipro/
+/skills/uipro/
