@@ -55,7 +55,7 @@ export function RegisterCard() {
       >
         <FormField label="Full Name" name="fullName" placeholder="Enter your full name" autoComplete="name" />
         <FormField label="Mobile Number" name="mobile" type="tel" placeholder="0412 345 678" autoComplete="tel" />
-        <FormField label="Email Address" name="email" type="email" placeholder="james@example.com" autoComplete="email" />
+        <FormField label="Email Address" name="email" type="email" placeholder="you@example.com" autoComplete="email" />
 
         <fieldset>
           <legend className="mb-2 block text-sm font-semibold text-pm-charcoal">
@@ -97,7 +97,7 @@ export function RegisterCard() {
       <p className="mt-4 text-center text-sm text-pm-muted">
         Already have an account?{" "}
         <Link
-          href="/sign-in"
+          href="/login"
           className="font-semibold text-pm-green-900 underline-offset-2 hover:underline"
         >
           Log in

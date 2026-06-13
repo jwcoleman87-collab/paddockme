@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PropertyResultCard } from "@/components/paddockme/PropertyResultCard";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
 import { demoProperties } from "@/lib/paddockmeDemoData";
-
-export const metadata: Metadata = {
-  title: "Matches Found — PaddockME",
-};
+import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 /** Screen 5 — Matches Found: real-estate style property results. */
 export default function MatchesPage() {
+  const { state } = usePaddockmeWorkflow();
+
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
       <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
@@ -29,9 +29,11 @@ export default function MatchesPage() {
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-extrabold text-pm-charcoal">
-          12 Suitable Properties Found
+          {demoProperties.length} Suitable Properties Found
         </h1>
-        <p className="mt-1 text-sm text-pm-muted">Based on your requirements</p>
+        <p className="mt-1 text-sm text-pm-muted">
+          Within {state.request.distanceKm} of {state.request.location}
+        </p>
 
         <div className="mt-6 space-y-4">
           {demoProperties.map((p) => (
@@ -40,7 +42,8 @@ export default function MatchesPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-pm-muted">
-          Showing the 2 closest matches. 10 more available within 300 km.
+          That&apos;s everything within your search radius. Try
+          &quot;Refine Search&quot; to widen it.
         </p>
       </main>
 

@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { MoveRight } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { TransportQuoteCard } from "@/components/paddockme/TransportQuoteCard";
@@ -6,13 +8,18 @@ import { ImagePanel } from "@/components/paddockme/ImagePanel";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
 import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoRequest, demoTransportQuotes } from "@/lib/paddockmeDemoData";
-
-export const metadata: Metadata = {
-  title: "Transport Quotes — PaddockME",
-};
+import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 /** Screen 12 — Transport Quotes, shown only after the agreement stage. */
 export default function TransportQuotesPage() {
+  const router = useRouter();
+  const { state, acceptTransport } = usePaddockmeWorkflow();
+
+  function handleAccept(company: string, price: string) {
+    acceptTransport(company, price);
+    router.push("/workspaces/1023");
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
       <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
@@ -34,13 +41,20 @@ export default function TransportQuotesPage() {
               Transport Required
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-pm-charcoal">
-              {demoRequest.currentLocation}
+              {state.request.location}
               <MoveRight className="h-4 w-4 text-pm-gold-600" aria-label="to" />
               {demoRequest.targetLocation}
               <span className="rounded-full bg-pm-green-900 px-2.5 py-0.5 text-xs font-bold text-white">
-                {demoRequest.headCount} Head
+                {state.request.headCount} Head
               </span>
             </p>
+
+            {state.agreement.transportArranged && (
+              <p className="mt-3 text-sm text-pm-success">
+                Transport with {state.agreement.transportCompany} is already
+                arranged. Accepting a quote below will replace it.
+              </p>
+            )}
 
             <h2 className="mt-7 text-sm font-bold uppercase tracking-wider text-pm-muted">
               Available Transporters
@@ -50,7 +64,7 @@ export default function TransportQuotesPage() {
                 <TransportQuoteCard
                   key={q.company}
                   quote={q}
-                  acceptHref="/workspaces/1023"
+                  onAccept={() => handleAccept(q.company, q.price)}
                 />
               ))}
             </div>

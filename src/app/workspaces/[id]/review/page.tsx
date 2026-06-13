@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useRouter } from "next/navigation";
 import {
   Beef,
   LandPlot,
@@ -12,23 +14,62 @@ import { PmButton } from "@/components/paddockme/PmButton";
 import { ImagePanel } from "@/components/paddockme/ImagePanel";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
 import { paddockmeImages } from "@/lib/paddockmeImages";
-import { demoAgreementReview } from "@/lib/paddockmeDemoData";
+import { demoRequest } from "@/lib/paddockmeDemoData";
+import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
 
-export const metadata: Metadata = {
-  title: "Review Agreement — PaddockME",
-};
+// Matches the dates suggested on the agreement screen.
+const CONFIRMED_DATES_LABEL = "1 Jun 2025 – 30 Aug 2025";
 
 /** Screen 11 — Agreement Review: clear, safe, final check before accepting. */
 export default function AgreementReviewPage() {
-  const a = demoAgreementReview;
+  const router = useRouter();
+  const { state, acceptReview } = usePaddockmeWorkflow();
+  const { agreement } = state;
+
   const rows = [
-    { icon: Beef, label: "Livestock", value: a.livestock },
-    { icon: LandPlot, label: "Property", value: a.property },
-    { icon: CalendarDays, label: "Duration", value: `${a.duration} · ${a.dates}` },
-    { icon: CircleDollarSign, label: "Rate", value: a.rate },
-    { icon: CreditCard, label: "Payment Terms", value: a.paymentTerms },
-    { icon: Truck, label: "Transport", value: a.transport },
+    { icon: Beef, label: "Livestock", value: livestockLabel(state.request) },
+    {
+      icon: LandPlot,
+      label: "Property",
+      value: `Green Hills Farm, ${demoRequest.targetLocation}`,
+    },
+    {
+      icon: CalendarDays,
+      label: "Duration",
+      value: agreement.datesConfirmed
+        ? `${demoRequest.duration} · ${CONFIRMED_DATES_LABEL}`
+        : `${demoRequest.duration} · Dates not yet confirmed`,
+    },
+    {
+      icon: CircleDollarSign,
+      label: "Rate",
+      value: agreement.rate ?? "Not yet agreed",
+    },
+    {
+      icon: CreditCard,
+      label: "Payment Terms",
+      value: agreement.paymentTerms ?? "Not yet agreed",
+    },
+    {
+      icon: Truck,
+      label: "Transport",
+      value: agreement.transportArranged
+        ? `${agreement.transportCompany} — ${agreement.transportPrice}`
+        : "Not yet arranged",
+    },
   ];
+
+  const readyToAccept =
+    agreement.priceAgreed &&
+    agreement.datesConfirmed &&
+    agreement.paymentTermsConfirmed;
+
+  function handleAccept() {
+    acceptReview();
+    router.push(
+      agreement.transportArranged ? "/workspaces/1023" : "/transport/quotes/1023",
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
@@ -67,12 +108,25 @@ export default function AgreementReviewPage() {
               ))}
             </dl>
 
+            {!readyToAccept && (
+              <p className="mt-4 text-sm text-pm-gold-600">
+                Price, dates and payment terms all need to be agreed on the
+                Agreement screen before you can accept.
+              </p>
+            )}
+
             <div className="mt-8 flex items-center justify-between gap-3">
               <PmButton variant="outline" href="/workspaces/1023/agreement">
                 Back
               </PmButton>
-              <PmButton href="/transport/quotes/1023">
-                Accept Agreement
+              <PmButton
+                onClick={handleAccept}
+                disabled={!readyToAccept}
+                className={!readyToAccept ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                {agreement.transportArranged
+                  ? "Accept Agreement"
+                  : "Accept & Arrange Transport"}
               </PmButton>
             </div>
           </div>

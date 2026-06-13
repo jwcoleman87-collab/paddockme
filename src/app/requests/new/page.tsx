@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { Beef, Cloud, PawPrint, CirclePlus } from "lucide-react";
 import { FlowShell } from "@/components/paddockme/FlowShell";
 import { LivestockTypeCard } from "@/components/paddockme/PmCards";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { paddockmeImages } from "@/lib/paddockmeImages";
+import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 const livestockTypes = [
   { label: "Cattle", icon: <Beef className="h-7 w-7" /> },
@@ -17,7 +17,7 @@ const livestockTypes = [
 
 /** Screen 3 — New Agistment Request, Step 1: what stock do you have? */
 export default function RequestStockPage() {
-  const [type, setType] = useState("Cattle");
+  const { state, setRequestDetails } = usePaddockmeWorkflow();
 
   return (
     <FlowShell
@@ -35,8 +35,8 @@ export default function RequestStockPage() {
             key={t.label}
             label={t.label}
             icon={t.icon}
-            selected={type === t.label}
-            onSelect={() => setType(t.label)}
+            selected={state.request.livestockType === t.label}
+            onSelect={() => setRequestDetails({ livestockType: t.label })}
           />
         ))}
       </div>
@@ -46,14 +46,18 @@ export default function RequestStockPage() {
           label="How many head?"
           name="headCount"
           type="number"
-          defaultValue={120}
           min={1}
+          value={state.request.headCount}
+          onChange={(e) =>
+            setRequestDetails({ headCount: Number(e.target.value) || 0 })
+          }
         />
         <FormField
           label="Current location"
           name="location"
-          defaultValue="Dubbo NSW"
           placeholder="Town or postcode"
+          value={state.request.location}
+          onChange={(e) => setRequestDetails({ location: e.target.value })}
         />
       </div>
 

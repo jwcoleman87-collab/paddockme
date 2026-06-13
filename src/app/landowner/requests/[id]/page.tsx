@@ -1,16 +1,20 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Bell, UserCircle2 } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoLivestockOwner, demoRequest } from "@/lib/paddockmeDemoData";
-
-export const metadata: Metadata = {
-  title: "New Request Received — PaddockME",
-};
+import {
+  usePaddockmeWorkflow,
+  livestockLabel,
+  needUntilLabel,
+} from "@/lib/paddockmeWorkflow";
 
 /** Screen 8 — Landowner receives a discussion request: accept or decline. */
 export default function LandownerRequestPage() {
+  const { state } = usePaddockmeWorkflow();
+
   return (
     <main
       className="relative flex min-h-screen flex-col bg-cover bg-center"
@@ -43,13 +47,13 @@ export default function LandownerRequestPage() {
           </p>
           <div className="mt-4 rounded-xl bg-pm-cream-50 px-4 py-4">
             <p className="text-lg font-extrabold text-pm-green-900">
-              {demoRequest.livestock}
+              {livestockLabel(state.request)}
             </p>
             <p className="mt-1 text-sm text-pm-charcoal">
-              {demoRequest.durationLabel}
+              {needUntilLabel(state.request)}
             </p>
             <p className="text-sm text-pm-muted">
-              Located near {demoRequest.currentLocation}
+              Located near {state.request.location}
             </p>
           </div>
           <div className="mt-6 flex gap-3">

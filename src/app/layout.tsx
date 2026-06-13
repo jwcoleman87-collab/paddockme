@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
+import { PaddockmeWorkflowProvider } from "@/lib/paddockmeWorkflow";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -58,7 +59,7 @@ export default function RootLayout({
       className={`${fraunces.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-warm-white text-bark">
-        {children}
+        <PaddockmeWorkflowProvider>{children}</PaddockmeWorkflowProvider>
       </body>
     </html>
   );

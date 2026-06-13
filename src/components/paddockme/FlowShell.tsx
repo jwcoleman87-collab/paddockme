@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PaddockMeLogo } from "./PaddockMeLogo";
 import { StepProgress } from "./StepProgress";
 
-const REQUEST_STEPS = ["Stock", "Requirements", "Review", "Matches"];
+const REQUEST_STEPS = ["Stock", "Requirements", "Matches"];
 
 /**
  * Shared wrapper for the guided agistment request flow:

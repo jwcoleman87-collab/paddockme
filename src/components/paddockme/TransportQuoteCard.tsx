@@ -11,10 +11,10 @@ const badgeIcons: Record<string, React.ReactNode> = {
 
 export function TransportQuoteCard({
   quote,
-  acceptHref,
+  onAccept,
 }: {
   quote: DemoTransportQuote;
-  acceptHref: string;
+  onAccept: () => void;
 }) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-pm-border bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -44,7 +44,7 @@ export function TransportQuoteCard({
             INC. GST
           </span>
         </p>
-        <PmButton variant="accent" href={acceptHref}>
+        <PmButton variant="accent" onClick={onAccept}>
           Accept Quote
         </PmButton>
       </div>

@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
-import { MoveRight } from "lucide-react";
+"use client";
+
+import { MoveRight, CheckCircle2 } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { ChecklistPanel } from "@/components/paddockme/ChecklistPanel";
@@ -7,14 +8,29 @@ import { DealSummaryCard } from "@/components/paddockme/PmCards";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
 import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoRequest, demoWorkspace } from "@/lib/paddockmeDemoData";
-
-export const metadata: Metadata = {
-  title: "Workspace — PaddockME",
-};
+import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
 
 /** Screen 9 — Workspace Overview: what deal are we working on? */
 export default function WorkspaceOverviewPage() {
   const w = demoWorkspace;
+  const { state, isComplete } = usePaddockmeWorkflow();
+
+  // Build the progress checklist from real workflow state instead of a
+  // fixed snapshot, so it actually reflects what's been agreed so far.
+  const baseItems = [
+    { label: "Connected", done: true },
+    { label: "Livestock Reviewed", done: true },
+    { label: "Property Reviewed", done: true },
+    { label: "Agree Price", done: state.agreement.priceAgreed },
+    { label: "Arrange Transport", done: state.agreement.transportArranged },
+    { label: "Complete", done: isComplete },
+  ];
+  const firstPending = baseItems.findIndex((item) => !item.done);
+  const checklist = baseItems.map((item, idx) => ({
+    ...item,
+    current: idx === firstPending,
+  }));
+
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
       <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
@@ -24,7 +40,7 @@ export default function WorkspaceOverviewPage() {
             <p className="text-sm font-bold text-pm-charcoal">
               {w.title}{" "}
               <span className="ml-1 rounded-full bg-pm-success/10 px-2 py-0.5 text-xs font-semibold text-pm-success">
-                {w.status}
+                {isComplete ? "Complete" : w.status}
               </span>
             </p>
             <p className="text-xs text-pm-muted">{w.parties}</p>
@@ -36,7 +52,7 @@ export default function WorkspaceOverviewPage() {
         <div className="grid gap-6 md:grid-cols-[230px_1fr]">
           {/* Progress checklist */}
           <aside className="rounded-2xl border border-pm-border bg-white p-5 shadow-sm md:order-first">
-            <ChecklistPanel title="Progress" items={w.checklist} />
+            <ChecklistPanel title="Progress" items={checklist} />
           </aside>
 
           {/* Deal summary */}
@@ -45,15 +61,17 @@ export default function WorkspaceOverviewPage() {
               Workspace
             </h1>
             <p className="mt-1 text-sm text-pm-muted">
-              Work through each step to complete your agistment agreement.
+              {isComplete
+                ? "Your agistment agreement is complete."
+                : "Work through each step to complete your agistment agreement."}
             </p>
 
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
               <div className="w-full flex-1">
                 <DealSummaryCard
                   image={paddockmeImages.workspaceCattle}
-                  title={demoRequest.livestock}
-                  subtitle={demoRequest.currentLocation}
+                  title={livestockLabel(state.request)}
+                  subtitle={state.request.location}
                 />
               </div>
               <MoveRight
@@ -84,12 +102,23 @@ export default function WorkspaceOverviewPage() {
               </div>
             </dl>
 
-            <div className="mt-8">
+            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              {isComplete && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-pm-success/10 px-4 py-2 text-sm font-bold text-pm-success">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                  Agreement Complete
+                </span>
+              )}
               <PmButton
-                href={`/workspaces/${w.id}/agreement`}
+                href={
+                  isComplete
+                    ? `/workspaces/${w.id}/review`
+                    : `/workspaces/${w.id}/agreement`
+                }
+                variant={isComplete ? "outline" : "primary"}
                 className="w-full sm:w-auto"
               >
-                Continue Agreement
+                {isComplete ? "View Final Agreement" : "Continue Agreement"}
               </PmButton>
             </div>
           </section>

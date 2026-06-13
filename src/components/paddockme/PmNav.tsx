@@ -39,7 +39,7 @@ export function PrimaryNav() {
         <div className="flex items-center gap-2">
           <PmButton
             variant="ghost"
-            href="/register"
+            href="/login"
             className="border border-white/40 px-4 py-2 text-white hover:bg-white/10 min-h-0"
           >
             Log In
@@ -60,7 +60,7 @@ const appLinks = [
   { label: "Requests", href: "/requests/matches", icon: ClipboardList },
   { label: "Workspaces", href: "/workspaces/1023", icon: MessagesSquare },
   { label: "Active Agreements", href: "/workspaces/1023/review", icon: FileCheck2 },
-  { label: "Profile", href: "/register", icon: User },
+  { label: "Profile", href: "/profile", icon: User },
 ];
 
 /**

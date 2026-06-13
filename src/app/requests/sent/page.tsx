@@ -27,10 +27,11 @@ export default function RequestSentPage() {
           Your discussion request has been sent to John Smith.
         </p>
         <p className="mt-1 text-sm text-pm-muted">
-          You&apos;ll be notified when they respond.
+          Good news — for this demo John has already said yes. Your shared
+          workspace is ready.
         </p>
-        <PmButton href="/landowner/requests/1023" className="mt-6 w-full">
-          View My Requests
+        <PmButton href="/workspaces/1023" className="mt-6 w-full">
+          Go to My Workspace
         </PmButton>
       </div>
     </main>
