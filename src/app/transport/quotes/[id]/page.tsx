@@ -1,0 +1,64 @@
+import type { Metadata } from "next";
+import { MoveRight } from "lucide-react";
+import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
+import { TransportQuoteCard } from "@/components/paddockme/TransportQuoteCard";
+import { ImagePanel } from "@/components/paddockme/ImagePanel";
+import { AppBottomNav } from "@/components/paddockme/PmNav";
+import { paddockmeImages } from "@/lib/paddockmeImages";
+import { demoRequest, demoTransportQuotes } from "@/lib/paddockmeDemoData";
+
+export const metadata: Metadata = {
+  title: "Transport Quotes — PaddockME",
+};
+
+/** Screen 12 — Transport Quotes, shown only after the agreement stage. */
+export default function TransportQuotesPage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-pm-cream-50">
+      <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <PaddockMeLogo variant="dark" />
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+        <div className="overflow-hidden rounded-2xl border border-pm-border bg-white shadow-sm md:grid md:grid-cols-[minmax(200px,32%)_1fr]">
+          <div className="hidden md:block">
+            <ImagePanel
+              src={paddockmeImages.transportQuotesSide}
+              alt="Livestock truck on a rural Australian road"
+            />
+          </div>
+          <div className="p-6 sm:p-9">
+            <h1 className="text-2xl font-extrabold text-pm-charcoal">
+              Transport Required
+            </h1>
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-pm-charcoal">
+              {demoRequest.currentLocation}
+              <MoveRight className="h-4 w-4 text-pm-gold-600" aria-label="to" />
+              {demoRequest.targetLocation}
+              <span className="rounded-full bg-pm-green-900 px-2.5 py-0.5 text-xs font-bold text-white">
+                {demoRequest.headCount} Head
+              </span>
+            </p>
+
+            <h2 className="mt-7 text-sm font-bold uppercase tracking-wider text-pm-muted">
+              Available Transporters
+            </h2>
+            <div className="mt-3 space-y-4">
+              {demoTransportQuotes.map((q) => (
+                <TransportQuoteCard
+                  key={q.company}
+                  quote={q}
+                  acceptHref="/workspaces/1023"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <AppBottomNav />
+    </div>
+  );
+}

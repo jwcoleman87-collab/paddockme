@@ -1,16 +1,13 @@
-import { redirect } from "next/navigation";
-import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
-import { LandingMarketing } from "./LandingMarketing";
+import { PaddockHomepage } from "./PaddockHomepage";
 
 /**
- * Public marketing landing. Signed-in users skip it entirely and go
- * straight to the app shell - showing "Log in" + sign-up CTAs to someone
- * who is already logged in is confusing.
+ * Screen 1 — Homepage (guided-workflow MVP rebuild).
+ *
+ * Note: the old landing redirected signed-in users to /agreements. During
+ * the rebuild everyone sees the new guided homepage so the full demo flow
+ * is always reachable. Re-introduce the signed-in redirect once the new
+ * flow is wired to auth.
  */
-export default async function HomePage() {
-  const currentUserProfile = await getCurrentUserProfile();
-  if (currentUserProfile) {
-    redirect("/agreements");
-  }
-  return <LandingMarketing />;
+export default function HomePage() {
+  return <PaddockHomepage />;
 }

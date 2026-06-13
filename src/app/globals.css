@@ -51,6 +51,24 @@
   --radius-lg: 6px;
   --radius-xl: 8px;
   --radius-2xl: 10px;
+
+  /*
+   * PaddockME MVP rebuild palette — dark green / gold / warm cream.
+   * Use these (pm- prefixed) tokens for all new guided-workflow screens.
+   * Source: PaddockME MVP Rebuild brief, June 2026.
+   */
+  --color-pm-green-900: #003d2b;
+  --color-pm-green-800: #064e37;
+  --color-pm-green-700: #0b6848;
+  --color-pm-gold-500: #d6a328;
+  --color-pm-gold-600: #b88718;
+  --color-pm-cream-50: #f8f4ea;
+  --color-pm-cream-100: #efe6d2;
+  --color-pm-charcoal: #1d1d1b;
+  --color-pm-muted: #6b6b5f;
+  --color-pm-border: #e5ddcf;
+  --color-pm-success: #0f7b4a;
+  --color-pm-warning: #d6a328;
 }
 
 body {
