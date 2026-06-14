@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, MoveRight, Send } from "lucide-react";
+import { ArrowLeft, MoveRight, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
@@ -120,6 +120,10 @@ export default function TransportRoomPage() {
         <h1 className="mt-1 text-2xl font-extrabold text-pm-charcoal">
           Transport Coordination Room
         </h1>
+        <p className="mt-1 text-sm text-pm-muted">
+          Sort out access, yards and timing with the driver here, then accept
+          or decline Wayne&apos;s quote. Chatting doesn&apos;t book anything.
+        </p>
 
         {/* Participants */}
         <div className="mt-4 flex flex-wrap gap-3">
@@ -258,38 +262,26 @@ export default function TransportRoomPage() {
               <ChecklistPanel title="Transport checklist" items={checklist} />
             </div>
             <div className="rounded-2xl border border-pm-border bg-white p-5 shadow-sm">
-              {arranged ? (
-                <>
-                  <p className="flex items-center gap-2 text-sm font-bold text-pm-success">
-                    <CheckCircle2 className="h-5 w-5" aria-hidden />
-                    Transport booked with {state.agreement.transportCompany}
-                  </p>
-                  <PmButton
-                    href="/workspaces/1023"
-                    variant="outline"
-                    className="mt-3 w-full"
-                  >
-                    Back to workspace
-                  </PmButton>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-bold text-pm-charcoal">
-                    Ready to book?
-                  </p>
-                  <p className="mt-1 text-sm text-pm-muted">
-                    Accepting Wayne&apos;s quote ({wayne.price} inc. GST)
-                    confirms the pickup and returns you to your workspace.
-                  </p>
-                  <PmButton
-                    variant="accent"
-                    onClick={handleAcceptWayne}
-                    className="mt-4 w-full"
-                  >
-                    Accept Wayne Quote
-                  </PmButton>
-                </>
-              )}
+              <p className="text-sm font-bold text-pm-charcoal">Your decision</p>
+              <p className="mt-1 text-sm text-pm-muted">
+                Nothing here is booked until you choose. Accept Wayne&apos;s
+                quote ({wayne.price} inc. GST) to confirm the pickup, or decline
+                and keep comparing.
+              </p>
+              <PmButton
+                variant="accent"
+                onClick={handleAcceptWayne}
+                className="mt-4 w-full"
+              >
+                Accept Wayne Quote
+              </PmButton>
+              <PmButton
+                href="/transport/quotes/1023"
+                variant="outline"
+                className="mt-2 w-full"
+              >
+                Decline &amp; Back to Quotes
+              </PmButton>
             </div>
           </aside>
         </div>
