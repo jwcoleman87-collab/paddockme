@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, MoveRight } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { ChecklistPanel } from "@/components/paddockme/ChecklistPanel";
@@ -11,7 +11,11 @@ import {
   NegotiationStep,
 } from "@/components/paddockme/WorkspacePanels";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
-import { demoConversation, demoRequest } from "@/lib/paddockmeDemoData";
+import {
+  demoConversation,
+  demoRequest,
+  demoTransportRft,
+} from "@/lib/paddockmeDemoData";
 import {
   usePaddockmeWorkflow,
   livestockLabel,
@@ -34,6 +38,13 @@ export default function WorkspaceAgreementPage() {
     acceptPaymentTerms,
   } = usePaddockmeWorkflow();
   const { agreement } = state;
+
+  // All three negotiable terms agreed — ready to move to review (and, from
+  // there, to send the RFT). Transport stays pending until a quote is accepted.
+  const termsComplete =
+    agreement.priceAgreed &&
+    agreement.datesConfirmed &&
+    agreement.paymentTermsConfirmed;
 
   const checklistItems = [
     { label: "Stock Numbers", done: true },
@@ -89,7 +100,7 @@ export default function WorkspaceAgreementPage() {
             Workspace
           </Link>
           <PaddockMeLogo variant="dark" className="hidden sm:block" />
-          <PmButton href="/workspaces/1023/review" variant="accent">
+          <PmButton href="/workspaces/1023/review" variant="outline">
             Review Agreement
           </PmButton>
         </div>
@@ -136,6 +147,66 @@ export default function WorkspaceAgreementPage() {
                 choices={PAYMENT_TERM_CHOICES}
               />
             </div>
+
+            {/* Bottom progression CTA — appears right where the user finishes
+                accepting the terms, so they never have to scroll back up. */}
+            {termsComplete && (
+              <div className="mt-6 rounded-2xl border border-pm-success/40 bg-pm-success/5 p-6 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pm-success text-white">
+                    <CheckCircle2 className="h-5 w-5" aria-hidden />
+                  </span>
+                  <h2 className="text-lg font-extrabold text-pm-charcoal">
+                    Agreement terms complete
+                  </h2>
+                </div>
+                <p className="mt-3 text-sm text-pm-muted">
+                  Your agistment terms are ready to review. After review,
+                  PaddockME will create an RFT — Request For Transport — so
+                  livestock transporters can quote the movement.
+                </p>
+
+                <div className="mt-4 rounded-xl border border-pm-border bg-white p-4">
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-pm-charcoal">
+                    {state.request.location}
+                    <MoveRight
+                      className="h-4 w-4 text-pm-gold-600"
+                      aria-label="to"
+                    />
+                    {demoTransportRft.destination}
+                  </p>
+                  <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div>
+                      <dt className="text-xs text-pm-muted">Approx. distance</dt>
+                      <dd className="text-sm font-semibold text-pm-charcoal">
+                        {demoTransportRft.distanceKm} km
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-pm-muted">Livestock</dt>
+                      <dd className="text-sm font-semibold text-pm-charcoal">
+                        {livestockLabel(state.request)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-pm-muted">Target start</dt>
+                      <dd className="text-sm font-semibold text-pm-charcoal">
+                        {demoRequest.startDate}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <PmButton
+                  href="/workspaces/1023/review"
+                  variant="accent"
+                  className="mt-5 w-full sm:w-auto"
+                >
+                  Review Agreement &amp; Request Transport
+                  <MoveRight className="h-4 w-4" aria-hidden />
+                </PmButton>
+              </div>
+            )}
 
             <div className="mt-8 h-[360px] rounded-2xl border border-pm-border bg-white p-5 shadow-sm">
               <ChatPanel messages={demoConversation} currentUser="James" />
