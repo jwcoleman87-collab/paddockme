@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/types/database";
+import { isSupabaseConfigured } from "./env";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -67,6 +68,33 @@ const GUIDED_MVP_PREFIXES = [
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  const url = request.nextUrl.clone();
+  const path = url.pathname;
+  const isAuthRoute =
+    path.startsWith("/sign-in") || path.startsWith("/sign-up");
+  // /forgot-password and /update-password are intentionally not in
+  // isAuthRoute - a signed-in user clicking "Forgot?" should still be able
+  // to land on the reset flow. They sit in PUBLIC_PREFIXES below so the
+  // signed-out gate keeps strangers out of the app shell but still lets
+  // the reset flow render.
+  const isOnboardingRoute = path.startsWith(ONBOARDING_PATH);
+  const isPublicRoute =
+    path === "/" ||
+    isOnboardingRoute ||
+    GUIDED_MVP_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
+    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
+  const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
+
+  if (!isSupabaseConfigured()) {
+    if (isAppRoute && !isPublicRoute) {
+      url.pathname = "/sign-in";
+      url.search = "";
+      url.searchParams.set("next", `${path}${request.nextUrl.search}`);
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -92,23 +120,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const url = request.nextUrl.clone();
-  const path = url.pathname;
-  const isAuthRoute =
-    path.startsWith("/sign-in") || path.startsWith("/sign-up");
-  // /forgot-password and /update-password are intentionally not in
-  // isAuthRoute - a signed-in user clicking "Forgot?" should still be able
-  // to land on the reset flow. They sit in PUBLIC_PREFIXES below so the
-  // signed-out gate keeps strangers out of the app shell but still lets
-  // the reset flow render.
-  const isOnboardingRoute = path.startsWith(ONBOARDING_PATH);
-  const isPublicRoute =
-    path === "/" ||
-    isOnboardingRoute ||
-    GUIDED_MVP_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
-    PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
-  const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
 
   if (!user && isAppRoute && !isPublicRoute) {
     url.pathname = "/sign-in";
