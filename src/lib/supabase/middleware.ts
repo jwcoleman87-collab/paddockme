@@ -42,6 +42,28 @@ const APP_PREFIXES = [
   "/workspace",
 ];
 
+// Guided-MVP demo flow (branch: paddockme-guided-mvp-rebuild).
+// These are the new customer-journey screens, designed to be walked
+// end-to-end with demo data and NO auth. They take precedence over the
+// APP_PREFIXES gate so signed-out visitors are never bounced to /sign-in
+// mid-flow. Auth itself is untouched — every other marketplace surface
+// (the old (app) dashboards: bare /requests, /transport, /workspace,
+// /home, /agreements, /listings, /map, /matches, /messages, /profile)
+// still requires sign-in. /requests is intentionally scoped to its demo
+// sub-routes so the old /requests dashboard index stays gated.
+const GUIDED_MVP_PREFIXES = [
+  "/register",
+  "/login",
+  "/account",
+  "/properties",
+  "/requests/new",
+  "/requests/matches",
+  "/requests/sent",
+  "/landowner/requests",
+  "/workspaces",
+  "/transport/quotes",
+];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -83,6 +105,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     path === "/" ||
     isOnboardingRoute ||
+    GUIDED_MVP_PREFIXES.some((prefix) => path.startsWith(prefix)) ||
     PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix));
   const isAppRoute = APP_PREFIXES.some((prefix) => path.startsWith(prefix));
 
