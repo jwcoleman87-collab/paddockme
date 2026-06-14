@@ -169,6 +169,35 @@ export const demoTransportQuotes: DemoTransportQuote[] = [
   },
 ];
 
+/**
+ * A Request For Transport (RFT). Once the two farmers accept the agreement,
+ * the livestock owner sends this to the transport side of PaddockME — it is
+ * what truckies would see on their RFT map and quote against.
+ */
+export type TransportRft = {
+  id: string;
+  agreementId: string;
+  pickup: string;
+  destination: string;
+  distanceKm: number;
+  livestock: string;
+  preferredDate: string;
+  access: string;
+  status: "open_for_quotes";
+};
+
+export const demoTransportRft: TransportRft = {
+  id: "rft-1023",
+  agreementId: "1023",
+  pickup: "Dubbo NSW",
+  destination: "Green Hills Farm, Bungendore NSW",
+  distanceKm: 320,
+  livestock: "120 Cattle",
+  preferredDate: "1 June 2025",
+  access: "Road train suitable",
+  status: "open_for_quotes",
+};
+
 export const demoRecentActivity = [
   { icon: "cattle", headline: "120 head", detail: "seeking feed near Dubbo NSW" },
   { icon: "land", headline: "80 acres", detail: "available near Wagga Wagga" },

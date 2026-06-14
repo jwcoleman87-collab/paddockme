@@ -20,7 +20,7 @@ import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
 /** Screen 11 — Agreement Review: clear, safe, final check before accepting. */
 export default function AgreementReviewPage() {
   const router = useRouter();
-  const { state, acceptReview } = usePaddockmeWorkflow();
+  const { state, acceptReview, sendRft } = usePaddockmeWorkflow();
   const { agreement } = state;
 
   const rows = [
@@ -64,9 +64,13 @@ export default function AgreementReviewPage() {
 
   function handleAccept() {
     acceptReview();
-    router.push(
-      agreement.transportArranged ? "/workspaces/1023" : "/transport/quotes/1023",
-    );
+    if (agreement.transportArranged) {
+      router.push("/workspaces/1023");
+      return;
+    }
+    // Agreement is done — open it to transporters as a Request For Transport.
+    sendRft();
+    router.push("/transport/quotes/1023");
   }
 
   return (
@@ -125,8 +129,14 @@ export default function AgreementReviewPage() {
             >
               {agreement.transportArranged
                 ? "Accept Agreement"
-                : "Accept & Arrange Transport"}
+                : "Accept Agreement & Send RFT"}
             </PmButton>
+            {!agreement.transportArranged && (
+              <p className="mt-2 text-xs text-pm-muted">
+                Accepting opens this movement as a Request For Transport (RFT)
+                so PaddockME transporters can quote on it.
+              </p>
+            )}
           </div>
 
           <div className="hidden md:block">

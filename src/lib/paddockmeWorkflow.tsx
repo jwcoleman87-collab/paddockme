@@ -17,6 +17,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { demoTransportRft, type TransportRft } from "./paddockmeDemoData";
 
 const STORAGE_KEY = "paddockme-workflow-v2";
 
@@ -75,6 +76,8 @@ export type AgreementState = {
   /** The RFT James has sent out to transport companies, if any. */
   transportRequestSent: boolean;
   transportRequest: TransportRequestDetails | null;
+  /** The structured Request For Transport opened from the agreement. */
+  transportRft: TransportRft | null;
 
   transportCompany: string | null;
   transportPrice: string | null;
@@ -118,6 +121,7 @@ function defaultState(): WorkflowState {
       pendingPaymentTerms: { value: SUGGESTED_PAYMENT_TERMS, from: "James" },
       transportRequestSent: false,
       transportRequest: null,
+      transportRft: null,
       transportCompany: null,
       transportPrice: null,
       transportArranged: false,
@@ -136,6 +140,7 @@ type WorkflowContextValue = {
   acceptDates: () => void;
   proposePaymentTerms: (value: string, from: "James" | "John") => void;
   acceptPaymentTerms: () => void;
+  sendRft: () => void;
   acceptTransport: (company: string, price: string) => void;
   acceptReview: () => void;
   resetWorkflow: () => void;
@@ -292,6 +297,27 @@ export function PaddockmeWorkflowProvider({
     }));
   }
 
+  /**
+   * Turn the accepted agreement into a Request For Transport and "send" it
+   * to the transport side of PaddockME. Built from the live request (pickup
+   * + livestock) on top of the demo RFT template (route, distance, access).
+   */
+  function sendRft() {
+    setState((prev) => ({
+      ...prev,
+      agreement: {
+        ...prev.agreement,
+        transportRequestSent: true,
+        transportRft: {
+          ...demoTransportRft,
+          pickup: prev.request.location,
+          livestock: `${prev.request.headCount} ${prev.request.livestockType}`,
+        },
+        lastUpdated: new Date().toISOString(),
+      },
+    }));
+  }
+
   function resetWorkflow() {
     setState(defaultState());
     try {
@@ -318,6 +344,7 @@ export function PaddockmeWorkflowProvider({
       acceptDates,
       proposePaymentTerms,
       acceptPaymentTerms,
+      sendRft,
       acceptTransport,
       acceptReview,
       resetWorkflow,
