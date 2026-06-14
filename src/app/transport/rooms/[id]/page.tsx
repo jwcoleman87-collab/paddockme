@@ -158,7 +158,7 @@ export default function TransportRoomPage() {
             <MoveRight className="h-4 w-4 text-pm-gold-600" aria-label="to" />
             {rft.destination}
           </p>
-          <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div>
               <dt className="text-xs text-pm-muted">Livestock</dt>
               <dd className="text-sm font-semibold text-pm-charcoal">
@@ -181,6 +181,13 @@ export default function TransportRoomPage() {
               <dt className="text-xs text-pm-muted">Agreement ID</dt>
               <dd className="text-sm font-semibold text-pm-charcoal">
                 Agistment #{rft.agreementId}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-pm-muted">Wayne&apos;s quote</dt>
+              <dd className="text-sm font-bold text-pm-green-900">
+                {wayne.price}{" "}
+                <span className="font-normal text-pm-muted">inc. GST</span>
               </dd>
             </div>
           </dl>
