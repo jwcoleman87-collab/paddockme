@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   // Allows CI/sandbox builds to write somewhere other than .next
   // (e.g. NEXT_DIST_DIR=/tmp/paddockme-dist npx next build). Defaults to .next.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  output: "standalone",
   turbopack: {
     root: process.cwd(),
   },
