@@ -184,12 +184,19 @@ export default function TransportQuotesPage() {
               <TransportQuoteCard
                 key={q.company}
                 quote={q}
+                chatHref="/transport/rooms/1023"
                 onAccept={() => handleAccept(q.company, q.price)}
               />
             ))}
           </div>
 
-          <p className="mt-6 text-xs text-pm-muted">
+          <p className="mt-4 rounded-lg bg-pm-cream-100 px-4 py-3 text-xs text-pm-charcoal">
+            <span className="font-bold">Chat with Driver</span> opens a
+            coordination room to sort access, yards and timing — it does not
+            accept the quote. <span className="font-bold">Accept Quote</span>{" "}
+            books the transporter.
+          </p>
+          <p className="mt-3 text-xs text-pm-muted">
             Quotes are indicative and include GST. Accepting books transport
             and returns you to your workspace.
           </p>

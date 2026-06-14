@@ -1,4 +1,4 @@
-import { ShieldCheck, Truck, FileCheck } from "lucide-react";
+import { ShieldCheck, Truck, FileCheck, MessagesSquare } from "lucide-react";
 import { PmButton } from "./PmButton";
 import { Badge, Rating } from "./PmCards";
 import type { DemoTransportQuote } from "@/lib/paddockmeDemoData";
@@ -12,9 +12,12 @@ const badgeIcons: Record<string, React.ReactNode> = {
 export function TransportQuoteCard({
   quote,
   onAccept,
+  chatHref,
 }: {
   quote: DemoTransportQuote;
   onAccept: () => void;
+  /** When set, shows a "Chat with Driver" button that opens the coordination room. */
+  chatHref?: string;
 }) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-pm-border bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -37,16 +40,24 @@ export function TransportQuoteCard({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-        <p className="text-xl font-extrabold text-pm-charcoal">
+      <div className="flex flex-col gap-3 sm:items-end">
+        <p className="text-xl font-extrabold text-pm-charcoal sm:text-right">
           {quote.price}
-          <span className="block text-right text-[11px] font-medium text-pm-muted">
+          <span className="block text-[11px] font-medium text-pm-muted sm:text-right">
             INC. GST
           </span>
         </p>
-        <PmButton variant="accent" onClick={onAccept}>
-          Accept Quote
-        </PmButton>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {chatHref && (
+            <PmButton variant="outline" href={chatHref}>
+              <MessagesSquare className="h-4 w-4" aria-hidden />
+              Chat with Driver
+            </PmButton>
+          )}
+          <PmButton variant="accent" onClick={onAccept}>
+            Accept Quote
+          </PmButton>
+        </div>
       </div>
     </div>
   );

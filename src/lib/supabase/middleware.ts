@@ -62,6 +62,7 @@ const GUIDED_MVP_PREFIXES = [
   "/landowner/requests",
   "/workspaces",
   "/transport/quotes",
+  "/transport/rooms",
 ];
 
 export async function updateSession(request: NextRequest) {

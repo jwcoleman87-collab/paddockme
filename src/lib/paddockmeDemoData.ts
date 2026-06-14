@@ -198,6 +198,51 @@ export const demoTransportRft: TransportRft = {
   status: "open_for_quotes",
 };
 
+/**
+ * Three-way transport coordination room for Agistment #1023 — the livestock
+ * owner, the landowner and the chosen transporter sorting out the practical
+ * detail (access, yards, NVDs, timing) before the quote is accepted.
+ */
+export const demoTransportRoomParticipants = [
+  { name: "James Coleman", role: "Livestock owner", initials: "JC" },
+  { name: "John — Green Hills Farm", role: "Landowner", initials: "GH" },
+  { name: "Wayne Transport", role: "Transporter", initials: "WT" },
+];
+
+export type TransportRoomMessage = {
+  sender: string;
+  role: "owner" | "landowner" | "transporter";
+  time: string;
+  text: string;
+};
+
+export const demoTransportRoomMessages: TransportRoomMessage[] = [
+  {
+    sender: "Wayne Transport",
+    role: "transporter",
+    time: "9:02 AM",
+    text: "G'day all. Is Green Hills road-train accessible, and is there room to turn an A-double around near the yards?",
+  },
+  {
+    sender: "John — Green Hills Farm",
+    role: "landowner",
+    time: "9:08 AM",
+    text: "Yep — road train suitable, all-weather access right to the yards and plenty of room to turn around. Loading ramp's rated for cattle.",
+  },
+  {
+    sender: "James Coleman",
+    role: "owner",
+    time: "9:15 AM",
+    text: "I'll have the 120 head yarded and drafted the afternoon before so they're ready for an early pickup.",
+  },
+  {
+    sender: "Wayne Transport",
+    role: "transporter",
+    time: "9:21 AM",
+    text: "Perfect. I'll have the truck at Dubbo for a 6:30am pickup on 1 June. NVDs travelling with the mob and we'll be right to go.",
+  },
+];
+
 export const demoRecentActivity = [
   { icon: "cattle", headline: "120 head", detail: "seeking feed near Dubbo NSW" },
   { icon: "land", headline: "80 acres", detail: "available near Wagga Wagga" },
