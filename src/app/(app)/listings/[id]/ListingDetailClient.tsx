@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Camera, Droplets, Fence, MapPin, Sprout, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { DemoResetAction } from "@/components/DemoResetAction";
 import { InfoTile } from "@/components/InfoTile";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -237,6 +238,7 @@ export function ListingDetailClient({
           <ButtonLink href="/listings" variant="secondary" className="w-full">
             Back to paddocks
           </ButtonLink>
+          <DemoResetAction className="w-full" />
         </aside>
       </div>
       <TileDetailDialog tile={activeTile} onClose={() => setActiveTile(null)} />

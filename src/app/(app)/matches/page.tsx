@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight, Check, Minus, Sparkles } from "lucide-react"
 import { useSearchParams } from "next/navigation";
 import { ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { DemoResetAction } from "@/components/DemoResetAction";
 import { InfoTile } from "@/components/InfoTile";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -135,11 +136,12 @@ export default function MatchesPage() {
         </div>
       )}
 
-      <div className="relative z-30 mt-6 text-center">
+      <div className="relative z-30 mt-6 flex flex-wrap items-center justify-center gap-3">
         <ButtonLink href={listingsHref} variant="ghost">
           Browse all paddocks
           <ArrowRight className="h-4 w-4" aria-hidden />
         </ButtonLink>
+        <DemoResetAction />
       </div>
     </>
   );
