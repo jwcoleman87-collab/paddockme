@@ -2,7 +2,8 @@
 
 import { RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demoMode";
+import { runDemoReset } from "@/lib/demoReset";
 
 /**
  * Demo reset control.
@@ -15,10 +16,13 @@ import { createClient } from "@/lib/supabase/client";
  * Rendered beside the sign-out control in both the desktop sidebar and the
  * mobile header. The label shows on the desktop sidebar (lg+) and collapses
  * to an icon-only button in the tighter mobile header - same control, two
- * presentations.
+ * presentations. Demo-only: hidden unless the build runs in demo mode, so real
+ * users never see a reset control in production.
  */
 export function DemoResetButton() {
   const [loading, setLoading] = useState(false);
+
+  if (!isDemoMode()) return null;
 
   async function resetDemo() {
     if (loading) return;
@@ -28,33 +32,7 @@ export function DemoResetButton() {
     if (!confirmed) return;
 
     setLoading(true);
-    try {
-      // Clear every PaddockME-namespaced localStorage key (inbox unread
-      // tracker + any legacy persona/draft keys left by older builds).
-      try {
-        const toRemove: string[] = [];
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key && key.startsWith("paddockme")) toRemove.push(key);
-        }
-        toRemove.forEach((key) => window.localStorage.removeItem(key));
-        // Request flow draft lives in sessionStorage under its own key.
-        window.sessionStorage.removeItem("pm-request-draft");
-      } catch {
-        // ignore - private mode / quota
-      }
-
-      try {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-      } catch {
-        // ignore - sign-out is best-effort during a reset
-      }
-    } finally {
-      // Hard navigation guarantees all in-memory React state is dropped too,
-      // so the demo truly starts from zero.
-      window.location.assign("/");
-    }
+    await runDemoReset();
   }
 
   return (

@@ -26,6 +26,7 @@ import {
 } from "@/components/ArtefactUploadDialog";
 import { ArtefactViewer, type ViewableArtefact } from "@/components/ArtefactViewer";
 import { Button, ButtonLink } from "@/components/Button";
+import { DemoResetAction } from "@/components/DemoResetAction";
 import { InfoTile } from "@/components/InfoTile";
 import { LifecycleStepper } from "@/components/LifecycleStepper";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -450,6 +451,7 @@ export function AgreementPanel({
               Agreement is {lifecycleState.toLowerCase()} - no further actions.
             </p>
           )}
+          {isTerminal && <DemoResetAction />}
         </div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import { CheckCircle, ReceiptText } from "lucide-react";
 import { ButtonLink } from "@/components/Button";
+import { DemoResetAction } from "@/components/DemoResetAction";
 import { StatusBadge } from "@/components/StatusBadge";
 import { isSandboxSessionId } from "@/lib/payments/sandboxCheckout";
 
@@ -50,6 +51,7 @@ export default async function TransportPaymentSuccessPage({
           <ButtonLink href="/agreements" variant="secondary">
             Agreements
           </ButtonLink>
+          <DemoResetAction />
         </div>
       </section>
     </main>

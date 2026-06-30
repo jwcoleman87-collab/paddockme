@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, CheckCircle, Truck } from "lucide-react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ChatPanel } from "@/components/ChatPanel";
+import { DemoResetAction } from "@/components/DemoResetAction";
 import { InfoTile } from "@/components/InfoTile";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -287,6 +288,7 @@ export function RealTransportRoom({
                     RFT board
                   </ButtonLink>
                 )}
+                <DemoResetAction />
               </div>
               {viewerRole === "driver" && !nextStatus && job.status === "completed" && (
                 <ButtonLink href="/transport/jobs" variant="secondary">
