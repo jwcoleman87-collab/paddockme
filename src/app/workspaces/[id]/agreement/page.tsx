@@ -45,6 +45,17 @@ export default function WorkspaceAgreementPage() {
     agreement.priceAgreed &&
     agreement.datesConfirmed &&
     agreement.paymentTermsConfirmed;
+  const agreementAccepted = agreement.reviewAccepted;
+  const progressionHref = agreementAccepted
+    ? "/workspaces/1023/review"
+    : agreement.transportRequestSent
+      ? "/transport/quotes/1023"
+      : "/workspaces/1023/review";
+  const progressionLabel = agreementAccepted
+    ? "View Accepted Agreement"
+    : agreement.transportRequestSent
+      ? "View Transport Quotes"
+      : "Review Agreement & Request Transport";
 
   const checklistItems = [
     { label: "Stock Numbers", done: true },
@@ -101,7 +112,7 @@ export default function WorkspaceAgreementPage() {
           </Link>
           <PaddockMeLogo variant="dark" className="hidden sm:block" />
           <PmButton href="/workspaces/1023/review" variant="outline">
-            Review Agreement
+            {agreementAccepted ? "View Agreement" : "Review Agreement"}
           </PmButton>
         </div>
       </header>
@@ -157,13 +168,19 @@ export default function WorkspaceAgreementPage() {
                     <CheckCircle2 className="h-5 w-5" aria-hidden />
                   </span>
                   <h2 className="text-lg font-extrabold text-pm-charcoal">
-                    Agreement terms complete
+                    {agreementAccepted
+                      ? "Agreement accepted"
+                      : agreement.transportRequestSent
+                        ? "Transport request sent"
+                        : "Agreement terms complete"}
                   </h2>
                 </div>
                 <p className="mt-3 text-sm text-pm-muted">
-                  Your agistment terms are ready to review. After review,
-                  PaddockME will create an RFT — Request For Transport — so
-                  livestock transporters can quote the movement.
+                  {agreementAccepted
+                    ? "The agreement is already in place. You can view the accepted record without accepting it again."
+                    : agreement.transportRequestSent
+                      ? "Your agreement has already been reviewed and the transport request is open for quotes."
+                      : "Your agistment terms are ready to review. After review, PaddockME will create an RFT - Request For Transport - so livestock transporters can quote the movement."}
                 </p>
 
                 <div className="mt-4 rounded-xl border border-pm-border bg-white p-4">
@@ -198,11 +215,11 @@ export default function WorkspaceAgreementPage() {
                 </div>
 
                 <PmButton
-                  href="/workspaces/1023/review"
+                  href={progressionHref}
                   variant="accent"
                   className="mt-5 w-full sm:w-auto"
                 >
-                  Review Agreement &amp; Request Transport
+                  {progressionLabel}
                   <MoveRight className="h-4 w-4" aria-hidden />
                 </PmButton>
               </div>

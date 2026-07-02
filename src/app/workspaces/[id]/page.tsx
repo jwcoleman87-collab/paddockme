@@ -15,6 +15,9 @@ import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
 export default function WorkspaceOverviewPage() {
   const w = demoWorkspace;
   const { state, isComplete } = usePaddockmeWorkflow();
+  const workspaceCtaHref = isComplete
+    ? "/workspaces/1023/review"
+    : "/workspaces/1023/agreement";
 
   // Build the progress checklist from real workflow state instead of a
   // fixed snapshot, so it actually reflects what's been agreed so far.
@@ -137,10 +140,10 @@ export default function WorkspaceOverviewPage() {
             )}
 
             <PmButton
-              href="/workspaces/1023/agreement"
+              href={workspaceCtaHref}
               className="mt-6 w-full sm:w-auto"
             >
-              {isComplete ? "Review Agreement" : "Continue to Agreement"}
+              {isComplete ? "View Agreement" : "Continue to Agreement"}
               <MoveRight className="h-4 w-4" aria-hidden />
             </PmButton>
           </section>

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   LandPlot,
   CalendarDays,
+  CheckCircle2,
   CircleDollarSign,
   CreditCard,
   Truck,
@@ -61,8 +62,17 @@ export default function AgreementReviewPage() {
     agreement.priceAgreed &&
     agreement.datesConfirmed &&
     agreement.paymentTermsConfirmed;
+  const agreementAccepted = agreement.reviewAccepted;
+  const acceptedUntil =
+    agreement.datesConfirmed && agreement.datesLabel
+      ? agreement.datesLabel.replace(/^.*\s(?:-|\u2013)\s/, "")
+      : demoRequest.duration;
 
   function handleAccept() {
+    if (agreementAccepted) {
+      router.push("/workspaces/1023");
+      return;
+    }
     acceptReview();
     if (agreement.transportArranged) {
       router.push("/workspaces/1023");
@@ -85,10 +95,12 @@ export default function AgreementReviewPage() {
         <div className="overflow-hidden rounded-2xl border border-pm-border bg-white shadow-sm md:grid md:grid-cols-[1fr_minmax(220px,38%)]">
           <div className="p-6 sm:p-9">
             <h1 className="text-2xl font-extrabold text-pm-charcoal">
-              Review Agreement
+              {agreementAccepted ? "Agreement in place" : "Review Agreement"}
             </h1>
             <p className="mt-1 text-sm text-pm-muted">
-              Please review all details before accepting.
+              {agreementAccepted
+                ? "This agreement has already been accepted."
+                : "Please review all details before accepting."}
             </p>
 
             <dl className="mt-6 divide-y divide-pm-border">
@@ -117,21 +129,44 @@ export default function AgreementReviewPage() {
               </p>
             )}
 
-            <PmButton
-              variant="accent"
-              onClick={handleAccept}
-              disabled={!readyToAccept}
-              className={
-                readyToAccept
-                  ? "mt-6 w-full sm:w-auto"
-                  : "mt-6 w-full cursor-not-allowed opacity-50 sm:w-auto"
-              }
-            >
-              {agreement.transportArranged
-                ? "Accept Agreement"
-                : "Accept Agreement & Send RFT"}
-            </PmButton>
-            {!agreement.transportArranged && (
+            {agreementAccepted ? (
+              <>
+                <div className="mt-6 rounded-xl border border-pm-success/30 bg-pm-success/10 px-4 py-4 text-sm text-pm-charcoal">
+                  <p className="flex items-center gap-2 font-bold text-pm-success">
+                    <CheckCircle2 className="h-5 w-5" aria-hidden />
+                    Agreement in place until {acceptedUntil}
+                  </p>
+                  <p className="mt-2 text-pm-muted">
+                    {agreement.transportArranged
+                      ? `Transport is booked with ${agreement.transportCompany}.`
+                      : "The agreement has been accepted and the transport request is open."}
+                  </p>
+                </div>
+                <PmButton
+                  href="/workspaces/1023"
+                  variant="primary"
+                  className="mt-6 w-full sm:w-auto"
+                >
+                  Back to Workspace
+                </PmButton>
+              </>
+            ) : (
+              <PmButton
+                variant="accent"
+                onClick={handleAccept}
+                disabled={!readyToAccept}
+                className={
+                  readyToAccept
+                    ? "mt-6 w-full sm:w-auto"
+                    : "mt-6 w-full cursor-not-allowed opacity-50 sm:w-auto"
+                }
+              >
+                {agreement.transportArranged
+                  ? "Accept Agreement"
+                  : "Accept Agreement & Send RFT"}
+              </PmButton>
+            )}
+            {!agreementAccepted && !agreement.transportArranged && (
               <p className="mt-2 text-xs text-pm-muted">
                 Accepting opens this movement as a Request For Transport (RFT)
                 so PaddockME transporters can quote on it.
