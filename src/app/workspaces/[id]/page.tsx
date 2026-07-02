@@ -6,6 +6,7 @@ import { PmButton } from "@/components/paddockme/PmButton";
 import { ChecklistPanel } from "@/components/paddockme/ChecklistPanel";
 import { DealSummaryCard } from "@/components/paddockme/PmCards";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
+import { PmChatPanel } from "@/components/paddockme/PmChatPanel";
 import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoRequest, demoWorkspace } from "@/lib/paddockmeDemoData";
 import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
@@ -34,7 +35,7 @@ export default function WorkspaceOverviewPage() {
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
       <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
           <PaddockMeLogo variant="dark" />
           <div className="text-right">
             <p className="text-sm font-bold text-pm-charcoal">
@@ -48,10 +49,10 @@ export default function WorkspaceOverviewPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-        <div className="grid gap-6 md:grid-cols-[230px_1fr]">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+        <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)_minmax(340px,400px)]">
           {/* Progress checklist */}
-          <aside className="rounded-2xl border border-pm-border bg-white p-5 shadow-sm md:order-first">
+          <aside className="rounded-2xl border border-pm-border bg-white p-5 shadow-sm lg:order-first">
             <ChecklistPanel title="Progress" items={checklist} />
           </aside>
 
@@ -143,6 +144,12 @@ export default function WorkspaceOverviewPage() {
               <MoveRight className="h-4 w-4" aria-hidden />
             </PmButton>
           </section>
+
+          {/* Live 3-party chat — the constant, transparent line of
+              communication between owner, landowner and transporter. */}
+          <aside className="min-w-0">
+            <PmChatPanel />
+          </aside>
         </div>
       </main>
 
