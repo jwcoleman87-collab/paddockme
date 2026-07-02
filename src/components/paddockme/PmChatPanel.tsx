@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   demoTransportRoomMessages,
   demoTransportRoomParticipants,
+  demoWorkspace,
 } from "@/lib/paddockmeDemoData";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { Tables } from "@/lib/types/database";
 
 /**
  * PmChatPanel — the three-way workspace chat for the guided MVP demo.
@@ -18,11 +22,19 @@ import {
  *
  * DEMO SCOPE: there is no auth on this page yet, so instead of detecting the
  * signed-in party we let you *act as* any of the three parties via the chips
- * at the top — that's how you demo a live 3-way conversation to one screen.
- * Messages and image previews live in local state only. When this flips to
- * the real backend, swap the local send handler for a Supabase insert and the
- * object-URL image for a Storage upload (migration already drafted).
+ * at the top — that's how you demo a live 3-way conversation from one screen.
+ *
+ * Persistence: messages and photos are stored in the demo-scoped
+ * `demo_chat_messages` table + `demo-chat-photos` bucket (NOT the real
+ * auth-gated `messages` table — see the demo_workspace_chat migration), and
+ * live-sync across browsers via Supabase Realtime, so the same thread can be
+ * driven from a laptop and a phone at once. If Supabase isn't configured or
+ * a send fails, the panel degrades to local-only state so a demo never
+ * bricks mid-pitch. The seeded conversation is the scripted backstory and
+ * always renders above whatever is in the database.
  */
+
+const DEMO_CHAT_BUCKET = "demo-chat-photos";
 
 type Role = "owner" | "landowner" | "transporter";
 
@@ -35,6 +47,8 @@ type ChatMessage = {
   imageUrl?: string;
   imageName?: string;
 };
+
+type DemoChatRow = Tables<"demo_chat_messages">;
 
 // Map each party's role -> the display name + initials shown on their bubbles.
 const PARTY_BY_ROLE: Record<Role, { name: string; initials: string }> = {
@@ -67,27 +81,121 @@ function seedMessages(): ChatMessage[] {
   }));
 }
 
-function nowTime(): string {
-  return new Date().toLocaleTimeString("en-AU", {
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString("en-AU", {
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
-export function PmChatPanel() {
+function isRole(value: string): value is Role {
+  return value === "owner" || value === "landowner" || value === "transporter";
+}
+
+export function PmChatPanel({
+  workspaceId = demoWorkspace.id,
+}: {
+  workspaceId?: string;
+}) {
   const parties = demoTransportRoomParticipants;
   const roleOf = (i: number): Role =>
     (["owner", "landowner", "transporter"] as Role[])[i] ?? "owner";
 
+  const supabase = useMemo(
+    () => (isSupabaseConfigured() ? createClient() : null),
+    [],
+  );
+
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
   const [activeRole, setActiveRole] = useState<Role>("owner");
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const [pendingImage, setPendingImage] = useState<
-    { url: string; name: string } | null
+    { url: string; name: string; file: File } | null
   >(null);
 
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  function mapRow(row: DemoChatRow): ChatMessage {
+    return {
+      id: row.id,
+      sender: row.sender_name,
+      role: isRole(row.sender_role) ? row.sender_role : "owner",
+      time: formatTime(new Date(row.created_at)),
+      text: row.body ?? "",
+      imageUrl:
+        row.image_path && supabase
+          ? supabase.storage.from(DEMO_CHAT_BUCKET).getPublicUrl(row.image_path)
+              .data.publicUrl
+          : undefined,
+      imageName: row.image_name ?? undefined,
+    };
+  }
+
+  // Load the persisted thread and live-sync inserts/deletes across browsers.
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+
+    supabase
+      .from("demo_chat_messages")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setMessages((current) => {
+          const base = [...seedMessages(), ...data.map(mapRow)];
+          const known = new Set(base.map((m) => m.id));
+          // Keep anything sent while the fetch was in flight.
+          const extras = current.filter(
+            (m) => !m.id.startsWith("seed-") && !known.has(m.id),
+          );
+          return [...base, ...extras];
+        });
+      });
+
+    const channel = supabase
+      .channel(`demo-chat-${workspaceId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "demo_chat_messages",
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload) => {
+          const row = payload.new as DemoChatRow;
+          setMessages((current) =>
+            current.some((m) => m.id === row.id)
+              ? current
+              : [...current, mapRow(row)],
+          );
+        },
+      )
+      .on(
+        // Delete events only carry the primary key (no workspace filter
+        // possible), so drop by id — this is how a demo reset in one
+        // browser clears the thread in the others.
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "demo_chat_messages" },
+        (payload) => {
+          const oldRow = payload.old as Partial<DemoChatRow>;
+          if (!oldRow.id) return;
+          setMessages((current) => current.filter((m) => m.id !== oldRow.id));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+    // mapRow is stable in practice (depends only on supabase).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, workspaceId]);
 
   // Auto-scroll to the newest message.
   useEffect(() => {
@@ -106,13 +214,13 @@ export function PmChatPanel() {
 
   const me = PARTY_BY_ROLE[activeRole];
 
-  const canSend = draft.trim().length > 0 || !!pendingImage;
+  const canSend = (draft.trim().length > 0 || !!pendingImage) && !sending;
 
   function handlePickImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (pendingImage) URL.revokeObjectURL(pendingImage.url);
-    setPendingImage({ url: URL.createObjectURL(file), name: file.name });
+    setPendingImage({ url: URL.createObjectURL(file), name: file.name, file });
     // Allow re-selecting the same file later.
     event.target.value = "";
   }
@@ -122,23 +230,91 @@ export function PmChatPanel() {
     setPendingImage(null);
   }
 
-  function handleSend(event: React.FormEvent) {
-    event.preventDefault();
-    if (!canSend) return;
+  function appendLocal(text: string, image: typeof pendingImage) {
     setMessages((current) => [
       ...current,
       {
         id: `local-${Date.now()}`,
         sender: me.name,
         role: activeRole,
-        time: nowTime(),
-        text: draft.trim(),
-        imageUrl: pendingImage?.url,
-        imageName: pendingImage?.name,
+        time: formatTime(new Date()),
+        text,
+        imageUrl: image?.url,
+        imageName: image?.name,
       },
     ]);
-    setDraft("");
-    setPendingImage(null);
+  }
+
+  async function handleSend(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canSend) return;
+    const text = draft.trim();
+    const image = pendingImage;
+
+    // No backend configured — keep the panel usable in pure-local mode.
+    if (!supabase) {
+      appendLocal(text, image);
+      setDraft("");
+      setPendingImage(null);
+      return;
+    }
+
+    setSending(true);
+    try {
+      const id = crypto.randomUUID();
+      let imagePath: string | null = null;
+      if (image) {
+        const safeName = image.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+        imagePath = `${workspaceId}/${id}-${safeName}`;
+        const { error } = await supabase.storage
+          .from(DEMO_CHAT_BUCKET)
+          .upload(imagePath, image.file);
+        if (error) throw error;
+      }
+      const { error } = await supabase.from("demo_chat_messages").insert({
+        id,
+        workspace_id: workspaceId,
+        sender_role: activeRole,
+        sender_name: me.name,
+        body: text || null,
+        image_path: imagePath,
+        image_name: image?.name ?? null,
+      });
+      if (error) throw error;
+
+      // Optimistic append; the realtime echo dedupes on id.
+      setMessages((current) =>
+        current.some((m) => m.id === id)
+          ? current
+          : [
+              ...current,
+              {
+                id,
+                sender: me.name,
+                role: activeRole,
+                time: formatTime(new Date()),
+                text,
+                imageUrl: imagePath
+                  ? supabase.storage
+                      .from(DEMO_CHAT_BUCKET)
+                      .getPublicUrl(imagePath).data.publicUrl
+                  : undefined,
+                imageName: image?.name ?? undefined,
+              },
+            ],
+      );
+      if (image) URL.revokeObjectURL(image.url);
+      setDraft("");
+      setPendingImage(null);
+    } catch {
+      // Backend hiccup mid-demo: fall back to a local-only message (blob
+      // URL for the photo) rather than losing what was typed.
+      appendLocal(text, image);
+      setDraft("");
+      setPendingImage(null);
+    } finally {
+      setSending(false);
+    }
   }
 
   const onlineCount = parties.length;
@@ -264,7 +440,7 @@ export function PmChatPanel() {
           <button
             type="submit"
             disabled={!canSend}
-            aria-label="Send message"
+            aria-label={sending ? "Sending message" : "Send message"}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pm-green-900 text-white transition hover:bg-pm-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Send className="h-4 w-4" />

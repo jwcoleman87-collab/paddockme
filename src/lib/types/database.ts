@@ -280,6 +280,39 @@ export type Database = {
           },
         ]
       }
+      demo_chat_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          image_name: string | null
+          image_path: string | null
+          sender_name: string
+          sender_role: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_name?: string | null
+          image_path?: string | null
+          sender_name: string
+          sender_role: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_name?: string | null
+          image_path?: string | null
+          sender_name?: string
+          sender_role?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           created_at: string | null

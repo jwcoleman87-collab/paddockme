@@ -148,7 +148,7 @@ export default function WorkspaceOverviewPage() {
           {/* Live 3-party chat — the constant, transparent line of
               communication between owner, landowner and transporter. */}
           <aside className="min-w-0">
-            <PmChatPanel />
+            <PmChatPanel workspaceId={w.id} />
           </aside>
         </div>
       </main>
