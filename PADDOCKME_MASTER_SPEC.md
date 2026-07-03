@@ -227,6 +227,7 @@ Each page below has: **Purpose** (one sentence — if a page can't state its pur
 - `PaddockME-Map-Layers-Reference.md` — map layer catalogue + governance (authoritative for map layers specifically)
 - `BUGFIX_BRIEF_listing_and_maps.md` — tactical, may be complete; verify before re-running
 - `UI_BRIEF_profile_cards_bars_filters.md` — tactical UI refinements
+- `docs/LIVE_AGREEMENT_SPEC.md` — Live Agreement screen (post-finalisation home base); proposal awaiting James's sign-off
 - White paper (19pp PDF) — vision/strategy; useful for tone and positioning, not a build doc
 ---
 ## Appendix A — Codebase ground truth (FILL ON FIRST RUN, THEN CANONICAL)
