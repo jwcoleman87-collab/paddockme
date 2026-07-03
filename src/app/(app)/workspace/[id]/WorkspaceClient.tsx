@@ -498,6 +498,13 @@ export function WorkspaceClient({
   };
 
   const requestTransport = async () => {
+    if (lifecycleTerminal) {
+      flash(
+        `This agreement is ${lifecycleState.toLowerCase()} - transport can no longer be requested.`,
+        "warning"
+      );
+      return;
+    }
     if (!allSectionsAgreed) {
       flash("Resolve every agreement section before pushing an RFT.", "warning");
       return;
@@ -533,6 +540,10 @@ export function WorkspaceClient({
     return state.agreedByA && state.agreedByB ? count + 1 : count;
   }, 0);
   const allSectionsAgreed = mutuallyAgreedCount === sectionsContent.length;
+  // A completed or cancelled agreement must never offer a live RFT action -
+  // the negotiation-phase CTAs are gated on lifecycle state (spec §6.9/§6.10).
+  const lifecycleTerminal =
+    lifecycleState === "Completed" || lifecycleState === "Cancelled";
 
   const timelineItems = useMemo(() => {
     const totalSections = sectionsContent.length;
@@ -635,8 +646,12 @@ export function WorkspaceClient({
               onCancelLifecycle={cancelLifecycle}
               transportHref={transportHref}
               onRequestTransport={requestTransport}
-              canRequestTransport={allSectionsAgreed}
-              requestTransportBlockedReason={`${mutuallyAgreedCount} of ${sectionsContent.length} sections agreed. Resolve every section before pushing an RFT.`}
+              canRequestTransport={allSectionsAgreed && !lifecycleTerminal}
+              requestTransportBlockedReason={
+                lifecycleTerminal
+                  ? `Agreement is ${lifecycleState.toLowerCase()} - transport can no longer be requested.`
+                  : `${mutuallyAgreedCount} of ${sectionsContent.length} sections agreed. Resolve every section before pushing an RFT.`
+              }
               viewerParty={viewerParty}
               partyLabels={{
                 A: partyProfile.A.label,
