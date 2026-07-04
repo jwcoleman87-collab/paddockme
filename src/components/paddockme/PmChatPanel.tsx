@@ -8,6 +8,7 @@ import {
   demoTransportRoomParticipants,
   demoWorkspace,
 } from "@/lib/paddockmeDemoData";
+import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Tables } from "@/lib/types/database";
@@ -97,7 +98,15 @@ export function PmChatPanel({
 }: {
   workspaceId?: string;
 }) {
-  const parties = demoTransportRoomParticipants;
+  // The transporter is not a party to the deal until the agreement is done
+  // and he has picked the RFT up off the board — before that this is a
+  // two-way conversation between the livestock owner and the landowner.
+  const { state } = usePaddockmeWorkflow();
+  const transporterJoined =
+    state.agreement.transportRequestSent || state.agreement.transportArranged;
+  const parties = transporterJoined
+    ? demoTransportRoomParticipants
+    : demoTransportRoomParticipants.slice(0, 2);
   const roleOf = (i: number): Role =>
     (["owner", "landowner", "transporter"] as Role[])[i] ?? "owner";
 
@@ -116,6 +125,23 @@ export function PmChatPanel({
 
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // If the demo is reset while "acting as" Wayne, fall back to the owner —
+  // the transporter chip no longer exists pre-RFT.
+  useEffect(() => {
+    if (!transporterJoined && activeRole === "transporter") {
+      setActiveRole("owner");
+    }
+  }, [transporterJoined, activeRole]);
+
+  // Pre-RFT the thread hides the transporter entirely: the seeded
+  // conversation is the post-RFT trucking backstory (Wayne + replies to
+  // Wayne), and any persisted transporter rows belong to that stage too.
+  const visibleMessages = transporterJoined
+    ? messages
+    : messages.filter(
+        (m) => !m.id.startsWith("seed-") && m.role !== "transporter",
+      );
 
   function mapRow(row: DemoChatRow): ChatMessage {
     return {
@@ -377,12 +403,18 @@ export function PmChatPanel({
         ref={messagesRef}
         className="flex-1 space-y-3 overflow-y-auto bg-white px-4 py-4"
       >
-        {messages.length === 0 && (
+        {visibleMessages.length === 0 && (
           <p className="text-sm text-pm-muted">No messages yet.</p>
         )}
-        {messages.map((m) => (
+        {visibleMessages.map((m) => (
           <MessageBubble key={m.id} message={m} isMine={m.role === activeRole} />
         ))}
+        {!transporterJoined && (
+          <p className="rounded-xl border border-dashed border-pm-border bg-pm-cream-50 px-3.5 py-2.5 text-xs text-pm-muted">
+            Your transporter joins this chat once the agreement is done and
+            they accept the Request for Transport (RFT).
+          </p>
+        )}
       </div>
 
       {/* Pending image preview */}
