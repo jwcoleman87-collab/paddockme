@@ -186,6 +186,73 @@ export type TransportRft = {
   status: "open_for_quotes";
 };
 
+/**
+ * An RFT as it appears on the transporter network board: route endpoints
+ * with coordinates so it can be drawn on the RFT map. Carriers see route,
+ * stock, distance and timing - never the agistment terms behind the deal.
+ */
+export type NetworkRft = {
+  id: string;
+  pickup: string;
+  destination: string;
+  from: { latitude: number; longitude: number };
+  to: { latitude: number; longitude: number };
+  distanceKm: number;
+  livestock: string;
+  targetDate: string;
+  access: string;
+  /** The hero deal's RFT - its status is driven by live workflow state. */
+  isLiveDeal?: boolean;
+};
+
+export const demoNetworkRfts: NetworkRft[] = [
+  {
+    id: "rft-1023",
+    isLiveDeal: true,
+    pickup: "Dubbo NSW",
+    destination: "Green Hills Farm, Bungendore NSW",
+    from: { latitude: -32.2569, longitude: 148.601 },
+    to: { latitude: -35.2554, longitude: 149.4437 },
+    distanceKm: 320,
+    livestock: "120 Cattle",
+    targetDate: "1 June 2025",
+    access: "Road train suitable",
+  },
+  {
+    id: "rft-1027",
+    pickup: "Wagga Wagga NSW",
+    destination: "Albury NSW",
+    from: { latitude: -35.1082, longitude: 147.3598 },
+    to: { latitude: -36.0737, longitude: 146.9135 },
+    distanceKm: 125,
+    livestock: "90 Angus Steers",
+    targetDate: "5 June 2025",
+    access: "Semi access, sealed road to yards",
+  },
+  {
+    id: "rft-1031",
+    pickup: "Tamworth NSW",
+    destination: "Orange NSW",
+    from: { latitude: -31.0905, longitude: 150.929 },
+    to: { latitude: -33.2835, longitude: 149.1013 },
+    distanceKm: 330,
+    livestock: "600 Merino Ewes",
+    targetDate: "8 June 2025",
+    access: "B-double access",
+  },
+  {
+    id: "rft-1035",
+    pickup: "Moree NSW",
+    destination: "Gunnedah NSW",
+    from: { latitude: -29.4658, longitude: 149.8339 },
+    to: { latitude: -30.981, longitude: 150.2581 },
+    distanceKm: 185,
+    livestock: "45 Cows & Calves",
+    targetDate: "12 June 2025",
+    access: "Gravel last 5 km, good yards",
+  },
+];
+
 export const demoTransportRft: TransportRft = {
   id: "rft-1023",
   agreementId: "1023",

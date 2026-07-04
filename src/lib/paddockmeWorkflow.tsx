@@ -75,6 +75,8 @@ export type AgreementState = {
 
   /** The RFT James has sent out to transport companies, if any. */
   transportRequestSent: boolean;
+  /** A carrier (Wayne) has taken the RFT off the board and quoted it. */
+  rftAcceptedByCarrier: boolean;
   transportRequest: TransportRequestDetails | null;
   /** The structured Request For Transport opened from the agreement. */
   transportRft: TransportRft | null;
@@ -126,6 +128,7 @@ function defaultState(): WorkflowState {
       paymentTermsConfirmed: false,
       pendingPaymentTerms: { value: SUGGESTED_PAYMENT_TERMS, from: "James" },
       transportRequestSent: false,
+      rftAcceptedByCarrier: false,
       transportRequest: null,
       transportRft: null,
       transportCompany: null,
@@ -147,6 +150,7 @@ type WorkflowContextValue = {
   proposePaymentTerms: (value: string, from: "James" | "John") => void;
   acceptPaymentTerms: () => void;
   sendRft: () => void;
+  carrierAcceptRft: () => void;
   acceptTransport: (company: string, price: string) => void;
   acceptReview: () => void;
   resetWorkflow: () => void;
@@ -287,6 +291,21 @@ export function PaddockmeWorkflowProvider({
     });
   }
 
+  function carrierAcceptRft() {
+    setState((prev) =>
+      prev.agreement.rftAcceptedByCarrier
+        ? prev
+        : {
+            ...prev,
+            agreement: {
+              ...prev.agreement,
+              rftAcceptedByCarrier: true,
+              lastUpdated: new Date().toISOString(),
+            },
+          }
+    );
+  }
+
   function acceptTransport(company: string, price: string) {
     setState((prev) => ({
       ...prev,
@@ -359,6 +378,7 @@ export function PaddockmeWorkflowProvider({
       proposePaymentTerms,
       acceptPaymentTerms,
       sendRft,
+      carrierAcceptRft,
       acceptTransport,
       acceptReview,
       resetWorkflow,

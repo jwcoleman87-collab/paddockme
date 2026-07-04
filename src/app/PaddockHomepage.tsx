@@ -66,7 +66,7 @@ export function PaddockHomepage() {
                 accent
               />
               <RoleChoiceCard
-                href="/transport/quotes/1023"
+                href="/transport/board"
                 icon={<Truck className="h-6 w-6" aria-hidden />}
                 title="I Transport"
                 subtitle="Find transport jobs"

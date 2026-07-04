@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { MapPin, Truck, Send, Map as MapIcon, MoveRight } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
+import { PmButton } from "@/components/paddockme/PmButton";
 import { TransportQuoteCard } from "@/components/paddockme/TransportQuoteCard";
 import { ImagePanel } from "@/components/paddockme/ImagePanel";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
@@ -169,8 +170,30 @@ export default function TransportQuotesPage() {
             Quotes received
           </h2>
           <p className="mt-1 text-sm text-pm-muted">
-            Transporters who can cover this RFT have responded with quotes.
+            {state.agreement.rftAcceptedByCarrier
+              ? "Transporters who can cover this RFT have responded with quotes."
+              : "Your RFT is live on the transporter board. Quotes appear here as carriers respond."}
           </p>
+
+          {!state.agreement.rftAcceptedByCarrier && (
+            <div className="mt-4 rounded-2xl border border-dashed border-pm-border bg-white px-5 py-8 text-center">
+              <p className="text-sm font-bold text-pm-charcoal">
+                Waiting for carriers to respond…
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-pm-muted">
+                Transporters across the network can see this route on their
+                RFT board right now. (In the demo: open the transporter board
+                and accept the RFT as Wayne.)
+              </p>
+              <PmButton
+                href="/transport/board"
+                variant="outline"
+                className="mt-4"
+              >
+                View the transporter board
+              </PmButton>
+            </div>
+          )}
 
           {state.agreement.transportArranged && (
             <p className="mt-3 text-sm text-pm-success">
@@ -179,16 +202,18 @@ export default function TransportQuotesPage() {
             </p>
           )}
 
-          <div className="mt-4 space-y-4">
-            {demoTransportQuotes.map((q) => (
-              <TransportQuoteCard
-                key={q.company}
-                quote={q}
-                chatHref="/transport/rooms/1023"
-                onAccept={() => handleAccept(q.company, q.price)}
-              />
-            ))}
-          </div>
+          {state.agreement.rftAcceptedByCarrier && (
+            <div className="mt-4 space-y-4">
+              {demoTransportQuotes.map((q) => (
+                <TransportQuoteCard
+                  key={q.company}
+                  quote={q}
+                  chatHref="/transport/rooms/1023"
+                  onAccept={() => handleAccept(q.company, q.price)}
+                />
+              ))}
+            </div>
+          )}
 
           <p className="mt-4 rounded-lg bg-pm-cream-100 px-4 py-3 text-xs text-pm-charcoal">
             <span className="font-bold">Chat with Driver</span> opens a
