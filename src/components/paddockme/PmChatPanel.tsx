@@ -110,12 +110,12 @@ export function PmChatPanel({
 }: {
   workspaceId?: string;
 }) {
-  // The transporter is not a party to the deal until the agreement is done
-  // and he has picked the RFT up off the board — before that this is a
-  // two-way conversation between the livestock owner and the landowner.
+  // The transporter is not a party to the deal until his job is locked in
+  // (quote accepted / transport booked). An RFT that has merely been sent
+  // is still an open request on the carrier board — until someone takes
+  // it, this stays a two-way conversation between owner and landowner.
   const { state } = usePaddockmeWorkflow();
-  const transporterJoined =
-    state.agreement.transportRequestSent || state.agreement.transportArranged;
+  const transporterJoined = state.agreement.transportArranged;
   const parties = transporterJoined
     ? demoTransportRoomParticipants
     : demoTransportRoomParticipants.slice(0, 2);
@@ -423,8 +423,8 @@ export function PmChatPanel({
         ))}
         {!transporterJoined && (
           <p className="rounded-xl border border-dashed border-pm-border bg-pm-cream-50 px-3.5 py-2.5 text-xs text-pm-muted">
-            Your transporter joins this chat once the agreement is done and
-            they accept the Request for Transport (RFT).
+            Your transporter joins this chat once they have taken on your
+            Request for Transport (RFT) and the job is booked.
           </p>
         )}
       </div>
