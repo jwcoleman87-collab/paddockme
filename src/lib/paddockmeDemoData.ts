@@ -216,6 +216,50 @@ export type TransportRoomMessage = {
   text: string;
 };
 
+/**
+ * Two-party workspace backstory for Agistment #1023 — James and John just
+ * connected off the match and are sizing each other up before locking terms
+ * in the agreement. Seeded BEFORE the RFT stage, so no transporter appears.
+ */
+export const demoWorkspaceIntroMessages: TransportRoomMessage[] = [
+  {
+    sender: "James Coleman",
+    role: "owner",
+    time: "Yesterday 4:05 PM",
+    text: "G'day John, thanks for accepting the request. We're right out of feed at Dubbo - I'm looking to agist 120 Angus steers for roughly 90 days from 1 June. Your place looks ideal.",
+  },
+  {
+    sender: "John — Green Hills Farm",
+    role: "landowner",
+    time: "Yesterday 4:12 PM",
+    text: "G'day James. We've had a good autumn break down here - improved pasture and plenty of standing feed. I'd comfortably carry 120 head through winter.",
+  },
+  {
+    sender: "James Coleman",
+    role: "owner",
+    time: "Yesterday 4:18 PM",
+    text: "Good to hear. How are you set up for water and fencing?",
+  },
+  {
+    sender: "John — Green Hills Farm",
+    role: "landowner",
+    time: "Yesterday 4:26 PM",
+    text: "Stock water off the creek plus two troughs on a bore that's never let us down. Boundary fencing is near new, and there are steel cattle yards by the road if you need to work them.",
+  },
+  {
+    sender: "James Coleman",
+    role: "owner",
+    time: "Yesterday 4:31 PM",
+    text: "Sounds spot on. Happy to talk numbers - I'll put a rate through in the agreement so we can lock the terms in properly.",
+  },
+  {
+    sender: "John — Green Hills Farm",
+    role: "landowner",
+    time: "Yesterday 4:38 PM",
+    text: "Righto, send it through and I'll have a look tonight. Sing out in here any time if a question comes up.",
+  },
+];
+
 export const demoTransportRoomMessages: TransportRoomMessage[] = [
   {
     sender: "Wayne Transport",

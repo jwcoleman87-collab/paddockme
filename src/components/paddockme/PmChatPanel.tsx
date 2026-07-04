@@ -7,6 +7,7 @@ import {
   demoTransportRoomMessages,
   demoTransportRoomParticipants,
   demoWorkspace,
+  demoWorkspaceIntroMessages,
 } from "@/lib/paddockmeDemoData";
 import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 import { createClient } from "@/lib/supabase/client";
@@ -72,14 +73,25 @@ const ROLE_LABEL: Record<Role, string> = {
   transporter: "Transporter",
 };
 
+// Two seeded stages: the owner/landowner getting-to-know-you thread
+// (always shown), then the trucking coordination thread which only becomes
+// visible once the transporter has joined (see the seed-t- filter below).
 function seedMessages(): ChatMessage[] {
-  return demoTransportRoomMessages.map((m, i) => ({
-    id: `seed-${i}`,
+  const intro = demoWorkspaceIntroMessages.map((m, i) => ({
+    id: `seed-i-${i}`,
     sender: m.sender,
     role: m.role,
     time: m.time,
     text: m.text,
   }));
+  const transport = demoTransportRoomMessages.map((m, i) => ({
+    id: `seed-t-${i}`,
+    sender: m.sender,
+    role: m.role,
+    time: m.time,
+    text: m.text,
+  }));
+  return [...intro, ...transport];
 }
 
 function formatTime(date: Date): string {
@@ -134,13 +146,13 @@ export function PmChatPanel({
     }
   }, [transporterJoined, activeRole]);
 
-  // Pre-RFT the thread hides the transporter entirely: the seeded
-  // conversation is the post-RFT trucking backstory (Wayne + replies to
-  // Wayne), and any persisted transporter rows belong to that stage too.
+  // Pre-RFT the thread hides the transporter stage entirely: the trucking
+  // seeds (Wayne + the replies to Wayne) and any persisted transporter rows
+  // belong to the post-RFT world. The owner/landowner intro thread stays.
   const visibleMessages = transporterJoined
     ? messages
     : messages.filter(
-        (m) => !m.id.startsWith("seed-") && m.role !== "transporter",
+        (m) => !m.id.startsWith("seed-t-") && m.role !== "transporter",
       );
 
   function mapRow(row: DemoChatRow): ChatMessage {
