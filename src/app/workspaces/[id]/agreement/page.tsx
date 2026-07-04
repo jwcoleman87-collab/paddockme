@@ -21,6 +21,7 @@ import {
   livestockLabel,
   PAYMENT_TERM_CHOICES,
 } from "@/lib/paddockmeWorkflow";
+import { ViewAsToggle } from "@/components/paddockme/ViewAsToggle";
 
 /**
  * Screen 10 — the core product screen: guided agreement checklist,
@@ -38,6 +39,7 @@ export default function WorkspaceAgreementPage() {
     acceptPaymentTerms,
   } = usePaddockmeWorkflow();
   const { agreement } = state;
+  const me = state.perspective;
 
   // All three negotiable terms agreed — ready to move to review (and, from
   // there, to send the RFT). Transport stays pending until a quote is accepted.
@@ -110,7 +112,7 @@ export default function WorkspaceAgreementPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Workspace
           </Link>
-          <PaddockMeLogo variant="dark" className="hidden sm:block" />
+          <ViewAsToggle className="hidden sm:inline-flex" />
           <PmButton href="/workspaces/1023/review" variant="outline">
             {agreementAccepted ? "View Agreement" : "Review Agreement"}
           </PmButton>
@@ -121,12 +123,22 @@ export default function WorkspaceAgreementPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* Negotiation — the primary action column */}
           <section>
-            <h1 className="text-xl font-extrabold text-pm-charcoal">
-              Agree the terms
-            </h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-xl font-extrabold text-pm-charcoal">
+                Agree the terms
+              </h1>
+              <ViewAsToggle className="sm:hidden" />
+            </div>
             <p className="mt-1 text-sm text-pm-muted">
               Accept the offer on the table, or send back a counter. Each
-              agreed item locks in and updates the live agreement.
+              agreed item locks in and updates the live agreement. You are
+              negotiating as{" "}
+              <span className="font-bold text-pm-charcoal">
+                {me === "James"
+                  ? "James (livestock owner)"
+                  : "John (landowner)"}
+              </span>
+              .
             </p>
 
             <div className="mt-6 space-y-3">
@@ -135,8 +147,9 @@ export default function WorkspaceAgreementPage() {
                 pending={agreement.pendingRate}
                 confirmed={agreement.priceAgreed}
                 confirmedValue={agreement.rate}
+                currentUser={me}
                 onAccept={acceptRate}
-                onPropose={(value) => proposeRate(value, "James")}
+                onPropose={(value) => proposeRate(value, me)}
                 placeholder="e.g. $13 / head / week"
               />
               <NegotiationStep
@@ -144,8 +157,9 @@ export default function WorkspaceAgreementPage() {
                 pending={agreement.pendingDates}
                 confirmed={agreement.datesConfirmed}
                 confirmedValue={agreement.datesLabel}
+                currentUser={me}
                 onAccept={acceptDates}
-                onPropose={(value) => proposeDates(value, "James")}
+                onPropose={(value) => proposeDates(value, me)}
                 placeholder="e.g. 1 Jun – 30 Aug 2025"
               />
               <NegotiationStep
@@ -153,8 +167,9 @@ export default function WorkspaceAgreementPage() {
                 pending={agreement.pendingPaymentTerms}
                 confirmed={agreement.paymentTermsConfirmed}
                 confirmedValue={agreement.paymentTerms}
+                currentUser={me}
                 onAccept={acceptPaymentTerms}
-                onPropose={(value) => proposePaymentTerms(value, "James")}
+                onPropose={(value) => proposePaymentTerms(value, me)}
                 choices={PAYMENT_TERM_CHOICES}
               />
             </div>
@@ -226,7 +241,7 @@ export default function WorkspaceAgreementPage() {
             )}
 
             <div className="mt-8 h-[360px] rounded-2xl border border-pm-border bg-white p-5 shadow-sm">
-              <ChatPanel messages={demoConversation} currentUser="James" />
+              <ChatPanel messages={demoConversation} currentUser={me} />
             </div>
           </section>
 

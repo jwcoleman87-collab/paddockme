@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Bell, UserCircle2 } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
@@ -13,7 +14,15 @@ import {
 
 /** Screen 8 — Landowner receives a discussion request: accept or decline. */
 export default function LandownerRequestPage() {
-  const { state } = usePaddockmeWorkflow();
+  const router = useRouter();
+  const { state, setPerspective } = usePaddockmeWorkflow();
+
+  // Accepting the discussion enters the shared workspace as John, the
+  // landowner - the same rooms James uses, seen from the other side.
+  function acceptDiscussion() {
+    setPerspective("John");
+    router.push(`/workspaces/${demoRequest.id}`);
+  }
 
   return (
     <main
@@ -57,7 +66,7 @@ export default function LandownerRequestPage() {
             </p>
           </div>
           <div className="mt-6 flex gap-3">
-            <PmButton href={`/workspaces/${demoRequest.id}`} className="flex-1">
+            <PmButton onClick={acceptDiscussion} className="flex-1">
               Accept Discussion
             </PmButton>
             <PmButton variant="outline" href="/" className="flex-1">

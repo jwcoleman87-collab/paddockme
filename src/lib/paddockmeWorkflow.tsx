@@ -87,9 +87,14 @@ export type AgreementState = {
   lastUpdated: string | null;
 };
 
+/** Which side of the deal the demo is currently being viewed from. */
+export type Perspective = "James" | "John";
+
 export type WorkflowState = {
   request: RequestDetails;
   agreement: AgreementState;
+  /** Demo lens: James (livestock owner) or John (landowner). */
+  perspective: Perspective;
 };
 
 function defaultNeedUntil(): string {
@@ -100,6 +105,7 @@ function defaultNeedUntil(): string {
 
 function defaultState(): WorkflowState {
   return {
+    perspective: "James",
     request: {
       livestockType: "Cattle",
       headCount: 120,
@@ -144,6 +150,7 @@ type WorkflowContextValue = {
   acceptTransport: (company: string, price: string) => void;
   acceptReview: () => void;
   resetWorkflow: () => void;
+  setPerspective: (perspective: Perspective) => void;
   isComplete: boolean;
 };
 
@@ -166,6 +173,7 @@ export function PaddockmeWorkflowProvider({
         setState((prev) => ({
           request: { ...prev.request, ...parsed.request },
           agreement: { ...prev.agreement, ...parsed.agreement },
+          perspective: parsed.perspective ?? prev.perspective,
         }));
       }
     } catch {
@@ -187,6 +195,12 @@ export function PaddockmeWorkflowProvider({
 
   function setRequestDetails(partial: Partial<RequestDetails>) {
     setState((prev) => ({ ...prev, request: { ...prev.request, ...partial } }));
+  }
+
+  function setPerspective(perspective: Perspective) {
+    setState((prev) =>
+      prev.perspective === perspective ? prev : { ...prev, perspective }
+    );
   }
 
   function proposeRate(value: string, from: "James" | "John") {
@@ -348,6 +362,7 @@ export function PaddockmeWorkflowProvider({
       acceptTransport,
       acceptReview,
       resetWorkflow,
+      setPerspective,
       isComplete,
     }),
     [state, isComplete],

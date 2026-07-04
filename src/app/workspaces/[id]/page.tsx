@@ -10,11 +10,13 @@ import { PmChatPanel } from "@/components/paddockme/PmChatPanel";
 import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoRequest, demoWorkspace } from "@/lib/paddockmeDemoData";
 import { usePaddockmeWorkflow, livestockLabel } from "@/lib/paddockmeWorkflow";
+import { ViewAsToggle } from "@/components/paddockme/ViewAsToggle";
 
 /** Screen 9 — Workspace Overview: what deal are we working on? */
 export default function WorkspaceOverviewPage() {
   const w = demoWorkspace;
   const { state, isComplete } = usePaddockmeWorkflow();
+  const asJohn = state.perspective === "John";
   const workspaceCtaHref = isComplete
     ? "/workspaces/1023/review"
     : "/workspaces/1023/agreement";
@@ -38,8 +40,9 @@ export default function WorkspaceOverviewPage() {
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
       <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <PaddockMeLogo variant="dark" />
+          <ViewAsToggle />
           <div className="text-right">
             <p className="text-sm font-bold text-pm-charcoal">
               {w.title}{" "}
@@ -66,8 +69,12 @@ export default function WorkspaceOverviewPage() {
             </h1>
             <p className="mt-1 text-sm text-pm-muted">
               {isComplete
-                ? "Your agistment agreement is complete."
-                : "Work through each step to complete your agistment agreement."}
+                ? asJohn
+                  ? "The agreement is complete - James's cattle are booked onto Green Hills Farm."
+                  : "Your agistment agreement is complete."
+                : asJohn
+                  ? `James wants to bring ${livestockLabel(state.request).toLowerCase()} onto your place. Work through each step to agree the terms.`
+                  : "Work through each step to complete your agistment agreement."}
             </p>
 
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">

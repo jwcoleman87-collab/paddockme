@@ -193,6 +193,7 @@ export function NegotiationStep({
   }
 
   const offeredByYou = pending?.from === currentUser;
+  const otherParty = currentUser === "James" ? "John" : "James";
 
   return (
     <div className="rounded-xl border border-pm-border bg-white px-4 py-4">
@@ -211,15 +212,23 @@ export function NegotiationStep({
         </p>
       )}
 
+      {offeredByYou && (
+        <p className="mt-1 text-xs font-semibold text-pm-gold-600">
+          Waiting on {otherParty} - you can update your offer below.
+        </p>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={onAccept}
-          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-pm-green-900 px-4 text-sm font-semibold text-white hover:bg-pm-green-800"
-        >
-          <Check className="h-4 w-4" aria-hidden />
-          Accept
-        </button>
+        {!offeredByYou && (
+          <button
+            type="button"
+            onClick={onAccept}
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-pm-green-900 px-4 text-sm font-semibold text-white hover:bg-pm-green-800"
+          >
+            <Check className="h-4 w-4" aria-hidden />
+            Accept
+          </button>
+        )}
 
         {choices ? (
           <div className="flex flex-wrap gap-2">
@@ -257,14 +266,18 @@ export function NegotiationStep({
               id={`counter-${label}`}
               value={counter}
               onChange={(e) => setCounter(e.target.value)}
-              placeholder={placeholder ?? "Counter offer..."}
+              placeholder={
+                offeredByYou
+                  ? placeholder ?? "Update your offer..."
+                  : placeholder ?? "Counter offer..."
+              }
               className="min-h-[40px] w-full min-w-0 rounded-lg border border-pm-border bg-white px-3 text-sm focus:border-pm-green-700 focus:outline-none"
             />
             <button
               type="submit"
               className="min-h-[40px] shrink-0 rounded-lg border border-pm-border px-3 text-sm font-semibold text-pm-charcoal hover:border-pm-green-900"
             >
-              Counter
+              {offeredByYou ? "Update offer" : "Counter"}
             </button>
           </form>
         )}

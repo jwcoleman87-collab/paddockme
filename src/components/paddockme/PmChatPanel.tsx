@@ -128,7 +128,15 @@ export function PmChatPanel({
   );
 
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
-  const [activeRole, setActiveRole] = useState<Role>("owner");
+  const [activeRole, setActiveRole] = useState<Role>(
+    state.perspective === "John" ? "landowner" : "owner",
+  );
+
+  // Follow the demo's View-as switcher: flipping the workspace to John's
+  // perspective also flips who you message as by default.
+  useEffect(() => {
+    setActiveRole(state.perspective === "John" ? "landowner" : "owner");
+  }, [state.perspective]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [pendingImage, setPendingImage] = useState<
