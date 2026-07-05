@@ -24,27 +24,27 @@ export const metadata: Metadata = {
   description:
     "Australian agistment marketplace helping livestock owners, landowners and transport providers coordinate agreements and stock movement.",
   openGraph: {
-    title: "PaddockME - Find Feed. Find Stock. Move Livestock.",
+    title: "PaddockME - Feed. Stock. Freight. Sorted.",
     description:
       "Australia's platform for agistment and livestock transport - agreements, transport and coordination in one place.",
     url: "https://paddockme-oz51.vercel.app",
     siteName: "PaddockME",
     images: [
       {
-        url: "/og/paddockme-share-card.png",
+        url: "/og/paddockme-share-card-v2.png",
         width: 1200,
         height: 630,
-        alt: "PaddockME - Find Feed. Find Stock. Move Livestock.",
+        alt: "PaddockME - Feed. Stock. Freight. Sorted.",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PaddockME - Find Feed. Find Stock. Move Livestock.",
+    title: "PaddockME - Feed. Stock. Freight. Sorted.",
     description:
       "Australia's platform for agistment and livestock transport - agreements, transport and coordination in one place.",
-    images: ["/og/paddockme-share-card.png"],
+    images: ["/og/paddockme-share-card-v2.png"],
   },
 };
 

@@ -45,7 +45,7 @@ export function PaddockHomepage() {
           />
           <div className="relative mx-auto w-full max-w-6xl">
             <h1 className="max-w-xl text-4xl font-extrabold leading-tight text-white sm:text-5xl">
-              Find Feed. Find Stock. Move Livestock.
+              Feed. Stock. Freight. Sorted.
             </h1>
             <p className="mt-4 max-w-md text-base text-white/85">
               Australia&apos;s trusted platform for agistment and livestock
