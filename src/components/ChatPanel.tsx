@@ -39,6 +39,10 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  // Whether the viewer is reading the latest message. New messages only
+  // auto-scroll while this holds, so scrolling back through history is
+  // never yanked away mid-read.
+  const stickToBottomRef = useRef(true);
   const hasSections = !!sections && sections.length > 0;
   const activeSection = hasSections
     ? sections!.find((section) => section.id === activeSectionId)
@@ -47,7 +51,32 @@ export function ChatPanel({
   useEffect(() => {
     const el = messagesRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
+      stickToBottomRef.current = distanceFromBottom < 48;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Also re-pin when the list changes size - covers first paint and the
+    // mobile Agreement/Chat tab switch, where the panel mounts hidden and
+    // only gains a height once its tab is shown.
+    const observer = new ResizeObserver(() => {
+      if (stickToBottomRef.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+    if (stickToBottomRef.current) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
   const composerEnabled = !!onSend;
@@ -66,7 +95,7 @@ export function ChatPanel({
   }
 
   return (
-    <section className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)]">
+    <section className="flex max-h-[70dvh] min-h-[480px] min-w-0 flex-col overflow-hidden rounded-2xl border border-sage-deep/20 bg-warm-white shadow-[0_18px_45px_rgba(34,84,52,0.08)] md:sticky md:top-24 md:h-[calc(100dvh-13rem)] md:max-h-none lg:top-6 lg:h-[calc(100dvh-3rem)]">
       <div className="border-b border-sage-deep/15 bg-cream/55 px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

@@ -29,11 +29,14 @@ export function SplitWorkspace({
         </TabButton>
       </div>
 
-      <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-6">
+      {/* The chat column deliberately has no self-start: it stretches to the
+          row height so the sticky, viewport-capped ChatPanel inside it can
+          stay in view while the agreement column scrolls. */}
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-6">
         <div
           className={cn(
             active === "left" ? "block" : "hidden",
-            "min-w-0 md:block"
+            "min-w-0 md:block md:self-start"
           )}
         >
           {left}
