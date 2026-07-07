@@ -46,16 +46,19 @@ export default function WorkspaceAgreementPage() {
     agreement.datesConfirmed &&
     agreement.paymentTermsConfirmed;
   const agreementAccepted = agreement.reviewAccepted;
-  const progressionHref = agreementAccepted
-    ? "/workspaces/1023/review"
-    : agreement.transportRequestSent
+  // Transport already booked beats "request sent" — never point someone at
+  // the quotes board once a carrier is locked in.
+  const progressionHref =
+    !agreementAccepted && agreement.transportRequestSent && !agreement.transportArranged
       ? "/transport/quotes/1023"
       : "/workspaces/1023/review";
   const progressionLabel = agreementAccepted
     ? "View Accepted Agreement"
-    : agreement.transportRequestSent
-      ? "View Transport Quotes"
-      : "Review Agreement & Request Transport";
+    : agreement.transportArranged
+      ? "Review Agreement"
+      : agreement.transportRequestSent
+        ? "View Transport Quotes"
+        : "Review Agreement & Request Transport";
 
   const checklistItems = [
     { label: "Stock Numbers", done: true },
@@ -170,19 +173,24 @@ export default function WorkspaceAgreementPage() {
                   <h2 className="text-lg font-extrabold text-pm-charcoal">
                     {agreementAccepted
                       ? "Agreement accepted"
-                      : agreement.transportRequestSent
-                        ? "Transport request sent"
-                        : "Agreement terms complete"}
+                      : agreement.transportArranged
+                        ? "Transport booked"
+                        : agreement.transportRequestSent
+                          ? "Transport request sent"
+                          : "Agreement terms complete"}
                   </h2>
                 </div>
                 <p className="mt-3 text-sm text-pm-muted">
                   {agreementAccepted
                     ? "The agreement is already in place. You can view the accepted record without accepting it again."
-                    : agreement.transportRequestSent
-                      ? "Your agreement has already been reviewed and the transport request is open for quotes."
-                      : "Your agistment terms are ready to review. After review, PaddockME will create an RFT - Request For Transport - so livestock transporters can quote the movement."}
+                    : agreement.transportArranged
+                      ? "Transport is locked in. Review the agreement to finish up."
+                      : agreement.transportRequestSent
+                        ? "Your agreement has already been reviewed and the transport request is open for quotes."
+                        : "Your agistment terms are ready to review. After review, PaddockME will create an RFT - Request For Transport - so livestock transporters can quote the movement."}
                 </p>
 
+                {!agreementAccepted && (
                 <div className="mt-4 rounded-xl border border-pm-border bg-white p-4">
                   <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-pm-charcoal">
                     {state.request.location}
@@ -213,10 +221,11 @@ export default function WorkspaceAgreementPage() {
                     </div>
                   </dl>
                 </div>
+                )}
 
                 <PmButton
                   href={progressionHref}
-                  variant="accent"
+                  variant={agreementAccepted ? "primary" : "accent"}
                   className="mt-5 w-full sm:w-auto"
                 >
                   {progressionLabel}
