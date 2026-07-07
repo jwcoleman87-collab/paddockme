@@ -1,130 +1,75 @@
 # AI Handoff Current
 
-Use this when handing PaddockME to another AI assistant during the investor MVP sprint.
+Use this when handing PaddockME to another AI assistant during the guided-MVP rebuild.
 
-## Current Goal
+## Current Product Direction
 
-Make PaddockME investor-ready by proving a tight, repeatable MVP story:
+The guided MVP flow is now the canonical PaddockME product UX. Treat the current guided screens as the product becoming real by progressive backend wiring, not as a disposable demo path.
 
-- Livestock owner needs feed.
-- Landowner can offer paddocks.
-- Driver coordinates transport.
-- Agreement and movement stay in structured workspaces.
-- Payments/settlement are the next commercial unlock, not a current implementation claim.
+Backend direction:
 
-## Current Production App
+- Auth first.
+- Then a Supabase-backed workflow provider.
+- Keep claims honest while that wiring lands: the UX is canonical, but not every workflow state is database-native yet.
 
-Live app:
+## Source Of Truth
 
-https://paddockme-oz51.vercel.app
+Read in this order before changing product behaviour:
 
-Branch:
+1. `PADDOCKME_MASTER_SPEC.md` v1.2 - canonical build spec. Section 3 makes `pm-*` the canonical design system and retires "Pastoral Zen".
+2. `SPEC_DRIFT.md` - known gaps between the live code and the master spec.
+3. `docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md` - expected home for completed agreements and the live-agreement review loop.
 
-`main`
+The old demo run sheets are gone. Do not reference `docs/DEMO_CHEATSHEET.md`, `docs/DEMO_SCRIPT.md`, or `docs/DEMO_REHEARSAL_LOG.md` as active operating docs.
 
-Before changing anything pitch-facing, run:
+## Canonical UX Flow
 
-```bash
-npm run verify:pitch
-```
+The current guided route path is:
 
-This currently runs:
+1. `/requests/new`
+2. `/requests/matches`
+3. `/properties/[slug]`
+4. `/workspaces/1023`
+5. `/workspaces/1023/agreement`
+6. `/workspaces/1023/review`
+7. `/transport/quotes/1023`
+8. `/transport/rooms/1023`
+9. `/workspaces/1023/live`
 
-- TypeScript check.
-- Markdown link check.
-- Production build.
-- Production route smoke.
-- Production browser click rehearsal.
+Use the flat guided routes under `src/app/**`, the `pm-*` components under `src/components/paddockme/**`, and the `usePaddockmeWorkflow` provider as the canonical implementation lane unless a task brief says otherwise.
 
-## Current Verification State
+## Legacy Tree Status
 
-Known green locally:
+`src/app/(app)/**` is dormant reference code. It may still be useful for reading older data-access and interaction patterns, but it is not the canonical customer journey and should not be mass-deleted without a human-approved retirement brief.
 
-```bash
-npm run verify:pitch
-```
+The retired Dale/Brett/Wayne click path is no longer the product path. If those names appear in historical docs, treat them as historical context unless your brief explicitly asks for a docs scrub.
 
-The command includes the canonical click path:
+## Package Scripts
 
-- Landing CTA opens `/agreements`.
-- `Sections to confirm` opens `/workspace/agreement-glenbarra`.
-- Dale and Brett can agree the rate section.
-- `Open transport room` opens `/transport/transport-glenbarra`.
-- Wayne's driver view shows farmer-created transport RFTs and accepted runs.
-- Farmer A can see accepted rate state.
-- Brett can open `Pick a paddock to offer`.
-- Wayne's `/runs` pipeline is reachable.
+These script names are verified in `package.json` as of 7 Jul 2026:
 
-## Ownership Guardrails
-
-Avoid broad changes under:
-
-- `src/app/(app)/**`
-- `src/lib/dummyData.ts`
-- `src/lib/prototypeStore.ts`
-- `supabase/migrations/**`
-
-Those are sensitive because Claude has been working the authenticated app/demo path and those files hold the prototype state model.
-
-Safe sprint lane:
-
-- Pitch docs.
-- Demo verification scripts.
-- Public README/operator docs.
-- Marketing/auth surface only if explicitly needed and verified.
-
-## Active Operating Docs
-
-Read in this order:
-
-1. `docs/DEMO_CHEATSHEET.md`
-2. `docs/DEMO_SCRIPT.md`
-3. `docs/CURRENT_PRODUCT_AUDIT.md`
-4. `docs/INVESTOR_MVP_SPRINT.md`
-5. `docs/INVESTOR_DILIGENCE_QA.md`
-6. `docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`
-7. `docs/CUSTOMER_VALIDATION_GUIDE.md`
-
-## Important Scripts
-
+- `npm run dev`
+- `npm run typecheck`
+- `npm run build`
+- `npm run docs:check`
 - `npm run verify:pitch`
 - `npm run demo:smoke`
 - `npm run demo:click`
-- `npm run docs:check`
+- `npm run payments:smoke`
 - `npm run db:types`
 
-## Known Truths
+Before writing down what any script proves, inspect the script and the files it runs. In particular, do not assume the demo smoke/click scripts cover the current guided route flow unless you have checked them for this sprint.
 
-Real today:
+## Working Guardrails
 
-- Deployed Next.js app.
-- Supabase auth wiring.
-- Generated Supabase database types.
-- Type-safe `agistment_requests` insert.
-- Signed-in `/profile` summary loaded from Supabase `profiles`.
-- Investor landing page.
-- Demo route smoke test.
-- Browser click rehearsal.
-
-Prototype today:
-
-- Many demo interactions use local prototype state.
-- Agreement and transport state are intentionally resettable.
-- Matching is not a full algorithm.
-- Payments, escrow, settlement, GPS, and legal automation are not built.
+- Do not change route behaviour from docs-only or housekeeping briefs.
+- Do not edit load-bearing guided-flow files unless the current brief explicitly asks for it.
+- Do not invent a new design language. `pm-*` is canonical.
+- Do not revive deleted demo docs or retired persona-click instructions.
+- Do not mass-delete the legacy `(app)` tree.
 
 ## Current Risk Notes
 
-- `npm audit` reports moderate advisories through Next's internal PostCSS dependency. Do not run `npm audit fix --force`; it suggests an inappropriate major downgrade path.
-- The browser click script depends on live labels. If Claude changes demo labels, update `scripts/demo-click.mjs`, `docs/DEMO_SCRIPT.md`, and `docs/DEMO_CHEATSHEET.md` together.
-- Keep claims honest: production surfaces are real, but the full marketplace is not database-native yet.
-
-## Next Useful Work
-
-Highest value:
-
-- Keep `npm run verify:pitch` green.
-- Rehearse the live pitch twice with a timer.
-- If labels drift, update scripts/docs immediately.
-- Use `docs/CUSTOMER_VALIDATION_GUIDE.md` for first real interviews.
-- Do not build payments UI until the payment/settlement assumptions are validated.
+- The guided UX is ahead of the backend in places; backend wiring should move through auth and then Supabase-backed workflow state.
+- Complete-state agreement handling should follow `docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md`.
+- Keep claims plain: PaddockME is becoming database-native route by route, and any remaining local or seeded workflow state should be treated as migration work, not as a finished marketplace backend.
