@@ -60,6 +60,18 @@ export type Proposal = {
   from: "James" | "John";
 };
 
+/** Where the booked movement is up to, shown on the Live Agreement screen. */
+export type TransportStatus = "booked" | "picked_up" | "en_route" | "delivered";
+
+/** One payment in the schedule derived from the agreed terms + dates. */
+export type PaymentScheduleItem = {
+  /** e.g. "June 2025" (monthly) or "Week 3" (weekly) */
+  label: string;
+  /** Display date, e.g. "1 Jun 2025" */
+  due: string;
+  status: "due" | "upcoming" | "paid";
+};
+
 export type AgreementState = {
   rate: string | null;
   priceAgreed: boolean;
@@ -85,6 +97,18 @@ export type AgreementState = {
   reviewAccepted: boolean;
   /** ISO datetime of the last agreement change */
   lastUpdated: string | null;
+
+  // Complete-state fields (docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md) —
+  // populated when transport is booked / the review is accepted, and read
+  // by the Live Agreement screen.
+  /** ISO datetime the review was accepted — the deal's execution date. */
+  acceptedAt: string | null;
+  /** Movement progress; null until a carrier is booked. */
+  transportStatus: TransportStatus | null;
+  /** Display label for the booked pickup date, e.g. "1 June 2025". */
+  transportPickupDate: string | null;
+  /** Payment schedule derived from terms + dates at acceptance. */
+  paymentSchedule: PaymentScheduleItem[];
 };
 
 export type WorkflowState = {
@@ -127,6 +151,93 @@ function defaultState(): WorkflowState {
       transportArranged: false,
       reviewAccepted: false,
       lastUpdated: null,
+      acceptedAt: null,
+      transportStatus: null,
+      transportPickupDate: null,
+      paymentSchedule: [],
+    },
+  };
+}
+
+/**
+ * Parse a dates label like "1 Jun 2025 – 30 Aug 2025" into real dates.
+ * Counter-offers are free text, so this can fail — callers must handle null.
+ */
+export function parseAgreementDates(
+  label: string | null,
+): { start: Date; end: Date } | null {
+  if (!label) return null;
+  const parts = label.split(/\s+[–—-]\s+/);
+  if (parts.length !== 2) return null;
+  const start = new Date(parts[0].trim());
+  const end = new Date(parts[1].trim());
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  return { start, end };
+}
+
+/**
+ * Derive the payment schedule from the agreed terms and dates. Falls back
+ * to a single "on start" entry when the dates label can't be parsed.
+ */
+export function buildPaymentSchedule(
+  paymentTerms: string | null,
+  datesLabel: string | null,
+): PaymentScheduleItem[] {
+  const fallback: PaymentScheduleItem[] = [
+    { label: "First payment", due: "On agreement start", status: "due" },
+  ];
+  const range = parseAgreementDates(datesLabel);
+  if (!range) return fallback;
+
+  const weekly = /week/i.test(paymentTerms ?? "");
+  const items: PaymentScheduleItem[] = [];
+  const cursor = new Date(range.start);
+  let n = 1;
+  while (cursor <= range.end && items.length < 26) {
+    items.push({
+      label: weekly
+        ? `Week ${n}`
+        : cursor.toLocaleDateString("en-AU", { month: "long", year: "numeric" }),
+      due: cursor.toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      status: items.length === 0 ? "due" : "upcoming",
+    });
+    if (weekly) cursor.setDate(cursor.getDate() + 7);
+    else cursor.setMonth(cursor.getMonth() + 1);
+    n += 1;
+  }
+  return items.length > 0 ? items : fallback;
+}
+
+/**
+ * Sessions stored before the Complete-state fields existed have accepted
+ * agreements with no acceptedAt / transport status / payment schedule.
+ * Derive sensible values so the Live Agreement screen works for them too.
+ */
+function withCompleteStateBackfill(state: WorkflowState): WorkflowState {
+  const a = state.agreement;
+  if (!a.reviewAccepted && !a.transportArranged) return state;
+  return {
+    ...state,
+    agreement: {
+      ...a,
+      acceptedAt: a.acceptedAt ?? (a.reviewAccepted ? a.lastUpdated : null),
+      transportStatus:
+        a.transportStatus ?? (a.transportArranged ? "booked" : null),
+      transportPickupDate:
+        a.transportPickupDate ??
+        (a.transportArranged
+          ? (a.transportRft?.preferredDate ?? demoTransportRft.preferredDate)
+          : null),
+      paymentSchedule:
+        a.paymentSchedule.length > 0
+          ? a.paymentSchedule
+          : a.reviewAccepted
+            ? buildPaymentSchedule(a.paymentTerms, a.datesLabel)
+            : [],
     },
   };
 }
@@ -145,6 +256,12 @@ type WorkflowContextValue = {
   acceptReview: () => void;
   resetWorkflow: () => void;
   isComplete: boolean;
+  /**
+   * True once the stored session (if any) has been read back from
+   * localStorage. Screens that branch hard on workflow state (e.g. the
+   * Live Agreement screen) should wait for this before deciding.
+   */
+  hasHydrated: boolean;
 };
 
 const WorkflowContext = createContext<WorkflowContextValue | null>(null);
@@ -163,10 +280,12 @@ export function PaddockmeWorkflowProvider({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<WorkflowState>;
-        setState((prev) => ({
-          request: { ...prev.request, ...parsed.request },
-          agreement: { ...prev.agreement, ...parsed.agreement },
-        }));
+        setState((prev) =>
+          withCompleteStateBackfill({
+            request: { ...prev.request, ...parsed.request },
+            agreement: { ...prev.agreement, ...parsed.agreement },
+          }),
+        );
       }
     } catch {
       // ignore corrupt/blocked storage
@@ -281,6 +400,10 @@ export function PaddockmeWorkflowProvider({
         transportCompany: company,
         transportPrice: price,
         transportArranged: true,
+        transportStatus: "booked",
+        transportPickupDate:
+          prev.agreement.transportRft?.preferredDate ??
+          demoTransportRft.preferredDate,
         lastUpdated: new Date().toISOString(),
       },
     }));
@@ -292,6 +415,11 @@ export function PaddockmeWorkflowProvider({
       agreement: {
         ...prev.agreement,
         reviewAccepted: true,
+        acceptedAt: new Date().toISOString(),
+        paymentSchedule: buildPaymentSchedule(
+          prev.agreement.paymentTerms,
+          prev.agreement.datesLabel,
+        ),
         lastUpdated: new Date().toISOString(),
       },
     }));
@@ -349,8 +477,9 @@ export function PaddockmeWorkflowProvider({
       acceptReview,
       resetWorkflow,
       isComplete,
+      hasHydrated: hasLoadedStoredState,
     }),
-    [state, isComplete],
+    [state, isComplete, hasLoadedStoredState],
   );
 
   return (
