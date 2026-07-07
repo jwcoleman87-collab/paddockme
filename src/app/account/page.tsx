@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserCircle2, RotateCcw, CheckCircle2, Circle } from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
@@ -11,16 +12,89 @@ import {
   livestockLabel,
   needUntilLabel,
 } from "@/lib/paddockmeWorkflow";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+type BetaProfile = {
+  fullName: string | null;
+  email: string | null;
+  accountTypes: string[];
+};
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
 
 /**
- * Profile / account screen for the demo. Shows the signed-in demo user,
- * a snapshot of where they're at in the agistment workflow, and a way to
- * reset the demo back to its starting state.
+ * Profile / account screen. In private-beta mode it displays the signed-in
+ * Supabase profile; without Supabase env/session it keeps the guided demo
+ * identity so the visual flow remains available.
  */
 export default function AccountPage() {
   const router = useRouter();
   const { state, isComplete, resetWorkflow } = usePaddockmeWorkflow();
   const { agreement } = state;
+  const [profile, setProfile] = useState<BetaProfile | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadProfile() {
+      if (!isSupabaseConfigured()) {
+        if (isActive) setAuthChecked(true);
+        return;
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (isActive) setAuthChecked(true);
+        return;
+      }
+
+      const metadata = user.user_metadata ?? {};
+      const metadataName =
+        typeof metadata.full_name === "string" ? metadata.full_name : null;
+      const metadataAccountTypes = stringArray(metadata.account_types);
+
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("full_name, account_types")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profileRow) {
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            full_name: metadataName,
+            account_types: metadataAccountTypes,
+          },
+          { onConflict: "id" },
+        );
+      }
+
+      if (!isActive) return;
+      setProfile({
+        fullName: profileRow?.full_name ?? metadataName,
+        email: user.email ?? null,
+        accountTypes: profileRow?.account_types ?? metadataAccountTypes,
+      });
+      setAuthChecked(true);
+    }
+
+    loadProfile();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const progressItems = [
     { label: "Price agreed", done: agreement.priceAgreed },
@@ -28,6 +102,17 @@ export default function AccountPage() {
     { label: "Payment terms confirmed", done: agreement.paymentTermsConfirmed },
     { label: "Transport arranged", done: agreement.transportArranged },
   ];
+
+  const accountName =
+    profile?.fullName || profile?.email || demoLivestockOwner.name;
+  const accountMeta = profile
+    ? [profile.email, profile.accountTypes.join(", ")].filter(Boolean).join(" - ")
+    : `${demoLivestockOwner.location} - Member since ${demoLivestockOwner.memberSince}`;
+  const statusLabel = profile
+    ? "Signed in (beta)"
+    : authChecked
+      ? "Demo mode"
+      : "Checking session";
 
   function handleReset() {
     resetWorkflow();
@@ -50,15 +135,12 @@ export default function AccountPage() {
             </span>
             <div>
               <h1 className="text-xl font-extrabold text-pm-charcoal">
-                {demoLivestockOwner.name}
+                {accountName}
               </h1>
-              <p className="text-sm text-pm-muted">
-                {demoLivestockOwner.location} · Member since{" "}
-                {demoLivestockOwner.memberSince}
-              </p>
+              <p className="text-sm text-pm-muted">{accountMeta}</p>
             </div>
             <span className="ml-auto rounded-full bg-pm-success/10 px-3 py-1 text-xs font-bold text-pm-success">
-              Signed in (demo)
+              {statusLabel}
             </span>
           </div>
 
@@ -119,25 +201,27 @@ export default function AccountPage() {
             <PmButton
               href={
                 isComplete
-                  ? "/workspaces/1023/review"
+                  ? "/workspaces/1023/live"
                   : "/workspaces/1023/agreement"
               }
               variant="outline"
               className="mt-4"
             >
-              {isComplete ? "View Final Agreement" : "Continue Agreement"}
+              {isComplete ? "View Live Agreement" : "Continue Agreement"}
             </PmButton>
           </div>
 
           <div className="mt-6 border-t border-pm-border pt-6">
-            <h2 className="text-sm font-bold text-pm-charcoal">Demo controls</h2>
+            <h2 className="text-sm font-bold text-pm-charcoal">
+              Workflow controls
+            </h2>
             <p className="mt-1 text-sm text-pm-muted">
-              Reset the agistment request and agreement back to their
+              Reset the guided agistment request and agreement back to their
               starting state.
             </p>
             <PmButton variant="ghost" className="mt-3" onClick={handleReset}>
               <RotateCcw className="h-4 w-4" aria-hidden />
-              Reset Demo
+              Reset Workflow
             </PmButton>
           </div>
         </div>

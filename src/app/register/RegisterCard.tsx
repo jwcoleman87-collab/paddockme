@@ -8,11 +8,14 @@ import { CattleIcon } from "@/components/paddockme/AnimalIcons";
 import { cn } from "@/lib/utils";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 const roles = [
   {
     id: "livestock-owner",
     label: "Livestock Owner",
+    accountType: "Livestock Owner",
     detail: "I need feed",
     icon: CattleIcon,
     next: "/requests/new",
@@ -20,6 +23,7 @@ const roles = [
   {
     id: "landowner",
     label: "Landowner",
+    accountType: "Landowner",
     detail: "I have feed",
     icon: Wheat,
     next: "/landowner/requests/1023",
@@ -27,19 +31,19 @@ const roles = [
   {
     id: "transport",
     label: "Transport Provider",
+    accountType: "Transport Provider",
     detail: "I transport",
     icon: Truck,
     next: "/transport/quotes/1023",
   },
 ];
 
-/**
- * Role selection is local state for now (per the brief: don't let auth
- * wiring block the visual workflow). Continue routes by chosen role.
- */
 export function RegisterCard() {
   const router = useRouter();
   const [role, setRole] = useState("livestock-owner");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl sm:p-9">
@@ -48,15 +52,105 @@ export function RegisterCard() {
       </h1>
       <form
         className="mt-6 space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          const target = roles.find((r) => r.id === role)?.next ?? "/requests/new";
-          router.push(target);
+          setError(null);
+          setNotice(null);
+
+          const selectedRole =
+            roles.find((candidate) => candidate.id === role) ?? roles[0];
+          const target = selectedRole.next;
+
+          if (!isSupabaseConfigured()) {
+            router.push(target);
+            return;
+          }
+
+          const formData = new FormData(e.currentTarget);
+          const fullName = String(formData.get("fullName") ?? "").trim();
+          const mobile = String(formData.get("mobile") ?? "").trim();
+          const email = String(formData.get("email") ?? "").trim();
+          const password = String(formData.get("password") ?? "");
+
+          if (!fullName || !email || !password) {
+            setError("Enter your name, email and password.");
+            return;
+          }
+
+          setIsSubmitting(true);
+          const supabase = createClient();
+          const { data, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                phone: mobile,
+                account_types: [selectedRole.accountType],
+              },
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+                target,
+              )}`,
+            },
+          });
+
+          if (signUpError) {
+            setIsSubmitting(false);
+            setError(signUpError.message);
+            return;
+          }
+
+          if (data.session && data.user) {
+            await supabase.from("profiles").upsert(
+              {
+                id: data.user.id,
+                full_name: fullName,
+                phone: mobile || null,
+                account_types: [selectedRole.accountType],
+              },
+              { onConflict: "id" },
+            );
+            setIsSubmitting(false);
+            router.refresh();
+            router.push(target);
+            return;
+          }
+
+          setIsSubmitting(false);
+          setNotice("Check your email to finish creating your account.");
         }}
       >
-        <FormField label="Full Name" name="fullName" placeholder="Enter your full name" autoComplete="name" />
-        <FormField label="Mobile Number" name="mobile" type="tel" placeholder="0412 345 678" autoComplete="tel" />
-        <FormField label="Email Address" name="email" type="email" placeholder="you@example.com" autoComplete="email" />
+        <FormField
+          label="Full Name"
+          name="fullName"
+          placeholder="Enter your full name"
+          autoComplete="name"
+          required
+        />
+        <FormField
+          label="Mobile Number"
+          name="mobile"
+          type="tel"
+          placeholder="0412 345 678"
+          autoComplete="tel"
+        />
+        <FormField
+          label="Email Address"
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+        />
+        <FormField
+          label="Password"
+          name="password"
+          type="password"
+          placeholder="At least 6 characters"
+          autoComplete="new-password"
+          minLength={6}
+          required
+        />
 
         <fieldset>
           <legend className="mb-2 block text-sm font-semibold text-pm-charcoal">
@@ -91,8 +185,19 @@ export function RegisterCard() {
           </div>
         </fieldset>
 
-        <PmButton type="submit" className="w-full">
-          Continue
+        {error && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p className="rounded-lg bg-pm-cream-100 px-3 py-2 text-sm font-medium text-pm-green-900">
+            {notice}
+          </p>
+        )}
+
+        <PmButton type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating account..." : "Continue"}
         </PmButton>
       </form>
       <p className="mt-4 text-center text-sm text-pm-muted">
