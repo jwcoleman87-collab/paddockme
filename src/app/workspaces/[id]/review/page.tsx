@@ -142,13 +142,22 @@ export default function AgreementReviewPage() {
                       : "The agreement has been accepted and the transport request is open."}
                   </p>
                 </div>
-                <PmButton
-                  href="/workspaces/1023"
-                  variant="primary"
-                  className="mt-6 w-full sm:w-auto"
-                >
-                  Back to Workspace
-                </PmButton>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <PmButton
+                    href="/workspaces/1023/live"
+                    variant="primary"
+                    className="w-full sm:w-auto"
+                  >
+                    View Live Agreement
+                  </PmButton>
+                  <PmButton
+                    href="/workspaces/1023"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Back to Workspace
+                  </PmButton>
+                </div>
               </>
             ) : (
               <PmButton

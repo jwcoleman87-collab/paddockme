@@ -16,7 +16,7 @@ export default function WorkspaceOverviewPage() {
   const w = demoWorkspace;
   const { state, isComplete } = usePaddockmeWorkflow();
   const workspaceCtaHref = isComplete
-    ? "/workspaces/1023/review"
+    ? "/workspaces/1023/live"
     : "/workspaces/1023/agreement";
 
   // Build the progress checklist from real workflow state instead of a
@@ -143,7 +143,7 @@ export default function WorkspaceOverviewPage() {
               href={workspaceCtaHref}
               className="mt-6 w-full sm:w-auto"
             >
-              {isComplete ? "View Agreement" : "Continue to Agreement"}
+              {isComplete ? "View Live Agreement" : "Continue to Agreement"}
               <MoveRight className="h-4 w-4" aria-hidden />
             </PmButton>
           </section>

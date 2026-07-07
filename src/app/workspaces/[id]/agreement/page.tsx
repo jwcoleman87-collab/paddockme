@@ -47,13 +47,15 @@ export default function WorkspaceAgreementPage() {
     agreement.paymentTermsConfirmed;
   const agreementAccepted = agreement.reviewAccepted;
   // Transport already booked beats "request sent" — never point someone at
-  // the quotes board once a carrier is locked in.
-  const progressionHref =
-    !agreementAccepted && agreement.transportRequestSent && !agreement.transportArranged
+  // the quotes board once a carrier is locked in. An accepted agreement
+  // routes to its Live Agreement home, not back into negotiation surfaces.
+  const progressionHref = agreementAccepted
+    ? "/workspaces/1023/live"
+    : agreement.transportRequestSent && !agreement.transportArranged
       ? "/transport/quotes/1023"
       : "/workspaces/1023/review";
   const progressionLabel = agreementAccepted
-    ? "View Accepted Agreement"
+    ? "View Live Agreement"
     : agreement.transportArranged
       ? "Review Agreement"
       : agreement.transportRequestSent
@@ -182,7 +184,7 @@ export default function WorkspaceAgreementPage() {
                 </div>
                 <p className="mt-3 text-sm text-pm-muted">
                   {agreementAccepted
-                    ? "The agreement is already in place. You can view the accepted record without accepting it again."
+                    ? "The agreement is in place. The Live Agreement is your home base while the stock are on agistment."
                     : agreement.transportArranged
                       ? "Transport is locked in. Review the agreement to finish up."
                       : agreement.transportRequestSent
