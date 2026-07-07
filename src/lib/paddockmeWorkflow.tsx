@@ -17,16 +17,21 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { demoTransportRft, type TransportRft } from "./paddockmeDemoData";
+import {
+  demoDatesRangeLabel,
+  demoTransportRft,
+  type TransportRft,
+} from "./paddockmeDemoData";
 
 const STORAGE_KEY = "paddockme-workflow-v2";
 
 // Opening offers — framed as James' (the livestock owner's) initial
 // proposal, which John (the landowner) can accept or counter. Whoever's
 // turn it isn't sees the other side's current offer and can accept it or
-// send back their own.
+// send back their own. Dates come from the evergreen demo window so the
+// proposal is always in the future relative to the real current date.
 export const SUGGESTED_RATE = "$12.50 / head / week";
-export const SUGGESTED_DATES_LABEL = "1 Jun 2025 – 30 Aug 2025";
+export const SUGGESTED_DATES_LABEL = demoDatesRangeLabel;
 export const SUGGESTED_PAYMENT_TERMS = "Monthly in advance";
 export const PAYMENT_TERM_CHOICES = [
   "Monthly in advance",

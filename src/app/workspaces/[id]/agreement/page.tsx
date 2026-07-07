@@ -20,6 +20,7 @@ import {
   usePaddockmeWorkflow,
   livestockLabel,
   PAYMENT_TERM_CHOICES,
+  SUGGESTED_DATES_LABEL,
 } from "@/lib/paddockmeWorkflow";
 
 /**
@@ -151,7 +152,7 @@ export default function WorkspaceAgreementPage() {
                 confirmedValue={agreement.datesLabel}
                 onAccept={acceptDates}
                 onPropose={(value) => proposeDates(value, "James")}
-                placeholder="e.g. 1 Jun – 30 Aug 2025"
+                placeholder={`e.g. ${SUGGESTED_DATES_LABEL}`}
               />
               <NegotiationStep
                 label="Payment Terms"

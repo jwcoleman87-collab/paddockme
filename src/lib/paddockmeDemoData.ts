@@ -8,6 +8,44 @@
  */
 import { paddockmeImages } from "./paddockmeImages";
 
+/*
+ * Evergreen demo agreement window: the demo always proposes an agistment
+ * starting on the first of next month and running 90 days. Every date a
+ * screen shows derives from this one window, so the flow stays internally
+ * consistent with the real current date (no "accepted in 2026, ran in
+ * 2025"). Labels only change at month rollover, which keeps SSR and
+ * client renders matching.
+ */
+function firstOfNextMonth(): Date {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + 1);
+  return d;
+}
+
+function formatAu(d: Date, month: "short" | "long"): string {
+  return d.toLocaleDateString("en-AU", { day: "numeric", month, year: "numeric" });
+}
+
+const agreementStart = firstOfNextMonth();
+const agreementEnd = (() => {
+  const d = new Date(agreementStart);
+  d.setDate(d.getDate() + 90);
+  return d;
+})();
+
+/** e.g. "1 August 2026" — long form for workspace/transport surfaces. */
+export const demoStartDateLabel = formatAu(agreementStart, "long");
+/** e.g. "30 Oct 2026" — short form end of the agistment window. */
+export const demoEndDateLabel = formatAu(agreementEnd, "short");
+/** e.g. "1 Aug 2026 – 30 Oct 2026" — the negotiation dates offer. */
+export const demoDatesRangeLabel = `${formatAu(agreementStart, "short")} – ${demoEndDateLabel}`;
+/** e.g. "1 August" — for conversational demo copy. */
+export const demoStartDayMonth = agreementStart.toLocaleDateString("en-AU", {
+  day: "numeric",
+  month: "long",
+});
+
 export const demoLivestockOwner = {
   name: "James Coleman",
   location: "Dubbo NSW",
@@ -29,9 +67,9 @@ export const demoRequest = {
   targetLocation: "Bungendore NSW",
   duration: "90 Days",
   durationLabel: "For 90 days",
-  startDate: "1 June 2025",
-  endDate: "30 Aug 2025",
-  needFeedUntil: "30/06/2025",
+  startDate: demoStartDateLabel,
+  endDate: demoEndDateLabel,
+  needFeedUntil: agreementEnd.toLocaleDateString("en-AU"),
   distanceKm: "300 km",
 };
 
@@ -105,7 +143,7 @@ export const demoWorkspace = {
     { label: "Arrange Transport", done: false },
     { label: "Complete", done: false },
   ],
-  targetStartDate: "1 June 2025",
+  targetStartDate: demoStartDateLabel,
   duration: "90 days",
 };
 
@@ -138,7 +176,7 @@ export const demoAgreementReview = {
   livestock: "120 Angus Cattle",
   property: "Green Hills Farm, Bungendore NSW",
   duration: "90 Days",
-  dates: "1 Jun 2025 – 30 Aug 2025",
+  dates: demoDatesRangeLabel,
   rate: "$12.50 / head / week",
   paymentTerms: "Monthly in advance",
   transport: "Required",
@@ -193,7 +231,7 @@ export const demoTransportRft: TransportRft = {
   destination: "Green Hills Farm, Bungendore NSW",
   distanceKm: 320,
   livestock: "120 Cattle",
-  preferredDate: "1 June 2025",
+  preferredDate: demoStartDateLabel,
   access: "Road train suitable",
   status: "open_for_quotes",
 };
@@ -239,7 +277,7 @@ export const demoTransportRoomMessages: TransportRoomMessage[] = [
     sender: "Wayne Transport",
     role: "transporter",
     time: "9:21 AM",
-    text: "Perfect. I'll have the truck at Dubbo for a 6:30am pickup on 1 June. NVDs travelling with the mob and we'll be right to go.",
+    text: `Perfect. I'll have the truck at Dubbo for a 6:30am pickup on ${demoStartDayMonth}. NVDs travelling with the mob and we'll be right to go.`,
   },
 ];
 
