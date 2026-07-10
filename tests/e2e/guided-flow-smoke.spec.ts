@@ -47,12 +47,15 @@ const routeChecks = [
     text: ["Review Agreement", "Accept Agreement & Send RFT", "Request For Transport"],
   },
   {
+    // Direct navigation with no RFT on foot must NOT show a phantom deal —
+    // these pages explain the stage instead. The full quote/booking surfaces
+    // are covered by the walkthrough spec, which reaches them via the flow.
     path: "/transport/quotes/1023",
-    text: ["Transport RFT Sent", "Quotes received", "Chat with Driver"],
+    text: ["No transport request yet", "Go to your Agreement"],
   },
   {
     path: "/transport/rooms/1023",
-    text: ["Transport Coordination Room", "Wayne Transport", "Accept Wayne Quote"],
+    text: ["No transport underway", "Go to your Agreement"],
   },
 ] as const;
 

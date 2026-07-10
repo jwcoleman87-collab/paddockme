@@ -15,7 +15,8 @@
     "docs:check": "node scripts/docs-check.mjs",
     "db:types": "npx supabase gen types typescript --project-id aevzcvlzfvrdipgofczx > src/lib/types/database.ts",
     "typecheck": "tsc --noEmit",
-    "start": "node .next/standalone/server.js"
+    "start": "node .next/standalone/server.js",
+    "start:e2e": "node scripts/standalone-serve.mjs"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",
