@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AppShellHeaderUser } from "@/components/AppShellHeaderUser";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { DemoResetButton } from "@/components/DemoResetButton";
 import { FlashProvider } from "@/components/FlashProvider";
 import { HeaderInboxLink } from "@/components/HeaderInboxLink";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -27,7 +28,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <AppShellHeaderUser />
               </Suspense>
             </Link>
-            <SignOutButton />
+            <div className="flex items-center gap-2">
+              <SignOutButton />
+              <DemoResetButton />
+            </div>
           </div>
         </AppSidebar>
 
@@ -43,6 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
               <div className="flex items-center gap-2">
                 <HeaderInboxLink />
+                <DemoResetButton />
                 <SignOutButton />
                 <Link
                   href="/profile"
