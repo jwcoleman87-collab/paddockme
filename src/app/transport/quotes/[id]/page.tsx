@@ -1,8 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MapPin, Truck, Send, Map as MapIcon, MoveRight } from "lucide-react";
+import {
+  CheckCircle2,
+  MapPin,
+  Truck,
+  Send,
+  Map as MapIcon,
+  MoveRight,
+} from "lucide-react";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
+import { PmButton } from "@/components/paddockme/PmButton";
 import { TransportQuoteCard } from "@/components/paddockme/TransportQuoteCard";
 import { ImagePanel } from "@/components/paddockme/ImagePanel";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
@@ -21,15 +29,59 @@ import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
  */
 export default function TransportQuotesPage() {
   const router = useRouter();
-  const { state, acceptTransport } = usePaddockmeWorkflow();
+  const { state, acceptTransport, hasHydrated } = usePaddockmeWorkflow();
   // Use the RFT the owner sent if present, otherwise the demo template so the
   // page still reads sensibly when a transporter opens it directly.
   const rft = state.agreement.transportRft ?? demoTransportRft;
   const destinationCity = demoRequest.targetLocation;
+  const arranged = state.agreement.transportArranged;
 
   function handleAccept(company: string, price: string) {
     acceptTransport(company, price);
     router.push("/workspaces/1023");
+  }
+
+  // Wait for stored state before branching so direct navigation or a
+  // refresh never flashes the wrong stage.
+  if (!hasHydrated) {
+    return <div className="min-h-screen bg-pm-cream-50" />;
+  }
+
+  // Direct navigation before any RFT exists (e.g. straight after a demo
+  // reset): say so honestly instead of showing a phantom "RFT Sent".
+  if (!state.agreement.transportRequestSent && !arranged) {
+    return (
+      <div className="flex min-h-screen flex-col bg-pm-cream-50">
+        <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
+          <div className="mx-auto max-w-5xl">
+            <PaddockMeLogo variant="dark" />
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-xl flex-1 px-4 py-16 sm:px-6">
+          <div className="rounded-2xl border border-pm-border bg-white p-8 text-center shadow-sm">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-pm-cream-100 text-pm-green-900">
+              <Send className="h-6 w-6" aria-hidden />
+            </span>
+            <h1 className="mt-4 text-xl font-extrabold text-pm-charcoal">
+              No transport request yet
+            </h1>
+            <p className="mt-2 text-sm text-pm-muted">
+              Quotes appear here after your agistment agreement is accepted
+              and PaddockME opens the movement to transporters as a Request
+              For Transport.
+            </p>
+            <PmButton
+              href="/workspaces/1023/agreement"
+              className="mt-6 w-full sm:w-auto"
+            >
+              Go to your Agreement
+              <MoveRight className="h-4 w-4" aria-hidden />
+            </PmButton>
+          </div>
+        </main>
+        <AppBottomNav />
+      </div>
+    );
   }
 
   return (
@@ -53,11 +105,12 @@ export default function TransportQuotesPage() {
                   Request For Transport · Agistment #{rft.agreementId}
                 </p>
                 <h1 className="mt-1 text-2xl font-extrabold text-pm-charcoal">
-                  Transport RFT Sent
+                  {arranged ? "Transport Booked" : "Transport RFT Sent"}
                 </h1>
                 <p className="mt-1 text-sm text-pm-muted">
-                  This movement has been opened to livestock transporters for
-                  quotes.
+                  {arranged
+                    ? `${state.agreement.transportCompany} is booked for this movement.`
+                    : "This movement has been opened to livestock transporters for quotes."}
                 </p>
               </div>
             </div>
@@ -101,7 +154,9 @@ export default function TransportQuotesPage() {
           <div className="sm:col-span-4">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-pm-success/10 px-3 py-1 text-xs font-bold text-pm-success">
               <span className="h-1.5 w-1.5 rounded-full bg-pm-success" aria-hidden />
-              Open for transport quotes
+              {arranged
+                ? `Booked with ${state.agreement.transportCompany}`
+                : "Open for transport quotes"}
             </span>
           </div>
         </div>
@@ -163,43 +218,63 @@ export default function TransportQuotesPage() {
           </div>
         </div>
 
-        {/* Quotes received in response to the RFT */}
+        {/* Quotes received in response to the RFT — or the booked outcome */}
         <section className="mt-8">
-          <h2 className="text-lg font-extrabold text-pm-charcoal">
-            Quotes received
-          </h2>
-          <p className="mt-1 text-sm text-pm-muted">
-            Transporters who can cover this RFT have responded with quotes.
-          </p>
+          {arranged ? (
+            <div className="rounded-2xl border border-pm-success/30 bg-pm-success/5 p-6">
+              <p className="flex items-center gap-2 text-lg font-extrabold text-pm-charcoal">
+                <CheckCircle2
+                  className="h-6 w-6 shrink-0 text-pm-success"
+                  aria-hidden
+                />
+                Booked: {state.agreement.transportCompany} —{" "}
+                {state.agreement.transportPrice} inc. GST
+              </p>
+              <p className="mt-2 text-sm text-pm-muted">
+                Pickup {state.agreement.transportPickupDate ?? rft.preferredDate}.
+                Status updates from the driver land in the coordination room.
+              </p>
+              <PmButton
+                href="/transport/rooms/1023"
+                className="mt-4 w-full sm:w-auto"
+              >
+                Open Transport Room
+                <MoveRight className="h-4 w-4" aria-hidden />
+              </PmButton>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-lg font-extrabold text-pm-charcoal">
+                Quotes received
+              </h2>
+              <p className="mt-1 text-sm text-pm-muted">
+                Transporters who can cover this RFT have responded with quotes.
+              </p>
 
-          {state.agreement.transportArranged && (
-            <p className="mt-3 text-sm text-pm-success">
-              Transport with {state.agreement.transportCompany} is already
-              arranged. Accepting a quote below will replace it.
-            </p>
+              <div className="mt-4 space-y-4">
+                {demoTransportQuotes.map((q) => (
+                  <TransportQuoteCard
+                    key={q.company}
+                    quote={q}
+                    chatHref="/transport/rooms/1023"
+                    onAccept={() => handleAccept(q.company, q.price)}
+                  />
+                ))}
+              </div>
+
+              <p className="mt-4 rounded-lg bg-pm-cream-100 px-4 py-3 text-xs text-pm-charcoal">
+                <span className="font-bold">Chat with Driver</span> opens a
+                coordination room to sort access, yards and timing — it does
+                not accept the quote.{" "}
+                <span className="font-bold">Accept Quote</span> books the
+                transporter.
+              </p>
+              <p className="mt-3 text-xs text-pm-muted">
+                Quotes are indicative and include GST. Accepting books
+                transport and returns you to your workspace.
+              </p>
+            </>
           )}
-
-          <div className="mt-4 space-y-4">
-            {demoTransportQuotes.map((q) => (
-              <TransportQuoteCard
-                key={q.company}
-                quote={q}
-                chatHref="/transport/rooms/1023"
-                onAccept={() => handleAccept(q.company, q.price)}
-              />
-            ))}
-          </div>
-
-          <p className="mt-4 rounded-lg bg-pm-cream-100 px-4 py-3 text-xs text-pm-charcoal">
-            <span className="font-bold">Chat with Driver</span> opens a
-            coordination room to sort access, yards and timing — it does not
-            accept the quote. <span className="font-bold">Accept Quote</span>{" "}
-            books the transporter.
-          </p>
-          <p className="mt-3 text-xs text-pm-muted">
-            Quotes are indicative and include GST. Accepting books transport
-            and returns you to your workspace.
-          </p>
         </section>
       </main>
 

@@ -68,6 +68,27 @@ export type Proposal = {
 /** Where the booked movement is up to, shown on the Live Agreement screen. */
 export type TransportStatus = "booked" | "picked_up" | "en_route" | "delivered";
 
+/**
+ * The movement's stages in order — one source of truth for the Live
+ * Agreement stepper, the transport room tracker and the advance action.
+ */
+export const TRANSPORT_STEPS: { key: TransportStatus; label: string }[] = [
+  { key: "booked", label: "Booked" },
+  { key: "picked_up", label: "Picked up" },
+  { key: "en_route", label: "En route" },
+  { key: "delivered", label: "Delivered" },
+];
+
+/** The stage after `status`, or null when the movement is already delivered. */
+export function nextTransportStatus(
+  status: TransportStatus,
+): TransportStatus | null {
+  const idx = TRANSPORT_STEPS.findIndex((s) => s.key === status);
+  return idx >= 0 && idx < TRANSPORT_STEPS.length - 1
+    ? TRANSPORT_STEPS[idx + 1].key
+    : null;
+}
+
 /** One payment in the schedule derived from the agreed terms + dates. */
 export type PaymentScheduleItem = {
   /** e.g. "June 2025" (monthly) or "Week 3" (weekly) */
@@ -134,7 +155,7 @@ function defaultState(): WorkflowState {
       headCount: 120,
       location: "Dubbo NSW",
       needUntil: defaultNeedUntil(),
-      distanceKm: "300 km",
+      distanceKm: "350 km",
       budget: "",
       specialRequirements: "",
     },
@@ -258,6 +279,12 @@ type WorkflowContextValue = {
   acceptPaymentTerms: () => void;
   sendRft: () => void;
   acceptTransport: (company: string, price: string) => void;
+  /**
+   * Move the booked transport to its next stage (picked up → en route →
+   * delivered). Returns the new status, or null if there was nothing to
+   * advance. Delivered is terminal.
+   */
+  advanceTransport: () => TransportStatus | null;
   acceptReview: () => void;
   resetWorkflow: () => void;
   isComplete: boolean;
@@ -414,6 +441,25 @@ export function PaddockmeWorkflowProvider({
     }));
   }
 
+  function advanceTransport(): TransportStatus | null {
+    // Read from the rendered state (not the setState updater) so callers get
+    // the new status back synchronously — they use it to post the matching
+    // update into the coordination thread.
+    const current = state.agreement.transportStatus;
+    if (!state.agreement.transportArranged || !current) return null;
+    const next = nextTransportStatus(current);
+    if (!next) return null;
+    setState((prev) => ({
+      ...prev,
+      agreement: {
+        ...prev.agreement,
+        transportStatus: next,
+        lastUpdated: new Date().toISOString(),
+      },
+    }));
+    return next;
+  }
+
   function acceptReview() {
     setState((prev) => ({
       ...prev,
@@ -479,6 +525,7 @@ export function PaddockmeWorkflowProvider({
       acceptPaymentTerms,
       sendRft,
       acceptTransport,
+      advanceTransport,
       acceptReview,
       resetWorkflow,
       isComplete,

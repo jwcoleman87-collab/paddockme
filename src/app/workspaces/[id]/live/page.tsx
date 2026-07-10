@@ -18,6 +18,7 @@ import {
   Truck,
 } from "lucide-react";
 import { CattleIcon } from "@/components/paddockme/AnimalIcons";
+import { GuidedDemoResetAction } from "@/components/paddockme/GuidedDemo";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
@@ -27,15 +28,8 @@ import {
   usePaddockmeWorkflow,
   parseAgreementDates,
   livestockLabel,
-  type TransportStatus,
+  TRANSPORT_STEPS,
 } from "@/lib/paddockmeWorkflow";
-
-const TRANSPORT_STEPS: { key: TransportStatus; label: string }[] = [
-  { key: "booked", label: "Booked" },
-  { key: "picked_up", label: "Picked up" },
-  { key: "en_route", label: "En route" },
-  { key: "delivered", label: "Delivered" },
-];
 
 /**
  * Screen 13 — Live Agreement: the executed deal's home base for the life
@@ -181,8 +175,9 @@ export default function LiveAgreementPage() {
           Live Agreement
         </h1>
         <p className="mt-1 text-sm text-pm-muted">
-          Agistment #1023 is agreed and under way. This is your home base
-          while the stock are on agistment.
+          {delivered
+            ? `Your stock have arrived at Green Hills Farm — Agistment #1023 is active. This is your home base for the life of the agreement.`
+            : "Agistment #1023 is agreed and under way. This is your home base while the stock are on agistment."}
         </p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_minmax(320px,380px)]">
@@ -238,7 +233,7 @@ export default function LiveAgreementPage() {
               </PmButton>
               <PmButton href="/transport/rooms/1023" variant="outline">
                 <Truck className="h-4 w-4" aria-hidden />
-                Track Transport
+                {delivered ? "Transport Record" : "Track Transport"}
               </PmButton>
               {/* v1: requesting an amendment just opens the workspace chat. */}
               <PmButton href="/workspaces/1023" variant="outline">
@@ -247,6 +242,9 @@ export default function LiveAgreementPage() {
               </PmButton>
               <StubAction icon={Receipt} label="View Invoices" />
               <StubAction icon={Flag} label="Report an Issue" />
+              {/* End of the guided walkthrough — reset in place, inline with
+                  the other actions rather than in a banner. */}
+              {delivered && <GuidedDemoResetAction />}
             </div>
           </section>
 
