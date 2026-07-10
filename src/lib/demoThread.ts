@@ -55,10 +55,10 @@ function isMessage(value: unknown): value is DemoThreadMessage {
 export function demoThreadTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString("en-AU", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // en-AU emits lowercase "am/pm"; the seeded backstory uses "AM" — match it.
+  return date
+    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })
+    .toUpperCase();
 }
 
 /**

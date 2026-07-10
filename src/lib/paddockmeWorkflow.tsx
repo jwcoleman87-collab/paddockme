@@ -575,8 +575,7 @@ export function lastUpdatedLabel(iso: string | null): string {
   if (!iso) return "Not updated yet";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "Not updated yet";
-  return date.toLocaleTimeString("en-AU", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return date
+    .toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })
+    .toUpperCase();
 }
