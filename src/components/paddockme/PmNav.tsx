@@ -10,6 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GuidedDemoBadge } from "./GuidedDemo";
 import { PaddockMeLogo } from "./PaddockMeLogo";
 import { PmButton } from "./PmButton";
 
@@ -25,7 +26,10 @@ export function PrimaryNav() {
   return (
     <header className="absolute inset-x-0 top-0 z-20">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <PaddockMeLogo variant="light" />
+        <span className="flex items-center gap-2.5">
+          <PaddockMeLogo variant="light" />
+          <GuidedDemoBadge light />
+        </span>
         <nav
           aria-label="Main"
           className="hidden items-center gap-6 text-sm font-medium text-white/85 md:flex"
@@ -75,7 +79,10 @@ export function AppBottomNav() {
       className="sticky bottom-0 z-30 border-t border-white/10 bg-pm-green-900"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-        <PaddockMeLogo variant="light" className="hidden text-lg sm:block" />
+        <span className="hidden items-center gap-2.5 sm:flex">
+          <PaddockMeLogo variant="light" className="text-lg" />
+          <GuidedDemoBadge light />
+        </span>
         <div className="flex flex-1 items-center justify-around sm:justify-end sm:gap-8">
           {appLinks.map(({ label, href, icon: Icon }) => {
             const active =

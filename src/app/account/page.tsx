@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { UserCircle2, RotateCcw, CheckCircle2, Circle } from "lucide-react";
+import { UserCircle2, CheckCircle2, Circle } from "lucide-react";
+import { GuidedDemoResetAction } from "@/components/paddockme/GuidedDemo";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { AppBottomNav } from "@/components/paddockme/PmNav";
@@ -33,8 +33,7 @@ function stringArray(value: unknown): string[] {
  * identity so the visual flow remains available.
  */
 export default function AccountPage() {
-  const router = useRouter();
-  const { state, isComplete, resetWorkflow } = usePaddockmeWorkflow();
+  const { state, isComplete } = usePaddockmeWorkflow();
   const { agreement } = state;
   const [profile, setProfile] = useState<BetaProfile | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -113,11 +112,6 @@ export default function AccountPage() {
     : authChecked
       ? "Demo mode"
       : "Checking session";
-
-  function handleReset() {
-    resetWorkflow();
-    router.push("/");
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-pm-cream-50">
@@ -213,16 +207,13 @@ export default function AccountPage() {
 
           <div className="mt-6 border-t border-pm-border pt-6">
             <h2 className="text-sm font-bold text-pm-charcoal">
-              Workflow controls
+              Demo controls
             </h2>
             <p className="mt-1 text-sm text-pm-muted">
-              Reset the guided agistment request and agreement back to their
-              starting state.
+              Return the whole guided demo — request, agreement, transport
+              and chat — to its starting state.
             </p>
-            <PmButton variant="ghost" className="mt-3" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" aria-hidden />
-              Reset Workflow
-            </PmButton>
+            <GuidedDemoResetAction className="mt-3" />
           </div>
         </div>
       </main>

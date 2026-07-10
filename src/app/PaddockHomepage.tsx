@@ -51,6 +51,10 @@ export function PaddockHomepage() {
               Australia&apos;s trusted platform for agistment and livestock
               transport.
             </p>
+            <p className="mt-3 max-w-md text-xs text-white/60">
+              You&apos;re viewing a guided demonstration — the people and
+              transaction shown are representative.
+            </p>
             <div className="mt-10 flex flex-col gap-4 lg:flex-row">
               <RoleChoiceCard
                 href="/requests/new"
