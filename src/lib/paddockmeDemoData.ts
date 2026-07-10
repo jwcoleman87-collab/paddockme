@@ -70,8 +70,19 @@ export const demoRequest = {
   startDate: demoStartDateLabel,
   endDate: demoEndDateLabel,
   needFeedUntil: agreementEnd.toLocaleDateString("en-AU"),
-  distanceKm: "300 km",
+  distanceKm: "350 km",
 };
+
+/**
+ * Conversational mob description derived from what the visitor actually
+ * entered — "120 cattle", "40 sheep", "6 horses" — so seeded chat always
+ * talks about the same animals as the rest of the flow.
+ */
+export function describeMob(headCount: number, livestockType: string): string {
+  const type = livestockType.trim().toLowerCase();
+  const noun = type === "other" || type === "" ? "head of stock" : type;
+  return `${headCount} ${noun}`;
+}
 
 export type DemoProperty = {
   slug: string;
@@ -89,7 +100,7 @@ export const demoProperties: DemoProperty[] = [
     slug: "green-hills-farm",
     name: "Green Hills Farm",
     location: "Bungendore NSW",
-    distance: "120 km",
+    distance: "320 km",
     rating: 4.8,
     acres: "120 Acres",
     badges: ["Permanent Water", "Excellent Fencing"],
@@ -99,7 +110,7 @@ export const demoProperties: DemoProperty[] = [
     slug: "riverbend-grazing",
     name: "Riverbend Grazing",
     location: "Tarago NSW",
-    distance: "150 km",
+    distance: "340 km",
     rating: 4.9,
     acres: "250 Acres",
     badges: ["Loading Ramp", "Good Water"],
@@ -162,25 +173,6 @@ export const demoConversation = [
   { sender: "James", time: "10:18 AM", text: "Meet in the middle at $12.50?" },
   { sender: "John", time: "10:19 AM", text: "Sounds good. $12.50 it is." },
 ];
-
-export const demoLiveAgreement = {
-  livestock: "120 Angus Cattle",
-  duration: "90 Days",
-  rate: "$12.50 / head / week",
-  property: "Green Hills Farm",
-  transport: "Pending",
-  lastUpdated: "10:19 AM",
-};
-
-export const demoAgreementReview = {
-  livestock: "120 Angus Cattle",
-  property: "Green Hills Farm, Bungendore NSW",
-  duration: "90 Days",
-  dates: demoDatesRangeLabel,
-  rate: "$12.50 / head / week",
-  paymentTerms: "Monthly in advance",
-  transport: "Required",
-};
 
 export type DemoTransportQuote = {
   company: string;
@@ -254,32 +246,118 @@ export type TransportRoomMessage = {
   text: string;
 };
 
-export const demoTransportRoomMessages: TransportRoomMessage[] = [
-  {
-    sender: "Wayne Transport",
-    role: "transporter",
-    time: "9:02 AM",
-    text: "G'day all. Is Green Hills road-train accessible, and is there room to turn an A-double around near the yards?",
-  },
-  {
-    sender: "John — Green Hills Farm",
-    role: "landowner",
-    time: "9:08 AM",
-    text: "Yep — road train suitable, all-weather access right to the yards and plenty of room to turn around. Loading ramp's rated for cattle.",
-  },
-  {
-    sender: "James Coleman",
-    role: "owner",
-    time: "9:15 AM",
-    text: "I'll have the 120 head yarded and drafted the afternoon before so they're ready for an early pickup.",
-  },
-  {
-    sender: "Wayne Transport",
-    role: "transporter",
-    time: "9:21 AM",
-    text: `Perfect. I'll have the truck at Dubbo for a 6:30am pickup on ${demoStartDayMonth}. NVDs travelling with the mob and we'll be right to go.`,
-  },
-];
+/** What the seeded conversations need to know about the visitor's request. */
+export type MobDetails = {
+  headCount: number;
+  livestockType: string;
+  location: string;
+};
+
+/**
+ * Seeded workspace conversation — the enquiry-stage backstory between the
+ * livestock owner and the landowner. Derived from the visitor's actual
+ * request so the chat never contradicts the deal on screen.
+ */
+export function workspaceSeedMessages(mob: MobDetails): TransportRoomMessage[] {
+  const mobText = describeMob(mob.headCount, mob.livestockType);
+  return [
+    {
+      sender: demoLivestockOwner.name,
+      role: "owner",
+      time: "8:42 AM",
+      text: `G'day John — I've got ${mobText} at ${mob.location} needing agistment from ${demoStartDayMonth}. Green Hills looks ideal.`,
+    },
+    {
+      sender: "John — Green Hills Farm",
+      role: "landowner",
+      time: "8:51 AM",
+      text: `Morning James. The front paddocks have good cover and the creek's permanent — happy to take ${mob.headCount} head for the season.`,
+    },
+    {
+      sender: "John — Green Hills Farm",
+      role: "landowner",
+      time: "8:52 AM",
+      text: "Work through the agreement steps when you're ready and we'll lock in price and dates.",
+    },
+  ];
+}
+
+/**
+ * Seeded transport coordination backstory — access, yards, NVDs, timing —
+ * derived from the visitor's actual request.
+ */
+export function transportRoomSeedMessages(
+  mob: MobDetails,
+): TransportRoomMessage[] {
+  const mobText = describeMob(mob.headCount, mob.livestockType);
+  return [
+    {
+      sender: "Wayne Transport",
+      role: "transporter",
+      time: "9:02 AM",
+      text: "G'day all. Is Green Hills road-train accessible, and is there room to turn an A-double around near the yards?",
+    },
+    {
+      sender: "John — Green Hills Farm",
+      role: "landowner",
+      time: "9:08 AM",
+      text: "Yep — road train suitable, all-weather access right to the yards and plenty of room to turn around. Ramp and yards will handle the mob no worries.",
+    },
+    {
+      sender: demoLivestockOwner.name,
+      role: "owner",
+      time: "9:15 AM",
+      text: `I'll have the ${mobText} yarded and drafted the afternoon before so they're ready for an early pickup.`,
+    },
+    {
+      sender: "Wayne Transport",
+      role: "transporter",
+      time: "9:21 AM",
+      text: `Perfect. I'll have the truck at ${mob.location} for a 6:30am pickup on ${demoStartDayMonth}. NVDs travelling with the mob and we'll be right to go.`,
+    },
+  ];
+}
+
+/**
+ * The scripted updates the transporter (and landowner, on arrival) post as
+ * the movement progresses. Keyed by the status just reached.
+ */
+export function transportStatusUpdateMessages(
+  mob: MobDetails,
+): Record<
+  "picked_up" | "en_route" | "delivered",
+  { sender: string; role: TransportRoomMessage["role"]; text: string }[]
+> {
+  const mobText = describeMob(mob.headCount, mob.livestockType);
+  return {
+    picked_up: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `On the truck — ${mobText} loaded at ${mob.location} in good order. NVDs sighted and travelling with us.`,
+      },
+    ],
+    en_route: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: "En route and making good time. I'll ring ahead when we're half an hour out from Green Hills.",
+      },
+    ],
+    delivered: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `Delivered — ${mobText} off-loaded into the yards at Green Hills Farm in good order. John's signed off the arrival.`,
+      },
+      {
+        sender: "John — Green Hills Farm",
+        role: "landowner",
+        text: "Mob's settled into the front paddock — water and feed all checked. All good here, James.",
+      },
+    ],
+  };
+}
 
 export const demoRecentActivity = [
   { icon: "cattle", headline: "120 head", detail: "seeking feed near Dubbo NSW" },

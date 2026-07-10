@@ -238,7 +238,11 @@ export default function WorkspaceAgreementPage() {
             )}
 
             <div className="mt-8 h-[360px] rounded-2xl border border-pm-border bg-white p-5 shadow-sm">
-              <ChatPanel messages={demoConversation} currentUser="James" />
+              <ChatPanel
+                messages={demoConversation}
+                currentUser="James"
+                threadId="agreement-chat-1023"
+              />
             </div>
           </section>
 

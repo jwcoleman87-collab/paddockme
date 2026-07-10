@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { demoThreadTime, useDemoThread } from "@/lib/demoThread";
 import { lastUpdatedLabel, type Proposal } from "@/lib/paddockmeWorkflow";
 
 /* ---------- ChatPanel (workspace conversation) ---------- */
@@ -12,33 +13,33 @@ export type ChatMessage = { sender: string; time: string; text: string };
 export function ChatPanel({
   messages,
   currentUser,
+  threadId,
   className,
 }: {
   messages: ChatMessage[];
   currentUser: string;
+  /** Persist what the visitor types under this demo-thread id. */
+  threadId: string;
   className?: string;
 }) {
   const [draft, setDraft] = useState("");
-  const [extra, setExtra] = useState<ChatMessage[]>([]);
+  const thread = useDemoThread(threadId);
 
   function send() {
     const text = draft.trim();
     if (!text) return;
-    setExtra((prev) => [
-      ...prev,
-      {
-        sender: currentUser,
-        time: new Date().toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-        text,
-      },
-    ]);
+    thread.append({ sender: currentUser, role: "owner", text });
     setDraft("");
   }
 
-  const all = [...messages, ...extra];
+  const all = [
+    ...messages,
+    ...thread.messages.map((m) => ({
+      sender: m.sender,
+      time: demoThreadTime(m.sentAt),
+      text: m.text,
+    })),
+  ];
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
