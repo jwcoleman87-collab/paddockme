@@ -5,11 +5,11 @@ import {
   FileCheck2,
   LandPlot,
   MapPinned,
+  Search,
   ShieldCheck,
   Truck,
   Wheat,
 } from "lucide-react";
-import { CattleIcon } from "@/components/paddockme/AnimalIcons";
 import { PrimaryNav } from "@/components/paddockme/PmNav";
 import { RoleChoiceCard } from "@/components/paddockme/PmCards";
 import { PmButton } from "@/components/paddockme/PmButton";
@@ -131,14 +131,14 @@ export function PaddockHomepage() {
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               <RoleChoiceCard
                 href="/request/new"
-                icon={<CattleIcon className="h-6 w-6" />}
+                icon={<Search className="h-6 w-6" aria-hidden />}
                 title="I need feed"
                 subtitle="Create an agistment request"
                 actionLabel="Find a paddock"
               />
               <RoleChoiceCard
                 href="/listings/new"
-                icon={<Wheat className="h-6 w-6" aria-hidden />}
+                icon={<LandPlot className="h-6 w-6" aria-hidden />}
                 title="I have grazing"
                 subtitle="List available paddock capacity"
                 actionLabel="List a paddock"
