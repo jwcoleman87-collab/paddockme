@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 export function PageHeader({
   eyebrow,
   title,
-  description: _description,
+  description,
   action,
   className,
 }: {
@@ -29,6 +29,11 @@ export function PageHeader({
         <h1 className="max-w-full break-words text-2xl font-extrabold leading-tight text-bark sm:max-w-2xl md:text-3xl">
           {title}
         </h1>
+        {description && (
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone sm:text-base">
+            {description}
+          </p>
+        )}
       </div>
       {action && <div className="max-w-full shrink-0">{action}</div>}
     </header>

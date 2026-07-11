@@ -77,10 +77,10 @@ export function RoleChoiceCard({
     <Link
       href={href}
       className={cn(
-        "group flex flex-1 items-center gap-4 rounded-xl px-6 py-5 shadow-lg transition-transform hover:-translate-y-0.5",
+        "group flex min-h-40 flex-1 items-start gap-4 rounded-lg border px-5 py-5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500 sm:px-6",
         accent
-          ? "bg-pm-gold-500 text-pm-charcoal"
-          : "bg-pm-green-900 text-white",
+          ? "border-pm-gold-500 bg-pm-gold-500 text-pm-charcoal hover:bg-pm-gold-600"
+          : "border-pm-green-900 bg-pm-green-900 text-white hover:bg-pm-green-800",
       )}
     >
       <span
@@ -93,7 +93,7 @@ export function RoleChoiceCard({
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-base font-bold uppercase tracking-wide">
+        <span className="block text-base font-extrabold">
           {title}
         </span>
         <span
@@ -105,7 +105,7 @@ export function RoleChoiceCard({
           {subtitle}
         </span>
         {actionLabel && (
-          <span className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4">
+          <span className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4">
             {actionLabel}
             <MoveRight className="h-4 w-4" aria-hidden />
           </span>

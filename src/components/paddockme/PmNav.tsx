@@ -10,7 +10,6 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GuidedDemoBadge } from "./GuidedDemo";
 import { PaddockMeLogo } from "./PaddockMeLogo";
 import { PmButton } from "./PmButton";
 
@@ -26,10 +25,7 @@ export function PrimaryNav() {
   return (
     <header className="absolute inset-x-0 top-0 z-20">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <span className="flex items-center gap-2.5">
-          <PaddockMeLogo variant="light" />
-          <GuidedDemoBadge light />
-        </span>
+        <PaddockMeLogo variant="light" />
         <nav
           aria-label="Main"
           className="hidden items-center gap-6 text-sm font-medium text-white/85 md:flex"
@@ -43,13 +39,13 @@ export function PrimaryNav() {
         <div className="flex items-center gap-2">
           <PmButton
             variant="ghost"
-            href="/login"
+            href="/sign-in"
             className="border border-white/40 px-4 py-2 text-white hover:bg-white/10 min-h-0"
           >
             Log In
           </PmButton>
-          <PmButton variant="accent" href="/register" className="px-4 py-2 min-h-0">
-            Sign Up
+          <PmButton variant="accent" href="/sign-up" className="px-4 py-2 min-h-0">
+            Get started
           </PmButton>
         </div>
       </div>
@@ -81,7 +77,6 @@ export function AppBottomNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <span className="hidden items-center gap-2.5 sm:flex">
           <PaddockMeLogo variant="light" className="text-lg" />
-          <GuidedDemoBadge light />
         </span>
         <div className="flex flex-1 items-center justify-around sm:justify-end sm:gap-8">
           {appLinks.map(({ label, href, icon: Icon }) => {
