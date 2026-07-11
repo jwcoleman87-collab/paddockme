@@ -20,21 +20,29 @@ const journey = [
     label: "Tell us what you need",
     detail: "Post stock needing feed or list available grazing.",
     icon: ClipboardPen,
+    image: paddockmeImages.journeyStepRequest,
+    alt: "Farmer at a paddock gate posting a new listing on his phone at dusk",
   },
   {
     label: "Choose the right match",
     detail: "Review suitable paddocks without ringing around.",
     icon: MapPinned,
+    image: paddockmeImages.journeyStepMatch,
+    alt: "Two farmers at the cattle yards comparing paddock matches on a tablet",
   },
   {
     label: "Agree the details",
     detail: "Keep the terms and decisions together in one place.",
     icon: FileCheck2,
+    image: paddockmeImages.journeyStepAgree,
+    alt: "Two people in a farm office approving agreement terms on a tablet",
   },
   {
     label: "Arrange the move",
     detail: "Send an RFT and follow transport through to arrival.",
     icon: Truck,
+    image: paddockmeImages.journeyStepMove,
+    alt: "Farmers shaking hands as a loaded livestock truck departs down a farm track",
   },
 ];
 
@@ -172,18 +180,29 @@ export function PaddockHomepage() {
             </div>
 
             <ol className="mt-9 grid gap-px overflow-hidden border border-pm-border bg-pm-border sm:grid-cols-2 lg:grid-cols-4">
-              {journey.map(({ label, detail, icon: Icon }, index) => (
-                <li key={label} className="bg-pm-cream-50 p-5 sm:p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-11 w-11 items-center justify-center bg-pm-green-900 text-white">
-                      <Icon className="h-5 w-5" aria-hidden />
-                    </span>
-                    <span className="text-sm font-extrabold text-pm-gold-600">
+              {journey.map(({ label, detail, icon: Icon, image, alt }, index) => (
+                <li key={label} className="group bg-pm-cream-50">
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={image}
+                      alt={alt}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <span className="absolute left-0 top-0 bg-pm-green-900 px-3 py-1.5 text-sm font-extrabold text-pm-gold-500">
                       0{index + 1}
                     </span>
                   </div>
-                  <h3 className="mt-5 font-extrabold">{label}</h3>
-                  <p className="mt-2 text-sm leading-6 text-pm-muted">{detail}</p>
+                  <div className="p-5 sm:p-6">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-pm-green-900 text-white">
+                        <Icon className="h-5 w-5" aria-hidden />
+                      </span>
+                      <h3 className="font-extrabold">{label}</h3>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-pm-muted">{detail}</p>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -192,10 +211,28 @@ export function PaddockHomepage() {
 
         <section id="about" className="px-4 py-12 sm:px-6 lg:py-16">
           <div className="mx-auto max-w-6xl">
-            <h2 className="max-w-2xl text-2xl font-extrabold sm:text-3xl">
-              Calm on screen. Clear in the paddock.
-            </h2>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="relative overflow-hidden border border-pm-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={paddockmeImages.journeyBannerGate}
+                alt="Farmer posting his needs from the paddock gate at sunset, sheep grazing behind"
+                loading="lazy"
+                className="h-72 w-full object-cover object-[center_30%] sm:h-80 lg:h-[26rem]"
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-b from-pm-green-900/75 via-pm-green-900/10 to-pm-green-900/45"
+                aria-hidden
+              />
+              <div className="absolute left-0 top-0 p-6 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-pm-gold-500">
+                  It starts at the gate
+                </p>
+                <h2 className="mt-2 max-w-xl text-2xl font-extrabold text-white sm:text-3xl">
+                  Calm on screen. Clear in the paddock.
+                </h2>
+              </div>
+            </div>
+            <div className="relative z-10 mt-4 grid gap-4 md:-mt-16 md:grid-cols-3 md:px-8">
               {assurances.map(({ title, detail, icon: Icon }) => (
                 <article key={title} className="border border-pm-border bg-white p-5 shadow-sm">
                   <Icon className="h-6 w-6 text-pm-green-900" aria-hidden />
