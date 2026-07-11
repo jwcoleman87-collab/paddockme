@@ -70,10 +70,11 @@ export function PaddockHomepage() {
                 accent
               />
               <RoleChoiceCard
-                href="/transport/quotes/1023"
+                href="/transport/demo"
                 icon={<Truck className="h-6 w-6" aria-hidden />}
-                title="I Transport"
-                subtitle="Find transport jobs"
+                title="Find transport work"
+                subtitle="Browse livestock movements, discuss jobs with both farmers, submit quotes and manage active work."
+                actionLabel="View available jobs"
               />
             </div>
           </div>

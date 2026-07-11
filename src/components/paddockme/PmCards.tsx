@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Star } from "lucide-react";
+import { Check, MoveRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ---------- Rating ---------- */
@@ -63,12 +63,14 @@ export function RoleChoiceCard({
   icon,
   title,
   subtitle,
+  actionLabel,
   accent = false,
 }: {
   href: string;
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  actionLabel?: string;
   accent?: boolean;
 }) {
   return (
@@ -90,7 +92,7 @@ export function RoleChoiceCard({
       >
         {icon}
       </span>
-      <span>
+      <span className="min-w-0 flex-1">
         <span className="block text-base font-bold uppercase tracking-wide">
           {title}
         </span>
@@ -102,6 +104,12 @@ export function RoleChoiceCard({
         >
           {subtitle}
         </span>
+        {actionLabel && (
+          <span className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4">
+            {actionLabel}
+            <MoveRight className="h-4 w-4" aria-hidden />
+          </span>
+        )}
       </span>
     </Link>
   );

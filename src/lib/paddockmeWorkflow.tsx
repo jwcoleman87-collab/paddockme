@@ -20,7 +20,10 @@ import {
 import {
   demoDatesRangeLabel,
   demoEndDateInput,
+  demoPrimaryTransportJob,
+  demoTransportQuotes,
   demoTransportRft,
+  type DemoTransporterMovementStep,
   type TransportRft,
 } from "./paddockmeDemoData";
 
@@ -79,6 +82,82 @@ export const TRANSPORT_STEPS: { key: TransportStatus; label: string }[] = [
   { key: "en_route", label: "En route" },
   { key: "delivered", label: "Delivered" },
 ];
+
+/** Wayne's transporter-first lifecycle on the job board. */
+export type TransporterStage =
+  | "available"
+  | "quoted"
+  | "awarded"
+  | "active"
+  | "completed";
+
+/** Fine road status shown to Wayne; farmer surfaces keep the coarse status. */
+export type TransporterMovementStep = DemoTransporterMovementStep;
+
+export const TRANSPORTER_MOVEMENT_STEPS: {
+  key: TransporterMovementStep;
+  label: string;
+  sharedStatus: TransportStatus;
+}[] = [
+  {
+    key: "heading_to_pickup",
+    label: "Heading to pickup",
+    sharedStatus: "booked",
+  },
+  {
+    key: "arrived_at_pickup",
+    label: "Arrived at pickup",
+    sharedStatus: "booked",
+  },
+  {
+    key: "livestock_loaded",
+    label: "Livestock loaded",
+    sharedStatus: "picked_up",
+  },
+  { key: "departed", label: "Departed", sharedStatus: "en_route" },
+  { key: "en_route", label: "En route", sharedStatus: "en_route" },
+  {
+    key: "arrived_at_property",
+    label: "Arrived at property",
+    sharedStatus: "en_route",
+  },
+  { key: "unloaded", label: "Unloaded", sharedStatus: "en_route" },
+  {
+    key: "delivery_complete",
+    label: "Delivery complete",
+    sharedStatus: "delivered",
+  },
+];
+
+export type TransporterInvoiceStatus =
+  | "not_ready"
+  | "invoice_ready"
+  | "invoice_sent";
+
+export type TransporterQuoteDraft = {
+  totalPrice: string;
+  availability: string;
+  estimatedArrival: string;
+  equipment: string;
+  notes: string;
+};
+
+export type TransporterQuoteSubmission = TransporterQuoteDraft & {
+  submittedAt: string;
+};
+
+export type TransporterDemoState = {
+  selectedJobId: string | null;
+  discussionStarted: boolean;
+  discussionConfirmed: boolean;
+  stage: TransporterStage;
+  quote: TransporterQuoteSubmission | null;
+  awardedAt: string | null;
+  movementStep: TransporterMovementStep | null;
+  completedAt: string | null;
+  deliveredHeadCount: number | null;
+  invoiceStatus: TransporterInvoiceStatus;
+};
 
 /** The stage after `status`, or null when the movement is already delivered. */
 export function nextTransportStatus(
@@ -141,7 +220,23 @@ export type AgreementState = {
 export type WorkflowState = {
   request: RequestDetails;
   agreement: AgreementState;
+  transporter: TransporterDemoState;
 };
+
+function defaultTransporterState(): TransporterDemoState {
+  return {
+    selectedJobId: null,
+    discussionStarted: false,
+    discussionConfirmed: false,
+    stage: "available",
+    quote: null,
+    awardedAt: null,
+    movementStep: null,
+    completedAt: null,
+    deliveredHeadCount: null,
+    invoiceStatus: "not_ready",
+  };
+}
 
 function defaultState(): WorkflowState {
   return {
@@ -177,7 +272,39 @@ function defaultState(): WorkflowState {
       transportPickupDate: null,
       paymentSchedule: [],
     },
+    transporter: defaultTransporterState(),
   };
+}
+
+const WAYNE_COMPANY = "Wayne Transport";
+
+function rftForRequest(request: RequestDetails): TransportRft {
+  return {
+    ...demoTransportRft,
+    pickup: request.location,
+    livestock: `${request.headCount} ${request.livestockType}`,
+  };
+}
+
+function fallbackWayneQuote(submittedAt: string): TransporterQuoteSubmission {
+  const seededWayne =
+    demoTransportQuotes.find((quote) => quote.company === WAYNE_COMPANY) ??
+    demoTransportQuotes[0];
+  return {
+    totalPrice: seededWayne?.price ?? "$2,200",
+    availability: `Available ${demoPrimaryTransportJob.preferredDate}`,
+    estimatedArrival: "1:10 PM",
+    equipment: demoPrimaryTransportJob.equipmentRequirement,
+    notes: "Quoted against the access, loading and receiving details confirmed by all three parties.",
+    submittedAt,
+  };
+}
+
+function sharedTransportStatus(step: TransporterMovementStep): TransportStatus {
+  return (
+    TRANSPORTER_MOVEMENT_STEPS.find((item) => item.key === step)?.sharedStatus ??
+    "booked"
+  );
 }
 
 /**
@@ -239,10 +366,17 @@ export function buildPaymentSchedule(
  * Derive sensible values so the Live Agreement screen works for them too.
  */
 function withCompleteStateBackfill(state: WorkflowState): WorkflowState {
-  const a = state.agreement;
-  if (!a.reviewAccepted && !a.transportArranged) return state;
-  return {
+  const normalisedState: WorkflowState = {
     ...state,
+    transporter: {
+      ...defaultTransporterState(),
+      ...state.transporter,
+    },
+  };
+  const a = normalisedState.agreement;
+  if (!a.reviewAccepted && !a.transportArranged) return normalisedState;
+  return {
+    ...normalisedState,
     agreement: {
       ...a,
       acceptedAt: a.acceptedAt ?? (a.reviewAccepted ? a.lastUpdated : null),
@@ -273,6 +407,13 @@ type WorkflowContextValue = {
   proposePaymentTerms: (value: string, from: "James" | "John") => void;
   acceptPaymentTerms: () => void;
   sendRft: () => void;
+  selectTransporterJob: (jobId: string) => void;
+  startTransporterDiscussion: (jobId: string) => void;
+  confirmTransporterDiscussion: () => void;
+  submitTransporterQuote: (quote: TransporterQuoteDraft) => void;
+  awardTransporterJob: () => void;
+  startTransporterMovement: () => TransporterMovementStep | null;
+  advanceTransporterMovement: () => TransporterMovementStep | null;
   acceptTransport: (company: string, price: string) => void;
   /**
    * Move the booked transport to its next stage (picked up → en route →
@@ -311,6 +452,10 @@ export function PaddockmeWorkflowProvider({
           withCompleteStateBackfill({
             request: { ...prev.request, ...parsed.request },
             agreement: { ...prev.agreement, ...parsed.agreement },
+            transporter: {
+              ...prev.transporter,
+              ...parsed.transporter,
+            },
           }),
         );
       }
@@ -419,7 +564,179 @@ export function PaddockmeWorkflowProvider({
     });
   }
 
+  function selectTransporterJob(jobId: string) {
+    setState((prev) => ({
+      ...prev,
+      transporter: {
+        ...prev.transporter,
+        selectedJobId: jobId,
+      },
+    }));
+  }
+
+  function startTransporterDiscussion(jobId: string) {
+    setState((prev) => ({
+      ...prev,
+      transporter: {
+        ...prev.transporter,
+        selectedJobId: jobId,
+        discussionStarted: true,
+      },
+    }));
+  }
+
+  function confirmTransporterDiscussion() {
+    setState((prev) => ({
+      ...prev,
+      transporter: {
+        ...prev.transporter,
+        discussionStarted: true,
+        discussionConfirmed: true,
+      },
+    }));
+  }
+
+  function submitTransporterQuote(quote: TransporterQuoteDraft) {
+    const submittedAt = new Date().toISOString();
+    setState((prev) => ({
+      ...prev,
+      agreement: {
+        ...prev.agreement,
+        transportRequestSent: true,
+        transportRft: prev.agreement.transportRft ?? rftForRequest(prev.request),
+        lastUpdated: submittedAt,
+      },
+      transporter: {
+        ...prev.transporter,
+        selectedJobId:
+          prev.transporter.selectedJobId ?? demoPrimaryTransportJob.id,
+        stage: "quoted",
+        quote: { ...quote, submittedAt },
+      },
+    }));
+  }
+
+  /**
+   * Script the owner's award of Wayne's submitted quote. The transporter-first
+   * entry begins after the farmer agreement exists, so this single mutation
+   * backfills those accepted terms and the existing owner booking fields too.
+   */
+  function awardTransporterJob() {
+    const awardedAt = new Date().toISOString();
+    setState((prev) => {
+      const rate = prev.agreement.rate ?? SUGGESTED_RATE;
+      const datesLabel = prev.agreement.datesLabel ?? SUGGESTED_DATES_LABEL;
+      const paymentTerms =
+        prev.agreement.paymentTerms ?? SUGGESTED_PAYMENT_TERMS;
+      const quote =
+        prev.transporter.quote ?? fallbackWayneQuote(awardedAt);
+      return {
+        ...prev,
+        agreement: {
+          ...prev.agreement,
+          rate,
+          priceAgreed: true,
+          pendingRate: null,
+          datesLabel,
+          datesConfirmed: true,
+          pendingDates: null,
+          paymentTerms,
+          paymentTermsConfirmed: true,
+          pendingPaymentTerms: null,
+          transportRequestSent: true,
+          transportRft: prev.agreement.transportRft ?? rftForRequest(prev.request),
+          transportCompany: WAYNE_COMPANY,
+          transportPrice: quote.totalPrice,
+          transportArranged: true,
+          reviewAccepted: true,
+          acceptedAt: prev.agreement.acceptedAt ?? awardedAt,
+          transportStatus: "booked",
+          transportPickupDate: demoPrimaryTransportJob.preferredDate,
+          paymentSchedule:
+            prev.agreement.paymentSchedule.length > 0
+              ? prev.agreement.paymentSchedule
+              : buildPaymentSchedule(paymentTerms, datesLabel),
+          lastUpdated: awardedAt,
+        },
+        transporter: {
+          ...prev.transporter,
+          selectedJobId: demoPrimaryTransportJob.id,
+          discussionStarted: true,
+          discussionConfirmed: true,
+          stage: "awarded",
+          quote,
+          awardedAt,
+          movementStep: null,
+          completedAt: null,
+          deliveredHeadCount: null,
+          invoiceStatus: "not_ready",
+        },
+      };
+    });
+  }
+
+  function startTransporterMovement(): TransporterMovementStep | null {
+    if (
+      state.transporter.stage !== "awarded" ||
+      state.transporter.movementStep !== null
+    ) {
+      return null;
+    }
+    const first = TRANSPORTER_MOVEMENT_STEPS[0]?.key ?? null;
+    if (!first) return null;
+    const now = new Date().toISOString();
+    setState((prev) => ({
+      ...prev,
+      agreement: {
+        ...prev.agreement,
+        transportStatus: sharedTransportStatus(first),
+        lastUpdated: now,
+      },
+      transporter: {
+        ...prev.transporter,
+        stage: "active",
+        movementStep: first,
+      },
+    }));
+    return first;
+  }
+
+  function advanceTransporterMovement(): TransporterMovementStep | null {
+    const current = state.transporter.movementStep;
+    if (state.transporter.stage !== "active" || !current) return null;
+    const currentIndex = TRANSPORTER_MOVEMENT_STEPS.findIndex(
+      (item) => item.key === current,
+    );
+    const next = TRANSPORTER_MOVEMENT_STEPS[currentIndex + 1]?.key ?? null;
+    if (!next) return null;
+
+    const now = new Date().toISOString();
+    const completed = next === "delivery_complete";
+    setState((prev) => ({
+      ...prev,
+      agreement: {
+        ...prev.agreement,
+        transportStatus: sharedTransportStatus(next),
+        lastUpdated: now,
+      },
+      transporter: {
+        ...prev.transporter,
+        stage: completed ? "completed" : "active",
+        movementStep: next,
+        completedAt: completed ? now : prev.transporter.completedAt,
+        deliveredHeadCount: completed
+          ? prev.request.headCount
+          : prev.transporter.deliveredHeadCount,
+        invoiceStatus: completed
+          ? "invoice_ready"
+          : prev.transporter.invoiceStatus,
+      },
+    }));
+    return next;
+  }
+
   function acceptTransport(company: string, price: string) {
+    const acceptedAt = new Date().toISOString();
     setState((prev) => ({
       ...prev,
       agreement: {
@@ -431,8 +748,25 @@ export function PaddockmeWorkflowProvider({
         transportPickupDate:
           prev.agreement.transportRft?.preferredDate ??
           demoTransportRft.preferredDate,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: acceptedAt,
       },
+      transporter:
+        company === WAYNE_COMPANY
+          ? {
+              ...prev.transporter,
+              selectedJobId: demoPrimaryTransportJob.id,
+              discussionStarted: true,
+              discussionConfirmed: true,
+              stage: "awarded",
+              quote:
+                prev.transporter.quote ?? fallbackWayneQuote(acceptedAt),
+              awardedAt: prev.transporter.awardedAt ?? acceptedAt,
+              movementStep: null,
+              completedAt: null,
+              deliveredHeadCount: null,
+              invoiceStatus: "not_ready",
+            }
+          : prev.transporter,
     }));
   }
 
@@ -444,13 +778,40 @@ export function PaddockmeWorkflowProvider({
     if (!state.agreement.transportArranged || !current) return null;
     const next = nextTransportStatus(current);
     if (!next) return null;
+    const now = new Date().toISOString();
+    const mirroredStep: TransporterMovementStep =
+      next === "picked_up"
+        ? "livestock_loaded"
+        : next === "en_route"
+          ? "en_route"
+          : "delivery_complete";
     setState((prev) => ({
       ...prev,
       agreement: {
         ...prev.agreement,
         transportStatus: next,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: now,
       },
+      transporter:
+        prev.agreement.transportCompany === WAYNE_COMPANY
+          ? {
+              ...prev.transporter,
+              selectedJobId: demoPrimaryTransportJob.id,
+              stage: next === "delivered" ? "completed" : "active",
+              awardedAt: prev.transporter.awardedAt ?? now,
+              movementStep: mirroredStep,
+              completedAt:
+                next === "delivered" ? now : prev.transporter.completedAt,
+              deliveredHeadCount:
+                next === "delivered"
+                  ? prev.request.headCount
+                  : prev.transporter.deliveredHeadCount,
+              invoiceStatus:
+                next === "delivered"
+                  ? "invoice_ready"
+                  : prev.transporter.invoiceStatus,
+            }
+          : prev.transporter,
     }));
     return next;
   }
@@ -482,11 +843,7 @@ export function PaddockmeWorkflowProvider({
       agreement: {
         ...prev.agreement,
         transportRequestSent: true,
-        transportRft: {
-          ...demoTransportRft,
-          pickup: prev.request.location,
-          livestock: `${prev.request.headCount} ${prev.request.livestockType}`,
-        },
+        transportRft: rftForRequest(prev.request),
         lastUpdated: new Date().toISOString(),
       },
     }));
@@ -519,6 +876,13 @@ export function PaddockmeWorkflowProvider({
       proposePaymentTerms,
       acceptPaymentTerms,
       sendRft,
+      selectTransporterJob,
+      startTransporterDiscussion,
+      confirmTransporterDiscussion,
+      submitTransporterQuote,
+      awardTransporterJob,
+      startTransporterMovement,
+      advanceTransporterMovement,
       acceptTransport,
       advanceTransport,
       acceptReview,

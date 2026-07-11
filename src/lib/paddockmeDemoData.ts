@@ -47,6 +47,12 @@ function formatDateInput(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function dateFromAgreementStart(offsetDays: number): Date {
+  const date = new Date(agreementStart);
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date;
+}
+
 const agreementStart = firstOfNextMonth();
 const agreementEnd = (() => {
   const d = new Date(agreementStart);
@@ -252,6 +258,145 @@ export const demoTransportRft: TransportRft = {
 };
 
 /**
+ * Transporter-facing presentation data layered over the canonical RFT facts.
+ * The primary job deliberately spreads `demoTransportRft`, so the transporter
+ * and farmer journeys cannot drift on route, livestock, distance or date.
+ */
+export type DemoTransportJob = TransportRft & {
+  headCount: number;
+  livestockType: string;
+  pickupRegion: string;
+  destinationRegion: string;
+  dateFlexibility: string;
+  pickupAccess: string;
+  deliveryAccess: string;
+  loadingArrangements: string;
+  unloadingArrangements: string;
+  equipmentRequirement: string;
+  quoteCloses: string;
+  discussionCount: number;
+  commercialDetails: string;
+  outstandingQuestions: string[];
+  featured: boolean;
+};
+
+export const demoPrimaryTransportJob: DemoTransportJob = {
+  ...demoTransportRft,
+  headCount: demoRequest.headCount,
+  livestockType: demoRequest.livestockType,
+  pickupRegion: "Dubbo district",
+  destinationRegion: "Bungendore district",
+  dateFlexibility: "Pickup time flexible by 2 hours",
+  pickupAccess: "All-weather gravel access to steel cattle yards",
+  deliveryAccess: "Use the western gate; full-size stock crate access confirmed",
+  loadingArrangements: "James will have the cattle yarded and drafted before 6:30 AM",
+  unloadingArrangements: "John will meet the truck at the western gate and open the receiving yards",
+  equipmentRequirement: "Full-size stock crate suitable for 120 cattle",
+  quoteCloses: "Quotes close today at 5:00 PM",
+  discussionCount: 7,
+  commercialDetails: "Quote the complete movement including GST; no overnight holding required",
+  outstandingQuestions: [],
+  featured: true,
+};
+
+export const demoTransportJobs: DemoTransportJob[] = [
+  demoPrimaryTransportJob,
+  {
+    id: "rft-2047",
+    agreementId: "2047",
+    pickup: "Orange NSW",
+    destination: "Yass NSW",
+    distanceKm: 265,
+    livestock: "86 Hereford Cattle",
+    preferredDate: formatAu(dateFromAgreementStart(3), "long"),
+    access: "B-double suitable",
+    status: "open_for_quotes",
+    headCount: 86,
+    livestockType: "Cattle",
+    pickupRegion: "Orange district",
+    destinationRegion: "Yass district",
+    dateFlexibility: "Flexible by 1 day",
+    pickupAccess: "Sealed road to the property entrance; firm gravel to the yards",
+    deliveryAccess: "B-double access with a wide turnaround beside the yards",
+    loadingArrangements: "Vendor will yard and draft the mob before arrival",
+    unloadingArrangements: "Receiver and stock agent will meet the carrier",
+    equipmentRequirement: "Cattle crate with two secure compartments",
+    quoteCloses: "Quotes close tomorrow at 12:00 PM",
+    discussionCount: 2,
+    commercialDetails: "Flat-rate quote including GST",
+    outstandingQuestions: ["Confirm the preferred morning loading window"],
+    featured: false,
+  },
+  {
+    id: "rft-3108",
+    agreementId: "3108",
+    pickup: "Mudgee NSW",
+    destination: "Cowra NSW",
+    distanceKm: 235,
+    livestock: "42 Angus Cattle",
+    preferredDate: formatAu(dateFromAgreementStart(6), "long"),
+    access: "Single trailer recommended",
+    status: "open_for_quotes",
+    headCount: 42,
+    livestockType: "Cattle",
+    pickupRegion: "Mudgee district",
+    destinationRegion: "Cowra district",
+    dateFlexibility: "Flexible across a 2-day window",
+    pickupAccess: "Short unsealed approach; dry-weather access confirmed",
+    deliveryAccess: "Single trailer can reverse directly to the unloading ramp",
+    loadingArrangements: "Cattle will be held overnight in the pickup yards",
+    unloadingArrangements: "Receiver available from 1:00 PM",
+    equipmentRequirement: "Single cattle trailer; no road train required",
+    quoteCloses: "Quotes close in 2 days",
+    discussionCount: 0,
+    commercialDetails: "Quote including GST and one hour loading allowance",
+    outstandingQuestions: ["Confirm road condition after forecast rain"],
+    featured: false,
+  },
+];
+
+export type TransportConfirmedDetail = {
+  id: string;
+  label: string;
+  value: string;
+  confirmedBy: string;
+};
+
+/** The practical outcomes Wayne can rely on when preparing his quote. */
+export const demoTransportConfirmedDetails: TransportConfirmedDetail[] = [
+  {
+    id: "pickup-date",
+    label: "Pickup date confirmed",
+    value: `${demoStartDateLabel} at 6:30 AM`,
+    confirmedBy: "James and Wayne",
+  },
+  {
+    id: "receiving-window",
+    label: "Receiving window confirmed",
+    value: "12:30 PM to 2:00 PM",
+    confirmedBy: "John",
+  },
+  {
+    id: "western-gate",
+    label: "Western gate access confirmed",
+    value: "All-weather approach directly to the receiving yards",
+    confirmedBy: "John",
+  },
+  {
+    id: "loading-ramp",
+    label: "Loading ramp confirmed",
+    value: "Steel cattle yards and loading ramp ready before pickup",
+    confirmedBy: "James",
+  },
+  {
+    id: "full-size-crate",
+    label: "Full-size stock crate confirmed",
+    value: "Gate, approach and turnaround suit Wayne's full-size crate",
+    confirmedBy: "John and Wayne",
+  },
+];
+
+/**
  * Three-way transport coordination room for Agistment #1023 — the livestock
  * owner, the landowner and the chosen transporter sorting out the practical
  * detail (access, yards, NVDs, timing) before the quote is accepted.
@@ -318,27 +463,135 @@ export function transportRoomSeedMessages(
       sender: "Wayne Transport",
       role: "transporter",
       time: "9:02 AM",
-      text: "G'day all. Is Green Hills road-train accessible, and is there room to turn an A-double around near the yards?",
+      text: "G'day James and John. Can a full-size stock crate get through to the Green Hills yards, and which gate gives me the safest approach?",
     },
     {
       sender: "John — Green Hills Farm",
       role: "landowner",
       time: "9:08 AM",
-      text: "Yep — road train suitable, all-weather access right to the yards and plenty of room to turn around. Ramp and yards will handle the mob no worries.",
+      text: "Use the western gate. It's an all-weather approach straight to the receiving yards, and the turnaround comfortably takes a full-size crate.",
+    },
+    {
+      sender: "Wayne Transport",
+      role: "transporter",
+      time: "9:11 AM",
+      text: `Thanks John. Can we lock pickup at 6:30am on ${demoStartDayMonth}? That keeps the run inside your receiving window.`,
     },
     {
       sender: demoLivestockOwner.name,
       role: "owner",
       time: "9:15 AM",
-      text: `I'll have the ${mobText} yarded and drafted the afternoon before so they're ready for an early pickup.`,
+      text: `Confirmed. I'll have the ${mobText} yarded and drafted the afternoon before, with the steel loading ramp ready for 6:30am.`,
     },
     {
       sender: "Wayne Transport",
       role: "transporter",
-      time: "9:21 AM",
-      text: `Perfect. I'll have the truck at ${mob.location} for a 6:30am pickup on ${demoStartDayMonth}. NVDs travelling with the mob and we'll be right to go.`,
+      time: "9:18 AM",
+      text: "John, will a 12:30pm to 2:00pm arrival work for unloading if traffic runs to plan?",
+    },
+    {
+      sender: "John — Green Hills Farm",
+      role: "landowner",
+      time: "9:20 AM",
+      text: "Yes, that receiving window is confirmed. I'll meet you at the western gate and have the unloading yards open.",
+    },
+    {
+      sender: "Wayne Transport",
+      role: "transporter",
+      time: "9:23 AM",
+      text: `Perfect. Access, loading and timing are clear. I'll quote the ${mob.location} to Green Hills movement on that confirmed plan.`,
     },
   ];
+}
+
+export type DemoTransporterMovementStep =
+  | "heading_to_pickup"
+  | "arrived_at_pickup"
+  | "livestock_loaded"
+  | "departed"
+  | "en_route"
+  | "arrived_at_property"
+  | "unloaded"
+  | "delivery_complete";
+
+export type TransporterSharedUpdate = {
+  sender: string;
+  role: TransportRoomMessage["role"];
+  text: string;
+};
+
+/**
+ * Wayne's fine-grained road updates. The transporter room appends these to
+ * the same `transport-room-1023` thread used by both farmers, so one update
+ * informs all three parties and remains part of the completed job record.
+ */
+export function transporterMovementUpdateMessages(
+  mob: MobDetails,
+): Record<DemoTransporterMovementStep, TransporterSharedUpdate[]> {
+  const mobText = describeMob(mob.headCount, mob.livestockType);
+  return {
+    heading_to_pickup: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `Heading to the ${mob.location} pickup now. ETA 6:20am, ten minutes ahead of the confirmed loading time.`,
+      },
+    ],
+    arrived_at_pickup: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: "Arrived at pickup. Access is clear and James has the mob ready in the yards.",
+      },
+    ],
+    livestock_loaded: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `${mobText} loaded in good order. Head count checked and NVDs are travelling with the truck.`,
+      },
+    ],
+    departed: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: "Departed pickup. The load is settled and our current ETA at Green Hills is 1:10pm.",
+      },
+    ],
+    en_route: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: "En route and making good time. No route issues; I'll update again when we're thirty minutes out.",
+      },
+    ],
+    arrived_at_property: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: "Arrived at Green Hills. John has opened the western gate and I'm moving through to the receiving yards.",
+      },
+    ],
+    unloaded: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `${mobText} unloaded into the receiving yards. John and I are completing the final count and handover.`,
+      },
+    ],
+    delivery_complete: [
+      {
+        sender: "Wayne Transport",
+        role: "transporter",
+        text: `Delivery complete — ${mobText} off-loaded into the yards at Green Hills Farm in good order. Final count confirmed.`,
+      },
+      {
+        sender: "John — Green Hills Farm",
+        role: "landowner",
+        text: "Arrival confirmed. The mob is settled, water and feed are checked, and the shared movement record is complete.",
+      },
+    ],
+  };
 }
 
 /**
