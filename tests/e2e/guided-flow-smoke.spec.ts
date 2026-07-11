@@ -28,7 +28,7 @@ const routeChecks = [
   },
   {
     path: "/requests/sent",
-    text: ["Request Sent!", "Go to My Workspace", "John Smith"],
+    text: ["Request Sent!", "Continue as John", "John Smith"],
   },
   {
     path: "/landowner/requests/1023",

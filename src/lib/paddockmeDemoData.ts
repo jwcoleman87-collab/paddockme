@@ -16,21 +16,41 @@ import { paddockmeImages } from "./paddockmeImages";
  * 2025"). Labels only change at month rollover, which keeps SSR and
  * client renders matching.
  */
+const DEMO_TIME_ZONE = "Australia/Sydney";
+
 function firstOfNextMonth(): Date {
-  const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + 1);
-  return d;
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: DEMO_TIME_ZONE,
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(new Date());
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+
+  // `month` is 1-based, which intentionally points Date.UTC at next month.
+  return new Date(Date.UTC(year, month, 1));
 }
 
 function formatAu(d: Date, month: "short" | "long"): string {
-  return d.toLocaleDateString("en-AU", { day: "numeric", month, year: "numeric" });
+  return d.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month,
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function formatDateInput(d: Date): string {
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 const agreementStart = firstOfNextMonth();
 const agreementEnd = (() => {
   const d = new Date(agreementStart);
-  d.setDate(d.getDate() + 90);
+  d.setUTCDate(d.getUTCDate() + 90);
   return d;
 })();
 
@@ -38,12 +58,15 @@ const agreementEnd = (() => {
 export const demoStartDateLabel = formatAu(agreementStart, "long");
 /** e.g. "30 Oct 2026" — short form end of the agistment window. */
 export const demoEndDateLabel = formatAu(agreementEnd, "short");
+/** ISO date used by the request form so its default matches the agreement. */
+export const demoEndDateInput = formatDateInput(agreementEnd);
 /** e.g. "1 Aug 2026 – 30 Oct 2026" — the negotiation dates offer. */
 export const demoDatesRangeLabel = `${formatAu(agreementStart, "short")} – ${demoEndDateLabel}`;
 /** e.g. "1 August" — for conversational demo copy. */
 export const demoStartDayMonth = agreementStart.toLocaleDateString("en-AU", {
   day: "numeric",
   month: "long",
+  timeZone: "UTC",
 });
 
 export const demoLivestockOwner = {
@@ -69,7 +92,7 @@ export const demoRequest = {
   durationLabel: "For 90 days",
   startDate: demoStartDateLabel,
   endDate: demoEndDateLabel,
-  needFeedUntil: agreementEnd.toLocaleDateString("en-AU"),
+  needFeedUntil: agreementEnd.toLocaleDateString("en-AU", { timeZone: "UTC" }),
   distanceKm: "350 km",
 };
 

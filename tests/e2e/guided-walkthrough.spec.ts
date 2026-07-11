@@ -42,6 +42,16 @@ test("owner completes the full journey through delivery, then resets", async ({
 
   // 3. Request — requirements step.
   await expect(page.getByText("Feed Requirements")).toBeVisible();
+  const requestEndDate = await page
+    .locator('input[name="needUntil"]')
+    .inputValue();
+  const requestEndDateLabel = new Date(
+    `${requestEndDate}T00:00:00`,
+  ).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
   await page.getByRole("link", { name: /Find Matches/ }).click();
 
   // 4. Matches → property detail.
@@ -54,19 +64,38 @@ test("owner completes the full journey through delivery, then resets", async ({
     page.getByRole("heading", { name: "Green Hills Farm" }),
   ).toBeVisible();
 
-  // 5. Request a discussion → landowner has accepted (demo) → workspace.
+  // 5. Request a discussion → switch to the landowner → accept → workspace.
   await page.getByRole("link", { name: /Request Discussion/ }).click();
   await expect(page.getByText("Request Sent!")).toBeVisible();
-  await page.getByRole("link", { name: /Go to My Workspace/ }).click();
+  await page.getByRole("link", { name: /Continue as John/ }).click();
+  await expect(page.getByText("New Request Received")).toBeVisible();
+  await page.getByRole("link", { name: /Accept Discussion/ }).click();
 
   // 6. Workspace → agreement. Seeded chat must describe the same mob the
   //    request carries (120 cattle), not a contradictory backstory.
   await expect(page.getByText("120 Cattle").first()).toBeVisible();
   await expect(page.getByText(/120 cattle at Dubbo NSW/).first()).toBeVisible();
+  await expect(page.getByText("2 participants")).toBeVisible();
+
+  const persistedMessage = "Yards are ready for the demo run.";
+  await page
+    .getByRole("textbox", { name: "Write a message" })
+    .fill(persistedMessage);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByText(persistedMessage)).toBeVisible();
+  const sentMessage = page.locator("article").filter({ hasText: persistedMessage });
+  await expect(sentMessage.getByText("James Coleman")).toBeVisible();
+  await expect(sentMessage.getByText("Livestock owner")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(persistedMessage)).toBeVisible();
+
   await page.getByRole("link", { name: /Continue to Agreement/ }).click();
 
   // 7. Negotiate all three terms.
   await expect(page.getByText("Agree the terms")).toBeVisible();
+  await expect(
+    page.getByText(requestEndDateLabel, { exact: false }).first(),
+  ).toBeVisible();
   await acceptAllTerms(page);
 
   // Refresh persistence: agreed terms survive a reload.
@@ -98,6 +127,8 @@ test("owner completes the full journey through delivery, then resets", async ({
   await expect(
     page.getByText("Everything's agreed and transport is booked."),
   ).toBeVisible();
+  await expect(page.getByText("3 participants")).toBeVisible();
+  await expect(page.getByText(persistedMessage)).toBeVisible();
   await page.getByRole("link", { name: /View Live Agreement/ }).click();
   await expect(
     page.getByRole("heading", { name: "Live Agreement" }),
@@ -139,6 +170,16 @@ test("owner completes the full journey through delivery, then resets", async ({
   await expect(
     page.getByText("Find Feed. Find Stock. Move Livestock."),
   ).toBeVisible();
+  const remainingThreadKeys = await page.evaluate(() =>
+    Object.keys(window.localStorage).filter((key) =>
+      key.startsWith("paddockme-demo-thread:"),
+    ),
+  );
+  expect(remainingThreadKeys).toEqual([]);
+
+  await page.goto("/workspaces/1023");
+  await expect(page.getByText(persistedMessage)).toHaveCount(0);
+  await expect(page.getByText("2 participants")).toBeVisible();
 
   // Direct navigation after reset must not expose a half-reset deal.
   await page.goto("/transport/quotes/1023");

@@ -19,6 +19,7 @@ import {
 } from "react";
 import {
   demoDatesRangeLabel,
+  demoEndDateInput,
   demoTransportRft,
   type TransportRft,
 } from "./paddockmeDemoData";
@@ -142,19 +143,13 @@ export type WorkflowState = {
   agreement: AgreementState;
 };
 
-function defaultNeedUntil(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 60);
-  return d.toISOString().slice(0, 10);
-}
-
 function defaultState(): WorkflowState {
   return {
     request: {
       livestockType: "Cattle",
       headCount: 120,
       location: "Dubbo NSW",
-      needUntil: defaultNeedUntil(),
+      needUntil: demoEndDateInput,
       distanceKm: "350 km",
       budget: "",
       specialRequirements: "",
