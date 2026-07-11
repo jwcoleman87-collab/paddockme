@@ -25,7 +25,6 @@ export const paddockmeImages = {
   agreementReviewSide: "/images/paddockme/agreement-review-cattle.jpg",
   transportQuotesSide: "/images/paddockme/transport-quotes-truck.jpg",
   footerFarmBanner: "/images/paddockme/footer-australian-farm.jpg",
-  journeyBannerGate: "/images/paddockme/journey-banner-gate.jpg",
   journeyStepRequest: "/images/paddockme/journey-step-1-request.jpg",
   journeyStepMatch: "/images/paddockme/journey-step-2-match.jpg",
   journeyStepAgree: "/images/paddockme/journey-step-3-agree.jpg",

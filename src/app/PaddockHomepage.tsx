@@ -211,28 +211,10 @@ export function PaddockHomepage() {
 
         <section id="about" className="px-4 py-12 sm:px-6 lg:py-16">
           <div className="mx-auto max-w-6xl">
-            <div className="relative overflow-hidden border border-pm-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={paddockmeImages.journeyBannerGate}
-                alt="Farmer posting his needs from the paddock gate at sunset, sheep grazing behind"
-                loading="lazy"
-                className="h-72 w-full object-cover object-[center_30%] sm:h-80 lg:h-[26rem]"
-              />
-              <div
-                className="absolute inset-0 bg-gradient-to-b from-pm-green-900/75 via-pm-green-900/10 to-pm-green-900/45"
-                aria-hidden
-              />
-              <div className="absolute left-0 top-0 p-6 sm:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-pm-gold-500">
-                  It starts at the gate
-                </p>
-                <h2 className="mt-2 max-w-xl text-2xl font-extrabold text-white sm:text-3xl">
-                  Calm on screen. Clear in the paddock.
-                </h2>
-              </div>
-            </div>
-            <div className="relative z-10 mt-4 grid gap-4 md:-mt-16 md:grid-cols-3 md:px-8">
+            <h2 className="max-w-2xl text-2xl font-extrabold sm:text-3xl">
+              Calm on screen. Clear in the paddock.
+            </h2>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
               {assurances.map(({ title, detail, icon: Icon }) => (
                 <article key={title} className="border border-pm-border bg-white p-5 shadow-sm">
                   <Icon className="h-6 w-6 text-pm-green-900" aria-hidden />
