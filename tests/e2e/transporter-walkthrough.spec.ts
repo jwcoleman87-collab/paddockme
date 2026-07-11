@@ -73,12 +73,10 @@ test("Wayne completes the transporter journey, persists it, and resets cleanly",
 
   // 1. The homepage transport choice opens Wayne's own Available-jobs lane.
   await page.goto("/");
-  const transportEntry = page.getByRole("link", {
-    name: /View available jobs/i,
-  });
-  await expect(page.getByText("Find transport work", { exact: true })).toBeVisible();
+  const transportEntry = page.getByRole("link", { name: /Transport/i });
+  await expect(page.getByText("Transport", { exact: true })).toBeVisible();
   await expect(
-    page.getByText(/Browse livestock movements, discuss jobs with both farmers/i),
+    page.getByText("Find transport jobs", { exact: true }),
   ).toBeVisible();
   await expectMobileFit(page, transportEntry);
   await transportEntry.click();
@@ -374,7 +372,7 @@ test("Wayne completes the transporter journey, persists it, and resets cleanly",
   expect(resetStorage.hasQuoteNote).toBe(false);
 
   // The entry starts Wayne cleanly on Available again; later buckets are 0.
-  await page.getByRole("link", { name: /View available jobs/i }).click();
+  await page.getByRole("link", { name: /Transport/i }).click();
   await expect(page).toHaveURL(/\/transport\/demo\/?$/);
   await expect(page.getByLabel("0 my quotes")).toBeVisible();
   await expect(page.getByLabel("0 awarded")).toBeVisible();

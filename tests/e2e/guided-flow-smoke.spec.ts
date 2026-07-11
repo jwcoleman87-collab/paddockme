@@ -7,8 +7,8 @@ const routeChecks = [
       "Find Feed. Find Stock. Move Livestock.",
       "I Need Feed",
       "I Have Feed",
-      "Find transport work",
-      "View available jobs",
+      "Transport",
+      "Find transport jobs",
     ],
   },
   {
