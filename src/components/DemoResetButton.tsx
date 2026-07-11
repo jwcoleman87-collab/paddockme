@@ -11,7 +11,8 @@ import { runDemoReset } from "@/lib/demoReset";
  * Gives a presenter a one-tap "factory reset" so the next walk-through starts
  * from a clean slate: clears all PaddockME local/session state (inbox unread
  * tracker, in-progress request draft, any legacy persona keys from older
- * builds), signs out of Supabase, and hard-navigates to the public landing.
+ * builds), and hard-navigates to the public landing. Real account and database
+ * state stay untouched.
  *
  * Rendered beside the sign-out control in both the desktop sidebar and the
  * mobile header. The label shows on the desktop sidebar (lg+) and collapses
@@ -27,7 +28,7 @@ export function DemoResetButton() {
   async function resetDemo() {
     if (loading) return;
     const confirmed = window.confirm(
-      "Reset the demo? This clears local demo state and signs you out so the next run-through starts fresh."
+      "Reset the demo? This clears local demo state so the next run-through starts fresh."
     );
     if (!confirmed) return;
 
