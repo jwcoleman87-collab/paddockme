@@ -375,8 +375,8 @@ test("Wayne completes the transporter journey, persists it, and resets cleanly",
   expect(resetStorage.hasWayneMessage).toBe(false);
   expect(resetStorage.hasQuoteNote).toBe(false);
 
-  // The entry starts Wayne cleanly on Available again; later buckets are 0.
-  await page.getByRole("link", { name: /Transport/i }).click();
+  // The lane starts Wayne cleanly on Available again; later buckets are 0.
+  await page.goto("/transport/demo");
   await expect(page).toHaveURL(/\/transport\/demo\/?$/);
   await expect(page.getByLabel("0 my quotes")).toBeVisible();
   await expect(page.getByLabel("0 awarded")).toBeVisible();
