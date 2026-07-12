@@ -109,16 +109,20 @@ function SignUpForm() {
           {emailSent ? (
             <div className="rounded-[8px] border border-sage-deep/10 bg-sage-mist p-6">
               <div className="flex items-center gap-3 text-sage-deep font-medium mb-2">
-                <Mail className="h-5 w-5" />
+                <Mail className="h-5 w-5" aria-hidden />
                 Confirm your email
               </div>
+              <p className="text-sm leading-relaxed text-bark/75">
+                Open the confirmation link we sent to {email}. It will return
+                you to PaddockME to finish your role setup.
+              </p>
               <button
                 type="button"
                 onClick={handleResendConfirmation}
                 disabled={resending}
                 className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[8px] border border-sage-deep/20 px-5 py-2.5 text-sm font-bold text-sage-deep transition hover:bg-warm-white disabled:opacity-60"
               >
-                {resending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resending && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />}
                 Resend confirmation email
               </button>
               {resendMessage && (
@@ -198,7 +202,7 @@ function SignUpForm() {
               </div>
 
               {error && (
-                <p className="text-terra text-sm" role="alert">
+                <p className="rounded-[8px] border border-terra/35 bg-terra-light/50 px-3 py-2 text-sm text-bark" role="alert">
                   {error}
                 </p>
               )}
@@ -208,7 +212,7 @@ function SignUpForm() {
                 disabled={loading}
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-ochre px-5 py-3 font-bold text-bark transition hover:bg-ochre/90 disabled:opacity-60"
               >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />}
                 Continue
               </button>
             </form>

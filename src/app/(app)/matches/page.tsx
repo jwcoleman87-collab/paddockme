@@ -80,11 +80,12 @@ export default function MatchesPage() {
 
   if (loading) {
     return (
-      <PageHeader
-        eyebrow="Matches"
-        title="Loading matches."
-        description="Checking your saved request against live paddock listings."
-      />
+      <div role="status" aria-live="polite" className="animate-pulse space-y-4 motion-reduce:animate-none">
+        <span className="sr-only">Loading matches</span>
+        <div className="h-8 w-2/3 rounded-[8px] bg-sage-mist" aria-hidden />
+        <div className="h-4 w-1/2 rounded-[8px] bg-sage-mist/70" aria-hidden />
+        <div className="h-44 rounded-[8px] bg-sage-mist/55" aria-hidden />
+      </div>
     );
   }
 
@@ -118,10 +119,17 @@ export default function MatchesPage() {
       <RequestSummary request={request} />
 
       {scored.length === 0 ? (
-        <Card className="mt-5 text-center">
+        <Card className="mx-auto mt-5 max-w-2xl px-5 py-8 text-center">
           <h2 className="text-lg font-bold text-sage-deep">
             No paddocks to match yet.
           </h2>
+          <p className="mt-2 text-sm leading-relaxed text-bark/70">
+            Your request is saved. New paddocks will appear here as landowners
+            publish them.
+          </p>
+          <ButtonLink href={listingsHref} variant="secondary" className="mt-4">
+            Browse all paddocks
+          </ButtonLink>
         </Card>
       ) : (
         <div className="mt-5 grid gap-5">
@@ -160,7 +168,7 @@ function buildListingsHref(request: LivestockRequest): string {
 function RequestSummary({ request }: { request: LivestockRequest }) {
   return (
     <Card className="bg-sage-deep text-cream">
-      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-sage-glow/25 bg-sage-dark px-3 py-1 text-xs font-semibold text-sage-glow">
@@ -168,7 +176,7 @@ function RequestSummary({ request }: { request: LivestockRequest }) {
               Active request
             </span>
           </div>
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-xl font-bold sm:text-2xl">
             {request.headCount} {request.breed} {request.stockType}
           </h2>
           <p className="mt-2 max-w-2xl leading-relaxed text-sage-glow">

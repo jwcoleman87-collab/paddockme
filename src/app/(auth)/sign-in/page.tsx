@@ -107,10 +107,21 @@ function SignInForm() {
   if (magicSent) {
     return (
       <div className="rounded-[8px] border border-sage-deep/10 bg-sage-mist p-6">
-        <div className="flex items-center gap-3 text-sage-deep font-medium mb-2">
-          <Mail className="h-5 w-5" />
+        <div className="mb-2 flex items-center gap-3 font-bold text-sage-deep">
+          <Mail className="h-5 w-5" aria-hidden />
           Magic link sent
         </div>
+        <p className="text-sm leading-relaxed text-bark/75">
+          Check your inbox for a secure sign-in link. You can close this page
+          once the email arrives.
+        </p>
+        <button
+          type="button"
+          onClick={() => setMagicSent(false)}
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-sage-deep underline-offset-2 hover:underline"
+        >
+          Use a password instead
+        </button>
       </div>
     );
   }
@@ -156,7 +167,7 @@ function SignInForm() {
       </div>
 
       {error && (
-        <p className="text-terra text-sm" role="alert">
+        <p className="rounded-[8px] border border-terra/35 bg-terra-light/50 px-3 py-2 text-sm text-bark" role="alert">
           {error}
         </p>
       )}
@@ -166,7 +177,7 @@ function SignInForm() {
         disabled={loading}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-sage-deep px-5 py-3 font-bold text-warm-white transition hover:bg-sage-dark disabled:opacity-60"
       >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {loading && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />}
         Sign in
       </button>
 
@@ -181,7 +192,7 @@ function SignInForm() {
         disabled={loading}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] border border-sage-deep/20 px-5 py-3 font-bold text-sage-deep transition hover:bg-sage-mist disabled:opacity-60"
       >
-        <Mail className="h-4 w-4" />
+        <Mail className="h-4 w-4" aria-hidden />
         Send me a magic link
       </button>
     </form>
