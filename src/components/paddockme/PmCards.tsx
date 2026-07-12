@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, MoveRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PmAvatar } from "./PmAvatar";
 
 /* ---------- Rating ---------- */
 
@@ -179,25 +180,27 @@ export function OwnerCard({
   name,
   memberSince,
   rating,
+  avatar,
   action,
 }: {
   name: string;
   memberSince: string;
   rating: number;
+  avatar?: string;
   action?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-pm-border bg-white px-5 py-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <span
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-pm-green-900 text-base font-bold text-white"
-          aria-hidden
-        >
-          {name
+        <PmAvatar
+          src={avatar}
+          initials={name
             .split(" ")
             .map((p) => p[0])
             .join("")}
-        </span>
+          className="h-11 w-11 text-base"
+          fallbackClassName="bg-pm-green-900 text-white"
+        />
         <div>
           <p className="text-sm font-bold text-pm-charcoal">{name}</p>
           <p className="text-xs text-pm-muted">

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
+import { PmAvatar } from "@/components/paddockme/PmAvatar";
+import { paddockmeImages } from "@/lib/paddockmeImages";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { ChecklistPanel } from "@/components/paddockme/ChecklistPanel";
 import { GuidedDemoResetAction } from "@/components/paddockme/GuidedDemo";
@@ -49,6 +51,11 @@ const initialsByRole: Record<RoomRole, string> = {
   owner: "JC",
   landowner: "GH",
   transporter: "WT",
+};
+const avatarByRole: Record<RoomRole, string> = {
+  owner: paddockmeImages.avatarJames,
+  landowner: paddockmeImages.avatarJohn,
+  transporter: paddockmeImages.avatarWayne,
 };
 
 /**
@@ -228,15 +235,11 @@ export default function TransportRoomPage() {
                 key={p.name}
                 className="flex items-center gap-2.5 rounded-full border border-pm-border bg-white px-3 py-1.5 shadow-sm"
               >
-                <span
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                    roleAvatar[role],
-                  )}
-                  aria-hidden
-                >
-                  {p.initials}
-                </span>
+                <PmAvatar
+                  src={p.avatar}
+                  initials={p.initials}
+                  fallbackClassName={roleAvatar[role]}
+                />
                 <span className="pr-1">
                   <span className="block text-sm font-bold leading-tight text-pm-charcoal">
                     {p.name}
@@ -313,15 +316,11 @@ export default function TransportRoomPage() {
                       mine ? "flex-row-reverse" : "flex-row",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                        roleAvatar[m.role],
-                      )}
-                      aria-hidden
-                    >
-                      {initialsByRole[m.role]}
-                    </span>
+                    <PmAvatar
+                      src={avatarByRole[m.role]}
+                      initials={initialsByRole[m.role]}
+                      fallbackClassName={roleAvatar[m.role]}
+                    />
                     <div className={cn("max-w-[80%]", mine && "text-right")}>
                       <p className="text-[11px] text-pm-muted">
                         {m.sender} · {m.time}
