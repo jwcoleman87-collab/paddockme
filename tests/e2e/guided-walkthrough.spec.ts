@@ -32,9 +32,9 @@ test("owner completes the full journey through delivery, then resets", async ({
   // 1. Homepage → start a request.
   await page.goto("/");
   await expect(
-    page.getByText("Find Feed. Find Stock. Move Livestock."),
+    page.getByText("Match stock with feed. Then get them there."),
   ).toBeVisible();
-  await page.getByRole("link", { name: /I Need Feed/i }).click();
+  await page.getByRole("link", { name: /I need feed/i }).click();
 
   // 2. Request — stock step (defaults: 120 Cattle at Dubbo NSW).
   await expect(page.getByText("What stock do you have?")).toBeVisible();

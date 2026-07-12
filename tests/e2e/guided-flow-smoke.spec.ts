@@ -4,11 +4,11 @@ const routeChecks = [
   {
     path: "/",
     text: [
-      "Find Feed. Find Stock. Move Livestock.",
-      "I Need Feed",
-      "I Have Feed",
-      "Transport",
-      "Find transport jobs",
+      "Match stock with feed. Then get them there.",
+      "I need feed",
+      "I have grazing",
+      "I move livestock",
+      "Review Requests for Transport",
     ],
   },
   {

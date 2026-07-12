@@ -138,7 +138,7 @@ export function PaddockHomepage() {
 
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               <RoleChoiceCard
-                href="/request/new"
+                href="/requests/new"
                 icon={<Search className="h-6 w-6" aria-hidden />}
                 title="I need feed"
                 subtitle="Create an agistment request"

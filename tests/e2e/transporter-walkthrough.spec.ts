@@ -71,15 +71,19 @@ test("Wayne completes the transporter journey, persists it, and resets cleanly",
   test.setTimeout(180_000);
   await page.setViewportSize(VIEWPORT);
 
-  // 1. The homepage transport choice opens Wayne's own Available-jobs lane.
+  // 1. The homepage carrier card routes to the live RFT board; Wayne's guided
+  //    Available-jobs lane stays at /transport/demo for this walkthrough.
   await page.goto("/");
-  const transportEntry = page.getByRole("link", { name: /Transport/i });
-  await expect(page.getByText("Transport", { exact: true })).toBeVisible();
+  const transportEntry = page.getByRole("link", { name: /I move livestock/i });
   await expect(
-    page.getByText("Find transport jobs", { exact: true }),
+    page.getByText("I move livestock", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Review Requests for Transport", { exact: true }),
   ).toBeVisible();
   await expectMobileFit(page, transportEntry);
-  await transportEntry.click();
+  await expect(transportEntry).toHaveAttribute("href", "/transport/jobs");
+  await page.goto("/transport/demo");
 
   await expect(page).toHaveURL(/\/transport\/demo\/?$/);
   await expect(
