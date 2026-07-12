@@ -20,7 +20,7 @@ export function PageHeader({
         className
       )}
     >
-      <div className="min-w-0 max-w-[21.5rem] sm:max-w-3xl">
+      <div className="min-w-0 max-w-3xl">
         {eyebrow && (
           <p className="mb-3 inline-flex rounded-md border border-sage-deep/10 bg-sage-mist px-3 py-1 text-xs font-bold text-sage-deep">
             {eyebrow}
@@ -30,12 +30,12 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone sm:text-base">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bark/70 sm:text-base">
             {description}
           </p>
         )}
       </div>
-      {action && <div className="max-w-full shrink-0">{action}</div>}
+      {action && <div className="w-full max-w-full shrink-0 sm:w-auto">{action}</div>}
     </header>
   );
 }

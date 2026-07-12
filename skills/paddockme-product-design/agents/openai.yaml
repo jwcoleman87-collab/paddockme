@@ -1,0 +1,5 @@
+interface:
+  display_name: "PaddockME Product Design"
+  short_description: "Design and review PaddockME UI using its real product rules"
+  brand_color: "#3F7A4B"
+  default_prompt: "Use $paddockme-product-design to improve this PaddockME screen while preserving its core workflow and live design system."

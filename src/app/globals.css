@@ -122,6 +122,17 @@ h3:not(.font-display) {
   outline-color: #3f7a4b;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Print: drop the app shell chrome so /workspace/[id]/snapshot prints
  * as a clean, single-page record. The PrintButton itself adds
  * print:hidden via Tailwind, so it doesn't appear on the page either. */

@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
           <span className="text-bark">Paddock</span>
           <span className="text-ochre">ME</span>
         </Link>
-        <h1 className="mb-2 font-display text-3xl text-sage-deep">
+        <h1 className="mb-2 text-3xl font-extrabold text-bark">
           Reset your password.
         </h1>
         <p className="mb-8 text-bark/85">
@@ -47,9 +47,9 @@ export default function ForgotPasswordPage() {
         </p>
 
         {sent ? (
-          <div className="rounded-2xl border border-sage-glow bg-sage-mist p-6">
+          <div className="rounded-[8px] border border-sage-glow bg-sage-mist p-6">
             <div className="mb-2 flex items-center gap-3 font-medium text-sage-deep">
-              <Mail className="h-5 w-5" />
+              <Mail className="h-5 w-5" aria-hidden />
               Check your email
             </div>
             <p className="text-sm text-bark/80">
@@ -72,13 +72,13 @@ export default function ForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-mist bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
+                className="w-full rounded-[8px] border border-sage-deep/15 bg-warm-white px-4 py-3 outline-none focus:border-sage focus:ring-2 focus:ring-sage-glow"
                 placeholder="you@farm.com.au"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-terra" role="alert">
+              <p className="rounded-[8px] border border-terra/35 bg-terra-light/50 px-3 py-2 text-sm text-bark" role="alert">
                 {error}
               </p>
             )}
@@ -86,9 +86,9 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage-deep px-5 py-3 font-medium text-cream transition hover:bg-sage-dark disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-sage-deep px-5 py-3 font-bold text-cream transition hover:bg-sage-dark disabled:opacity-60"
             >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />}
               Send reset link
             </button>
           </form>

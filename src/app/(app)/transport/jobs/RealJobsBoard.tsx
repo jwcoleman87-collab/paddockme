@@ -48,7 +48,7 @@ export function RealJobsBoard({
       {mapRoutes.length > 0 && (
         <section aria-label="Route map" className="space-y-2">
           <LiveMap routes={mapRoutes} />
-          <p className="hidden">
+          <p className="sr-only">
             Amber routes are waiting for a carrier · green routes are underway.
             Tap a route for the job.
           </p>
@@ -60,11 +60,11 @@ export function RealJobsBoard({
             Available jobs ({available.length})
           </h2>
           {available.length === 0 ? (
-            <Card className="text-center">
+            <Card className="px-5 py-8 text-center">
               <h3 className="text-lg font-bold text-sage-deep">
                 No open jobs right now.
               </h3>
-              <p className="hidden">
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-bark/70">
                 New RFTs raised from agistment agreements will appear here the
                 moment a farmer requests transport. Check back soon.
               </p>
@@ -84,20 +84,20 @@ export function RealJobsBoard({
           Your jobs ({mine.length})
         </h2>
         {mine.length === 0 ? (
-          <Card className="text-center">
+          <Card className="px-5 py-8 text-center">
             <h3 className="text-lg font-bold text-sage-deep">
               {isTransportProvider
                 ? "No accepted jobs yet."
                 : "No transport jobs yet."}
             </h3>
-            <p className="hidden">
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-bark/70">
               {isTransportProvider
                 ? "Accept an available job above and it moves here with its transport room."
                 : "Request transport from an agreement workspace and the job will appear here."}
             </p>
             {!isTransportProvider && (
               <ButtonLink href="/agreements" className="mt-4 inline-flex">
-                Back to agreements
+                Go to My work
               </ButtonLink>
             )}
           </Card>
@@ -186,7 +186,7 @@ function JobCard({
             type="button"
             onClick={accept}
             disabled={accepting}
-            className="min-h-10"
+            className="min-h-11"
           >
             <Truck className="h-4 w-4" aria-hidden />
             {accepting ? "Accepting..." : "Accept job"}
@@ -194,7 +194,7 @@ function JobCard({
         )}
         <Link
           href={`/transport/${job.id}`}
-          className="inline-flex min-h-10 items-center gap-1 text-sm font-bold text-sage-deep underline-offset-2 hover:underline"
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-sage-deep underline-offset-2 hover:underline"
         >
           Open transport room
           <ArrowRight className="h-4 w-4" aria-hidden />

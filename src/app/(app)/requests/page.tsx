@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { CirclePlus } from "lucide-react";
-import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
+import { RealAccountEmptyState } from "@/components/RealAccountEmptyState";
 import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
 import {
   listLivestockRequestsServer,
@@ -32,14 +31,14 @@ export default async function RequestsPage() {
         description="Live requests from PaddockME customers looking for agistment."
       />
       {requests.length === 0 ? (
-        <Card className="text-center">
-          <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-sage-mist text-sage-deep">
-            <CirclePlus className="h-6 w-6" aria-hidden />
-          </div>
-          <h1 className="text-xl font-bold text-sage-deep">
-            No open requests yet.
-          </h1>
-        </Card>
+        <RealAccountEmptyState
+          title="No open requests yet."
+          body="Livestock requests will appear here as owners publish them. You can prepare a paddock listing now so it is ready to offer."
+          primaryHref="/listings/new"
+          primaryLabel="List a paddock"
+          secondaryHref="/listings"
+          secondaryLabel="Browse paddocks"
+        />
       ) : (
         <RequestsClient
           requests={requests}
