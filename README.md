@@ -4,7 +4,7 @@
 
 **PaddockME is an Australian agistment marketplace** — connecting livestock owners who need pasture, landowners with spare paddocks, and transport drivers who move stock between them. Replaces the phone tag, Facebook posts, and saleyard hand-shakes with one workspace per match.
 
-**Current sprint:** [Investor MVP Sprint](docs/INVESTOR_MVP_SPRINT.md) - a three-day push toward a tight, pitch-ready demo.
+**Current product spec:** [PaddockME Master Build Specification](PADDOCKME_MASTER_SPEC.md) v1.2 - guided MVP flow with `pm-*` components as canonical.
 
 **Live demo:** https://paddockme-oz51.vercel.app
 
@@ -38,33 +38,45 @@ The app boots at `http://localhost:3000`.
 
 ```bash
 npm run dev          # Local development server
-npm run verify:pitch # Typecheck, docs, build, production smoke, and browser click rehearsal
+npm run verify:pitch # Legacy pitch bundle; includes retired demo smoke/click scripts
 npm run build        # Production build check
-npm run demo:smoke   # Production demo route/content smoke test
-npm run demo:click   # Production browser click rehearsal for the pitch path
+npm run demo:smoke   # Legacy production smoke script for the retired persona route set
+npm run demo:click   # Legacy browser click script for the retired persona route set
 npm run payments:smoke # Payment route/API/UI smoke test
 npm run docs:check   # Markdown link check for repo docs
 npm run db:types     # Regenerate Supabase database types
 ```
 
-## Investor demo workflow
+## Guided MVP workflow
 
-Use these docs as the single source of truth for the current pitch path:
+Current guided route spine:
 
-- [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) - five-minute narrated product demo
-- [`docs/DEMO_CHEATSHEET.md`](docs/DEMO_CHEATSHEET.md) - one-page run sheet for the live demo
-- [`docs/DEMO_REHEARSAL_LOG.md`](docs/DEMO_REHEARSAL_LOG.md) - latest local/live rehearsal notes
+- `/requests/new`
+- `/requests/matches`
+- `/properties/[slug]`
+- `/workspaces/[id]`
+- `/workspaces/[id]/agreement`
+- `/workspaces/[id]/review`
+- `/transport/quotes/[id]`
+- `/transport/rooms/[id]`
+- `/workspaces/[id]/live`
+
+Use these docs as the current product references:
+
+- [`PADDOCKME_MASTER_SPEC.md`](PADDOCKME_MASTER_SPEC.md) - canonical product and design-system spec
+- [`SPEC_DRIFT.md`](SPEC_DRIFT.md) - known implementation/spec gaps
+- [`docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md`](docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md) - complete-state live agreement loop
 - [`docs/AI_HANDOFF_CURRENT.md`](docs/AI_HANDOFF_CURRENT.md) - current handoff brief for another AI assistant
 - [`docs/CURRENT_PRODUCT_AUDIT.md`](docs/CURRENT_PRODUCT_AUDIT.md) - current inventory of built routes, data, and demo limits
 - [`docs/INVESTOR_MVP_SPRINT.md`](docs/INVESTOR_MVP_SPRINT.md) - Day 1/2/3 readiness tracker
 - [`docs/INVESTOR_PITCH_NOTES.md`](docs/INVESTOR_PITCH_NOTES.md) - founder talk track and close
 - [`docs/INVESTOR_DILIGENCE_QA.md`](docs/INVESTOR_DILIGENCE_QA.md) - honest Q&A for investor follow-up
-- [`docs/CUSTOMER_VALIDATION_GUIDE.md`](docs/CUSTOMER_VALIDATION_GUIDE.md) - interview guide for Dale/Brett/Wayne validation
+- [`docs/CUSTOMER_VALIDATION_GUIDE.md`](docs/CUSTOMER_VALIDATION_GUIDE.md) - customer interview guide
 - [`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md) - next commercial unlock without claiming it is built
 - [`docs/PAYMENTS_MILESTONE_PLAN.md`](docs/PAYMENTS_MILESTONE_PLAN.md) - learn/build/test/deploy checklist for payment implementation
 - [`docs/INVESTOR_FREEZE_CHECKLIST.md`](docs/INVESTOR_FREEZE_CHECKLIST.md) - final pre-call freeze checklist
 
-Before pushing pitch-facing changes:
+Before relying on pitch verification, inspect the legacy demo smoke/click scripts for the current sprint:
 
 ```bash
 npm run verify:pitch
@@ -90,7 +102,22 @@ Google Maps: set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` from Google Cloud and enable 
 ```
 src/
   app/
-    (app)/                 # Foundation skeleton app shell
+    requests/              # Guided request flow
+      new/
+      matches/
+      sent/
+    properties/[slug]/     # Guided property detail
+    workspaces/[id]/       # Guided workspace, agreement, review, live agreement
+      agreement/
+      review/
+      live/
+    transport/             # Guided transport quote and room flow
+      quotes/[id]/
+      rooms/[id]/
+    account/
+    register/
+    login/
+    (app)/                 # Dormant legacy reference tree
       home/
       request/new/
       listings/
@@ -114,6 +141,7 @@ src/
     page.tsx               # Homepage / onboarding entry
     globals.css            # Tailwind v4 @theme + base styles
   components/
+    paddockme/             # Canonical pm-* guided-MVP components
     AppShell.tsx
     BottomNav.tsx
     PageHeader.tsx
@@ -128,7 +156,7 @@ src/
     ListingCard.tsx
     DummyMap.tsx
   lib/
-    dummyData.ts           # Clickable prototype data
+    dummyData.ts           # Domain reference types/options
     supabase/
       client.ts            # Browser client (Client Components)
       server.ts            # Server client (Server Components, Route Handlers)
@@ -137,16 +165,15 @@ src/
       database.ts          # Generated from Supabase schema
     utils.ts               # cn() helper (clsx + tailwind-merge)
   proxy.ts                 # Top-level Next proxy → calls lib/supabase/middleware
+PADDOCKME_MASTER_SPEC.md   # Canonical product spec
+SPEC_DRIFT.md              # Known implementation/spec gaps
 docs/
   PRINCIPLES.md            # Core platform DNA
   SCOPE.md                 # What NOT to build yet + day-one DoD
-  PERSONAS.md              # Dale, Tash, Brett, Lyn, Wayne, Sharon
   DESIGN_INTELLIGENCE.md   # ui-ux-pro-max recommendations + brand deviations
   BUILD_02.md              # Foundation Build 02 — workspace and agreement flow polish
   CURRENT_PRODUCT_AUDIT.md # Current built-product inventory
-  DEMO_SCRIPT.md           # Investor demo path
-  DEMO_CHEATSHEET.md       # One-page live demo run sheet
-  DEMO_REHEARSAL_LOG.md    # Latest smoke/rehearsal results
+  COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md # Complete-state live agreement loop
   AI_HANDOFF_CURRENT.md    # Current AI handoff brief
   INVESTOR_MVP_SPRINT.md   # Three-day MVP tracker
   INVESTOR_PITCH_NOTES.md  # Pitch talk track
@@ -155,8 +182,8 @@ docs/
   PAYMENTS_SETTLEMENT_BLUEPRINT.md # Payments/settlement product blueprint
   INVESTOR_FREEZE_CHECKLIST.md # Final pre-call checklist
 scripts/
-  demo-smoke.mjs           # Production smoke test for the demo route set
-  demo-click.mjs           # Production browser click rehearsal for the demo path
+  demo-smoke.mjs           # Legacy smoke test for the retired persona route set
+  demo-click.mjs           # Legacy browser click script for the retired persona route set
   docs-check.mjs           # Markdown link checker
 ```
 

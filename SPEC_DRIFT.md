@@ -7,9 +7,11 @@ Seeded 2026-06-11 during DEMO-RETIRE-01 Phase 0 (baseline commit `46b5e77`). Upd
 
 ## Section 3 — Design system
 
-- [§3] — `src/app/globals.css` — Radius tokens are 4/6/8/10px; spec expects soft 16px cards. Components also use Tailwind utility radii (`rounded-2xl` etc.) rather than the tokens. — cosmetic
-- [§3] — `src/app/globals.css` + `src/components/ListingCard.tsx` (PaddockSignalStrip) — Literal red/amber/green rating tokens (`--color-rating-low/mid/high`) exist and render on paddock signal tiles; spec §3 says R/A/G bars are NOT approved without James's sign-off. — cosmetic (explicit sign-off item, spec §8)
-- [§3] — various components — Occasional hardcoded rgba()/hex values in shadows and overlays rather than tokens. — cosmetic
+> **Closed 7 Jul 2026 (spec v1.2):** the pm-\* design system is now canonical and "Pastoral Zen" is retired, so the items below no longer measure against the spec. The R/A/G rating tokens survive only in the dormant legacy `(app)` tree and leave with it; hardcoded colour values remain disallowed under v1.2 §3 and are covered by the cross-cutting acceptance criteria, not this drift log.
+
+- [§3] — `src/app/globals.css` — Radius tokens are 4/6/8/10px; spec expected soft 16px cards. — **closed v1.2** (Pastoral Zen radius expectation retired)
+- [§3] — `src/app/globals.css` + `src/components/ListingCard.tsx` (PaddockSignalStrip) — Literal red/amber/green rating tokens render on paddock signal tiles. — **closed v1.2** (legacy `(app)` tree only; R/A/G remains unapproved in pm-\* surfaces, spec §8)
+- [§3] — various components — Occasional hardcoded rgba()/hex values in shadows and overlays rather than tokens. — **closed v1.2** (superseded by v1.2 §3 pm-\* token rule)
 
 ## Section 4 — Architecture
 

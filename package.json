@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "lint": "npm run typecheck",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run build && npm run test:e2e",
     "verify:pitch": "npm run typecheck && npm run docs:check && npm run build && npm run demo:smoke && npm run demo:click",
     "demo:smoke": "node scripts/demo-smoke.mjs",
     "demo:click": "node scripts/demo-click.mjs",
@@ -12,7 +15,8 @@
     "docs:check": "node scripts/docs-check.mjs",
     "db:types": "npx supabase gen types typescript --project-id aevzcvlzfvrdipgofczx > src/lib/types/database.ts",
     "typecheck": "tsc --noEmit",
-    "start": "next start"
+    "start": "node .next/standalone/server.js",
+    "start:e2e": "node scripts/standalone-serve.mjs"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",

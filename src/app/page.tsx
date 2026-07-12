@@ -1,20 +1,13 @@
-import { redirect } from "next/navigation";
-import { LandingMarketing } from "./LandingMarketing";
-import { getCurrentUserProfile } from "@/lib/supabase/currentUser";
+import { PaddockHomepage } from "./PaddockHomepage";
 
 /**
- * Screen 1 — Homepage.
+ * Screen 1 — Homepage, and the real entry point for the guided MVP.
  *
- * Signed-out visitors see the marketing homepage with quick-start links
- * (Need agistment / Have agistment / Need transport). Signed-in users are
- * sent straight into the real app (same landing spot as a fresh sign-in)
- * so "/" never feels like a separate, older site.
+ * Everyone (signed in or not) lands on the same guided homepage with three
+ * obvious paths: Need Feed / Have Feed / Transport. We deliberately do NOT
+ * redirect signed-in users elsewhere — "/" is the start of the flow, never
+ * a bounce into an older dashboard.
  */
-export default async function HomePage() {
-  const profile = await getCurrentUserProfile();
-  if (profile) {
-    redirect("/agreements");
-  }
-
-  return <LandingMarketing />;
+export default function HomePage() {
+  return <PaddockHomepage />;
 }

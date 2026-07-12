@@ -1,5 +1,5 @@
 # PaddockME — Master Build Specification
-**Version:** 1.1 · June 2026 — **Demo mode retired by owner decision. Real operation mode only.**
+**Version:** 1.2 · July 2026 — **Design system amended: pm-\* is canonical, "Pastoral Zen" retired (§3). Demo mode retired by owner decision. Real operation mode only.**
 **Owner:** James Coleman
 **Live preview:** https://paddockme-oz51.vercel.app/
 **Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Supabase (Postgres, Auth, Storage, Realtime) · Vercel
@@ -37,7 +37,9 @@ Every screen, every component, every copy decision is tested against these:
 - Dead ends are bugs. Every screen must answer: "what does the user do next?" with one visually primary action.
 - Simplicity wins ties. When two implementations are equal, choose the one with fewer concepts on screen.
 ---
-## 3. Design system — "Pastoral Zen"
+## 3. Design system — pm-\* (guided MVP)
+> **v1.2 amendment (7 Jul 2026, owner decision):** the **pm-\* design system** — the palette, type and component language implemented in `src/components/paddockme/**` and the guided-MVP customer screens — is **canonical**. **"Pastoral Zen" is retired.** The guided-MVP screens (`/requests/new`, `/requests/matches`, `/properties/[slug]`, `/workspaces/[id]/**`, `/transport/quotes`, `/transport/rooms`, `/account`, `/register`, `/login`) are the design reference for every new or reworked surface. Colour comes only from the `pm-*` tokens (`pm-green-900/800`, `pm-gold-500/600`, `pm-cream-50/100`, `pm-charcoal`, `pm-muted`, `pm-border`, `pm-success`) — never hardcode new hex values in components. The hard rules below carry over unchanged: one colour language, no improvised fonts/colours/radii, mobile-first at 390px, min 44px touch targets, plain Australian English copy. The Pastoral Zen description that follows is retained for historical reference only and no longer measures anything.
+
 **This is a single, fixed visual language. Do not invent variants.**
 - **Display/headings:** Fraunces, italic serif — warmth and character. Headings only.
 - **Body/UI:** Outfit, geometric sans — clarity. All body text, labels, buttons.
@@ -216,7 +218,7 @@ Each page below has: **Purpose** (one sentence — if a page can't state its pur
 | Item | Status |
 |---|---|
 | Agreement workspace redesign | Parked — needs design discussion first |
-| Red/amber/green quality bars | Rejected pending colour-language decision |
+| Red/amber/green quality bars | Closed by v1.2 — pm-\* is the single colour language; R/A/G bars remain unapproved |
 | Rain as shaded map areas; layer toggle behaviour | Excluded from current briefs |
 | Feed commodities marketplace | Long-term vision; waitlist card only |
 | Stripe Connect | **Build now in test mode** (§6.13). Account not yet set up — go-live is config only |

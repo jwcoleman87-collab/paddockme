@@ -58,6 +58,11 @@ export function LiveMap({
   useEffect(() => {
     if (!containerRef.current) return;
     if (markers.length === 0 && routes.length === 0) return;
+    if (!GOOGLE_MAPS_API_KEY) {
+      setFailed(true);
+      return;
+    }
+
     let cancelled = false;
     const overlays: { setMap: (map: google.maps.Map | null) => void }[] = [];
     let map: google.maps.Map | null = null;
