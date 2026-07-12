@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex min-h-dvh w-full min-w-0 flex-col">
           <header className="sticky top-0 z-30 border-b border-sage-deep/10 bg-warm-white/92 backdrop-blur lg:hidden">
-            <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 md:px-8">
+            <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-5 md:px-8">
               <Link
                 href="/agreements"
                 className="font-display text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
@@ -45,14 +45,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="text-bark">Paddock</span>
                 <span className="text-ochre">ME</span>
               </Link>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <HeaderInboxLink />
                 <DemoResetButton />
                 <SignOutButton />
                 <Link
                   href="/profile"
                   aria-label="Open profile"
-                  className="inline-flex min-h-11 items-center gap-2 rounded-[8px] border border-sage-deep/10 bg-warm-white pl-1.5 pr-3 text-sage-deep shadow-sm transition hover:border-sage/35 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-[8px] border border-sage-deep/10 bg-warm-white px-1.5 text-sage-deep shadow-sm transition hover:border-sage/35 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage sm:justify-start sm:pr-3"
                 >
                   <Suspense fallback={null}>
                     <AppShellHeaderUser />
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </header>
-          <main className="mx-auto w-full min-w-0 max-w-7xl px-5 py-7 pb-32 md:px-8 md:py-10 md:pb-36 lg:pb-12">
+          <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 pb-28 sm:px-5 md:px-8 md:py-9 md:pb-32 lg:pb-12">
             {children}
           </main>
         </div>

@@ -101,9 +101,9 @@ export function AgreementsClient({
         </section>
       )}
 
-      {/* Welcome banner — full-bleed farm photo with role/region badges */}
+      {/* Compact orientation banner: identity and role, without burying the next action. */}
       <section
-        className="relative mb-5 overflow-hidden rounded-[8px] bg-sage-deep bg-cover bg-center px-5 py-7 shadow-[0_14px_36px_rgba(31,42,36,0.12)] sm:px-8 sm:py-9"
+        className="relative mb-4 overflow-hidden rounded-[8px] bg-sage-deep bg-cover bg-center px-5 py-5 shadow-[0_14px_36px_rgba(31,42,36,0.12)] sm:px-7 sm:py-6"
         style={{ backgroundImage: "url(/images/paddockme/property-main-green-hills.jpg)" }}
       >
         <div
@@ -123,7 +123,7 @@ export function AgreementsClient({
               </span>
             )}
           </div>
-          <h2 className="text-2xl font-extrabold text-warm-white sm:text-3xl">
+          <h2 className="text-xl font-extrabold text-warm-white sm:text-2xl">
             Welcome back, {meta.firstName}.
           </h2>
           <p className="mt-1 max-w-md text-sm text-warm-white/80">
@@ -132,17 +132,17 @@ export function AgreementsClient({
         </div>
       </section>
 
-      <section aria-label="Next action" className="mb-5">
+      <section aria-label="Next action" className="mb-6">
         <div className="flex flex-col overflow-hidden rounded-[8px] border border-sage-deep/10 bg-warm-white shadow-[0_12px_32px_rgba(31,42,36,0.05)] sm:flex-row sm:items-center">
           <div
-            className="h-28 w-full shrink-0 bg-cover bg-center sm:h-auto sm:w-44 sm:self-stretch"
+            className="h-20 w-full shrink-0 bg-cover bg-center sm:h-auto sm:w-36 sm:self-stretch"
             style={{ backgroundImage: "url(/images/paddockme/request-step-road.jpg)" }}
             aria-hidden
           />
           <div className="flex flex-1 flex-col gap-3 border-l-4 border-l-sage p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:border-l-0 sm:border-t-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wide text-ochre">
-                Next step
+                What needs you now
               </p>
               <h3 className="mt-1 text-lg font-bold leading-snug text-bark">
                 {nextAction.title}
@@ -239,10 +239,10 @@ function RealAgreementsSection({
           <Link
             key={agreement.id}
             href={`/workspace/${agreement.id}`}
-            className="group block overflow-hidden rounded-[8px] border border-sage-deep/10 bg-warm-white shadow-[0_10px_28px_rgba(31,42,36,0.04)] transition hover:border-sage/35 hover:shadow-[0_16px_36px_rgba(31,42,36,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+            className="group block overflow-hidden rounded-[8px] border border-sage-deep/10 bg-warm-white shadow-[0_14px_36px_rgba(31,42,36,0.06)] transition hover:border-sage/35 hover:shadow-[0_16px_36px_rgba(31,42,36,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
           >
             <div
-              className="h-32 w-full bg-cover bg-center transition-transform duration-200 group-hover:scale-[1.03]"
+              className="h-24 w-full bg-cover bg-center transition-transform duration-200 group-hover:scale-[1.02] sm:h-28"
               style={{
                 backgroundImage: `url(${agreementCardImages[index % agreementCardImages.length]})`,
               }}

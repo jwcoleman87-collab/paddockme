@@ -102,10 +102,13 @@ export function RequestsClient({
           ))}
         </div>
       ) : (
-        <Card className="text-center">
+        <Card className="mx-auto max-w-2xl px-5 py-8 text-center">
           <h3 className="text-lg font-bold text-sage-deep">
             No open requests.
           </h3>
+          <p className="mt-2 text-sm text-bark/70">
+            New livestock requests will appear here when owners publish them.
+          </p>
         </Card>
       )}
     </>
@@ -186,7 +189,7 @@ function RequestCard({
       {pickerOpen && myPaddocks.length > 0 && (
         <div
           aria-label="Pick a paddock to offer"
-          className="rounded-xl border border-sage-deep/15 bg-cream/55 p-3"
+          className="rounded-[8px] border border-sage-deep/15 bg-cream/55 p-3"
         >
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-bark/65">
             Pick a paddock to offer
@@ -197,7 +200,7 @@ function RequestCard({
                 <button
                   type="button"
                   onClick={() => onOffer(paddock.id)}
-                  className="flex w-full min-h-10 cursor-pointer items-center justify-between gap-3 rounded-lg border border-mist bg-warm-white px-3 text-left text-sm transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-[8px] border border-mist bg-warm-white px-3 py-2 text-left text-sm transition hover:border-sage/40 hover:bg-sage-mist/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-bold text-sage-deep">
@@ -208,7 +211,7 @@ function RequestCard({
                     </span>
                   </span>
                   <span className="shrink-0 text-xs font-bold text-sage-deep">
-                    Offer →
+                    Offer
                   </span>
                 </button>
               </li>
@@ -217,7 +220,7 @@ function RequestCard({
           <button
             type="button"
             onClick={() => setPickerOpen(false)}
-            className="mt-2 cursor-pointer text-xs font-bold text-bark/65 underline-offset-2 hover:text-sage-deep hover:underline"
+            className="mt-2 inline-flex min-h-11 cursor-pointer items-center text-xs font-bold text-bark/65 underline-offset-2 hover:text-sage-deep hover:underline"
           >
             Cancel
           </button>
@@ -229,16 +232,16 @@ function RequestCard({
           <Button
             type="button"
             onClick={() => setPickerOpen((open) => !open)}
-            className="min-h-10"
+            className="min-h-11"
           >
             {pickerOpen ? "Hide paddocks" : "Offer a paddock"}
           </Button>
         ) : (
-          <ButtonLink href="/listings/new" className="min-h-10">
+          <ButtonLink href="/listings/new" className="min-h-11">
             List a paddock to offer
           </ButtonLink>
         )}
-        <ButtonLink href="/listings/new" variant="secondary" className="min-h-10">
+        <ButtonLink href="/listings/new" variant="secondary" className="min-h-11">
           List a new paddock
         </ButtonLink>
       </div>

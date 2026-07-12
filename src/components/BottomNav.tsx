@@ -16,10 +16,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 lg:hidden print:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-sage-deep/10 bg-warm-white/96 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden print:hidden"
     >
-      <div className="relative mx-auto max-w-[22.5rem] sm:max-w-4xl">
-        <div className="relative grid grid-cols-5 gap-1 rounded-[18px] border border-sage-deep/10 bg-warm-white/96 p-2 shadow-[0_18px_45px_rgba(31,42,36,0.14)] backdrop-blur">
+      <div className="relative mx-auto max-w-2xl">
+        <div className="relative grid grid-cols-5 gap-1 py-1.5">
           {items.map((item) => {
             const active = isNavItemActive(item, pathname);
             return (
@@ -28,7 +28,7 @@ export function BottomNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[12px] px-1 text-[0.68rem] font-bold transition sm:min-h-16 sm:px-2 sm:text-xs",
+                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[8px] px-1 text-[0.68rem] font-bold transition sm:min-h-16 sm:px-2 sm:text-xs",
                   active
                     ? "bg-sage-deep text-warm-white shadow-sm"
                     : "text-stone hover:bg-sage-mist hover:text-sage-deep"

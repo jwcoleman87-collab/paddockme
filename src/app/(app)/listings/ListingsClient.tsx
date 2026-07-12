@@ -194,7 +194,7 @@ export function ListingsClient({
     <>
       <section
         aria-label="Filter paddocks"
-        className="mb-5 rounded-2xl border border-sage-deep/15 bg-cream/55 p-3 sm:p-4"
+        className="mb-5 rounded-[8px] border border-sage-deep/15 bg-cream/55 p-3 sm:p-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <button
@@ -202,7 +202,7 @@ export function ListingsClient({
             onClick={() => setFiltersOpen((open) => !open)}
             aria-expanded={filtersOpen}
             aria-controls="paddock-filter-groups"
-            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-sage-deep/20 bg-warm-white px-3.5 py-1.5 text-sm font-bold text-sage-deep transition hover:border-sage/60 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[8px] border border-sage-deep/20 bg-warm-white px-3.5 py-1.5 text-sm font-bold text-sage-deep transition hover:border-sage/60 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
           >
             <Filter className="h-4 w-4" aria-hidden />
             <span>Filters</span>
@@ -227,7 +227,7 @@ export function ListingsClient({
               <button
                 type="button"
                 onClick={clearAll}
-                className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full border border-mist bg-warm-white px-3 py-1 text-xs font-bold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-[8px] border border-mist bg-warm-white px-3 py-1 text-xs font-bold text-bark transition hover:border-sage/40 hover:bg-sage-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
               >
                 <X className="h-3.5 w-3.5" aria-hidden />
                 Clear all
@@ -328,21 +328,20 @@ function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-dashed border-sage-deep/20 bg-cream/55 px-6 py-10 text-center"
+        "rounded-[8px] border border-dashed border-sage-deep/20 bg-cream/55 px-6 py-10 text-center"
       )}
     >
       <h2 className="text-lg font-bold text-sage-deep">
         No paddocks match these filters.
       </h2>
       <p className="mt-2 text-sm text-bark/70">
-        Loosen a chip or two and try again. Filters AND across groups - so
-        each pill you add narrows the shortlist further.
+        Remove one or more filters to widen the shortlist.
       </p>
       {hasFilters && (
         <button
           type="button"
           onClick={onClear}
-          className="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-sage-deep px-4 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+          className="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[8px] bg-sage-deep px-4 py-2 text-sm font-semibold text-cream transition hover:bg-sage-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
         >
           <X className="h-4 w-4" aria-hidden />
           Clear all filters
