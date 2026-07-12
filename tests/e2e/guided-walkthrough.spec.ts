@@ -168,7 +168,7 @@ test("owner completes the full journey through delivery, then resets", async ({
   await page.getByRole("button", { name: /Reset Demo/ }).click();
   await page.waitForURL("**/");
   await expect(
-    page.getByText("Find Feed. Find Stock. Move Livestock."),
+    page.getByText("Match stock with feed. Then get them there."),
   ).toBeVisible();
   const remainingThreadKeys = await page.evaluate(() =>
     Object.keys(window.localStorage).filter((key) =>
@@ -196,6 +196,6 @@ test("owner completes the full journey through delivery, then resets", async ({
 
   // And the walkthrough starts cleanly again.
   await page.goto("/");
-  await page.getByRole("link", { name: /I Need Feed/i }).click();
+  await page.getByRole("link", { name: /I need feed/i }).click();
   await expect(page.getByText("What stock do you have?")).toBeVisible();
 });

@@ -352,7 +352,7 @@ test("Wayne completes the transporter journey, persists it, and resets cleanly",
   await page.getByRole("button", { name: "Reset Demo" }).click();
   await page.waitForURL("**/");
   await expect(
-    page.getByText("Find Feed. Find Stock. Move Livestock."),
+    page.getByText("Match stock with feed. Then get them there."),
   ).toBeVisible();
 
   const resetStorage = await page.evaluate(
