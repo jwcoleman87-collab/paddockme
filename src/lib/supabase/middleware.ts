@@ -53,8 +53,8 @@ const APP_PREFIXES = [
 // still requires sign-in. /requests is intentionally scoped to its demo
 // sub-routes so the old /requests dashboard index stays gated.
 const GUIDED_MVP_PREFIXES = [
-  "/register",
-  "/login",
+  // /login and /register are legacy URLs whose pages now redirect straight
+  // to the real /sign-in and /sign-up.
   "/account",
   "/properties",
   "/requests/new",
@@ -131,6 +131,14 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     url.pathname = POST_AUTH_LANDING;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // Signed-in accounts always use the shared app shell: the guided demo's
+  // /account screen hands over to the real profile surface.
+  if (user && path.startsWith("/account")) {
+    url.pathname = "/profile";
     url.search = "";
     return NextResponse.redirect(url);
   }
