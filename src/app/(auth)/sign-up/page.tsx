@@ -37,17 +37,23 @@ function SignUpForm() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+
+    if (isDemoMode() || !isSupabaseConfigured()) {
+      router.push(GUIDED_DEMO_ENTRY);
+      return;
+    }
+
+    if (!fullName.trim() || !email.trim() || password.length < 8 || !confirmPassword) {
+      setError("Complete all fields and use a password of at least 8 characters.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("The passwords do not match.");
       return;
     }
 
     setError(null);
-
-    if (isDemoMode() || !isSupabaseConfigured()) {
-      router.push(GUIDED_DEMO_ENTRY);
-      return;
-    }
 
     setLoading(true);
     try {
@@ -161,7 +167,7 @@ function SignUpForm() {
               )}
             </div>
           ) : (
-            <form onSubmit={handleSignUp} className="space-y-4 rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.06)] sm:p-7">
+            <form noValidate onSubmit={handleSignUp} className="space-y-4 rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.06)] sm:p-7">
               <div>
                 <label htmlFor="sign-up-name" className="mb-1 block text-sm font-medium text-bark">
                   Full name
