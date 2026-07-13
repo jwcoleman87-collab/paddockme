@@ -4,8 +4,12 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demoMode";
 import { getSafeRedirectPath } from "@/lib/redirect";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { Loader2, Mail } from "lucide-react";
+
+const GUIDED_DEMO_ENTRY = "/requests/new";
 
 /**
  * Sign-in page.
@@ -66,20 +70,31 @@ function SignInForm() {
 
   async function handlePassword(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+
+    if (isDemoMode() || !isSupabaseConfigured()) {
+      router.push(GUIDED_DEMO_ENTRY);
       return;
     }
-    router.push(next);
-    router.refresh();
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      router.push(next);
+      router.refresh();
+    } catch {
+      setError("We could not sign you in right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleMagicLink() {
@@ -87,21 +102,32 @@ function SignInForm() {
       setError("Enter your email first.");
       return;
     }
-    setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+
+    if (isDemoMode() || !isSupabaseConfigured()) {
+      router.push(GUIDED_DEMO_ENTRY);
       return;
     }
-    setMagicSent(true);
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setMagicSent(true);
+    } catch {
+      setError("We could not send a magic link right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (magicSent) {
