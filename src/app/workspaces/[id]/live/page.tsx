@@ -262,7 +262,7 @@ export default function LiveAgreementPage() {
               </p>
               <ol className="mt-4 space-y-1">
                 {TRANSPORT_STEPS.map((step, idx) => {
-                  const done = idx < statusIdx;
+                  const done = idx <= statusIdx;
                   const current = idx === statusIdx;
                   return (
                     <li
@@ -276,7 +276,7 @@ export default function LiveAgreementPage() {
                             : "text-pm-muted",
                       )}
                     >
-                      {done || (current && delivered) ? (
+                      {done ? (
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pm-success text-white">
                           <Check className="h-3 w-3" aria-label="Done" />
                         </span>
