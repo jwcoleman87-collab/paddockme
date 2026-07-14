@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/types/database";
+import { GUIDED_DEMO_LANES, isDemoRequest } from "@/lib/demoMode";
 import { isSupabaseConfigured } from "./env";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
@@ -71,6 +72,26 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
   const url = request.nextUrl.clone();
   const path = url.pathname;
+
+  // Demo builds and the investor demo host: the homepage role cards point at
+  // the real signed-in surfaces (/listings/new, /transport/jobs), which a
+  // demo visitor can never enter. Send each role to its guided-demo lane
+  // instead, so all three customer journeys — livestock owner, landowner and
+  // carrier — are walkable straight from the front page.
+  if (isDemoRequest(url.hostname)) {
+    const demoLane =
+      path === "/listings/new" || path.startsWith("/listings/new/")
+        ? GUIDED_DEMO_LANES.landowner
+        : path === "/transport/jobs" || path.startsWith("/transport/jobs/")
+          ? GUIDED_DEMO_LANES.transport
+          : null;
+    if (demoLane) {
+      url.pathname = demoLane;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   const isAuthRoute =
     path.startsWith("/sign-in") || path.startsWith("/sign-up");
   // /forgot-password and /update-password are intentionally not in

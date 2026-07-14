@@ -93,3 +93,11 @@ Method: database evidence + code-path references + this session's two-account br
 RLS pricing wall → **intact**: `agreements` readable only by its two parties (carrier excluded ⇒ no `rate_per_head_week` access); `transport_jobs`/`transport_milestones` carry no agistment pricing; `transport_quotes` exclude the landowner. No policy was weakened this brief; one ADDITIVE select policy (driver discovery of available jobs) and the new `transport_milestones`/`payables` policies were added — logged, not weakening.
 
 Migrations applied to production this session (SQL editor): `20260528123000_payments_ledger_foundation`, `20260610130000` (previously), `20260611190000`, `20260611203000`, `20260611210000`. Local migration files match what was executed.
+
+## Guided demo — three customer lanes (added 14 Jul 2026)
+
+The demo must demonstrate all three customer journeys — Farmer A (livestock
+owner), Farmer B (landowner) and the carrier — as equally important views.
+
+- [§2/§6] — `src/app/PaddockHomepage.tsx`, `src/lib/supabase/middleware.ts`, `src/app/(auth)/sign-in/page.tsx`, `src/app/(auth)/sign-up/page.tsx` — Homepage role cards point at real signed-in surfaces (`/listings/new`, `/transport/jobs`); on demo builds/host these bounced the landowner and carrier roles into sign-in, which then dropped everyone into the livestock-owner lane, leaving the finished carrier lane (`/transport/demo`) unreachable from the front page. — **fixed 14 Jul 2026**: demo requests to those paths now redirect to each role's guided lane (`GUIDED_DEMO_LANES` in `src/lib/demoMode.ts`), and demo sign-in/sign-up preserve the chosen role via the sign-up `intent` param and the `next` path.
+- [§2/§6] — `src/app/landowner/requests/[id]/page.tsx` — Farmer B's (landowner) guided lane is one handoff screen plus the shared workspace; there is no standalone start-to-finish landowner journey equivalent in depth to the owner and carrier lanes. — debt (needs its own build brief)

@@ -4,12 +4,10 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { isDemoMode } from "@/lib/demoMode";
+import { guidedDemoPathFor, isDemoMode } from "@/lib/demoMode";
 import { getSafeRedirectPath } from "@/lib/redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { Loader2, Mail } from "lucide-react";
-
-const GUIDED_DEMO_ENTRY = "/requests/new";
 
 /**
  * Sign-in page.
@@ -73,7 +71,7 @@ function SignInForm() {
     setError(null);
 
     if (isDemoMode() || !isSupabaseConfigured()) {
-      router.push(GUIDED_DEMO_ENTRY);
+      router.push(guidedDemoPathFor(null, next));
       return;
     }
 
@@ -105,7 +103,7 @@ function SignInForm() {
     setError(null);
 
     if (isDemoMode() || !isSupabaseConfigured()) {
-      router.push(GUIDED_DEMO_ENTRY);
+      router.push(guidedDemoPathFor(null, next));
       return;
     }
 
