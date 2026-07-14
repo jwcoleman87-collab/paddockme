@@ -11,6 +11,11 @@ export const paddockmeImages = {
   registrationBackground: "/images/paddockme/registration-cattle.jpg",
   requestStepCow: "/images/paddockme/request-step-cow.jpg",
   requestStepRoad: "/images/paddockme/request-step-road.jpg",
+  // AI-generated demo photography. Replace these files in place when
+  // licensed livestock photography is available.
+  stockTypeCattle: "/images/paddockme/stock-type-cattle.jpg",
+  stockTypeSheep: "/images/paddockme/stock-type-sheep.jpg",
+  stockTypeHorse: "/images/paddockme/stock-type-horse.jpg",
   matchesPaddockCard: "/images/paddockme/matches-paddock-card.jpg",
   matchesRiverbendCard: "/images/paddockme/matches-riverbend-card.jpg",
   propertyMain: "/images/paddockme/property-main-green-hills.jpg",
