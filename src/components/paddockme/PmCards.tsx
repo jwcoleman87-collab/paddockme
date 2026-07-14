@@ -139,7 +139,7 @@ export function LivestockTypeCard({
       className={cn(
         "group relative flex h-28 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 bg-white text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500",
         selected
-          ? "border-pm-green-900 text-pm-green-900 shadow-sm"
+          ? "border-pm-gold-500 text-pm-green-900 shadow-sm"
           : "border-pm-border text-pm-muted hover:border-pm-green-700",
       )}
     >
@@ -161,7 +161,7 @@ export function LivestockTypeCard({
         </span>
       )}
       {selected && (
-        <span className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-pm-green-900 text-white ring-2 ring-white">
+        <span className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-pm-gold-500 text-pm-charcoal ring-2 ring-white">
           <Check className="h-3 w-3" aria-label="Selected" />
         </span>
       )}
