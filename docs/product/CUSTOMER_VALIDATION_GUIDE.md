@@ -163,8 +163,8 @@ Prioritise building around repeated 4s and 5s, not polite compliments.
 
 After every five interviews, update:
 
-- `docs/PERSONAS.md` if a persona is wrong.
-- `docs/CURRENT_PRODUCT_AUDIT.md` if the built product no longer matches the real workflow.
-- `docs/INVESTOR_DILIGENCE_QA.md` if investor claims need sharpening.
+- the persona notes in `PADDOCKME_MASTER_SPEC.md` if a persona is wrong.
+- `docs/reports/CURRENT_PRODUCT_AUDIT.md` if the built product no longer matches the real workflow.
+- `docs/investor/INVESTOR_DILIGENCE_QA.md` if investor claims need sharpening.
 - Product backlog only after patterns repeat.
 

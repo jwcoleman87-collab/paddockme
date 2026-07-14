@@ -65,16 +65,10 @@ Use these docs as the current product references:
 
 - [`PADDOCKME_MASTER_SPEC.md`](PADDOCKME_MASTER_SPEC.md) - canonical product and design-system spec
 - [`SPEC_DRIFT.md`](SPEC_DRIFT.md) - known implementation/spec gaps
-- [`docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md`](docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md) - complete-state live agreement loop
-- [`docs/AI_HANDOFF_CURRENT.md`](docs/AI_HANDOFF_CURRENT.md) - current handoff brief for another AI assistant
-- [`docs/CURRENT_PRODUCT_AUDIT.md`](docs/CURRENT_PRODUCT_AUDIT.md) - current inventory of built routes, data, and demo limits
-- [`docs/INVESTOR_MVP_SPRINT.md`](docs/INVESTOR_MVP_SPRINT.md) - Day 1/2/3 readiness tracker
-- [`docs/INVESTOR_PITCH_NOTES.md`](docs/INVESTOR_PITCH_NOTES.md) - founder talk track and close
-- [`docs/INVESTOR_DILIGENCE_QA.md`](docs/INVESTOR_DILIGENCE_QA.md) - honest Q&A for investor follow-up
-- [`docs/CUSTOMER_VALIDATION_GUIDE.md`](docs/CUSTOMER_VALIDATION_GUIDE.md) - customer interview guide
-- [`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md) - next commercial unlock without claiming it is built
-- [`docs/PAYMENTS_MILESTONE_PLAN.md`](docs/PAYMENTS_MILESTONE_PLAN.md) - learn/build/test/deploy checklist for payment implementation
-- [`docs/INVESTOR_FREEZE_CHECKLIST.md`](docs/INVESTOR_FREEZE_CHECKLIST.md) - final pre-call freeze checklist
+- [`docs/README.md`](docs/README.md) - **index of every doc in the repo**, grouped by topic with status labels
+- [`CLAUDE.md`](CLAUDE.md) - repo orientation for AI coding assistants (read first in any AI session)
+
+Everything else lives under `docs/` in themed folders: [`product/`](docs/product/), [`design/`](docs/design/), [`investor/`](docs/investor/), [`payments/`](docs/payments/), [`reports/`](docs/reports/) (point-in-time audits), and [`archive/`](docs/archive/) (superseded handovers and build briefs).
 
 Before relying on pitch verification, inspect the legacy demo smoke/click scripts for the current sprint:
 
@@ -166,21 +160,16 @@ src/
     utils.ts               # cn() helper (clsx + tailwind-merge)
   proxy.ts                 # Top-level Next proxy → calls lib/supabase/middleware
 PADDOCKME_MASTER_SPEC.md   # Canonical product spec
-SPEC_DRIFT.md              # Known implementation/spec gaps
+SPEC_DRIFT.md              # Known implementation/spec gaps (kept at root per spec)
+CLAUDE.md                  # Repo orientation for AI coding assistants
 docs/
-  PRINCIPLES.md            # Core platform DNA
-  SCOPE.md                 # What NOT to build yet + day-one DoD
-  DESIGN_INTELLIGENCE.md   # ui-ux-pro-max recommendations + brand deviations
-  BUILD_02.md              # Foundation Build 02 — workspace and agreement flow polish
-  CURRENT_PRODUCT_AUDIT.md # Current built-product inventory
-  COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md # Complete-state live agreement loop
-  AI_HANDOFF_CURRENT.md    # Current AI handoff brief
-  INVESTOR_MVP_SPRINT.md   # Three-day MVP tracker
-  INVESTOR_PITCH_NOTES.md  # Pitch talk track
-  INVESTOR_DILIGENCE_QA.md # Investor follow-up Q&A
-  CUSTOMER_VALIDATION_GUIDE.md # Customer interview guide
-  PAYMENTS_SETTLEMENT_BLUEPRINT.md # Payments/settlement product blueprint
-  INVESTOR_FREEZE_CHECKLIST.md # Final pre-call checklist
+  README.md                # Index of every doc, grouped by topic
+  product/                 # Principles, scope, app map, product specs
+  design/                  # Design system second opinions + UX standards
+  investor/                # Pitch notes, diligence Q&A, sprint tracker
+  payments/                # Payments blueprint + milestone plan
+  reports/                 # Point-in-time audits and bug scans
+  archive/                 # Superseded handovers and build briefs
 scripts/
   demo-smoke.mjs           # Legacy smoke test for the retired persona route set
   demo-click.mjs           # Legacy browser click script for the retired persona route set
@@ -213,7 +202,7 @@ Status indicators always use [lucide-react](https://lucide.dev) icons: `CheckCir
 
 ## Core platform DNA
 
-Every screen and decision is tested against the five principles in [`docs/PRINCIPLES.md`](./docs/PRINCIPLES.md). If something you're building doesn't serve them, stop and flag it.
+Every screen and decision is tested against the five principles in [`docs/product/PRINCIPLES.md`](./docs/product/PRINCIPLES.md). If something you're building doesn't serve them, stop and flag it.
 
 ## Design intelligence
 
@@ -225,4 +214,4 @@ Use it as a second opinion when designing new pages. Run from the repo root:
 python3 .uipro-skill/scripts/search.py "<product description>" --design-system -p "<project name>"
 ```
 
-Adoption notes (what we kept, what we deviated from, and why) live in [`docs/DESIGN_INTELLIGENCE.md`](./docs/DESIGN_INTELLIGENCE.md). The brief and `globals.css` remain the source of truth for palette and typography; the skill is authoritative on patterns, anti-patterns, and the pre-delivery checklist.
+Adoption notes (what we kept, what we deviated from, and why) live in [`docs/design/DESIGN_INTELLIGENCE.md`](./docs/design/DESIGN_INTELLIGENCE.md). The brief and `globals.css` remain the source of truth for palette and typography; the skill is authoritative on patterns, anti-patterns, and the pre-delivery checklist.

@@ -196,9 +196,9 @@ When Build 03 finishes, the user must be able to:
 
 Every screen and migration in this build must honour:
 
-- The five DNA principles in [PRINCIPLES.md](./PRINCIPLES.md)
+- The five DNA principles in [PRINCIPLES.md](../product/PRINCIPLES.md)
 - **Transport as co-equal pillar** (this build's guiding principle)
-- The **two-shape rule** from [PERSONAS.md](./PERSONAS.md) — 2-party agistment workspace + 3-party transport room. Build 03 does not blur this.
+- The **two-shape rule** from PERSONAS.md (doc since removed) — 2-party agistment workspace + 3-party transport room. Build 03 does not blur this.
 - **Both privacy walls** — driver-visibility and landowner-visibility — enforced at the data layer
 - **Profile-carries-the-difference** — Wayne and Sharon use the same surfaces; their fleet/driver count lives in the profile, not the UI
 - Tap, don't type. Chip filters on `/transport/available` mirror chip filters on `/listings`
