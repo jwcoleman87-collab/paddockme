@@ -4,8 +4,12 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isDemoMode } from "@/lib/demoMode";
 import { getSafeRedirectPath } from "@/lib/redirect";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { Loader2, Mail } from "lucide-react";
+
+const GUIDED_DEMO_ENTRY = "/requests/new";
 
 export default function SignUpPage() {
   return (
@@ -33,58 +37,84 @@ function SignUpForm() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+
+    if (isDemoMode() || !isSupabaseConfigured()) {
+      router.push(GUIDED_DEMO_ENTRY);
+      return;
+    }
+
+    if (!fullName.trim() || !email.trim() || password.length < 8 || !confirmPassword) {
+      setError("Complete all fields and use a password of at least 8 characters.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("The passwords do not match.");
       return;
     }
 
-    setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      // Email confirmations may be off — if a session exists immediately,
+      // send the new user straight into the onboarding wizard so their
+      // profile gets populated before they land on /agreements.
+      if (data.session) {
+        router.push(onboardingHref);
+        router.refresh();
+        return;
+      }
+      setEmailSent(true);
+    } catch {
+      setError("We could not create your account right now. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    // Email confirmations may be off — if a session exists immediately,
-    // send the new user straight into the onboarding wizard so their
-    // profile gets populated before they land on /agreements.
-    if (data.session) {
-      router.push(onboardingHref);
-      router.refresh();
-      return;
-    }
-    setEmailSent(true);
   }
 
   async function handleResendConfirmation() {
-    setResending(true);
     setError(null);
     setResendMessage(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
-      },
-    });
-    setResending(false);
 
-    if (error) {
-      setError("We could not resend the confirmation email right now.");
+    if (isDemoMode() || !isSupabaseConfigured()) {
+      router.push(GUIDED_DEMO_ENTRY);
       return;
     }
 
-    setResendMessage("Confirmation email resent. Check your inbox and spam folder.");
+    setResending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(onboardingHref)}`,
+        },
+      });
+      if (error) {
+        setError("We could not resend the confirmation email right now.");
+        return;
+      }
+      setResendMessage("Confirmation email resent. Check your inbox and spam folder.");
+    } catch {
+      setError("We could not resend the confirmation email right now.");
+    } finally {
+      setResending(false);
+    }
   }
 
   return (
@@ -137,7 +167,7 @@ function SignUpForm() {
               )}
             </div>
           ) : (
-            <form onSubmit={handleSignUp} className="space-y-4 rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.06)] sm:p-7">
+            <form noValidate onSubmit={handleSignUp} className="space-y-4 rounded-[8px] border border-sage-deep/10 bg-warm-white p-6 shadow-[0_18px_48px_rgba(31,42,36,0.06)] sm:p-7">
               <div>
                 <label htmlFor="sign-up-name" className="mb-1 block text-sm font-medium text-bark">
                   Full name

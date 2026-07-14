@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, Truck } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { GuidedDemoBadge, GuidedDemoResetAction } from "@/components/paddockme/GuidedDemo";
 import { PaddockMeLogo } from "@/components/paddockme/PaddockMeLogo";
+import { PmAvatar } from "@/components/paddockme/PmAvatar";
+import { paddockmeImages } from "@/lib/paddockmeImages";
 
 export function TransporterShell({
   title,
@@ -27,8 +29,12 @@ export function TransporterShell({
           <PaddockMeLogo variant="dark" />
           <div className="flex items-center gap-2">
             <GuidedDemoBadge />
-            <span className="hidden items-center gap-2 rounded-full bg-pm-cream-100 px-3 py-1.5 text-sm font-bold text-pm-charcoal sm:inline-flex">
-              <Truck className="h-4 w-4 text-pm-green-900" aria-hidden />
+            <span className="hidden items-center gap-2 rounded-full bg-pm-cream-100 py-1 pl-1 pr-3 text-sm font-bold text-pm-charcoal sm:inline-flex">
+              <PmAvatar
+                src={paddockmeImages.avatarWayne}
+                initials="WT"
+                className="h-7 w-7"
+              />
               Wayne Transport
             </span>
           </div>

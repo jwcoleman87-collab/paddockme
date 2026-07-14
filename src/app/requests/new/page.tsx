@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { CirclePlus, MoveRight } from "lucide-react";
-import { CattleIcon, SheepIcon, HorseIcon } from "@/components/paddockme/AnimalIcons";
 import { FlowShell } from "@/components/paddockme/FlowShell";
 import { LivestockTypeCard } from "@/components/paddockme/PmCards";
 import { FormField } from "@/components/paddockme/FormField";
@@ -11,10 +10,10 @@ import { paddockmeImages } from "@/lib/paddockmeImages";
 import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 const livestockTypes = [
-  { label: "Cattle", icon: <CattleIcon className="h-7 w-7" /> },
-  { label: "Sheep", icon: <SheepIcon className="h-7 w-7" /> },
-  { label: "Horses", icon: <HorseIcon className="h-7 w-7" /> },
-  { label: "Other", icon: <CirclePlus className="h-7 w-7" /> },
+  { label: "Cattle", image: paddockmeImages.stockTypeCattle, icon: null },
+  { label: "Sheep", image: paddockmeImages.stockTypeSheep, icon: null },
+  { label: "Horses", image: paddockmeImages.stockTypeHorse, icon: null },
+  { label: "Other", image: undefined, icon: <CirclePlus className="h-7 w-7" /> },
 ];
 
 /** Screen 3 — New Agistment Request, Step 1: what stock do you have? */
@@ -37,6 +36,7 @@ export default function RequestStockPage() {
             key={t.label}
             label={t.label}
             icon={t.icon}
+            image={t.image}
             selected={state.request.livestockType === t.label}
             onSelect={() => setRequestDetails({ livestockType: t.label })}
           />

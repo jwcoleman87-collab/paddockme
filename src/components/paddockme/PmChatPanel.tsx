@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PmAvatar } from "@/components/paddockme/PmAvatar";
+import { paddockmeImages } from "@/lib/paddockmeImages";
 import { demoWorkspace, workspaceSeedMessages } from "@/lib/paddockmeDemoData";
 import {
   demoThreadTime,
@@ -45,11 +47,26 @@ type ChatMessage = {
   imageName?: string;
 };
 
-// Map each party's role -> the display name + initials shown on their bubbles.
-const PARTY_BY_ROLE: Record<Role, { name: string; initials: string }> = {
-  owner: { name: "James Coleman", initials: "JC" },
-  landowner: { name: "John — Green Hills Farm", initials: "GH" },
-  transporter: { name: "Wayne Transport", initials: "WT" },
+// Map each party's role -> the display name + face shown on their bubbles.
+const PARTY_BY_ROLE: Record<
+  Role,
+  { name: string; initials: string; avatar: string }
+> = {
+  owner: {
+    name: "James Coleman",
+    initials: "JC",
+    avatar: paddockmeImages.avatarJames,
+  },
+  landowner: {
+    name: "John — Green Hills Farm",
+    initials: "GH",
+    avatar: paddockmeImages.avatarJohn,
+  },
+  transporter: {
+    name: "Wayne Transport",
+    initials: "WT",
+    avatar: paddockmeImages.avatarWayne,
+  },
 };
 
 // Role -> avatar chip colour. Icons/labels always carry the meaning too, so
@@ -198,14 +215,15 @@ export function PmChatPanel({
                       : "border-pm-border bg-white text-pm-charcoal hover:border-pm-green-900",
                   )}
                 >
-                  <span
+                  <PmAvatar
+                    src={party.avatar}
+                    initials={party.initials}
                     className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-full text-[0.55rem] font-bold",
-                      active ? "bg-white/20 text-white" : ROLE_CHIP[role],
+                      "h-5 w-5 border-0",
+                      active && "ring-1 ring-white/60",
                     )}
-                  >
-                    {party.initials}
-                  </span>
+                    fallbackClassName={ROLE_CHIP[role]}
+                  />
                   {party.name.split(" — ")[0].split(" ")[0]}
                 </button>
               );
@@ -303,15 +321,11 @@ function MessageBubble({
   const party = PARTY_BY_ROLE[message.role];
   return (
     <article className={cn("flex gap-2.5", isMine && "flex-row-reverse")}>
-      <span
-        className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-bold",
-          ROLE_CHIP[message.role],
-        )}
-        aria-hidden
-      >
-        {party.initials}
-      </span>
+      <PmAvatar
+        src={party.avatar}
+        initials={party.initials}
+        fallbackClassName={ROLE_CHIP[message.role]}
+      />
       <div className={cn("min-w-0 max-w-[80%]", isMine && "items-end text-right")}>
         <div
           className={cn(
