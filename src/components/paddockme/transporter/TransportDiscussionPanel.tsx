@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { MessageSquareText, Send, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PmAvatar } from "@/components/paddockme/PmAvatar";
+import { paddockmeImages } from "@/lib/paddockmeImages";
 import {
   demoTransportRoomParticipants,
   transportRoomSeedMessages,
@@ -27,6 +29,12 @@ const initials: Record<TransportRoomMessage["role"], string> = {
   owner: "JC",
   landowner: "GH",
   transporter: "WT",
+};
+
+const avatars: Record<TransportRoomMessage["role"], string> = {
+  owner: paddockmeImages.avatarJames,
+  landowner: paddockmeImages.avatarJohn,
+  transporter: paddockmeImages.avatarWayne,
 };
 
 export type TransporterThread = ReturnType<typeof useTransporterThread>;
@@ -110,9 +118,11 @@ export function TransportDiscussionPanel({
             const role = (["owner", "landowner", "transporter"] as const)[index];
             return (
               <div key={participant.name} className="flex min-w-0 items-center gap-2 rounded-xl border border-pm-border bg-white px-3 py-2">
-                <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", roleAvatar[role])} aria-hidden>
-                  {participant.initials}
-                </span>
+                <PmAvatar
+                  src={participant.avatar}
+                  initials={participant.initials}
+                  fallbackClassName={roleAvatar[role]}
+                />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-bold text-pm-charcoal">{participant.name}</span>
                   <span className="block text-xs text-pm-muted">{participant.role}</span>
@@ -129,9 +139,11 @@ export function TransportDiscussionPanel({
           const mine = message.role === "transporter";
           return (
             <article key={`${message.sender}-${message.time}-${index}`} className={cn("flex min-w-0 gap-2.5", mine && "flex-row-reverse")}>
-              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", roleAvatar[message.role])} aria-hidden>
-                {initials[message.role]}
-              </span>
+              <PmAvatar
+                src={avatars[message.role]}
+                initials={initials[message.role]}
+                fallbackClassName={roleAvatar[message.role]}
+              />
               <div className={cn("min-w-0 max-w-[82%]", mine && "text-right")}>
                 <p className={cn("flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-pm-muted", mine && "justify-end")}>
                   <span className="font-bold text-pm-charcoal">{message.sender}</span>

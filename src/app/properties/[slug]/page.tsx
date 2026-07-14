@@ -95,6 +95,7 @@ export default function PropertyDetailPage() {
             name={p.owner.name}
             memberSince={p.owner.memberSince}
             rating={p.owner.rating}
+            avatar={p.owner.avatar}
             action={
               <PmButton href="/requests/sent">Request Discussion</PmButton>
             }

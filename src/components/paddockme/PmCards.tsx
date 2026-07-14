@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, MoveRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PmAvatar } from "./PmAvatar";
 
 /* ---------- Rating ---------- */
 
@@ -120,11 +121,13 @@ export function RoleChoiceCard({
 export function LivestockTypeCard({
   label,
   icon,
+  image,
   selected,
   onSelect,
 }: {
   label: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
+  image?: string;
   selected?: boolean;
   onSelect?: () => void;
 }) {
@@ -134,19 +137,43 @@ export function LivestockTypeCard({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "relative flex h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 bg-white text-sm font-semibold transition-colors cursor-pointer",
+        "group relative flex h-28 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 bg-white text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500",
         selected
-          ? "border-pm-green-900 text-pm-green-900"
+          ? "border-pm-gold-500 text-pm-green-900 shadow-sm"
           : "border-pm-border text-pm-muted hover:border-pm-green-700",
       )}
     >
+      {image ? (
+        <>
+          <img
+            src={image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+          <span
+            className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent"
+            aria-hidden
+          />
+        </>
+      ) : (
+        <span className="mb-1 text-pm-green-900" aria-hidden>
+          {icon}
+        </span>
+      )}
       {selected && (
-        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-pm-green-900 text-white">
+        <span className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-pm-gold-500 text-pm-charcoal ring-2 ring-white">
           <Check className="h-3 w-3" aria-label="Selected" />
         </span>
       )}
-      <span aria-hidden>{icon}</span>
-      {label}
+      <span
+        className={cn(
+          image
+            ? "absolute inset-x-0 bottom-0 z-10 px-3 py-2.5 text-left font-bold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]"
+            : "text-sm font-bold",
+        )}
+      >
+        {label}
+      </span>
     </button>
   );
 }
@@ -179,25 +206,27 @@ export function OwnerCard({
   name,
   memberSince,
   rating,
+  avatar,
   action,
 }: {
   name: string;
   memberSince: string;
   rating: number;
+  avatar?: string;
   action?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-pm-border bg-white px-5 py-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <span
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-pm-green-900 text-base font-bold text-white"
-          aria-hidden
-        >
-          {name
+        <PmAvatar
+          src={avatar}
+          initials={name
             .split(" ")
             .map((p) => p[0])
             .join("")}
-        </span>
+          className="h-11 w-11 text-base"
+          fallbackClassName="bg-pm-green-900 text-white"
+        />
         <div>
           <p className="text-sm font-bold text-pm-charcoal">{name}</p>
           <p className="text-xs text-pm-muted">

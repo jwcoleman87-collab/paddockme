@@ -11,6 +11,11 @@ export const paddockmeImages = {
   registrationBackground: "/images/paddockme/registration-cattle.jpg",
   requestStepCow: "/images/paddockme/request-step-cow.jpg",
   requestStepRoad: "/images/paddockme/request-step-road.jpg",
+  // AI-generated demo photography. Replace these files in place when
+  // licensed livestock photography is available.
+  stockTypeCattle: "/images/paddockme/stock-type-cattle.jpg",
+  stockTypeSheep: "/images/paddockme/stock-type-sheep.jpg",
+  stockTypeHorse: "/images/paddockme/stock-type-horse.jpg",
   matchesPaddockCard: "/images/paddockme/matches-paddock-card.jpg",
   matchesRiverbendCard: "/images/paddockme/matches-riverbend-card.jpg",
   propertyMain: "/images/paddockme/property-main-green-hills.jpg",
@@ -29,6 +34,12 @@ export const paddockmeImages = {
   journeyStepMatch: "/images/paddockme/journey-step-2-match.jpg",
   journeyStepAgree: "/images/paddockme/journey-step-3-agree.jpg",
   journeyStepMove: "/images/paddockme/journey-step-4-move.jpg",
+  // Persona placeholders — demo faces/logos so investors see real people,
+  // not initials. Swap the files when real customer photos arrive.
+  avatarJames: "/images/paddockme/people/avatar-james-coleman.jpg",
+  avatarJohn: "/images/paddockme/people/avatar-john-green-hills.jpg",
+  avatarWayne: "/images/paddockme/people/avatar-wayne-transport.jpg",
+  logoRuralFreight: "/images/paddockme/people/logo-rural-freight.svg",
 } as const;
 
 export type PaddockmeImageKey = keyof typeof paddockmeImages;

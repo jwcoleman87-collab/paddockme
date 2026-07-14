@@ -79,12 +79,14 @@ export const demoLivestockOwner = {
   name: "James Coleman",
   location: "Dubbo NSW",
   memberSince: "2024",
+  avatar: paddockmeImages.avatarJames,
 };
 
 export const demoLandowner = {
   name: "John Smith",
   memberSince: "2021",
   rating: 4.8,
+  avatar: paddockmeImages.avatarJohn,
 };
 
 export const demoRequest = {
@@ -209,6 +211,8 @@ export type DemoTransportQuote = {
   reviews: number;
   price: string;
   badges: string[];
+  /** Driver headshot (owner-operators) or company logo (larger carriers). */
+  avatar: string;
 };
 
 export const demoTransportQuotes: DemoTransportQuote[] = [
@@ -218,6 +222,7 @@ export const demoTransportQuotes: DemoTransportQuote[] = [
     reviews: 24,
     price: "$2,200",
     badges: ["Road Train", "NVD Accredited", "Fully Insured"],
+    avatar: paddockmeImages.avatarWayne,
   },
   {
     company: "Rural Freight Co.",
@@ -225,6 +230,7 @@ export const demoTransportQuotes: DemoTransportQuote[] = [
     reviews: 18,
     price: "$2,450",
     badges: ["Road Train", "NVD Accredited", "Fully Insured"],
+    avatar: paddockmeImages.logoRuralFreight,
   },
 ];
 
@@ -402,9 +408,24 @@ export const demoTransportConfirmedDetails: TransportConfirmedDetail[] = [
  * detail (access, yards, NVDs, timing) before the quote is accepted.
  */
 export const demoTransportRoomParticipants = [
-  { name: "James Coleman", role: "Livestock owner", initials: "JC" },
-  { name: "John — Green Hills Farm", role: "Landowner", initials: "GH" },
-  { name: "Wayne Transport", role: "Transporter", initials: "WT" },
+  {
+    name: "James Coleman",
+    role: "Livestock owner",
+    initials: "JC",
+    avatar: paddockmeImages.avatarJames,
+  },
+  {
+    name: "John — Green Hills Farm",
+    role: "Landowner",
+    initials: "GH",
+    avatar: paddockmeImages.avatarJohn,
+  },
+  {
+    name: "Wayne Transport",
+    role: "Transporter",
+    initials: "WT",
+    avatar: paddockmeImages.avatarWayne,
+  },
 ];
 
 export type TransportRoomMessage = {
