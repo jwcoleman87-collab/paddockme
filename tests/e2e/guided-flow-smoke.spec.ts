@@ -32,6 +32,14 @@ const routeChecks = [
     text: ["Request Sent!", "Continue as John", "John Smith"],
   },
   {
+    path: "/landowner",
+    text: ["John Smith", "Your paddock", "New request", "Your agreements"],
+  },
+  {
+    path: "/landowner/listings/new",
+    text: ["List your paddock capacity", "Acres available", "Water availability"],
+  },
+  {
     path: "/landowner/requests/1023",
     text: ["New Request Received", "Accept Discussion", "Decline"],
   },
