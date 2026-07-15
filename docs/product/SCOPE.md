@@ -1,6 +1,6 @@
 # Scope — Day One
 
-This doc captures (a) what was explicitly OUT of scope for the day-one foundation, and (b) the definition of done for that foundation pass. For the current investor sprint, use [`INVESTOR_MVP_SPRINT.md`](./INVESTOR_MVP_SPRINT.md) as the active tracker.
+This doc captures (a) what was explicitly OUT of scope for the day-one foundation, and (b) the definition of done for that foundation pass. For the current investor sprint, use [`INVESTOR_MVP_SPRINT.md`](../investor/INVESTOR_MVP_SPRINT.md) as the active tracker.
 
 ## What NOT to build yet
 

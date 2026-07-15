@@ -10,7 +10,7 @@ Improve the real product, not an imagined redesign. Optimise for a farmer using 
 ## Start here
 
 1. Read `PADDOCKME_MASTER_SPEC.md`, especially sections 4–8 and the page being changed.
-2. Read `docs/PRINCIPLES.md`, `src/app/globals.css`, and the affected route/components.
+2. Read `docs/product/PRINCIPLES.md`, `src/app/globals.css`, and the affected route/components.
 3. Read [references/product-contract.md](references/product-contract.md).
 4. For multi-screen, navigation, agreement, transport, payment, identity, or data-sharing work, read [references/ux-workflow.md](references/ux-workflow.md).
 5. Treat live code as visual ground truth when subordinate docs contain stale token values. Treat the master spec as product-behaviour authority.

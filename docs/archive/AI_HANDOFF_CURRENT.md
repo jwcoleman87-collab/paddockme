@@ -1,5 +1,8 @@
 # AI Handoff Current
 
+> **Archived 14 Jul 2026.** Superseded by [`CLAUDE.md`](../../CLAUDE.md) at the
+> repo root, which carries these guardrails forward. Kept for history.
+
 Use this when handing PaddockME to another AI assistant during the guided-MVP rebuild.
 
 ## Current Product Direction

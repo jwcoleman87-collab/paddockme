@@ -71,7 +71,7 @@ Apply this before shipping any new screen. The skill returns this list for every
 - [ ] `prefers-reduced-motion` respected
 - [ ] Responsive: 375px, 768px, 1024px, 1440px
 
-The first item is already in our [PRINCIPLES.md](./PRINCIPLES.md) — restated here for emphasis.
+The first item is already in our [PRINCIPLES.md](../product/PRINCIPLES.md) — restated here for emphasis.
 
 ## Anti-patterns to actively avoid
 

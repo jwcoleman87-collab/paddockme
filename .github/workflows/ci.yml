@@ -22,6 +22,9 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Docs link check
+        run: node scripts/docs-check.mjs
+
       - name: Install dependencies
         run: npm ci
 

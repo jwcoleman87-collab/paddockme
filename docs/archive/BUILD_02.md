@@ -1,6 +1,6 @@
 # Foundation Build 02 — Workspace and Agreement Flow Polish
 
-This brief covers the second build phase. Foundation Build 01 (see [SCOPE.md](./SCOPE.md)) delivered the skeleton — routes scaffolded, brand applied, Supabase schema in place, Vercel auto-deploying. Build 02 makes PaddockME **feel like a real product instead of a prototype**: visual polish, the workspace fleshed out, the transport room introduced, and dummy data replaced with persisted, role-aware Supabase flows.
+This brief covers the second build phase. Foundation Build 01 (see [SCOPE.md](../product/SCOPE.md)) delivered the skeleton — routes scaffolded, brand applied, Supabase schema in place, Vercel auto-deploying. Build 02 makes PaddockME **feel like a real product instead of a prototype**: visual polish, the workspace fleshed out, the transport room introduced, and dummy data replaced with persisted, role-aware Supabase flows.
 
 By the end of Build 02, each of the six personas should land on a coherent workspace or transport room with the right surfaces and access rules, and the agreement lifecycle should move through its states with real data.
 
@@ -12,11 +12,11 @@ Eight steps. The order matters — each one unlocks the next.
 
 ### 1. Polish the visual system
 
-Settle typography, spacing, cards, bottom dock, page headers, and mobile layout so every page feels like the same product. The brand is already defined in `globals.css` and [DESIGN_INTELLIGENCE.md](./DESIGN_INTELLIGENCE.md) — this step is about applying it consistently, not redefining it.
+Settle typography, spacing, cards, bottom dock, page headers, and mobile layout so every page feels like the same product. The brand is already defined in `globals.css` and [DESIGN_INTELLIGENCE.md](../design/DESIGN_INTELLIGENCE.md) — this step is about applying it consistently, not redefining it.
 
 ### 2. Improve the 2-party workspace
 
-The workspace is the heart of PaddockME. The split-screen scaffolding exists ([`SplitWorkspace.tsx`](../src/components/SplitWorkspace.tsx), [`AgreementPanel.tsx`](../src/components/AgreementPanel.tsx), [`ChatPanel.tsx`](../src/components/ChatPanel.tsx)) — now it needs to deliver real value:
+The workspace is the heart of PaddockME. The split-screen scaffolding exists ([`SplitWorkspace.tsx`](../../src/components/SplitWorkspace.tsx), [`AgreementPanel.tsx`](../../src/components/AgreementPanel.tsx), [`ChatPanel.tsx`](../../src/components/ChatPanel.tsx)) — now it needs to deliver real value:
 
 - Clearer agreement sections (parties, stock, paddock, dates, rate, terms, artefacts)
 - Shared artefact viewing (both parties can see the same NVD, photo, fence map)
@@ -27,7 +27,7 @@ The workspace is the heart of PaddockME. The split-screen scaffolding exists ([`
 
 A distinct surface from the workspace. Three participants — Farmer A, Farmer B, Driver — coordinating the actual stock movement. No equivalent components exist in code yet; this is a new build, not a polish pass.
 
-- Logistics-only visibility for the driver (see the [PERSONAS.md](./PERSONAS.md) driver-visibility rule)
+- Logistics-only visibility for the driver (see the PERSONAS.md (doc since removed) driver-visibility rule)
 - Pickup, route, gate access, arrival, headcount on/off, return move
 - Linked to but separate from the workspace
 
@@ -82,7 +82,7 @@ Anything in the build sequence above. Plus:
 
 ## What's still NOT in scope
 
-These remain explicitly deferred (carried forward from [SCOPE.md](./SCOPE.md)):
+These remain explicitly deferred (carried forward from [SCOPE.md](../product/SCOPE.md)):
 
 - Real money movement / Stripe / payments — the rate is a number on a screen, no money moves
 - AI contract generation, AI mediation of disputes
@@ -121,9 +121,9 @@ When Build 02 finishes, the persona walkthrough must be able to:
 
 Every screen and migration in this build must honour:
 
-- The five DNA principles in [PRINCIPLES.md](./PRINCIPLES.md)
+- The five DNA principles in [PRINCIPLES.md](../product/PRINCIPLES.md)
 - **"Feel right before it gets clever"** (this build's guiding principle)
-- The **2-party workspace + 3-party transport room** shape rule from [PERSONAS.md](./PERSONAS.md)
+- The **2-party workspace + 3-party transport room** shape rule from PERSONAS.md (doc since removed)
 - The **driver-visibility rule** — enforced at the data layer, not just the UI
 - Tap, don't type — chips, pills, sliders. No new free-text fields except chat messages and the profile bio
 - No emoji as state indicators — lucide-react icons only

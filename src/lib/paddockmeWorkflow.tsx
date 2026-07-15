@@ -204,7 +204,7 @@ export type AgreementState = {
   /** ISO datetime of the last agreement change */
   lastUpdated: string | null;
 
-  // Complete-state fields (docs/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md) —
+  // Complete-state fields (docs/product/COMPLETE_STATE_LIVE_AGREEMENT_SPEC.md) —
   // populated when transport is booked / the review is accepted, and read
   // by the Live Agreement screen.
   /** ISO datetime the review was accepted — the deal's execution date. */

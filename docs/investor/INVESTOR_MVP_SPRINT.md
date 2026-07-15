@@ -8,7 +8,7 @@ https://paddockme-oz51.vercel.app
 
 Current built-product inventory:
 
-[`docs/CURRENT_PRODUCT_AUDIT.md`](./CURRENT_PRODUCT_AUDIT.md)
+[`docs/CURRENT_PRODUCT_AUDIT.md`](../reports/CURRENT_PRODUCT_AUDIT.md)
 
 Investor follow-up Q&A:
 
@@ -16,19 +16,19 @@ Investor follow-up Q&A:
 
 Customer validation guide:
 
-[`docs/CUSTOMER_VALIDATION_GUIDE.md`](./CUSTOMER_VALIDATION_GUIDE.md)
+[`docs/CUSTOMER_VALIDATION_GUIDE.md`](../product/CUSTOMER_VALIDATION_GUIDE.md)
 
 Payments/settlement blueprint:
 
-[`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](./PAYMENTS_SETTLEMENT_BLUEPRINT.md)
+[`docs/PAYMENTS_SETTLEMENT_BLUEPRINT.md`](../payments/PAYMENTS_SETTLEMENT_BLUEPRINT.md)
 
 Live demo cheat sheet:
 
-[`docs/DEMO_CHEATSHEET.md`](./DEMO_CHEATSHEET.md)
+`docs/DEMO_CHEATSHEET.md` (doc since removed)
 
 Current AI handoff:
 
-[`docs/AI_HANDOFF_CURRENT.md`](./AI_HANDOFF_CURRENT.md)
+[`docs/AI_HANDOFF_CURRENT.md`](../archive/AI_HANDOFF_CURRENT.md)
 
 Final freeze checklist:
 
