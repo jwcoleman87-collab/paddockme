@@ -38,8 +38,8 @@ export function isDemoRequest(hostname: string): boolean {
 export const GUIDED_DEMO_LANES = {
   /** Farmer A — livestock owner who needs feed. */
   livestock: "/requests/new",
-  /** Farmer B — landowner receiving the agistment request. */
-  landowner: "/landowner/requests/1023",
+  /** Farmer B — landowner's hub: his paddock listing, the incoming request, and his agreements. */
+  landowner: "/landowner",
   /** Carrier — Wayne's transport job board. */
   transport: "/transport/demo",
 } as const;

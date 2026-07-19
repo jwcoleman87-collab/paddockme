@@ -217,10 +217,26 @@ export type AgreementState = {
   paymentSchedule: PaymentScheduleItem[];
 };
 
+/** A paddock capacity listing the landowner has put up for livestock owners to find. */
+export type LandownerListing = {
+  acres: string;
+  stockTypesAccepted: string[];
+  waterAvailability: "Permanent" | "Seasonal" | "Tank" | "None";
+  fencingCondition: "Excellent" | "Good" | "Needs work";
+  ratePerHeadWeek: string;
+};
+
+export type LandownerState = {
+  paddockListed: boolean;
+  listing: LandownerListing | null;
+  listedAt: string | null;
+};
+
 export type WorkflowState = {
   request: RequestDetails;
   agreement: AgreementState;
   transporter: TransporterDemoState;
+  landowner: LandownerState;
 };
 
 function defaultTransporterState(): TransporterDemoState {
@@ -235,6 +251,14 @@ function defaultTransporterState(): TransporterDemoState {
     completedAt: null,
     deliveredHeadCount: null,
     invoiceStatus: "not_ready",
+  };
+}
+
+function defaultLandownerState(): LandownerState {
+  return {
+    paddockListed: false,
+    listing: null,
+    listedAt: null,
   };
 }
 
@@ -273,6 +297,7 @@ function defaultState(): WorkflowState {
       paymentSchedule: [],
     },
     transporter: defaultTransporterState(),
+    landowner: defaultLandownerState(),
   };
 }
 
@@ -372,6 +397,10 @@ function withCompleteStateBackfill(state: WorkflowState): WorkflowState {
       ...defaultTransporterState(),
       ...state.transporter,
     },
+    landowner: {
+      ...defaultLandownerState(),
+      ...state.landowner,
+    },
   };
   const a = normalisedState.agreement;
   if (!a.reviewAccepted && !a.transportArranged) return normalisedState;
@@ -407,6 +436,7 @@ type WorkflowContextValue = {
   proposePaymentTerms: (value: string, from: "James" | "John") => void;
   acceptPaymentTerms: () => void;
   sendRft: () => void;
+  listPaddock: (listing: LandownerListing) => void;
   selectTransporterJob: (jobId: string) => void;
   startTransporterDiscussion: (jobId: string) => void;
   confirmTransporterDiscussion: () => void;
@@ -455,6 +485,10 @@ export function PaddockmeWorkflowProvider({
             transporter: {
               ...prev.transporter,
               ...parsed.transporter,
+            },
+            landowner: {
+              ...prev.landowner,
+              ...parsed.landowner,
             },
           }),
         );
@@ -849,6 +883,17 @@ export function PaddockmeWorkflowProvider({
     }));
   }
 
+  function listPaddock(listing: LandownerListing) {
+    setState((prev) => ({
+      ...prev,
+      landowner: {
+        paddockListed: true,
+        listing,
+        listedAt: new Date().toISOString(),
+      },
+    }));
+  }
+
   function resetWorkflow() {
     setState(defaultState());
     try {
@@ -876,6 +921,7 @@ export function PaddockmeWorkflowProvider({
       proposePaymentTerms,
       acceptPaymentTerms,
       sendRft,
+      listPaddock,
       selectTransporterJob,
       startTransporterDiscussion,
       confirmTransporterDiscussion,

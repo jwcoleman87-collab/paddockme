@@ -61,7 +61,7 @@ const GUIDED_MVP_PREFIXES = [
   "/requests/new",
   "/requests/matches",
   "/requests/sent",
-  "/landowner/requests",
+  "/landowner",
   "/workspaces",
   "/transport/demo",
   "/transport/quotes",
