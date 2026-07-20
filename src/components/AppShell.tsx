@@ -16,7 +16,10 @@ import { SignOutButton } from "@/components/SignOutButton";
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <FlashProvider>
-      <div className="min-h-dvh overflow-x-hidden bg-transparent text-bark lg:flex">
+      {/* overflow-x-clip (not -hidden): hidden would make this div the
+          nearest scroll container, which silently disables position:sticky
+          for everything inside - e.g. the workspace chat panel. */}
+      <div className="min-h-dvh overflow-x-clip bg-transparent text-bark lg:flex">
         <AppSidebar>
           <div className="flex flex-col gap-2">
             <Link
