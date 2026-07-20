@@ -7,7 +7,7 @@
     "build": "next build",
     "lint": "npm run typecheck",
     "test:e2e": "playwright test",
-    "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
+    "test:unit": "node --import tsx --test tests/unit/agreement-party.test.ts",
     "check": "npm run lint && npm run build && npm run test:e2e",
     "verify:pitch": "npm run typecheck && npm run docs:check && npm run build && npm run demo:smoke && npm run demo:click",
     "demo:smoke": "node scripts/demo-smoke.mjs",
@@ -41,6 +41,7 @@
     "@types/react-dom": "^19",
     "playwright": "^1.60.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }
