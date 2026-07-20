@@ -7,6 +7,7 @@
     "build": "next build",
     "lint": "npm run typecheck",
     "test:e2e": "playwright test",
+    "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
     "check": "npm run lint && npm run build && npm run test:e2e",
     "verify:pitch": "npm run typecheck && npm run docs:check && npm run build && npm run demo:smoke && npm run demo:click",
     "demo:smoke": "node scripts/demo-smoke.mjs",

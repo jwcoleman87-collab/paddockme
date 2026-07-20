@@ -13,6 +13,10 @@ import type { ArtefactDraft } from "@/components/ArtefactUploadDialog";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useFlash } from "@/components/FlashProvider";
 import { SplitWorkspace } from "@/components/SplitWorkspace";
+import {
+  canMutateAgreement,
+  resolveAgreementParty,
+} from "@/lib/agreementParty";
 import { markThreadSeen } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
 import {
@@ -88,7 +92,13 @@ export function WorkspaceClient({
     }),
     [agreement.farmerAId, agreement.farmerAName, agreement.farmerBId, agreement.farmerBName]
   );
-  const [viewerParty, setViewerPartyState] = useState<WorkspaceParty>("A");
+  // Null until the signed-in user has been verified against THIS agreement's
+  // stored party ids. No perspective is rendered and no mutation is allowed
+  // while null (same principle as RealTransportRoom's null -> observer).
+  const [viewerParty, setViewerPartyState] = useState<WorkspaceParty | null>(
+    null
+  );
+  const [viewerChecked, setViewerChecked] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   // Section content is editable (dates, pickup address, terms...), so it
@@ -109,13 +119,20 @@ export function WorkspaceClient({
     markThreadSeen(agreement.id, messages.length);
   }, [agreement.id, messages.length]);
 
-  // Detect which side of the agreement the signed-in user is.
+  // Detect which side of the agreement the signed-in user is. A user who
+  // matches neither stored party id stays null (blocked), never a default.
   useEffect(() => {
+    let active = true;
     void getCurrentUserId().then((userId) => {
-      if (!userId) return;
-      if (userId === agreement.farmerBId) setViewerPartyState("B");
-      if (userId === agreement.farmerAId) setViewerPartyState("A");
+      if (!active) return;
+      setViewerPartyState(
+        resolveAgreementParty(userId, agreement.farmerAId, agreement.farmerBId)
+      );
+      setViewerChecked(true);
     });
+    return () => {
+      active = false;
+    };
   }, [agreement.farmerAId, agreement.farmerBId]);
 
   // Live chat sync: poll every few seconds and merge, keeping any
@@ -231,6 +248,7 @@ export function WorkspaceClient({
   }, [agreement.id]);
 
   function sendMessage(body: string) {
+    if (!canMutateAgreement(viewerParty)) return;
     const sender = partyProfile[viewerParty];
     void createAgreementMessage({
       agreementId: agreement.id,
@@ -295,8 +313,9 @@ export function WorkspaceClient({
 
   const toggleAgreement = (sectionId: string, party: WorkspaceParty) => {
     // Guard - the panel only renders the viewer's own button as
-    // interactive, but defend against rogue calls just in case.
-    if (party !== viewerParty) return;
+    // interactive, but defend against rogue calls just in case. Also blocks
+    // everything until the viewer is verified against this agreement.
+    if (!canMutateAgreement(viewerParty) || party !== viewerParty) return;
     lastLocalMutationRef.current = Date.now();
     setSectionState((current) => {
       const previous = current[sectionId] ?? {
@@ -308,11 +327,12 @@ export function WorkspaceClient({
           ? { ...previous, agreedByA: !previous.agreedByA }
           : { ...previous, agreedByB: !previous.agreedByB };
 
+      // The repository derives the caller's party from the agreement's
+      // stored ids and only writes the caller's own flag.
       void updateAgreementSectionAgreement({
         agreementId: agreement.id,
         sectionId,
-        agreedByA: next.agreedByA,
-        agreedByB: next.agreedByB,
+        agreed: party === "A" ? next.agreedByA : next.agreedByB,
       });
 
       const justMutuallyAgreed =
@@ -336,7 +356,7 @@ export function WorkspaceClient({
       if (withdrewAgreement) {
         const section = agreement.sections.find((s) => s.id === sectionId);
         demoteLifecycleIfFinalised(
-          `${partyProfile[viewerParty].label} withdrew agreement on "${section?.label ?? sectionId}".`
+          `${partyProfile[party].label} withdrew agreement on "${section?.label ?? sectionId}".`
         );
       }
 
@@ -351,6 +371,7 @@ export function WorkspaceClient({
    * section. Both screens pick the change up via the status poll.
    */
   const demoteLifecycleIfFinalised = (reason: string) => {
+    if (!canMutateAgreement(viewerParty)) return;
     const from = lifecycleState;
     if (from !== "Ready to finalise" && from !== "Active" && from !== "Completed") {
       return;
@@ -379,6 +400,7 @@ export function WorkspaceClient({
   };
 
   const editSectionValue = (sectionId: string, value: string) => {
+    if (!canMutateAgreement(viewerParty)) return;
     const section = sectionsContent.find((item) => item.id === sectionId);
     lastLocalMutationRef.current = Date.now();
     setSectionsContent((current) =>
@@ -396,10 +418,11 @@ export function WorkspaceClient({
       ...current,
       [sectionId]: { agreedByA: false, agreedByB: false },
     }));
+    // The repository derives the caller's party from the agreement's stored
+    // ids and only writes the caller's own side of the section.
     void updateAgreementSectionValue({
       agreementId: agreement.id,
       sectionId,
-      party: viewerParty,
       value,
     });
     flash(
@@ -416,6 +439,7 @@ export function WorkspaceClient({
   };
 
   const advanceLifecycle = (to: AgreementLifecycleState) => {
+    if (!canMutateAgreement(viewerParty)) return;
     const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
     lastLocalMutationRef.current = Date.now();
@@ -445,6 +469,8 @@ export function WorkspaceClient({
   };
 
   const addArtefact = (draft: ArtefactDraft) => {
+    if (!canMutateAgreement(viewerParty)) return;
+    const viewerLabel = partyProfile[viewerParty].label;
     const newArtefact: AgreementArtefact = {
       id: `local-art-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       label: draft.label,
@@ -470,13 +496,14 @@ export function WorkspaceClient({
       }
       flash(`Artefact "${draft.label}" added.`, "success");
       appendSystemMessage(
-        `${partyProfile[viewerParty].label} added artefact "${draft.label}".`,
+        `${viewerLabel} added artefact "${draft.label}".`,
         draft.sectionId
       );
     });
   };
 
   const cancelLifecycle = () => {
+    if (!canMutateAgreement(viewerParty)) return;
     const byParty = viewerParty === "A" ? "Livestock owner" : "Landowner";
     const from = lifecycleState;
     if (from === "Cancelled" || from === "Completed") return;
@@ -498,6 +525,7 @@ export function WorkspaceClient({
   };
 
   const requestTransport = async () => {
+    if (!canMutateAgreement(viewerParty)) return;
     if (!allSectionsAgreed) {
       flash("Resolve every agreement section before pushing an RFT.", "warning");
       return;
@@ -558,6 +586,29 @@ export function WorkspaceClient({
       },
     ];
   }, [sectionsContent, sectionState, agreement.livestock, agreement.listingTitle]);
+
+  // No perspective is rendered until the signed-in user has been verified
+  // against this agreement's stored party ids.
+  if (!viewerChecked) {
+    return (
+      <Card className="p-6 text-sm text-stone">
+        Confirming your access to this agreement…
+      </Card>
+    );
+  }
+  if (!viewerParty) {
+    return (
+      <Card className="p-6">
+        <h2 className="text-base font-bold text-bark">
+          This agreement isn&apos;t available on your account
+        </h2>
+        <p className="mt-2 text-sm text-stone">
+          Only the two parties to an agreement can view or change it. If you
+          expected access, check you&apos;re signed in with the right account.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
