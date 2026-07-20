@@ -21,6 +21,12 @@ import {
   pointToWkt,
   type Coordinate,
 } from "@/lib/mapCoordinates";
+import {
+  applyPartyTick,
+  resolveAgreementParty,
+  type AgreementPartyId,
+  type SectionTickState,
+} from "@/lib/agreementParty";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Json, Tables, TablesInsert, TablesUpdate } from "@/lib/types/database";
@@ -838,24 +844,45 @@ export async function getAgreementLiveState(
 }
 
 /**
+ * Resolve which side of an agreement the signed-in user is, from the stored
+ * party ids — never from a client-supplied label. Null = not a party.
+ */
+async function resolveCallerParty(
+  supabase: NonNullable<Awaited<ReturnType<typeof getAuthedClient>>>,
+  agreementId: string
+): Promise<AgreementPartyId | null> {
+  const user = await getCurrentUser(supabase);
+  if (!user) return null;
+  const { data } = await supabase
+    .from("agreements")
+    .select("livestock_owner_id, landowner_id")
+    .eq("id", agreementId)
+    .maybeSingle();
+  if (!data) return null;
+  return resolveAgreementParty(user.id, data.livestock_owner_id, data.landowner_id);
+}
+
+/**
  * One party edits their side of a section (dates, pickup address, terms...).
  * Any change resets BOTH agree ticks - new wording needs fresh agreement
- * from both sides.
+ * from both sides. The caller's party is derived server-of-client from the
+ * agreement's stored ids; the caller can only ever write their own value.
  */
 export async function updateAgreementSectionValue(input: {
   agreementId: string;
   sectionId: string;
-  party: "A" | "B";
   value: string;
 }): Promise<boolean> {
   const supabase = await getAuthedClient();
   if (!supabase || !isUuid(input.agreementId)) return false;
+  const party = await resolveCallerParty(supabase, input.agreementId);
+  if (!party) return false;
   const patch: TablesUpdate<"agreement_sections"> = {
     agreed_by_a: false,
     agreed_by_b: false,
     status: "pending",
   };
-  if (input.party === "A") patch.farmer_a_value = { value: input.value };
+  if (party === "A") patch.farmer_a_value = { value: input.value };
   else patch.farmer_b_value = { value: input.value };
   const { error } = await supabase
     .from("agreement_sections")
@@ -865,23 +892,42 @@ export async function updateAgreementSectionValue(input: {
   return !error;
 }
 
+/**
+ * Set the caller's OWN agree tick on a section. The party is derived from
+ * the agreement's stored ids; the counterparty's flag is never touched.
+ * Returns the resulting tick state, or null if the caller is not a party.
+ */
 export async function updateAgreementSectionAgreement(input: {
   agreementId: string;
   sectionId: string;
-  agreedByA: boolean;
-  agreedByB: boolean;
-}): Promise<void> {
+  agreed: boolean;
+}): Promise<SectionTickState | null> {
   const supabase = await getAuthedClient();
-  if (!supabase || !isUuid(input.agreementId)) return;
-  await supabase
+  if (!supabase || !isUuid(input.agreementId)) return null;
+  const party = await resolveCallerParty(supabase, input.agreementId);
+  if (!party) return null;
+  const { data: row } = await supabase
+    .from("agreement_sections")
+    .select("agreed_by_a, agreed_by_b")
+    .eq("agreement_id", input.agreementId)
+    .eq("section_key", input.sectionId)
+    .maybeSingle();
+  if (!row) return null;
+  const next = applyPartyTick(
+    party,
+    { agreedByA: !!row.agreed_by_a, agreedByB: !!row.agreed_by_b },
+    input.agreed
+  );
+  const { error } = await supabase
     .from("agreement_sections")
     .update({
-      agreed_by_a: input.agreedByA,
-      agreed_by_b: input.agreedByB,
-      status: input.agreedByA && input.agreedByB ? "agreed" : "pending",
+      agreed_by_a: next.agreedByA,
+      agreed_by_b: next.agreedByB,
+      status: next.agreedByA && next.agreedByB ? "agreed" : "pending",
     })
     .eq("agreement_id", input.agreementId)
     .eq("section_key", input.sectionId);
+  return error ? null : next;
 }
 
 async function getAuthedClient() {
