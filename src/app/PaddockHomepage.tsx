@@ -153,11 +153,11 @@ export function PaddockHomepage() {
                 accent
               />
               <RoleChoiceCard
-                href="/transport/jobs"
+                href="/transport/demo"
                 icon={<Truck className="h-6 w-6" aria-hidden />}
-                title="I move livestock"
-                subtitle="Review Requests for Transport"
-                actionLabel="Open the RFT board"
+                title="Find transport work"
+                subtitle="Browse livestock movements, discuss jobs with both farmers, submit quotes and manage active work."
+                actionLabel="View available jobs"
               />
             </div>
           </div>

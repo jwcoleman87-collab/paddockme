@@ -7,8 +7,8 @@ const routeChecks = [
       "Match stock with feed. Then get them there.",
       "I need feed",
       "I have grazing",
-      "I move livestock",
-      "Review Requests for Transport",
+      "Find transport work",
+      "View available jobs",
     ],
   },
   {
