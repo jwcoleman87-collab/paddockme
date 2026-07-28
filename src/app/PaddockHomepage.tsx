@@ -140,6 +140,8 @@ export function PaddockHomepage() {
               <RoleChoiceCard
                 href="/requests/new"
                 icon={<Search className="h-6 w-6" aria-hidden />}
+                image={paddockmeImages.roleWantFeed}
+                imageAlt="Livestock owner watching cattle in a dry paddock as a stock truck approaches"
                 title="I need feed"
                 subtitle="Create an agistment request"
                 actionLabel="Find a paddock"
@@ -147,6 +149,8 @@ export function PaddockHomepage() {
               <RoleChoiceCard
                 href="/listings/new"
                 icon={<LandPlot className="h-6 w-6" aria-hidden />}
+                image={paddockmeImages.roleWantCattle}
+                imageAlt="Landholder welcoming cattle into a green grazing paddock"
                 title="I have grazing"
                 subtitle="List available paddock capacity"
                 actionLabel="List a paddock"
@@ -155,6 +159,8 @@ export function PaddockHomepage() {
               <RoleChoiceCard
                 href="/transport/demo"
                 icon={<Truck className="h-6 w-6" aria-hidden />}
+                image={paddockmeImages.roleTruckies}
+                imageAlt="Farmers and a livestock transporter coordinating beside a loaded cattle truck"
                 title="Find transport work"
                 subtitle="Browse livestock movements, discuss jobs with both farmers, submit quotes and manage active work."
                 actionLabel="View available jobs"

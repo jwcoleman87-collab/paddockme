@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Check, MoveRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PmAvatar } from "./PmAvatar";
@@ -62,6 +63,8 @@ export function Badge({
 export function RoleChoiceCard({
   href,
   icon,
+  image,
+  imageAlt,
   title,
   subtitle,
   actionLabel,
@@ -69,6 +72,8 @@ export function RoleChoiceCard({
 }: {
   href: string;
   icon: React.ReactNode;
+  image: string;
+  imageAlt: string;
   title: string;
   subtitle: string;
   actionLabel?: string;
@@ -78,39 +83,50 @@ export function RoleChoiceCard({
     <Link
       href={href}
       className={cn(
-        "group flex min-h-40 flex-1 items-start gap-4 rounded-lg border px-5 py-5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500 sm:px-6",
+        "group flex min-h-40 flex-1 flex-col overflow-hidden rounded-lg border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500",
         accent
           ? "border-pm-gold-500 bg-pm-gold-500 text-pm-charcoal hover:bg-pm-gold-600"
           : "border-pm-green-900 bg-pm-green-900 text-white hover:bg-pm-green-800",
       )}
     >
-      <span
-        className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg",
-          accent ? "bg-pm-charcoal/10" : "bg-white/10",
-        )}
-        aria-hidden
-      >
-        {icon}
+      <span className="relative block aspect-[2/1] w-full overflow-hidden bg-pm-cream-100">
+        <Image
+          src={image}
+          alt={imageAlt}
+          fill
+          sizes="(min-width: 1024px) 373px, (min-width: 640px) calc(100vw - 48px), calc(100vw - 32px)"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+        />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-base font-extrabold">
-          {title}
-        </span>
+      <span className="flex w-full flex-1 items-start gap-4 px-5 py-5 sm:px-6">
         <span
           className={cn(
-            "block text-sm",
-            accent ? "text-pm-charcoal/70" : "text-white/70",
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg",
+            accent ? "bg-pm-charcoal/10" : "bg-white/10",
           )}
+          aria-hidden
         >
-          {subtitle}
+          {icon}
         </span>
-        {actionLabel && (
-          <span className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4">
-            {actionLabel}
-            <MoveRight className="h-4 w-4" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-extrabold">
+            {title}
           </span>
-        )}
+          <span
+            className={cn(
+              "block text-sm",
+              accent ? "text-pm-charcoal/70" : "text-white/70",
+            )}
+          >
+            {subtitle}
+          </span>
+          {actionLabel && (
+            <span className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4">
+              {actionLabel}
+              <MoveRight className="h-4 w-4" aria-hidden />
+            </span>
+          )}
+        </span>
       </span>
     </Link>
   );

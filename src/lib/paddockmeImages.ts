@@ -8,6 +8,9 @@
  */
 export const paddockmeImages = {
   homepageHero: "/images/paddockme/hero-homepage.jpg",
+  roleWantFeed: "/images/paddockme/role-want-feed.webp",
+  roleWantCattle: "/images/paddockme/role-want-cattle.webp",
+  roleTruckies: "/images/paddockme/role-truckies.webp",
   registrationBackground: "/images/paddockme/registration-cattle.jpg",
   requestStepCow: "/images/paddockme/request-step-cow.jpg",
   requestStepRoad: "/images/paddockme/request-step-road.jpg",
