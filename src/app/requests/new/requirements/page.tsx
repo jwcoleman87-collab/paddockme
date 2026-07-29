@@ -6,6 +6,7 @@ import { FlowShell } from "@/components/paddockme/FlowShell";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { paddockmeImages } from "@/lib/paddockmeImages";
+import { journeyEyebrow } from "@/lib/journeys";
 import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 /** Screen 4 — New Agistment Request, Step 2: feed requirements. */
@@ -15,6 +16,7 @@ export default function RequestRequirementsPage() {
   return (
     <FlowShell
       step={2}
+      journey={journeyEyebrow("livestock")}
       sideImage={paddockmeImages.requestStepRoad}
       sideImageAlt="Dirt road leading to an Australian paddock"
     >
@@ -62,7 +64,7 @@ export default function RequestRequirementsPage() {
       <div className="mt-8 flex items-center justify-between gap-3">
         <Link
           href="/requests/new"
-          className="text-sm font-medium text-pm-muted hover:text-pm-charcoal"
+          className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium text-pm-muted hover:text-pm-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-gold-500"
         >
           Back
         </Link>

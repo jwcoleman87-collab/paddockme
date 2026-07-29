@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { CirclePlus, MoveRight } from "lucide-react";
 import { FlowShell } from "@/components/paddockme/FlowShell";
 import { LivestockTypeCard } from "@/components/paddockme/PmCards";
 import { FormField } from "@/components/paddockme/FormField";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { paddockmeImages } from "@/lib/paddockmeImages";
+import { journeyEyebrow } from "@/lib/journeys";
 import { usePaddockmeWorkflow } from "@/lib/paddockmeWorkflow";
 
 const livestockTypes = [
@@ -23,6 +23,7 @@ export default function RequestStockPage() {
   return (
     <FlowShell
       step={1}
+      journey={journeyEyebrow("livestock")}
       sideImage={paddockmeImages.requestStepCow}
       sideImageAlt="Cattle grazing in an Australian paddock"
     >
@@ -63,13 +64,10 @@ export default function RequestStockPage() {
         />
       </div>
 
-      <div className="mt-8 flex items-center justify-between gap-3">
-        <Link
-          href="/"
-          className="text-sm font-medium text-pm-muted hover:text-pm-charcoal"
-        >
-          Cancel
-        </Link>
+      {/* One exit, not two. This row used to carry a "Cancel" link to "/"
+          alongside the header's "Save & Exit" — same destination, opposite
+          promises, and nothing was ever discarded. */}
+      <div className="mt-8 flex items-center justify-end gap-3">
         <PmButton href="/requests/new/requirements">
           Next
           <MoveRight className="h-4 w-4" aria-hidden />

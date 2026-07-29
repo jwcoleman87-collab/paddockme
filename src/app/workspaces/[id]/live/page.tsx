@@ -45,7 +45,41 @@ export default function LiveAgreementPage() {
   // Wait for the stored session before branching, so a mid-flow refresh
   // doesn't flash the "nothing live yet" state at a completed agreement.
   if (!hasHydrated) {
-    return <div className="min-h-screen bg-pm-cream-50" />;
+    return (
+      <div className="flex min-h-screen flex-col bg-pm-cream-50">
+        <header className="border-b border-pm-border bg-white px-4 py-4 sm:px-6">
+          <div className="mx-auto max-w-5xl">
+            <PaddockMeLogo variant="dark" />
+          </div>
+        </header>
+        <main
+          className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6"
+          aria-busy="true"
+        >
+          <section
+            className="rounded-2xl border border-pm-border bg-white p-6 shadow-sm sm:p-8"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-sm font-bold text-pm-green-900">
+              Loading agreement…
+            </p>
+            <div
+              className="mt-5 animate-pulse space-y-4 motion-reduce:animate-none"
+              aria-hidden="true"
+            >
+              <div className="h-7 w-48 rounded bg-pm-cream-100" />
+              <div className="h-4 max-w-xl rounded bg-pm-cream-100" />
+              <div className="grid gap-4 pt-2 sm:grid-cols-2">
+                <div className="h-36 rounded-xl bg-pm-cream-100" />
+                <div className="h-36 rounded-xl bg-pm-cream-100" />
+              </div>
+            </div>
+          </section>
+        </main>
+        <AppBottomNav />
+      </div>
+    );
   }
 
   if (!isComplete) {

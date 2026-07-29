@@ -14,6 +14,7 @@ import { PrimaryNav } from "@/components/paddockme/PmNav";
 import { RoleChoiceCard } from "@/components/paddockme/PmCards";
 import { PmButton } from "@/components/paddockme/PmButton";
 import { paddockmeImages } from "@/lib/paddockmeImages";
+import { JOURNEYS } from "@/lib/journeys";
 
 const journey = [
   {
@@ -91,17 +92,25 @@ export function PaddockHomepage() {
                 PaddockME keeps the request, agreement and livestock movement
                 together, so less time is lost coordinating the job.
               </p>
+              {/* The job comes first: the dominant action opens the three
+                  journeys. Creating an account is the subordinate path —
+                  sending a first-time visitor to a registration form before
+                  they have chosen a job is what made the entry feel clunky. */}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <PmButton href="/sign-up" variant="accent" className="sm:min-w-44">
-                  Get started
+                <PmButton
+                  href="#choose-your-path"
+                  variant="accent"
+                  className="sm:min-w-44"
+                >
+                  Choose what you need
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </PmButton>
                 <PmButton
-                  href="#choose-your-path"
+                  href="/sign-up"
                   variant="ghost"
                   className="border border-white/35 text-white hover:bg-white/10 sm:min-w-44"
                 >
-                  Choose what you need
+                  Create an account
                 </PmButton>
               </div>
             </div>
@@ -138,7 +147,7 @@ export function PaddockHomepage() {
 
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               <RoleChoiceCard
-                href="/requests/new"
+                href={JOURNEYS.livestock.lane}
                 icon={<Search className="h-6 w-6" aria-hidden />}
                 image={paddockmeImages.roleWantFeed}
                 imageAlt="Livestock owner watching cattle in a dry paddock as a stock truck approaches"
@@ -146,8 +155,12 @@ export function PaddockHomepage() {
                 subtitle="Create an agistment request"
                 actionLabel="Find a paddock"
               />
+              {/* Straight to the landowner lane. This used to point at
+                  /listings/new — a signed-in-only route rescued by a
+                  demo-host middleware redirect, so the tile cost a redirect
+                  hop and broke anywhere demo mode was off. */}
               <RoleChoiceCard
-                href="/listings/new"
+                href={JOURNEYS.landowner.lane}
                 icon={<LandPlot className="h-6 w-6" aria-hidden />}
                 image={paddockmeImages.roleWantCattle}
                 imageAlt="Landholder welcoming cattle into a green grazing paddock"
@@ -157,7 +170,7 @@ export function PaddockHomepage() {
                 accent
               />
               <RoleChoiceCard
-                href="/transport/demo"
+                href={JOURNEYS.transport.lane}
                 icon={<Truck className="h-6 w-6" aria-hidden />}
                 image={paddockmeImages.roleTruckies}
                 imageAlt="Farmers and a livestock transporter coordinating beside a loaded cattle truck"
@@ -240,7 +253,10 @@ export function PaddockHomepage() {
             <p className="mt-1 text-sm text-white/65">Built for Australian farmers and carriers.</p>
           </div>
           <div className="text-sm text-white/70 sm:text-right">
-            <a className="min-h-11 py-3 underline underline-offset-4" href="mailto:support@paddockme.com.au">
+            <a
+              className="inline-flex min-h-11 items-center py-3 underline underline-offset-4"
+              href="mailto:support@paddockme.com.au"
+            >
               support@paddockme.com.au
             </a>
             <p>© {new Date().getFullYear()} PaddockME</p>

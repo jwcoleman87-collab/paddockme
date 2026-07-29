@@ -11,7 +11,17 @@ test("landowner lists a paddock, sees it on the hub, and can edit it", async ({
   page,
 }) => {
   await page.goto("/landowner");
-  await expect(page.getByRole("heading", { name: "John Smith" })).toBeVisible();
+  // The heading names the job, not the persona: a visitor arriving from the
+  // "I have grazing" tile needs to know where they landed and what is
+  // waiting on them. John's identity stays on the page, below the heading.
+  await expect(
+    page.getByRole("heading", {
+      name: "Your paddock, requests and agreements",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("I have grazing")).toBeVisible();
+  await expect(page.getByText("John Smith")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Home" })).toBeVisible();
   await expect(
     page.getByText("List your paddock capacity so incoming requests"),
   ).toBeVisible();
