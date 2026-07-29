@@ -59,7 +59,21 @@ export default function RootLayout({
       className={`${fraunces.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-warm-white text-bark">
-        <PaddockmeWorkflowProvider>{children}</PaddockmeWorkflowProvider>
+        {/* WCAG 2.4.1 Bypass Blocks (Level A): a keyboard or screen-reader
+            user had no way past the header on any page. Invisible until it
+            takes focus, where it becomes the first thing in the tab order. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-md focus:bg-pm-green-900 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:outline-none focus:ring-2 focus:ring-pm-gold-500"
+        >
+          Skip to main content
+        </a>
+        {/* Lives here rather than on each page's own <main> so every route
+            gets a valid skip target. tabIndex allows the anchor to move
+            focus, not just the viewport. */}
+        <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
+          <PaddockmeWorkflowProvider>{children}</PaddockmeWorkflowProvider>
+        </div>
       </body>
     </html>
   );

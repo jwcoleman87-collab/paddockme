@@ -95,7 +95,7 @@ export function RoleChoiceCard({
           alt={imageAlt}
           fill
           sizes="(min-width: 1024px) 373px, (min-width: 640px) calc(100vw - 48px), calc(100vw - 32px)"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
         />
       </span>
       <span className="flex w-full flex-1 items-start gap-4 px-5 py-5 sm:px-6">
@@ -164,7 +164,7 @@ export function LivestockTypeCard({
           <img
             src={image}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
           />
           <span
             className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent"

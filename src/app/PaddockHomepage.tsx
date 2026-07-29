@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
@@ -80,11 +81,24 @@ export function PaddockHomepage() {
             sentence, one action. pt-24 is the floor here, because the header
             is absolutely positioned and stands about 76px tall. */}
         <section className="relative px-4 pb-14 pt-24 sm:px-6 sm:pb-16 lg:pb-20">
-          <div
-            className="absolute inset-0 bg-cover bg-[center_42%] opacity-40"
-            style={{ backgroundImage: `url(${paddockmeImages.homepageHero})` }}
-            aria-hidden
-          />
+          {/* This is the LCP element. As a CSS background-image it was
+              invisible to the browser's preload scanner, could not be served
+              responsively, and shipped a 264KB JPEG to every device
+              regardless of screen size — which is the wrong trade on a
+              paddock with one bar of signal. next/image makes it
+              discoverable (priority), responsive (sizes) and format-
+              negotiated (AVIF/WebP). The framing is unchanged. */}
+          <div className="absolute inset-0 opacity-40" aria-hidden>
+            <Image
+              src={paddockmeImages.homepageHero}
+              alt=""
+              fill
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+              className="object-cover object-[center_42%]"
+            />
+          </div>
           <div className="absolute inset-0 bg-pm-green-900/65" aria-hidden />
 
           <div className="relative mx-auto w-full max-w-6xl">
@@ -179,12 +193,12 @@ export function PaddockHomepage() {
               {journey.map(({ label, detail, icon: Icon, image, alt }, index) => (
                 <li key={label} className="group bg-pm-cream-50">
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={image}
                       alt={alt}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                     />
                     <span className="absolute left-0 top-0 bg-pm-green-900 px-3 py-1.5 text-sm font-extrabold text-pm-gold-500">
                       0{index + 1}
