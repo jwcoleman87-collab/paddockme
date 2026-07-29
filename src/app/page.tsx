@@ -1,4 +1,15 @@
+import type { Metadata } from "next";
 import { PaddockHomepage } from "./PaddockHomepage";
+
+/**
+ * Relative canonical, resolved against the layout's `metadataBase`, so the
+ * demo points at itself and the main site points at itself. Hardcoding an
+ * absolute URL here is what caused the cross-deployment leak in the first
+ * place.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 /**
  * Screen 1 — Homepage, and the real entry point for the guided MVP.

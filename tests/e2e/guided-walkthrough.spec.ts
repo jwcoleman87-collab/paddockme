@@ -66,9 +66,16 @@ test("owner completes the full journey through delivery, then resets", async ({
 
   // 5. Request a discussion → switch to the landowner → accept → workspace.
   await page.getByRole("link", { name: /Request Discussion/ }).click();
-  await expect(page.getByText("Request Sent!")).toBeVisible();
+  // Match the heading by role, not by text. Next's route announcer mirrors
+  // the h1 into an aria-live region on client navigation, so a bare
+  // getByText hits two elements and trips strict mode intermittently.
+  await expect(
+    page.getByRole("heading", { name: "Request Sent!" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: /Continue as John/ }).click();
-  await expect(page.getByText("New Request Received")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "New Request Received" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: /Accept Discussion/ }).click();
 
   // 6. Workspace → agreement. Seeded chat must describe the same mob the
@@ -114,13 +121,17 @@ test("owner completes the full journey through delivery, then resets", async ({
     .click();
 
   // 9. Quotes are in → coordination room → book Wayne.
-  await expect(page.getByText("Transport RFT Sent")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Transport RFT Sent" }),
+  ).toBeVisible();
   await expect(page.getByText("Wayne Transport").first()).toBeVisible();
   await page
     .getByRole("link", { name: /Chat with Driver/ })
     .first()
     .click();
-  await expect(page.getByText("Transport Coordination Room")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Transport Coordination Room" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /Accept Wayne Quote/ }).click();
 
   // 10. Workspace shows the booked deal → live agreement.

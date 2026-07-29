@@ -78,6 +78,69 @@ test("the hero image is discoverable, responsive and format-negotiated", async (
   ).toEqual([]);
 });
 
+test("the page never points at the other deployment", async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto("/");
+
+  const origin = new URL(baseURL!).origin;
+  const urls = await page.evaluate(() => ({
+    canonical: document
+      .querySelector('link[rel="canonical"]')
+      ?.getAttribute("href"),
+    ogUrl: document
+      .querySelector('meta[property="og:url"]')
+      ?.getAttribute("content"),
+    ogImage: document
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content"),
+    twitterImage: document
+      .querySelector('meta[name="twitter:image"]')
+      ?.getAttribute("content"),
+  }));
+
+  // A canonical and an og:url must exist — a missing tag would pass a
+  // "does not point at the other site" check vacuously.
+  expect(urls.canonical, "canonical link is required").toBeTruthy();
+  expect(urls.ogUrl, "og:url is required").toBeTruthy();
+
+  // Whatever host the build resolved to, it must resolve to exactly one.
+  // A page advertising two different origins is the bug we are guarding
+  // against, whichever way round it happens.
+  const origins = new Set(
+    Object.values(urls)
+      .filter((v): v is string => !!v)
+      .map((v) => new URL(v, origin).origin),
+  );
+  expect(
+    [...origins],
+    "every absolute URL on the page must share one origin",
+  ).toHaveLength(1);
+  const declared = [...origins][0];
+
+  // Run against a real deployment, the declared origin must be that
+  // deployment. Against localhost the resolver's documented last-resort
+  // fallback applies, so there is nothing meaningful to compare.
+  const isDemoHost = /\/\/paddockme\.vercel\.app$/.test(origin);
+  const isMainHost = /\/\/paddockme-oz51\.vercel\.app$/.test(origin);
+  if (isDemoHost || isMainHost) {
+    expect(declared, `${origin} must declare itself, not the other site`).toBe(
+      origin,
+    );
+  }
+
+  // The demo must never advertise the main deployment.
+  if (isDemoHost) {
+    for (const [name, value] of Object.entries(urls)) {
+      expect(
+        value ?? "",
+        `${name} must not mention the main deployment`,
+      ).not.toContain("paddockme-oz51");
+    }
+  }
+});
+
 test("hover motion is suppressed when the visitor asks for reduced motion", async ({
   browser,
 }) => {

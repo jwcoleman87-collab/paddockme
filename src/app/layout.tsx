@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
 import { PaddockmeWorkflowProvider } from "@/lib/paddockmeWorkflow";
+import { resolveSiteUrl } from "@/lib/siteUrl";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -18,8 +19,13 @@ const outfit = Outfit({
   display: "swap",
 });
 
+// Resolved per deployment. Hardcoding the main site here meant the showroom
+// demo told search engines and every share card that its canonical home was
+// paddockme-oz51.vercel.app — a different deployment.
+const siteUrl = resolveSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://paddockme-oz51.vercel.app"),
+  metadataBase: new URL(siteUrl),
   title: "PaddockME - Agistment coordination for livestock, land and transport",
   description:
     "Australian agistment marketplace helping livestock owners, landowners and transport providers coordinate agreements and stock movement.",
@@ -27,7 +33,7 @@ export const metadata: Metadata = {
     title: "PaddockME - Australian agistment coordination",
     description:
       "Investor-ready MVP for coordinating agistment agreements and stock transport across regional Australia.",
-    url: "https://paddockme-oz51.vercel.app",
+    url: siteUrl,
     siteName: "PaddockME",
     images: [
       {
