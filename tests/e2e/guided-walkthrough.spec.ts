@@ -32,7 +32,7 @@ test("owner completes the full journey through delivery, then resets", async ({
   // 1. Homepage → start a request.
   await page.goto("/");
   await expect(
-    page.getByText("Match stock with feed. Then get them there."),
+    page.getByText("Find feed. Fill paddocks. Move livestock."),
   ).toBeVisible();
   await page.getByRole("link", { name: /I need feed/i }).click();
 
@@ -168,7 +168,7 @@ test("owner completes the full journey through delivery, then resets", async ({
   await page.getByRole("button", { name: /Reset Demo/ }).click();
   await page.waitForURL("**/");
   await expect(
-    page.getByText("Match stock with feed. Then get them there."),
+    page.getByText("Find feed. Fill paddocks. Move livestock."),
   ).toBeVisible();
   const remainingThreadKeys = await page.evaluate(() =>
     Object.keys(window.localStorage).filter((key) =>

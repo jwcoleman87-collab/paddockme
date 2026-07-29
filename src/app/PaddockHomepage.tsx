@@ -8,7 +8,6 @@ import {
   Search,
   ShieldCheck,
   Truck,
-  Wheat,
 } from "lucide-react";
 import { PrimaryNav } from "@/components/paddockme/PmNav";
 import { RoleChoiceCard } from "@/components/paddockme/PmCards";
@@ -71,7 +70,16 @@ export function PaddockHomepage() {
     <div className="min-h-screen bg-pm-cream-50 text-pm-charcoal">
       <div className="relative overflow-hidden bg-pm-green-900">
         <PrimaryNav />
-        <section className="relative px-4 pb-12 pt-28 sm:px-6 sm:pb-16 lg:pb-20 lg:pt-36">
+        {/* The hero introduces PaddockME and then gets out of the way. It
+            used to run 813px tall on a phone — taller than the whole
+            viewport — so the three journey tiles, which are the actual point
+            of the page, could not be reached without scrolling past an
+            eyebrow badge, a paragraph, two buttons and a panel restating the
+            four-step journey that the "One connected run" section already
+            explains in full. All of that is gone: one headline, one
+            sentence, one action. pt-24 is the floor here, because the header
+            is absolutely positioned and stands about 76px tall. */}
+        <section className="relative px-4 pb-14 pt-24 sm:px-6 sm:pb-16 lg:pb-20">
           <div
             className="absolute inset-0 bg-cover bg-[center_42%] opacity-40"
             style={{ backgroundImage: `url(${paddockmeImages.homepageHero})` }}
@@ -79,53 +87,22 @@ export function PaddockHomepage() {
           />
           <div className="absolute inset-0 bg-pm-green-900/65" aria-hidden />
 
-          <div className="relative mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-end">
-            <div>
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white">
-                <Wheat className="h-4 w-4" aria-hidden />
-                Australian agistment and transport
-              </p>
-              <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl lg:text-6xl">
-                Match stock with feed. Then get them there.
+          <div className="relative mx-auto w-full max-w-6xl">
+            <div className="max-w-2xl">
+              <h1 className="text-3xl font-extrabold leading-[1.1] text-white sm:text-4xl lg:text-5xl">
+                Find feed. Fill paddocks. Move livestock.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
-                PaddockME keeps the request, agreement and livestock movement
-                together, so less time is lost coordinating the job.
+              <p className="mt-4 max-w-xl text-base leading-7 text-white/85 sm:text-lg">
+                Match stock with grazing and organise livestock transport in
+                one place.
               </p>
-              {/* The job comes first: the dominant action opens the three
-                  journeys. Creating an account is the subordinate path —
-                  sending a first-time visitor to a registration form before
-                  they have chosen a job is what made the entry feel clunky. */}
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <PmButton
-                  href="#choose-your-path"
-                  variant="accent"
-                  className="sm:min-w-44"
-                >
-                  Choose what you need
+              <div className="mt-6">
+                <PmButton href="#choose-your-path" variant="accent">
+                  Choose your journey
                   <ArrowRight className="h-4 w-4" aria-hidden />
-                </PmButton>
-                <PmButton
-                  href="/sign-up"
-                  variant="ghost"
-                  className="border border-white/35 text-white hover:bg-white/10 sm:min-w-44"
-                >
-                  Create an account
                 </PmButton>
               </div>
             </div>
-
-            <aside className="border-l-4 border-pm-gold-500 bg-pm-cream-50 p-5 shadow-lg sm:p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-pm-gold-600">
-                The whole job, connected
-              </p>
-              <p className="mt-2 text-xl font-extrabold text-pm-charcoal">
-                Request → match → agree → move
-              </p>
-              <p className="mt-2 text-sm leading-6 text-pm-muted">
-                Each completed step points clearly to the next one, so the job keeps moving without more ringing around.
-              </p>
-            </aside>
           </div>
         </section>
       </div>

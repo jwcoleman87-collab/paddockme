@@ -4,7 +4,7 @@ const routeChecks = [
   {
     path: "/",
     text: [
-      "Match stock with feed. Then get them there.",
+      "Find feed. Fill paddocks. Move livestock.",
       "I need feed",
       "I have grazing",
       "Find transport work",
